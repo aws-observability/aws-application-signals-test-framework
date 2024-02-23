@@ -1,3 +1,6 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
 ## This workflow aims to run the Application Signals end-to-end tests as a canary to
 ## test the artifacts for App Signals enablement. It will deploy a sample app and remote
 ## service onto an EKS cluster, call the APIs, and validate the generated telemetry,
