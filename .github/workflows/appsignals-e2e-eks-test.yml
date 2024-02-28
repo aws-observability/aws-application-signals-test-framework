@@ -35,6 +35,7 @@ env:
   SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/eks
+  TEST_RESOURCES_FOLDER: /home/runner/work/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 jobs:
   e2e-eks-test:
@@ -95,9 +96,10 @@ jobs:
 
       - name: Install eksctl
         run: |
+          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
           mkdir ${{ github.workspace }}/eksctl
           curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
-          tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz
+          execute_and_retry 2 "tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz"
           echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
 
       - name: Create role for AWS access from the sample app
@@ -113,17 +115,22 @@ jobs:
           --approve
 
       - name: Set up terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
+        run: |
+          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
+          execute_and_retry 2 "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"          
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install terraform
+
+      - name: Initiate Terraform
+        working-directory: terraform/eks
+        run: |
+          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
+          execute_and_retry 2 "terraform init && terraform validate" "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-sample-app
         working-directory: terraform/eks
-        run: |
-          terraform init
-          terraform validate
-          
+        run: |  
           # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online. 
           # There may be occasional failures due to transitivity issues, so try up to 2 times. 
           # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
@@ -157,15 +164,6 @@ jobs:
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.SAMPLE_APP_NAMESPACE }}
-          
-              # If the workflow provides a specific ADOT image to test, patch the deployment and restart CW agent related pods
-              if [ ${{ inputs.appsignals-adot-image-name }} != "" ]; then
-                kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-                -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/0", "value": "--auto-instrumentation-java-image=${{ inputs.appsignals-adot-image-name }}"}]'
-          
-                kubectl delete pods --all -n amazon-cloudwatch
-                kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-              fi
           
               kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
               kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
@@ -244,10 +242,15 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/outgoing-http-call/
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call/
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}/
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/client-call/
+          curl -S -o /dev/null http://${{ env.APP_ENDPOINT }}/outgoing-http-call/
+          curl -S -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call/
+          curl -S -o /dev/null http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}/
+          curl -S -o /dev/null http://${{ env.APP_ENDPOINT }}/client-call/
+
+      - name: Build Gradlew
+        run: |
+          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
+          execute_and_retry 2 "./gradlew"
 
       # Validation for app signals telemetry data
       - name: Call endpoint and validate generated EMF logs
