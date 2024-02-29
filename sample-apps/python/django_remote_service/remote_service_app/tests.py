@@ -1,3 +1,2 @@
-from django.test import TestCase
-
-# Create your tests here.
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
