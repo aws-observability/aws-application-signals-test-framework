@@ -1,3 +1,5 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
 from django.urls import path
 from frontend_service_app import views
 

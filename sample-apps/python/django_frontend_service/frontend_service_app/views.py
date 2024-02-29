@@ -6,6 +6,8 @@ import schedule
 import time
 from threading import Thread
 from opentelemetry import trace
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
 from opentelemetry.trace.span import format_trace_id
 
 logger = logging.getLogger(__name__)
