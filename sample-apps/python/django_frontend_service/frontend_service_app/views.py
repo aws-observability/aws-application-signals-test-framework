@@ -56,7 +56,7 @@ def aws_sdk_call(request):
     except Exception as e:
         logger.error("Could not retrieve http request:" + str(e))
 
-    return HttpResponse(get_xray_trace_id())
+    return get_xray_trace_id()
 
 def http_call(request):
     url = "https://www.amazon.com"
@@ -66,7 +66,7 @@ def http_call(request):
         logger.info("outgoing-http-call status code: " + str(status_code))
     except Exception as e:
         logger.error("Could not complete http request:" + str(e))
-    return HttpResponse(get_xray_trace_id())
+    return get_xray_trace_id()
 
 def downstream_service(request):
     ip = request.GET.get('ip', '')
@@ -76,11 +76,11 @@ def downstream_service(request):
         response = requests.get(url)
         status_code = response.status_code
         logger.info("Remote service call status code: " + str(status_code))
-        return HttpResponse(get_xray_trace_id())
+        return get_xray_trace_id()
     except Exception as e:
         logger.error("Could not complete http request to remote service:" + str(e))
 
-    return HttpResponse(get_xray_trace_id())
+    return get_xray_trace_id()
 
 def async_service(request):
     global should_send_local_root_client_call
