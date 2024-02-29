@@ -11,7 +11,7 @@ services:
     command: sh -c "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8000 --noreload"
     restart: always
     volumes:
-      - ./django_frontend_service/:/django_frontend_app/
+      - $HOME/.aws/credentials:/home/app/.aws/credentials:ro
     environment:
       DJANGO_SETTINGS_MODULE: "django_frontend_service.settings"
     ports:
@@ -23,11 +23,8 @@ services:
       context: .
       dockerfile: django_remote_service/Dockerfile
     container_name: django_remote_service
-    command: sh -c "python3 manage.py runserver 0.0.0.0:8001 --noreload"
+    command: sh -c "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8001 --noreload"
     restart: always
-    volumes:
-      - ./django_remote_service/:/django_remote_app/
-      - $HOME/.aws/credentials:/home/app/.aws/credentials:ro
     environment:
       DJANGO_SETTINGS_MODULE: "django_remote_service.settings"
     ports:
