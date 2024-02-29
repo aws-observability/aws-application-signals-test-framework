@@ -1,0 +1,34 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+version: '3'
+services:
+  django_frontend_service:
+    image: pythonsampleapp/frontend-service
+    build:
+      context: .
+      dockerfile: django_frontend_service/Dockerfile
+    container_name: django_frontend_service
+    command: sh -c "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8000 --noreload"
+    restart: always
+    volumes:
+      - ./django_frontend_service/:/django_frontend_app/
+    environment:
+      DJANGO_SETTINGS_MODULE: "django_frontend_service.settings"
+    ports:
+      - "8000:8000"
+
+  django_remote_service:
+    image: pythonsampleapp/remote-service
+    build:
+      context: .
+      dockerfile: django_remote_service/Dockerfile
+    container_name: django_remote_service
+    command: sh -c "python3 manage.py runserver 0.0.0.0:8001 --noreload"
+    restart: always
+    volumes:
+      - ./django_remote_service/:/django_remote_app/
+      - $HOME/.aws/credentials:/home/app/.aws/credentials:ro
+    environment:
+      DJANGO_SETTINGS_MODULE: "django_remote_service.settings"
+    ports:
+      - "8001:8001"
