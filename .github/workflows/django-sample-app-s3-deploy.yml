@@ -4,7 +4,6 @@
 name: App Signals Enablement - S3 Django Sample App Deployment
 on:
   workflow_dispatch: # be able to run the workflow on demand
-  push:
 
 permissions:
   id-token: write
@@ -24,17 +23,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      # TODO: Remove this step after ADOT python published to PyPI
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::637423224110:role/pulse-enablement-workflow-role
-          aws-region: us-east-1
-
-      # TODO: Remove this step after ADOT python published to PyPI
-      - name: Get Adot Wheel file
-        run: aws s3 cp s3://adot-autoinstrumentation-python-staging/${{ secrets.ADOT_WHEEL_NAME }} ./sample-apps/python/${{ secrets.ADOT_WHEEL_NAME }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -60,10 +48,7 @@ jobs:
         working-directory: sample-apps/python
         run: zip -r python-sample-app.zip .
 
-      # TODO: Remove put ADOT_WHEEL_NAME to S3 after ADOT python published to PyPI
       - name: Upload to S3
         working-directory: sample-apps/python
-        run: |
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./${{ secrets.ADOT_WHEEL_NAME }} --key ${{ secrets.ADOT_WHEEL_NAME }}
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
 
