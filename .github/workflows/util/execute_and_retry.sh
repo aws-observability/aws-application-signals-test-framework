@@ -11,7 +11,7 @@ execute_and_retry () {
    attempt_failed=0
    eval "$2" || attempt_failed=$?
 
-   if [ $attempt_failed -eq 1 ]; then
+   if [ $attempt_failed -ne 0 ]; then
      eval "$3"
      retry_counter=$(($retry_counter+1))
      sleep 5
