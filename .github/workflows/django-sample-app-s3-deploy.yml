@@ -26,10 +26,10 @@ jobs:
 
       # TODO: Remove this step after ADOT python published to PyPI
       - name: Configure AWS Credentials
-          uses: aws-actions/configure-aws-credentials@v4
-          with:
-            role-to-assume: arn:aws:iam::637423224110:role/pulse-enablement-workflow-role
-            aws-region: us-east-1
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::637423224110:role/pulse-enablement-workflow-role
+          aws-region: us-east-1
 
       # TODO: Remove this step after ADOT python published to PyPI
       - name: Get Adot Wheel file
