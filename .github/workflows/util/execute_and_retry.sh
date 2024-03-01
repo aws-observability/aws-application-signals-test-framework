@@ -3,16 +3,18 @@
 # This function is for retrying commands in the case they fail. It accepts three arguments
 # $1: Number of retries it will attempt
 # $2: Command to execute
-# $3: Clean up commands
+# $3: (Optional) Command for cleaning up resources if $2 fails
 execute_and_retry () {
   retry_counter=0
   max_retry=$1
+  command=$2
+  cleanup=$3
   while [ $retry_counter -lt $max_retry ]; do
    attempt_failed=0
-   eval "$2" || attempt_failed=$?
+   eval "$command" || attempt_failed=$?
 
    if [ $attempt_failed -ne 0 ]; then
-     eval "$3"
+     eval "$cleanup"
      retry_counter=$(($retry_counter+1))
      sleep 5
    else
