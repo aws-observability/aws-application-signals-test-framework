@@ -178,6 +178,8 @@ jobs:
               echo "Attempting to connect to the remote sample app endpoint"
               remote_service_pod_ip=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')
               remote_sample_app_endpoint=http://$remote_service_pod_ip/healthcheck
+              echo $remote_service_pod_ip
+              echo $remote_sample_app_endpoint
               attempt_counter=0
               max_attempts=60
               until $(curl --output /dev/null --silent --head --fail $(echo "$remote_sample_app_endpoint" | tr -d '"')); do
