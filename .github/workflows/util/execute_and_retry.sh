@@ -1,13 +1,17 @@
 #!/bin/bash
 
+# This function is for retrying commands in the case they fail. It accepts three arguments
+# $1: Number of retries it will attempt
+# $2: Command to execute
+# $3: Clean up commands
 execute_and_retry () {
   retry_counter=0
   max_retry=$1
   while [ $retry_counter -lt $max_retry ]; do
-   deployment_failed=0
-   eval "$2" || deployment_failed=$?
+   attempt_failed=0
+   eval "$2" || attempt_failed=$?
 
-   if [ $deployment_failed -eq 1 ]; then
+   if [ $attempt_failed -eq 1 ]; then
      eval "$3"
      retry_counter=$(($retry_counter+1))
      sleep 5
