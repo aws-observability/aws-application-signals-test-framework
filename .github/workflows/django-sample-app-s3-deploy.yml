@@ -1,10 +1,9 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-name: App Signals Enablement - S3 Springboot Sample App Deployment
+name: App Signals Enablement - S3 Django Sample App Deployment
 on:
   workflow_dispatch: # be able to run the workflow on demand
-  push:
 
 permissions:
   id-token: write
