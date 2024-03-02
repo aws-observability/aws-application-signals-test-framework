@@ -158,10 +158,10 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -o /dev/null http://${{ env.MAIN_SERVICE_ENDPOINT }}/outgoing-http-call/
-          curl -S -o /dev/null http://${{ env.MAIN_SERVICE_ENDPOINT }}/aws-sdk-call/
-          curl -S -o /dev/null http://${{ env.MAIN_SERVICE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/
-          curl -S -o /dev/null http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call/
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/outgoing-http-call/
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/aws-sdk-call/
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call/
           
       - name: Build Gradlew
         run: |
