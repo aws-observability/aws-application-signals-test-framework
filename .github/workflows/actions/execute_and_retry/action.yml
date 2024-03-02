@@ -1,0 +1,71 @@
+# Reusuable Action for executing commands and retrying them if it fails
+name: Command Retry Logic
+
+inputs:
+  pre-command:
+    required: false
+    type: string
+  max_retry:
+    required: false
+    type: number
+    default: 2
+  command:
+    required: true
+    type: string
+  cleanup:
+    required: false
+    type: string
+  post-command:
+    required: false
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run pre-command
+      shell: bash
+      env:
+        PRE_COMMAND: ${{ inputs.pre-command }}
+      run: |
+        $PRE_COMMAND
+
+    - name: Run command
+      shell: bash
+      env:
+        MAX_RETRY: ${{ inputs.max_retry }}
+        COMMAND: ${{ inputs.command }}
+        CLEANUP: ${{ inputs.cleanup }}
+      run: |
+        retry_counter=0
+        while [ $retry_counter -lt $MAX_RETRY ]; do
+        attempt_failed=0
+        eval "$COMMAND" || attempt_failed=$?
+
+        if [ $attempt_failed -ne 0 ]; then
+          eval "$CLEANUP"
+          retry_counter=$(($retry_counter+1))
+          sleep 5
+        else
+          break
+        fi
+
+        if [ $retry_counter -eq $max_retry ]; then
+          echo "Max retry reached, command failed to execute properly. Exiting code"
+          exit 1
+        fi
+        done
+
+    - name: Run post command
+      shell: bash
+      env:
+        POST_COMMAND: ${{ inputs.post-command }}
+      run: $POST_COMMAND
+
+
+
+
+
+
+
+
+
