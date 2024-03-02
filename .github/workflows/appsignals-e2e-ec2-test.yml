@@ -31,6 +31,8 @@ env:
   LOG_GROUP_NAME: /aws/appsignals/generic
   TEST: ${{ inputs.test }}
   GET_ADOT_JAR_COMMAND: "wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
+  TEST_RESOURCES_FOLDER: /home/runner/work/aws-application-signals-test-framework/aws-application-signals-test-framework
+
 
 jobs:
   e2e-ec2-test:
@@ -65,16 +67,21 @@ jobs:
           aws-region: ${{ inputs.aws-region }}
 
       - name: Set up terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_wrapper: false
+        run: |
+          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
+          execute_and_retry 2 "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"   
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt update && sudo apt install terraform
+
+      - name: Initiate Terraform
+        working-directory: terraform/ec2
+        run: |
+          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
+          execute_and_retry 2 "terraform init && terraform validate" "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
         working-directory: terraform/ec2
         run: |
-          terraform init
-          terraform validate
-          
           # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
           # There may be occasional failures due to transitivity issues, so try up to 2 times. 
           # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
@@ -151,10 +158,15 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s -o /dev/null http://${{ env.MAIN_SERVICE_ENDPOINT }}/outgoing-http-call/
-          curl -S -s -o /dev/null http://${{ env.MAIN_SERVICE_ENDPOINT }}/aws-sdk-call/
-          curl -S -s -o /dev/null http://${{ env.MAIN_SERVICE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/
-          curl -S -s -o /dev/null http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call/
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/outgoing-http-call/
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/aws-sdk-call/
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call/
+          
+      - name: Build Gradlew
+        run: |
+          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
+          execute_and_retry 2 ./gradlew
 
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
