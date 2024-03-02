@@ -31,6 +31,7 @@ env:
   LOG_GROUP_NAME: /aws/appsignals/generic
   TEST: ${{ inputs.test }}
   GET_ADOT_JAR_COMMAND: "wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
+  GET_CW_AGENT_RPM_COMMAND: "wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/1.300031.0b313/amazon-cloudwatch-agent.rpm"
   TEST_RESOURCES_FOLDER: /home/runner/work/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 
@@ -41,9 +42,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Set CW Agent RPM environment variable
-        run: echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/1.300031.0b313/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
 
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
@@ -67,17 +65,17 @@ jobs:
           aws-region: ${{ inputs.aws-region }}
 
       - name: Set up terraform
-        run: |
-          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
-          execute_and_retry 2 "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"   
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update && sudo apt install terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list \
+          sudo apt update && sudo apt install terraform'
 
       - name: Initiate Terraform
-        working-directory: terraform/ec2
-        run: |
-          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
-          execute_and_retry 2 "terraform init && terraform validate" "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/ec2 && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
         working-directory: terraform/ec2
@@ -108,10 +106,26 @@ jobs:
             # Attempts to connect will be made for up to 10 minutes
             if [ $deployment_failed -eq 0 ]; then
               echo "Attempting to connect to the endpoint"
-              sample_app_endpoint=http://$(terraform output sample_app_main_service_public_dns):8080
+              main_sample_app_endpoint=http://$(terraform output sample_app_main_service_public_dns):8080
               attempt_counter=0
-              max_attempts=60
-              until $(curl --output /dev/null --silent --head --fail $(echo "$sample_app_endpoint" | tr -d '"')); do
+              max_attempts=30
+              until $(curl --output /dev/null --silent --head --fail $(echo "$main_sample_app_endpoint" | tr -d '"')); do
+                if [ ${attempt_counter} -eq ${max_attempts} ];then
+                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
+                  deployment_failed=1
+                  break
+                fi
+          
+                printf '.'
+                attempt_counter=$(($attempt_counter+1))
+                sleep 10
+              done
+          
+              echo "Attempting to connect to the remote sample app endpoint"
+              remote_sample_app_endpoint=http://$(terraform output sample_app_remote_service_public_ip):8080/healthcheck
+              attempt_counter=0
+              max_attempts=30
+              until $(curl --output /dev/null --silent --head --fail $(echo "$remote_sample_app_endpoint" | tr -d '"')); do
                 if [ ${attempt_counter} -eq ${max_attempts} ];then
                   echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
                   deployment_failed=1
@@ -164,9 +178,9 @@ jobs:
           curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call/
           
       - name: Build Gradlew
-        run: |
-          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
-          execute_and_retry 2 ./gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "./gradlew"
 
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
