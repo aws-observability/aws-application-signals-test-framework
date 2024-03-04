@@ -129,7 +129,7 @@ resource "null_resource" "main_service_setup" {
       "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/python-sample-app.zip ./python-sample-app.zip",
       "ls -l",
       "unzip python-sample-app.zip",
-      "echo Done unzip!!!!!!!!!!!!!!!"
+      "echo Done unzip!!!!!!!!!!!!!!!",
 
       # Export environment variables for instrumentation
       "cd ./django_frontend_service",
