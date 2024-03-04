@@ -150,7 +150,7 @@ resource "null_resource" "main_service_setup" {
       # "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
-      "sleep 30"
+      # "sleep 30"
     ]
   }
 
@@ -204,11 +204,11 @@ resource "null_resource" "remote_service_setup" {
 
       # Get and run the sample application with configuration
       "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
-      "unzip python-sample-app.zip",
+      # "unzip python-sample-app.zip",
 
       # Export environment variables for instrumentation
       "cd ./django_remote_service",
-      "python3.9 -m pip install -r requirements.txt --force-reinstall",
+      # "python3.9 -m pip install -r requirements.txt --force-reinstall",
       "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
       "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
       "export OTEL_METRICS_EXPORTER=none",
@@ -221,8 +221,8 @@ resource "null_resource" "remote_service_setup" {
       "export OTEL_SERVICE_NAME=sample-remote-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
-      "opentelemetry-instrument python3.9 manage.py migrate --noinput --noreload",
-      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload",
+      # "opentelemetry-instrument python3.9 manage.py migrate --noinput --noreload",
+      # "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload",
 
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
