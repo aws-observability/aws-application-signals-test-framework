@@ -47,10 +47,6 @@ data "aws_ami" "ami" {
   owners = ["amazon"]
   most_recent      = true
   filter {
-    name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
-  }
-  filter {
     name   = "state"
     values = ["available"]
   }
@@ -108,8 +104,9 @@ resource "null_resource" "main_service_setup" {
     inline = [
       # Install Python and wget
       "sudo yum install wget -y",
-      "sudo dnf install python3.10",
-      "sudo dnf install python3.10-pip",
+      "sudo yum install unzip",
+      "sudo dnf install python3.9",
+      "sudo dnf install python3.9-pip",
 
       # Copy in CW Agent configuration
       "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
@@ -122,7 +119,7 @@ resource "null_resource" "main_service_setup" {
 
       # Get ADOT Wheel and install it
       "${var.get_adot_wheel_command} ./${var.adot_wheel_name}",
-      "python3.10 -m pip install ${var.adot_wheel_name}",
+      "python3.9 -m pip install ${var.adot_wheel_name}",
 
       # Get and run the sample application with configuration
       "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
