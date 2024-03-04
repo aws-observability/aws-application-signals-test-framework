@@ -1,12 +1,13 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
-from django.http import HttpResponse, JsonResponse
-import boto3
 import logging
+import threading
+import time
+
+import boto3
 import requests
 import schedule
-import time
-import threading
+from django.http import HttpResponse, JsonResponse
 from opentelemetry import trace
 from opentelemetry.trace.span import format_trace_id
 
@@ -75,7 +76,7 @@ def http_call(request):
 def downstream_service(request):
     ip = request.GET.get('ip', '')
     ip = ip.replace("/", "")
-    url = f"http://{ip}:8001/health-check"
+    url = f"http://{ip}:8001/healthcheck"
     try:
         response = requests.get(url)
         status_code = response.status_code
