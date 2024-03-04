@@ -197,8 +197,8 @@ resource "null_resource" "remote_service_setup" {
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
       # Get ADOT Wheel and install it
-      "${var.get_adot_wheel_command} ./${var.adot_wheel_name}",
-      "python3.9 -m pip install ${var.adot_wheel_name}",
+      "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl ./aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
+      "python3.9 -m pip install aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
 
       # Get and run the sample application with configuration
       "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
