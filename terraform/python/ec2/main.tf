@@ -204,7 +204,7 @@ resource "null_resource" "remote_service_setup" {
 
       # Get and run the sample application with configuration
       "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
-      # "unzip python-sample-app.zip",
+      "unzip -o python-sample-app.zip",
 
       # Export environment variables for instrumentation
       "cd ./django_remote_service",
