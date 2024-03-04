@@ -113,6 +113,7 @@ resource "null_resource" "main_service_setup" {
       "echo Listing directory contents:",
       "ls -l",
       "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
+      "echo $agent_config",
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
@@ -128,6 +129,7 @@ resource "null_resource" "main_service_setup" {
       "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/python-sample-app.zip ./python-sample-app.zip",
       "ls -l",
       "unzip python-sample-app.zip",
+      "echo Done unzip!!!!!!!!!!!!!!!"
 
       # Export environment variables for instrumentation
       "cd ./django_frontend_service",
