@@ -132,8 +132,8 @@ resource "null_resource" "main_service_setup" {
       "echo Done unzip!!!!!!!!!!!!!!!",
 
       # Export environment variables for instrumentation
-      "cd ./django_frontend_service",
-      "python3.9 -m pip install -r requirements.txt",
+      # "cd ./django_frontend_service",
+      # "python3.9 -m pip install -r requirements.txt",
       "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
       "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
       "export OTEL_METRICS_EXPORTER=none",
@@ -146,8 +146,8 @@ resource "null_resource" "main_service_setup" {
       "export OTEL_SERVICE_NAME=sample-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
-      "opentelemetry-instrument python3.9 manage.py migrate --noinput --noreload",
-      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload",
+      # "opentelemetry-instrument python3.9 manage.py migrate --noinput --noreload",
+      # "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       "sleep 30"
