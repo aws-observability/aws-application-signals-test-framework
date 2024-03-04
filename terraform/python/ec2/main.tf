@@ -109,6 +109,9 @@ resource "null_resource" "main_service_setup" {
       "sudo dnf install python3.9-pip",
 
       # Copy in CW Agent configuration
+      "echo Current directory: $(pwd)",
+      "echo Listing directory contents:",
+      "ls -l",
       "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
