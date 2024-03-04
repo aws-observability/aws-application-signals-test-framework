@@ -128,12 +128,12 @@ resource "null_resource" "main_service_setup" {
       # Get and run the sample application with configuration
       "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/python-sample-app.zip ./python-sample-app.zip",
       "ls -l",
-      # "unzip python-sample-app.zip",
+      "unzip -o python-sample-app.zip",
       "echo Done unzip!!!!!!!!!!!!!!!",
 
       # Export environment variables for instrumentation
-      # "cd ./django_frontend_service",
-      # "python3.9 -m pip install -r requirements.txt",
+      "cd ./django_frontend_service",
+      "python3.9 -m pip install -r requirements.txt",
       "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
       "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
       "export OTEL_METRICS_EXPORTER=none",
@@ -146,11 +146,11 @@ resource "null_resource" "main_service_setup" {
       "export OTEL_SERVICE_NAME=sample-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
-      # "opentelemetry-instrument python3.9 manage.py migrate --noinput --noreload",
-      # "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload",
+      "opentelemetry-instrument python3.9 manage.py migrate --noinput --noreload",
+      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
-      # "sleep 30"
+      "sleep 30"
     ]
   }
 
@@ -194,7 +194,7 @@ resource "null_resource" "remote_service_setup" {
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
-       "wget -O cw-agent.rpm https://amazoncloudwatch-agent-us-east-1.s3.us-east-1.amazonaws.com/amazon_linux/amd64/1.300031.0b313/amazon-cloudwatch-agent.rpm",
+      "wget -O cw-agent.rpm https://amazoncloudwatch-agent-us-east-1.s3.us-east-1.amazonaws.com/amazon_linux/amd64/1.300031.0b313/amazon-cloudwatch-agent.rpm",
       "sudo rpm -U ./cw-agent.rpm",
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
@@ -208,7 +208,7 @@ resource "null_resource" "remote_service_setup" {
 
       # Export environment variables for instrumentation
       "cd ./django_remote_service",
-      # "python3.9 -m pip install -r requirements.txt --force-reinstall",
+      "python3.9 -m pip install -r requirements.txt --force-reinstall",
       "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
       "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
       "export OTEL_METRICS_EXPORTER=none",
@@ -221,8 +221,8 @@ resource "null_resource" "remote_service_setup" {
       "export OTEL_SERVICE_NAME=sample-remote-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
-      # "opentelemetry-instrument python3.9 manage.py migrate --noinput --noreload",
-      # "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload",
+      "opentelemetry-instrument python3.9 manage.py migrate --noinput --noreload",
+      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload",
 
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
