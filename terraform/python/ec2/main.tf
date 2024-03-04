@@ -125,7 +125,7 @@ resource "null_resource" "main_service_setup" {
       "python3.9 -m pip install aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
 
       # Get and run the sample application with configuration
-      "aws s3 cp s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip ./python-sample-app.zip",
+      "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/python-sample-app.zip ./python-sample-app.zip",
       "ls -l",
       "unzip python-sample-app.zip",
 
