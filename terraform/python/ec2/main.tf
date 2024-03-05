@@ -147,7 +147,7 @@ resource "null_resource" "main_service_setup" {
       "export OTEL_SERVICE_NAME=sample-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
-      "opentelemetry-instrument python3.9 manage.py migrate",
+      "python3.9 manage.py migrate",
       "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
@@ -223,7 +223,7 @@ resource "null_resource" "remote_service_setup" {
       "export OTEL_SERVICE_NAME=sample-remote-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
-      # "opentelemetry-instrument python3.9 manage.py migrate",
+      # "python3.9 manage.py migrate",
       # "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload",
 
 
