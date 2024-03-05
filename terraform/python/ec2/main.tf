@@ -105,8 +105,8 @@ resource "null_resource" "main_service_setup" {
       # Install Python and wget
       "sudo yum install wget -y",
       "sudo yum install unzip",
-      "sudo dnf install python3.9",
-      "sudo dnf install python3.9-pip",
+      "sudo yum install python39",
+      "sudo yum install python39-pip",
 
       # Copy in CW Agent configuration
       "echo Current directory: $(pwd)",
@@ -186,8 +186,8 @@ resource "null_resource" "remote_service_setup" {
     inline = [
       # Install Python and wget
       "sudo yum install wget -y",
-      "sudo dnf install python3.9",
-      "sudo dnf install python3.9-pip",
+      "sudo yum install python39",
+      "sudo yum install python39-pip",
 
       # Copy in CW Agent configuration
       "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
