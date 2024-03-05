@@ -28,7 +28,7 @@ env:
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/generic
   TEST: ${{ inputs.test }}
-  ADOT_WHEEL_NAME: ${{ secrets.ADOT_WHEEL_NAME }}
+  ADOT_WHEEL_NAME: aws_opentelemetry_distro-0.0.1-py3-none-any.whl
   ADOT_WHEEL_LOCATION: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/aws_opentelemetry_distro-0.0.1-py3-none-any.whl
 
 
@@ -73,6 +73,7 @@ jobs:
         working-directory: terraform/python/ec2
         run: |
           echo "HERE!!!!!!!!!!"
+          echo ${{ env.ADOT_WHEEL_NAME }}
           echo ${{ env.ADOT_WHEEL_LOCATION }}
           echo ${{ env.SAMPLE_APP_ZIP }}
           terraform init
