@@ -123,6 +123,9 @@ resource "null_resource" "main_service_setup" {
 
       # Get ADOT Wheel and install it
       "{var.get_adot_wheel_command} ./{var.adot_wheel_name} ",
+      "wheel_name={var.adot_wheel_name}",
+      "echo ADOT wheel_name"
+      "echo $wheel_name"
       "python3.9 -m pip install {var.adot_wheel_name}",
 
       # Get and run the sample application with configuration
