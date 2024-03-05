@@ -47,6 +47,10 @@ data "aws_ami" "ami" {
   owners = ["amazon"]
   most_recent      = true
   filter {
+   name = "image_id"
+   values = ["ami-0e9107ed11be76fde"]
+  }
+  filter {
     name   = "state"
     values = ["available"]
   }
@@ -77,7 +81,7 @@ data "aws_ami" "ami" {
 
 resource "aws_instance" "main_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.micro"
+  instance_type                         = "t2.small"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -104,9 +108,9 @@ resource "null_resource" "main_service_setup" {
     inline = [
       # Install Python and wget
       "sudo yum install wget -y",
-      "sudo yum install unzip",
-      "sudo yum install python3",
-      "sudo yum install python3-pip",
+      "sudo yum install unzip -y",
+      "sudo dnf install -y python3.9",
+      "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
       "echo Current directory: $(pwd)",
@@ -123,7 +127,7 @@ resource "null_resource" "main_service_setup" {
 
       # Get ADOT Wheel and install it
       "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl ./aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
-      "python3 -m pip install aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
+      "python3.9 -m pip install aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
 
       # Get and run the sample application with configuration
       "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
@@ -132,7 +136,7 @@ resource "null_resource" "main_service_setup" {
 
       # Export environment variables for instrumentation
       "cd ./django_frontend_service",
-      "python3 -m pip install -r requirements.txt",
+      "python3.9 -m pip install -r requirements.txt",
       "export DJANGO_SETTINGS_MODULE=\"django_frontend_service.settings\"",
       "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
       "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
@@ -146,8 +150,8 @@ resource "null_resource" "main_service_setup" {
       "export OTEL_SERVICE_NAME=sample-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
-      "python3 manage.py migrate",
-      "nohup opentelemetry-instrument python3 manage.py runserver 0.0.0.0:8000 --noreload &",
+      "python3.9 manage.py migrate",
+      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload &",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       "sleep 30"
@@ -186,8 +190,9 @@ resource "null_resource" "remote_service_setup" {
     inline = [
       # Install Python and wget
       "sudo yum install wget -y",
-      "sudo yum install python3",
-      "sudo yum install python3-pip",
+      "sudo yum install unzip -y",
+      "sudo dnf install -y python3.9",
+      "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
       "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
@@ -200,7 +205,7 @@ resource "null_resource" "remote_service_setup" {
 
       # Get ADOT Wheel and install it
       "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl ./aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
-      "python3 -m pip install aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
+      "python3.9 -m pip install aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
 
       # Get and run the sample application with configuration
       "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
@@ -209,7 +214,7 @@ resource "null_resource" "remote_service_setup" {
       # Export environment variables for instrumentation
       "cd ./django_remote_service",
       "export DJANGO_SETTINGS_MODULE=\"django_remote_service.settings\"",
-      "python3 -m pip install -r requirements.txt --force-reinstall",
+      "python3.9 -m pip install -r requirements.txt --force-reinstall",
       "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
       "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
       "export OTEL_METRICS_EXPORTER=none",
@@ -222,8 +227,8 @@ resource "null_resource" "remote_service_setup" {
       "export OTEL_SERVICE_NAME=sample-remote-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
-      "python3 manage.py migrate",
-      "nohup opentelemetry-instrument python3 manage.py runserver 0.0.0.0:8001 --noreload &",
+      "python3.9 manage.py migrate",
+      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload &",
 
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
