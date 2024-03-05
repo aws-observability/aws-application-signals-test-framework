@@ -24,12 +24,12 @@ env:
   # It is not redundant
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
-  SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip # s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
+  SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/generic
   TEST: ${{ inputs.test }}
   ADOT_WHEEL_NAME: ${{ secrets.ADOT_WHEEL_NAME }}
-  GET_ADOT_WHEEL_COMMAND: "aws s3 cp s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/${{ secrets.ADOT_WHEEL_NAME }}"
+  ADOT_WHEEL_LOCATION: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/${{ secrets.ADOT_WHEEL_NAME }}
 
 
 jobs:
@@ -90,7 +90,7 @@ jobs:
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="adot_wheel_name=${{ env.ADOT_WHEEL_NAME }}"
-              -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
+              -var="adot_wheel_location=${{ env.ADOT_WHEEL_LOCATION }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
