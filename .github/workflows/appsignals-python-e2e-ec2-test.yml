@@ -29,7 +29,7 @@ env:
   LOG_GROUP_NAME: /aws/appsignals/generic
   TEST: ${{ inputs.test }}
   ADOT_WHEEL_NAME: ${{ secrets.ADOT_WHEEL_NAME }}
-  ADOT_WHEEL_LOCATION: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/${{ secrets.ADOT_WHEEL_NAME }}
+  ADOT_WHEEL_LOCATION: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/aws_opentelemetry_distro-0.0.1-py3-none-any.whl
 
 
 jobs:
@@ -72,8 +72,8 @@ jobs:
       - name: Deploy sample app via terraform and wait for endpoint to come online
         working-directory: terraform/python/ec2
         run: |
-          print("HERE!!!!!!!!!!)
-          print(${{ env.ADOT_WHEEL_LOCATION }})
+          echo "HERE!!!!!!!!!!"
+          echo ${{ env.ADOT_WHEEL_LOCATION }}
           terraform init
           terraform validate
           # TODO: Remove adot_wheel_name after adot release and publish to PyPI.
