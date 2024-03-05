@@ -90,7 +90,7 @@ jobs:
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
-              -var="adot_wheel_name=${{ env.ADOT_WHEEL_NAME }}"
+              -var="adot_wheel_name=${{ env.ADOT_WHEEL_NAME }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
