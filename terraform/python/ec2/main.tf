@@ -123,6 +123,7 @@ resource "null_resource" "main_service_setup" {
 
       # Get ADOT Wheel and install it
       "aws s3 cp ${var.adot_wheel_location} ./${var.adot_wheel_name}",
+      "ls",
       "python3.9 -m pip install ${var.adot_wheel_name}",
 
       # Get and run the sample application with configuration
@@ -200,6 +201,7 @@ resource "null_resource" "remote_service_setup" {
 
       # Get ADOT Wheel and install it
       "aws s3 cp ${var.adot_wheel_location} ./${var.adot_wheel_name}",
+      "ls",
       "python3.9 -m pip install ${var.adot_wheel_name}",
 
       # Get and run the sample application with configuration
