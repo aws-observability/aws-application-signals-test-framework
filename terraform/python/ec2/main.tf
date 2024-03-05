@@ -81,7 +81,7 @@ data "aws_ami" "ami" {
 
 resource "aws_instance" "main_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t2.small"
+  instance_type                         = "t3.small"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -159,7 +159,7 @@ resource "null_resource" "main_service_setup" {
 
 resource "aws_instance" "remote_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.micro"
+  instance_type                         = "t3.small"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]

@@ -28,8 +28,7 @@ env:
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/generic
   TEST: ${{ inputs.test }}
-  ADOT_WHEEL_NAME: aws_opentelemetry_distro-0.0.1-py3-none-any.whl
-  ADOT_WHEEL_LOCATION: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}
+  ADOT_WHEEL_NAME: ${{ secrets.ADOT_WHEEL_NAME }}
 
 
 jobs:
@@ -74,8 +73,6 @@ jobs:
         run: |
           echo "HERE!!!!!!!!!!"
           echo ${{ env.ADOT_WHEEL_NAME }}
-          echo ${{ env.ADOT_WHEEL_LOCATION }}
-          echo ${{ env.SAMPLE_APP_ZIP }}
           terraform init
           terraform validate
           # TODO: Remove adot_wheel_name after adot release and publish to PyPI.
@@ -94,7 +91,6 @@ jobs:
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="adot_wheel_name=${{ env.ADOT_WHEEL_NAME }}"
-              -var="adot_wheel_location=${{ env.ADOT_WHEEL_LOCATION }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
