@@ -122,8 +122,8 @@ resource "null_resource" "main_service_setup" {
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
       # Get ADOT Wheel and install it
-      "aws s3 cp s3://pulse-sample-app/aws_opentelemetry_distro-0.0.1-py3-none-any.whl ./aws_opentelemetry_distro-0.0.1-py3-none-any.whl",
-      "python3.9 -m pip install aws_opentelemetry_distro-0.0.1-py3-none-any.whl",
+      "{var.get_adot_wheel_command} ./{var.adot_wheel_name} ",
+      "python3.9 -m pip install {var.adot_wheel_name}",
 
       # Get and run the sample application with configuration
       "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
@@ -199,8 +199,8 @@ resource "null_resource" "remote_service_setup" {
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
       # Get ADOT Wheel and install it
-      "aws s3 cp s3://pulse-sample-app/aws_opentelemetry_distro-0.0.1-py3-none-any.whl ./aws_opentelemetry_distro-0.0.1-py3-none-any.whl",
-      "python3.9 -m pip install aws_opentelemetry_distro-0.0.1-py3-none-any.whl",
+      "${var.get_adot_wheel_command} ./{var.adot_wheel_name}",
+      "python3.9 -m pip install {var.adot_wheel_name}",
 
       # Get and run the sample application with configuration
       "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
