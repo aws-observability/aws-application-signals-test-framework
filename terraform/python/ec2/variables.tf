@@ -39,5 +39,5 @@ variable "get_cw_agent_rpm_command" {
 }
 
 variable "adot_wheel_location" {
-  default = "s3://<bucket-name>/<jar>"
+  default = "s3://<bucket-name>"
 }
