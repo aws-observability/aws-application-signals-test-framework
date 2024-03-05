@@ -148,7 +148,7 @@ resource "null_resource" "main_service_setup" {
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
       "python3.9 manage.py migrate",
-      "opentelemetry-instrument python3.11 manage.py runserver 0.0.0.0:8000 --noreload &",
+      "opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload &",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       "sleep 30"
