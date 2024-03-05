@@ -3,9 +3,6 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET /remote-service
-    -
       name: Service
       value: {{serviceName}}
     -
@@ -17,56 +14,34 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
       name: Operation
-      value: GET /remote-service
+      value: InternalOperation
+    -
+      name: HostedIn.Environment
+      value: EC2
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
     -
       name: Service
       value: {{serviceName}}
     -
+      name: Operation
+      value: InternalOperation
+    -
       name: HostedIn.Environment
       value: EC2
+    -
+      name: RemoteService
+      value: local-root-client-call
     -
       name: RemoteOperation
-      value: GET /healthcheck
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: Operation
-      value: GET /healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
+      value: GET /
 
 -
   metricName: Latency
@@ -80,40 +55,29 @@
       value: EC2
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
+      value: local-root-client-call
     -
       name: RemoteOperation
-      value: GET /healthcheck
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: GET /
 
 -
   metricName: Latency
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.Environment
+      value: EC2
+    -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: local-root-client-call
 
 -
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
-    -
-      name: Operation
-      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -126,56 +90,34 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
       name: Operation
-      value: GET /remote-service
+      value: InternalOperation
+    -
+      name: HostedIn.Environment
+      value: EC2
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
     -
       name: Service
       value: {{serviceName}}
     -
+      name: Operation
+      value: InternalOperation
+    -
       name: HostedIn.Environment
       value: EC2
+    -
+      name: RemoteService
+      value: local-root-client-call
     -
       name: RemoteOperation
-      value: GET /healthcheck
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: Operation
-      value: GET /healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
+      value: GET /
 
 -
   metricName: Error
@@ -189,40 +131,29 @@
       value: EC2
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
+      value: local-root-client-call
     -
       name: RemoteOperation
-      value: GET /healthcheck
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: GET /
 
 -
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.Environment
+      value: EC2
+    -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: local-root-client-call
 
 -
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
-    -
-      name: Operation
-      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -235,56 +166,34 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
       name: Operation
-      value: GET /remote-service
+      value: InternalOperation
+    -
+      name: HostedIn.Environment
+      value: EC2
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
     -
       name: Service
       value: {{serviceName}}
     -
+      name: Operation
+      value: InternalOperation
+    -
       name: HostedIn.Environment
       value: EC2
+    -
+      name: RemoteService
+      value: local-root-client-call
     -
       name: RemoteOperation
-      value: GET /healthcheck
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: Operation
-      value: GET /healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
+      value: GET /
 
 -
   metricName: Fault
@@ -298,29 +207,21 @@
       value: EC2
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
+      value: local-root-client-call
     -
       name: RemoteOperation
-      value: GET /healthcheck
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: GET /
 
 -
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.Environment
+      value: EC2
+    -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: local-root-client-call

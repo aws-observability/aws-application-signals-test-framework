@@ -113,11 +113,7 @@ resource "null_resource" "main_service_setup" {
       "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
-      "echo Current directory: $(pwd)",
-      "echo Listing directory contents:",
-      "ls -l",
       "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
-      "echo $agent_config",
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
@@ -131,7 +127,6 @@ resource "null_resource" "main_service_setup" {
 
       # Get and run the sample application with configuration
       "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
-      "ls -l",
       "unzip -o python-sample-app.zip",
 
       # Export environment variables for instrumentation

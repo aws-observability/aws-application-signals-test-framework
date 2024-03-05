@@ -15,42 +15,43 @@
   "annotations": {
     "aws_local_service": "^{{serviceName}}$",
     "HostedIn_Environment": "^EC2$",
-    "aws_local_operation": "^GET aws-sdk-call$"
+    "aws_local_operation": "^GET /aws-sdk-call$"
   },
   "metadata": {
     "default": {
         "otel.resource.aws.hostedin.environment": "^EC2$",
         "otel.resource.host.image.id": "^{{instanceAmi}}$",
-        "otel.resource.host.type": "^t2.small$",
+        "otel.resource.host.type": "^t3.micro$",
         "aws.span.kind": "^LOCAL_ROOT$"
     }
   },
   "subsegments": [
     {
-      "name": "^S3$",
-      "http": {
-        "response": {
-          "status": "^404$"
+      "subsegments": [
+        {
+          "name": "^S3$",
+          "http": {
+            "request": {
+              "url": "^https://e2e-test-bucket-name.s3.{{region}}.amazonaws.com\\?location$",
+              "method": "^GET$"
+            }
+          },
+          "annotations": {
+            "HostedIn_Environment": "^EC2$",
+            "aws_local_service": "^{{serviceName}}$",
+            "aws_local_operation": "^GET /aws-sdk-call$",
+            "aws_remote_service": "^AWS\\.SDK\\.S3$",
+            "aws_remote_operation": "^GetBucketLocation$",
+            "aws_remote_target": "^::s3:::e2e-test-bucket-name$"
+          },
+          "metadata": {
+            "default": {
+              "aws.span.kind": "^CLIENT$"
+            }
+          },
+          "namespace": "^aws$"
         }
-      },
-      "aws": {
-        "region": "{{region}}",
-        "operation": "^GetBucketLocation$"
-      },
-      "annotations": {
-        "HostedIn_Environment": "^EC2$",
-        "aws_local_service": "^{{serviceName}}$",
-        "aws_local_operation": "^GET aws-sdk-call$",
-        "aws_remote_service": "^S3$",
-        "aws_remote_operation": "^GetBucketLocation$",
-        "aws_remote_target": "^::s3:::e2e-test-bucket-name$"
-      },
-      "metadata": {
-        "default": {
-          "aws.span.kind": "^CLIENT$"
-        }
-      },
-      "namespace": "^aws$"
+      ]
     }
   ]
 },

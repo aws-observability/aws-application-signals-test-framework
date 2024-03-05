@@ -9,7 +9,7 @@
     "default": {
         "otel.resource.aws.hostedin.environment": "^EC2$",
         "otel.resource.host.image.id": "^{{instanceAmi}}$",
-        "otel.resource.host.type": "^t3.micro$"
+        "otel.resource.host.type": "^t2.small$"
 
     }
   },
@@ -18,7 +18,7 @@
       "name": "^local-root-client-call$",
       "http": {
           "request": {
-              "url": "^http://local-root-client-call$",
+              "url": "^http://local-root-client-call/$",
               "method": "^GET$"
           }
       },
@@ -42,7 +42,7 @@
     "name": "^local-root-client-call$",
     "http": {
         "request": {
-            "url": "^http://local-root-client-call$",
+            "url": "^http://local-root-client-call/$",
             "method": "^GET$"
         },
         "response": {

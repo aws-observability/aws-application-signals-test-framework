@@ -1,16 +1,16 @@
 [{
   "HostedIn.Environment": "^EC2$",
-  "Operation": "GET /remote-service",
+  "Operation": "InternalOperation",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "aws.span.kind": "^LOCAL_ROOT$"
 },
 {
   "HostedIn.Environment": "^EC2$",
-  "Operation": "GET /remote-service",
+  "Operation": "InternalOperation",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "RemoteService": "{{remoteServiceDeploymentName}}",
-  "RemoteOperation": "GET /healthcheck",
+  "RemoteService": "local-root-client-call",
+  "RemoteOperation": "GET /",
   "aws.span.kind": "^CLIENT$"
 }]

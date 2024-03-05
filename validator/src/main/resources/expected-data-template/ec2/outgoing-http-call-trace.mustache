@@ -15,38 +15,42 @@
   "annotations": {
     "aws_local_service": "^{{serviceName}}$",
     "HostedIn_Environment": "^EC2$",
-    "aws_local_operation": "^GET outgoing-http-call$"
+    "aws_local_operation": "^GET /outgoing-http-call$"
   },
   "metadata": {
       "default": {
           "otel.resource.aws.hostedin.environment": "^EC2$",
           "otel.resource.host.image.id": "^{{instanceAmi}}$",
-          "otel.resource.host.type": "^t2.small",
+          "otel.resource.host.type": "^t3.micro$",
           "aws.span.kind": "^LOCAL_ROOT$"
       }
   },
   "subsegments": [
     {
-      "name": "^www.amazon.com$",
-      "http": {
-        "request": {
-          "url": "^https://www.amazon.com/$",
-          "method": "^GET$"
+      "subsegments": [
+        {
+          "name": "^www.amazon.com$",
+          "http": {
+            "request": {
+              "url": "^https://www.amazon.com$",
+              "method": "^GET$"
+            }
+          },
+          "annotations": {
+            "HostedIn_Environment": "^EC2$",
+            "aws_local_service": "^{{serviceName}}$",
+            "aws_local_operation": "^GET /outgoing-http-call$",
+            "aws_remote_service": "^www.amazon.com$",
+            "aws_remote_operation": "^GET /$"
+          },
+          "metadata": {
+            "default": {
+              "aws.span.kind": "^CLIENT$"
+            }
+          },
+          "namespace": "^remote$"
         }
-      },
-      "annotations": {
-        "HostedIn_Environment": "^EC2$",
-        "aws_local_service": "^{{serviceName}}$",
-        "aws_local_operation": "^GET outgoing-http-call$",
-        "aws_remote_service": "^www.amazon.com$",
-        "aws_remote_operation": "^GET /$"
-      },
-      "metadata": {
-        "default": {
-          "aws.span.kind": "^CLIENT$"
-        }
-      },
-      "namespace": "^remote$"
+      ]
     }
   ]
 },

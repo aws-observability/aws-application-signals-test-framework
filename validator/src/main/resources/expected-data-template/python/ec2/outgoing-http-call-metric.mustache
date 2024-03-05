@@ -4,7 +4,7 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -18,7 +18,7 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -27,24 +27,10 @@
       value: EC2
     -
       name: RemoteOperation
-      value: GET /healthcheck
+      value: GET /
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: Operation
-      value: GET /healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
+      value: www.amazon.com
 
 -
   metricName: Latency
@@ -56,31 +42,6 @@
     -
       name: HostedIn.Environment
       value: EC2
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Latency
@@ -94,18 +55,24 @@
       value: EC2
     -
       name: RemoteOperation
-      value: GET /healthcheck
+      value: GET /
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: www.amazon.com
 
 -
   metricName: Latency
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.Environment
+      value: EC2
+    -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: www.amazon.com
 
 -
   metricName: Error
@@ -113,7 +80,7 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -127,7 +94,7 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -136,24 +103,10 @@
       value: EC2
     -
       name: RemoteOperation
-      value: GET /healthcheck
+      value: GET /
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: Operation
-      value: GET /healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
+      value: www.amazon.com
 
 -
   metricName: Error
@@ -165,31 +118,6 @@
     -
       name: HostedIn.Environment
       value: EC2
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Error
@@ -203,18 +131,24 @@
       value: EC2
     -
       name: RemoteOperation
-      value: GET /healthcheck
+      value: GET /
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: www.amazon.com
 
 -
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.Environment
+      value: EC2
+    -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: www.amazon.com
 
 -
   metricName: Fault
@@ -222,7 +156,7 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -236,7 +170,7 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -245,24 +179,10 @@
       value: EC2
     -
       name: RemoteOperation
-      value: GET /healthcheck
+      value: GET /
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: Operation
-      value: GET /healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
+      value: www.amazon.com
 
 -
   metricName: Fault
@@ -274,31 +194,6 @@
     -
       name: HostedIn.Environment
       value: EC2
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
@@ -312,15 +207,21 @@
       value: EC2
     -
       name: RemoteOperation
-      value: GET /healthcheck
+      value: GET /
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: www.amazon.com
 
 -
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.Environment
+      value: EC2
+    -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: www.amazon.com
