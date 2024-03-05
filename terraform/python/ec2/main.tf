@@ -126,10 +126,9 @@ resource "null_resource" "main_service_setup" {
       "python3.9 -m pip install aws_opentelemetry_distro-0.0.1-0.0.1-py3-none-any.whl",
 
       # Get and run the sample application with configuration
-      "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/python-sample-app.zip ./python-sample-app.zip",
+      "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
       "ls -l",
       "unzip -o python-sample-app.zip",
-      "echo Done unzip!!!!!!!!!!!!!!!",
 
       # Export environment variables for instrumentation
       "cd ./django_frontend_service",
@@ -223,8 +222,8 @@ resource "null_resource" "remote_service_setup" {
       "export OTEL_SERVICE_NAME=sample-remote-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
-      # "python3.9 manage.py migrate",
-      # "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload",
+      "python3.9 manage.py migrate",
+      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload &",
 
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
