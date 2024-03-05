@@ -122,7 +122,7 @@ resource "null_resource" "main_service_setup" {
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
       # Get ADOT Wheel and install it
-      "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/${var.adot_wheel_name} ./${var.adot_wheel_name} ",
+      "${var.get_adot_wheel_command} ./${var.adot_wheel_name} ",
       "wheel_name=${var.adot_wheel_name}",
       "echo ADOT wheel_name",
       "echo $wheel_name",
@@ -202,7 +202,7 @@ resource "null_resource" "remote_service_setup" {
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
       # Get ADOT Wheel and install it
-      "aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/${var.adot_wheel_name} ./${var.adot_wheel_name}",
+      "${var.get_adot_wheel_command} ./${var.adot_wheel_name}",
       "python3.9 -m pip install ${var.adot_wheel_name}",
 
       # Get and run the sample application with configuration
