@@ -74,6 +74,7 @@ jobs:
         run: |
           echo "HERE!!!!!!!!!!"
           echo ${{ env.ADOT_WHEEL_LOCATION }}
+          echo ${{ env.SAMPLE_APP_ZIP }}
           terraform init
           terraform validate
           # TODO: Remove adot_wheel_name after adot release and publish to PyPI.
