@@ -27,34 +27,30 @@
   },
   "subsegments": [
     {
-      "subsegments": [
-        {
-          "name": "^S3$",
-          "http": {
-            "response": {
-              "status": "^404$"
-            }
-          },
-          "aws": {
-            "region": "{{region}}",
-            "operation": "^GetBucketLocation$"
-          },
-          "annotations": {
-            "HostedIn_Environment": "^EC2$",
-            "aws_local_service": "^{{serviceName}}$",
-            "aws_local_operation": "^GET aws-sdk-call$",
-            "aws_remote_service": "^AWS\\.SDK\\.S3$",
-            "aws_remote_operation": "^GetBucketLocation$",
-            "aws_remote_target": "^::s3:::e2e-test-bucket-name$"
-          },
-          "metadata": {
-            "default": {
-              "aws.span.kind": "^CLIENT$"
-            }
-          },
-          "namespace": "^aws$"
+      "name": "^S3$",
+      "http": {
+        "response": {
+          "status": "^404$"
         }
-      ]
+      },
+      "aws": {
+        "region": "{{region}}",
+        "operation": "^GetBucketLocation$"
+      },
+      "annotations": {
+        "HostedIn_Environment": "^EC2$",
+        "aws_local_service": "^{{serviceName}}$",
+        "aws_local_operation": "^GET aws-sdk-call$",
+        "aws_remote_service": "^AWS\\.SDK\\.S3$",
+        "aws_remote_operation": "^GetBucketLocation$",
+        "aws_remote_target": "^::s3:::e2e-test-bucket-name$"
+      },
+      "metadata": {
+        "default": {
+          "aws.span.kind": "^CLIENT$"
+        }
+      },
+      "namespace": "^aws$"
     }
   ]
 },
