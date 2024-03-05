@@ -71,8 +71,6 @@ jobs:
       - name: Deploy sample app via terraform and wait for endpoint to come online
         working-directory: terraform/python/ec2
         run: |
-          echo "HERE!!!!!!!!!!"
-          echo ${{ env.ADOT_WHEEL_NAME }}
           terraform init
           terraform validate
           # TODO: Remove adot_wheel_name after adot release and publish to PyPI.

@@ -123,7 +123,6 @@ resource "null_resource" "main_service_setup" {
 
       # Get ADOT Wheel and install it
       "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/${var.adot_wheel_name} ./${var.adot_wheel_name}",
-      "ls",
       "python3.9 -m pip install ${var.adot_wheel_name}",
 
       # Get and run the sample application with configuration
@@ -202,10 +201,6 @@ resource "null_resource" "remote_service_setup" {
       # Get ADOT Wheel and install it
 
       "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/${var.adot_wheel_name} ./${var.adot_wheel_name}",
-      "echo LS!!!!!!!",
-      "echo ${var.aws_region}",
-      "echo ${var.adot_wheel_name}",
-      "ls",
       "python3.9 -m pip install ${var.adot_wheel_name}",
 
       # Get and run the sample application with configuration
