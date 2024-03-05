@@ -134,7 +134,7 @@ resource "null_resource" "main_service_setup" {
       # Export environment variables for instrumentation
       "cd ./django_frontend_service",
       "python3.9 -m pip install -r requirements.txt",
-      "export DJANGO_SETTINGS_MODULE=\"django_fronted_service.settings\"",
+      "export DJANGO_SETTINGS_MODULE=\"django_frontend_service.settings\"",
       "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
       "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
       "export OTEL_METRICS_EXPORTER=none",
