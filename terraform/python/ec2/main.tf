@@ -77,7 +77,7 @@ data "aws_ami" "ami" {
 
 resource "aws_instance" "main_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.micro"
+  instance_type                         = "t2.small"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -105,8 +105,8 @@ resource "null_resource" "main_service_setup" {
       # Install Python and wget
       "sudo yum install wget -y",
       "sudo yum install unzip",
-      "sudo yum install python39",
-      "sudo yum install python39-pip",
+      "sudo dnf install python3.11",
+      "sudo dnf install python3.11-pip",
 
       # Copy in CW Agent configuration
       "echo Current directory: $(pwd)",
