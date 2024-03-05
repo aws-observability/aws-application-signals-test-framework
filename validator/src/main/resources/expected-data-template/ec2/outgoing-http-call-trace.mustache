@@ -15,7 +15,7 @@
   "annotations": {
     "aws_local_service": "^{{serviceName}}$",
     "HostedIn_Environment": "^EC2$",
-    "aws_local_operation": "^GET /outgoing-http-call$"
+    "aws_local_operation": "^GET outgoing-http-call$"
   },
   "metadata": {
       "default": {
@@ -27,30 +27,26 @@
   },
   "subsegments": [
     {
-      "subsegments": [
-        {
-          "name": "^www.amazon.com$",
-          "http": {
-            "request": {
-              "url": "^https://www.amazon.com$",
-              "method": "^GET$"
-            }
-          },
-          "annotations": {
-            "HostedIn_Environment": "^EC2$",
-            "aws_local_service": "^{{serviceName}}$",
-            "aws_local_operation": "^GET /outgoing-http-call$",
-            "aws_remote_service": "^www.amazon.com$",
-            "aws_remote_operation": "^GET /$"
-          },
-          "metadata": {
-            "default": {
-              "aws.span.kind": "^CLIENT$"
-            }
-          },
-          "namespace": "^remote$"
+      "name": "^www.amazon.com$",
+      "http": {
+        "request": {
+          "url": "^https://www.amazon.com$",
+          "method": "^GET$"
         }
-      ]
+      },
+      "annotations": {
+        "HostedIn_Environment": "^EC2$",
+        "aws_local_service": "^{{serviceName}}$",
+        "aws_local_operation": "^GET /outgoing-http-call$",
+        "aws_remote_service": "^www.amazon.com$",
+        "aws_remote_operation": "^GET /$"
+      },
+      "metadata": {
+        "default": {
+          "aws.span.kind": "^CLIENT$"
+        }
+      },
+      "namespace": "^remote$"
     }
   ]
 },
