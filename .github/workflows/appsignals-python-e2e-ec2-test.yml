@@ -165,7 +165,7 @@ jobs:
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
@@ -182,7 +182,7 @@ jobs:
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
@@ -199,7 +199,7 @@ jobs:
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
