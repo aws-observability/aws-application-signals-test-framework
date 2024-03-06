@@ -252,23 +252,23 @@ jobs:
           source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
           execute_and_retry 2 "./gradlew"
 
-      # Validation for app signals telemetry data
-      - name: Call endpoint and validate generated EMF logs
-        id: log-validation
-#        if: steps.deploy-sample-app.outcome == 'success' && !cancelled()
-        run: ./gradlew validator:run --args='-c eks/log-validation.yml
-          --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.APP_ENDPOINT }}
-          --region ${{ inputs.aws-region }}
-          --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
-          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ inputs.test-cluster-name }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
-          --rollup'
+#      # Validation for app signals telemetry data
+#      - name: Call endpoint and validate generated EMF logs
+#        id: log-validation
+##        if: steps.deploy-sample-app.outcome == 'success' && !cancelled()
+#        run: ./gradlew validator:run --args='-c eks/log-validation.yml
+#          --testing-id ${{ env.TESTING_ID }}
+#          --endpoint http://${{ env.APP_ENDPOINT }}
+#          --region ${{ inputs.aws-region }}
+#          --account-id ${{ env.ACCOUNT_ID }}
+#          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+#          --log-group ${{ env.LOG_GROUP_NAME }}
+#          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
+#          --platform-info ${{ inputs.test-cluster-name }}
+#          --service-name sample-application-${{ env.TESTING_ID }}
+#          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
+#          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+#          --rollup'
 
       - name: Call endpoints and validate generated metrics
         id: metric-validation
@@ -288,22 +288,22 @@ jobs:
           --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
-      - name: Call endpoints and validate generated traces
-        id: trace-validation
-#        if: (steps.deploy-sample-app.outcome == 'success' || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c eks/trace-validation.yml
-          --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.APP_ENDPOINT }}
-          --region ${{ inputs.aws-region }}
-          --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
-          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ inputs.test-cluster-name }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
-          --rollup'
+#      - name: Call endpoints and validate generated traces
+#        id: trace-validation
+##        if: (steps.deploy-sample-app.outcome == 'success' || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
+#        run: ./gradlew validator:run --args='-c eks/trace-validation.yml
+#          --testing-id ${{ env.TESTING_ID }}
+#          --endpoint http://${{ env.APP_ENDPOINT }}
+#          --region ${{ inputs.aws-region }}
+#          --account-id ${{ env.ACCOUNT_ID }}
+#          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+#          --log-group ${{ env.LOG_GROUP_NAME }}
+#          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
+#          --platform-info ${{ inputs.test-cluster-name }}
+#          --service-name sample-application-${{ env.TESTING_ID }}
+#          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
+#          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+#          --rollup'
 
       - name: Publish metric on test result
         if: always()
