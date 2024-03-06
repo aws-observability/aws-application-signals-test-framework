@@ -71,8 +71,7 @@ public class CloudWatchService {
         new ListMetricsRequest()
             .withNamespace(namespace)
             .withMetricName(metricName)
-            .withDimensions(dimensionFilter)
-            .withRecentlyActive("PT3H");
+            .withDimensions(dimensionFilter);
     return amazonCloudWatch.listMetrics(listMetricsRequest).getMetrics();
   }
 
