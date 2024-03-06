@@ -117,9 +117,6 @@ jobs:
           tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz
           echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
 
-      - name: Install Helm
-        uses: azure/setup-helm@v3
-
       - name: Create role for AWS access from the sample app
         id: create_service_account
         run: |
@@ -131,6 +128,9 @@ jobs:
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
           --region ${{ inputs.aws-region }} \
           --approve
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
 
       - name: Set up terraform
         uses: hashicorp/setup-terraform@v3
