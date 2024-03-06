@@ -29,6 +29,7 @@ import com.amazonaws.services.logs.model.OutputLogEvent;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.log4j.Log4j2;
+import org.joda.time.DateTime;
 
 /** a wrapper of cloudwatch client. */
 @Log4j2
@@ -90,7 +91,7 @@ public class CloudWatchService {
     final GetMetricDataRequest request =
         new GetMetricDataRequest()
             .withMetricDataQueries(query)
-            .withStartTime(startTime)
+            .withStartTime(DateTime.now().minusDays(1).toDate())
             .withEndTime(endTime);
 
     GetMetricDataResult result = amazonCloudWatch.getMetricData(request);
