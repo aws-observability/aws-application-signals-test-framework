@@ -174,22 +174,7 @@ jobs:
 
             # If the deployment_failed is still 0, then the terraform deployment succeeded and now try to connect to the endpoint 
             # after installing App Signals. Attempts to connect will be made for up to 10 minutes
-            if [ $deployment_failed -eq 0 ]; then
-              echo "Installing app signals to the sample app"
-
-              echo "SAMPLE_APP_POD"=$(kubectl get pods -n kube-system --selector=app=sample-app -o jsonpath='{.items[0].metadata.name}') >> $GITHUB_ENV
-              echo "REMOTE_APP_POD"=$(kubectl get pods -n kube-system --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}') >> $GITHUB_ENV
-
-              cd ${{ github.workspace }}/amazon-cloudwatch-agent-operator/
-
-              kubectl apply -f namespace.yaml
-              helm template amazon-cloudwatch-observability ./helm --include-crds --namespace amazon-cloudwatch | kubectl apply --namespace amazon-cloudwatch --server-side --force-conflicts -f -
-              kubectl delete pods ${{ env.SAMPLE_APP_POD }} -n kube-system
-              kubectl delete pods ${{ env.REMOTE_APP_POD }} -n kube-system
-              kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-              kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
-              cd ${{ github.workspace }}/terraform/python/eks
-          
+            if [ $deployment_failed -eq 0 ]; then          
               echo "Attempting to connect to the endpoint"
               sample_app_endpoint=http://$(terraform output sample_app_endpoint)
               attempt_counter=0
@@ -205,6 +190,21 @@ jobs:
                 attempt_counter=$(($attempt_counter+1))
                 sleep 10
               done
+
+              echo "Installing app signals to the sample app"
+
+              echo "SAMPLE_APP_POD"=$(kubectl get pods -n kube-system --selector=app=sample-app -o jsonpath='{.items[0].metadata.name}') >> $GITHUB_ENV
+              echo "REMOTE_APP_POD"=$(kubectl get pods -n kube-system --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}') >> $GITHUB_ENV
+
+              cd ${{ github.workspace }}/amazon-cloudwatch-agent-operator/
+
+              kubectl apply -f namespace.yaml
+              helm template amazon-cloudwatch-observability ./helm --include-crds --namespace amazon-cloudwatch | kubectl apply --namespace amazon-cloudwatch --server-side --force-conflicts -f -
+              kubectl delete pods ${{ env.SAMPLE_APP_POD }} -n kube-system
+              kubectl delete pods ${{ env.REMOTE_APP_POD }} -n kube-system
+              kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+              kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
+              cd ${{ github.workspace }}/terraform/python/eks
             fi
           
             # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
