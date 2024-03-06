@@ -36,7 +36,7 @@ public class CloudWatchService {
   public static final String SERVICE_DIMENSION = "Service";
   public static final String REMOTE_SERVICE_DIMENSION = "RemoteService";
 
-  private static final int MAX_QUERY_PERIOD = 60;
+  private static final int MAX_QUERY_PERIOD = 60000;
   private static final String REQUESTER = "integrationTest";
 
   private AmazonCloudWatch amazonCloudWatch;
