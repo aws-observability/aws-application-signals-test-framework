@@ -93,6 +93,13 @@ jobs:
           --cluster ${{ inputs.test-cluster-name }} \
           --role-name eks-s3-access-${{ env.TESTING_ID }} \
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+          --region ${{ inputs.aws-region }} \
+          --approve
+          eksctl create iamserviceaccount \
+          --name cloudwatch-service-account-${{ env.TESTING_ID }} \
+          --namespace amazon-cloudwatch \
+          --cluster ${{ inputs.test-cluster-name }} \
+          --role-name eks-cloudwatch-access-${{ env.TESTING_ID }} \
           --attach-policy-arn arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess \
           --attach-policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy \
           --region ${{ inputs.aws-region }} \
@@ -119,7 +126,7 @@ jobs:
           sed -i 's/tag: 1.0.2/tag: latest/g' values.yaml
           sed -i 's/tag: 0.43b0/tag: latest/g' values.yaml
           sed -i '0,/public: public.ecr.aws\/cloudwatch-agent/s//public: ${{ secrets.TEST_CW_AGENT_REPO }}/' values.yaml
-          sed -i 's/# override agent service account name/service-account-${{ env.TESTING_ID }}/g' values.yaml
+          sed -i 's/# override agent service account name/cloudwatch-service-account-${{ env.TESTING_ID }}/g' values.yaml
           if [ ${{ inputs.appsignals-adot-image-name }} != "" ]; then
             sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: ${{ inputs.appsignals-adot-image-name }}~g' values.yaml
           else
@@ -409,3 +416,9 @@ jobs:
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-cluster-name }} \
           --region ${{ inputs.aws-region }}
+          eksctl delete iamserviceaccount \
+          --name cloudwatch-service-account-${{ env.TESTING_ID }} \
+          --namespace amazon-cloudwatch \
+          --cluster ${{ inputs.test-cluster-name }} \
+          --region ${{ inputs.aws-region }} \
+          --approve
