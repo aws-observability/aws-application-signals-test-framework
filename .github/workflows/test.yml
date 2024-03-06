@@ -14,11 +14,131 @@ permissions:
   contents: read
 
 jobs:
-  e2e-eks-test:
+  e2e-eks-test1:
     strategy:
       fail-fast: false
       matrix:
         aws-region: ['eu-central-2']
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test2:
+    needs: [e2e-eks-test1]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test3:
+    needs: [e2e-eks-test2]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test4:
+    needs: [e2e-eks-test3]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test5:
+    needs: [e2e-eks-test4]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test6:
+    needs: [e2e-eks-test5]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test7:
+    needs: [e2e-eks-test6]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test8:
+    needs: [e2e-eks-test7]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test9:
+    needs: [e2e-eks-test8]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test10:
+    needs: [e2e-eks-test9]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-canary-test'
+      caller-workflow-name: "test"
+  e2e-eks-test11:
+    needs: [e2e-eks-test10]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'eu-central-2' ]
     uses: ./.github/workflows/appsignals-e2e-eks-test.yml
     secrets: inherit
     with:
