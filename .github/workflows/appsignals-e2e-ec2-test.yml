@@ -180,6 +180,7 @@ jobs:
       - name: Build Gradlew
         uses: ./.github/workflows/actions/execute_and_retry
         with:
+          max_retry: 4
           command: "./gradlew"
 
       # Validation for pulse telemetry data
