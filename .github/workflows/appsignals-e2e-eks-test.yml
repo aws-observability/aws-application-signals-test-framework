@@ -64,7 +64,7 @@ jobs:
 #          sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
       - name: Generate testing id
-        run: echo TESTING_ID="eu-central-2-8166557505-1953" >> $GITHUB_ENV
+        run: echo TESTING_ID="8166557505-1953" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -305,22 +305,22 @@ jobs:
 #          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
 #          --rollup'
 
-      - name: Publish metric on test result
-        if: always()
-        run: |
-          if [[ "${{ steps.log-validation.outcome }}" == "success" && "${{ steps.metric-validation.outcome }}" == "success" && "${{ steps.trace-validation.outcome }}" == "success" ]]; then
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 0.0 \
-            --region ${{ inputs.aws-region }}
-          else
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 1.0 \
-            --region ${{ inputs.aws-region }}
-          fi
+#      - name: Publish metric on test result
+#        if: always()
+#        run: |
+#          if [[ "${{ steps.log-validation.outcome }}" == "success" && "${{ steps.metric-validation.outcome }}" == "success" && "${{ steps.trace-validation.outcome }}" == "success" ]]; then
+#            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
+#            --metric-name Failure \
+#            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
+#            --value 0.0 \
+#            --region ${{ inputs.aws-region }}
+#          else
+#            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
+#            --metric-name Failure \
+#            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
+#            --value 1.0 \
+#            --region ${{ inputs.aws-region }}
+#          fi
 
       # Clean up Procedures
 
