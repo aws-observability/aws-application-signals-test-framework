@@ -60,7 +60,7 @@ jobs:
       - name: Temporary override addon version
         working-directory: enablement-script/scripts/eks/appsignals
         run: |
-          sed -i '61 a--addon-version v1.2.2-eksbuild.1 \\' enable-app-signals.sh
+          sed -i '\#--addon-name amazon-cloudwatch-observability \\#a--addon-version v1.2.2-eksbuild.1 \\' enable-app-signals.sh
 
       - name: Remove log group deletion command
         if: always()
