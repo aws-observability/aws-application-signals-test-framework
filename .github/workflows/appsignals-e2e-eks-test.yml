@@ -55,13 +55,13 @@ jobs:
 #            scripts/eks/appsignals/enable-app-signals.sh
 #            scripts/eks/appsignals/clean-app-signals.sh
 #          sparse-checkout-cone-mode: false
-
-      - name: Remove log group deletion command
-        if: always()
-        working-directory: enablement-script/scripts/eks/appsignals
-        run: |
-          delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP_NAME }}' --region \$REGION"
-          sed -i "s#$delete_log_group##g" clean-app-signals.sh
+#
+#      - name: Remove log group deletion command
+#        if: always()
+#        working-directory: enablement-script/scripts/eks/appsignals
+#        run: |
+#          delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP_NAME }}' --region \$REGION"
+#          sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
       - name: Generate testing id
         run: echo TESTING_ID="eu-central-2-8166557505-1953" >> $GITHUB_ENV
@@ -324,43 +324,43 @@ jobs:
 
       # Clean up Procedures
 
-      - name: Clean Up App Signals
-        if: always()
-        continue-on-error: true
-        working-directory: enablement-script/scripts/eks/appsignals
-        run: |
-          ./clean-app-signals.sh \
-          ${{ inputs.test-cluster-name }} \
-          ${{ inputs.aws-region }} \
-          ${{ env.SAMPLE_APP_NAMESPACE }}
-
-      # This step also deletes lingering resources from previous test runs
-      - name: Delete all sample app resources
-        if: always()
-        continue-on-error: true
-        timeout-minutes: 10
-        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-
-      - name: Terraform destroy
-        if: always()
-        continue-on-error: true
-        working-directory: terraform/eks
-        run: |
-          terraform destroy -auto-approve \
-            -var="test_id=${{ env.TESTING_ID }}" \
-            -var="aws_region=${{ inputs.aws-region }}" \
-            -var="kube_directory_path=${{ github.workspace }}/.kube" \
-            -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
-            -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-            -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
-            -var="sample_app_image=${{ env.SAMPLE_APP_IMAGE }}"
-
-      - name: Remove aws access service account
-        if: always()
-        continue-on-error: true
-        run: |
-          eksctl delete iamserviceaccount \
-          --name service-account-${{ env.TESTING_ID }} \
-          --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
-          --cluster ${{ inputs.test-cluster-name }} \
-          --region ${{ inputs.aws-region }}
+#      - name: Clean Up App Signals
+#        if: always()
+#        continue-on-error: true
+#        working-directory: enablement-script/scripts/eks/appsignals
+#        run: |
+#          ./clean-app-signals.sh \
+#          ${{ inputs.test-cluster-name }} \
+#          ${{ inputs.aws-region }} \
+#          ${{ env.SAMPLE_APP_NAMESPACE }}
+#
+#      # This step also deletes lingering resources from previous test runs
+#      - name: Delete all sample app resources
+#        if: always()
+#        continue-on-error: true
+#        timeout-minutes: 10
+#        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }}
+#
+#      - name: Terraform destroy
+#        if: always()
+#        continue-on-error: true
+#        working-directory: terraform/eks
+#        run: |
+#          terraform destroy -auto-approve \
+#            -var="test_id=${{ env.TESTING_ID }}" \
+#            -var="aws_region=${{ inputs.aws-region }}" \
+#            -var="kube_directory_path=${{ github.workspace }}/.kube" \
+#            -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
+#            -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
+#            -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+#            -var="sample_app_image=${{ env.SAMPLE_APP_IMAGE }}"
+#
+#      - name: Remove aws access service account
+#        if: always()
+#        continue-on-error: true
+#        run: |
+#          eksctl delete iamserviceaccount \
+#          --name service-account-${{ env.TESTING_ID }} \
+#          --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
+#          --cluster ${{ inputs.test-cluster-name }} \
+#          --region ${{ inputs.aws-region }}
