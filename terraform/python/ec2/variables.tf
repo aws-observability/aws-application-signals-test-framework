@@ -29,9 +29,8 @@ variable "sample_app_zip" {
   default = "s3://<bucket-name>/<zip>"
 }
 
-# TODO: Remove adot_wheel_name after adot release and publish to PyPI.
-variable "adot_wheel_name" {
-  default = "<wheel-name>"
+variable "get_adot_wheel_command" {
+  default = "aws s3 cp s3://<bucket-name>/<whl> ./<whl> && pip install <whl>"
 }
 
 variable "get_cw_agent_rpm_command" {
