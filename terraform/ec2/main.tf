@@ -104,6 +104,8 @@ resource "null_resource" "main_service_setup" {
 
   provisioner "remote-exec" {
     inline = [
+      # Make the Terraform fail if any step throws an error
+      "set -o errexit",
       # Install Java 11 and wget
       "sudo yum install wget java-11-amazon-corretto -y",
 
@@ -165,6 +167,8 @@ resource "null_resource" "remote_service_setup" {
 
   provisioner "remote-exec" {
     inline = [
+      # Make the Terraform fail if any step throws an error
+      "set -o errexit",
       # Install Java 11 and wget
       "sudo yum install wget java-11-amazon-corretto -y",
 
