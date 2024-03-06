@@ -34,17 +34,17 @@ variable "eks_cluster_context_name" {
 }
 
 variable "test_namespace" {
-  default = "sample-app-namespace"
+  default = "python-app-namespace"
 }
 
 variable "service_account_aws_access" {
-  default = "sample-app-service-account"
+  default = "python-app-service-account"
 }
 
-variable "sample_app_image" {
+variable "python_app_image" {
   default = "<ECR_IMAGE_LINK>:<TAG>"
 }
 
-variable "sample_remote_app_image" {
+variable "python_remote_app_image" {
   default = "<ECR_IMAGE_LINK>:<TAG>"
 }
