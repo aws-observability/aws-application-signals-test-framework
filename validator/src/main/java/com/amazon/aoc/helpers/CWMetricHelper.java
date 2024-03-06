@@ -45,9 +45,9 @@ public class CWMetricHelper {
   public List<Metric> listExpectedMetrics(
       Context context, FileConfig expectedMetric, ICaller caller) throws Exception {
     // call endpoint
-    if (caller != null) {
-      caller.callSampleApp();
-    }
+//    if (caller != null) {
+//      caller.callSampleApp();
+//    }
 
     // get expected metrics as yaml from config
     String yamlExpectedMetrics = mustacheHelper.render(expectedMetric, context);
