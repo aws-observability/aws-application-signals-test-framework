@@ -119,7 +119,7 @@ resource "null_resource" "main_service_setup" {
       # Get and run CW agent rpm
       "wget -O cw-agent.rpm https://amazoncloudwatch-agent-us-east-1.s3.us-east-1.amazonaws.com/amazon_linux/amd64/1.300031.0b313/amazon-cloudwatch-agent.rpm",
       "sudo rpm -U ./cw-agent.rpm",
-      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
+      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:.../../ec2/amazon-cloudwatch-agent.json",
 
       # Get ADOT Wheel and install it
       "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/${var.adot_wheel_name} ./${var.adot_wheel_name}",
@@ -190,13 +190,13 @@ resource "null_resource" "remote_service_setup" {
       "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
-      "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
+      "agent_config='${replace(replace(file("../../ec2/amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
       "wget -O cw-agent.rpm https://amazoncloudwatch-agent-us-east-1.s3.us-east-1.amazonaws.com/amazon_linux/amd64/1.300031.0b313/amazon-cloudwatch-agent.rpm",
       "sudo rpm -U ./cw-agent.rpm",
-      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
+      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:../../ec2/amazon-cloudwatch-agent.json",
 
       # Get ADOT Wheel and install it
 
