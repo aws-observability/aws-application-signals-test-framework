@@ -119,6 +119,7 @@ jobs:
           sed -i 's/tag: 1.0.2/tag: latest/g' values.yaml
           sed -i 's/tag: 0.43b0/tag: latest/g' values.yaml
           sed -i '0,/public: public.ecr.aws\/cloudwatch-agent/s//public: ${{ secrets.TEST_CW_AGENT_REPO }}/' values.yaml
+          sed -i 's/# override agent service account name/service-account-${{ env.TESTING_ID }}/g' values.yaml
           if [ ${{ inputs.appsignals-adot-image-name }} != "" ]; then
             sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: ${{ inputs.appsignals-adot-image-name }}~g' values.yaml
           else
@@ -132,6 +133,7 @@ jobs:
           sed -i 's/tag: 1.0.2/tag: latest/g' values-copy.yaml
           sed -i 's/tag: 0.43b0/tag: latest/g' values-copy.yaml
           sed -i '0,/public: public.ecr.aws\/cloudwatch-agent/s//public: test.test.test/' values-copy.yaml
+          sed -i 's/# override agent service account name/service-account-${{ env.TESTING_ID }}/g' values-copy.yaml
           if [ ${{ inputs.appsignals-adot-image-name }} != "" ]; then
             sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: test2/test2/test2~g' values-copy.yaml
           else
