@@ -76,13 +76,13 @@ resource "local_file" "kubeconfig" {
 
 ### Setting up the sample app on the cluster
 
-resource "kubernetes_deployment" "sample_app_deployment" {
+resource "kubernetes_deployment" "python_app_deployment" {
 
   metadata {
-    name      = "sample-app-deployment-${var.test_id}"
+    name      = "python-app-deployment-${var.test_id}"
     namespace = var.test_namespace
     labels    = {
-      app = "sample-app"
+      app = "python-app"
     }
   }
 
@@ -90,13 +90,13 @@ resource "kubernetes_deployment" "sample_app_deployment" {
     replicas = 1
     selector {
       match_labels = {
-        app = "sample-app"
+        app = "python-app"
       }
     }
     template {
       metadata {
         labels = {
-          app = "sample-app"
+          app = "python-app"
         }
         annotations = {
           # these annotations allow for OTel Python instrumentation
@@ -107,13 +107,13 @@ resource "kubernetes_deployment" "sample_app_deployment" {
         service_account_name = var.service_account_aws_access
         container {
           name = "back-end"
-          image = var.sample_app_image
+          image = var.python_app_image
           image_pull_policy = "Always"
           args = ["sh", "-c", "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8000 --noreload"]
           env {
               #inject the test id to service name for unique App Signals metrics
               name = "OTEL_SERVICE_NAME"
-              value = "sample-application-${var.test_id}"
+              value = "python-application-${var.test_id}"
             }
           env {
               name = "PYTHONPATH"
@@ -133,17 +133,17 @@ resource "kubernetes_deployment" "sample_app_deployment" {
   }
 }
 
-resource "kubernetes_service" "sample_app_service" {
-  depends_on = [ kubernetes_deployment.sample_app_deployment ]
+resource "kubernetes_service" "python_app_service" {
+  depends_on = [ kubernetes_deployment.python_app_deployment ]
 
   metadata {
-    name = "sample-app-service"
+    name = "python-app-service"
     namespace = var.test_namespace
   }
   spec {
     type = "NodePort"
     selector = {
-        app = "sample-app"
+        app = "python-app"
     }
     port {
       protocol = "TCP"
@@ -154,11 +154,11 @@ resource "kubernetes_service" "sample_app_service" {
   }
 }
 
-resource "kubernetes_ingress_v1" "sample-app-ingress" {
-  depends_on = [kubernetes_service.sample_app_service]
+resource "kubernetes_ingress_v1" "python-app-ingress" {
+  depends_on = [kubernetes_service.python_app_service]
   wait_for_load_balancer = true
   metadata {
-    name = "sample-app-ingress-${var.test_id}"
+    name = "python-app-ingress-${var.test_id}"
     namespace = var.test_namespace
     annotations = {
       "kubernetes.io/ingress.class" = "alb"
@@ -166,7 +166,7 @@ resource "kubernetes_ingress_v1" "sample-app-ingress" {
       "alb.ingress.kubernetes.io/target-type" = "ip"
     }
     labels = {
-        app = "sample-app-ingress"
+        app = "python-app-ingress"
     }
   }
   spec {
@@ -177,7 +177,7 @@ resource "kubernetes_ingress_v1" "sample-app-ingress" {
           path_type = "Prefix"
           backend {
             service {
-              name = kubernetes_service.sample_app_service.metadata[0].name
+              name = kubernetes_service.python_app_service.metadata[0].name
               port {
                 number = 8080
               }
@@ -191,10 +191,10 @@ resource "kubernetes_ingress_v1" "sample-app-ingress" {
 
 # Set up the remote service
 
-resource "kubernetes_deployment" "sample_remote_app_deployment" {
+resource "kubernetes_deployment" "python_r_app_deployment" {
 
   metadata {
-    name      = "sample-remote-app-deployment-${var.test_id}"
+    name      = "python-r-app-deployment-${var.test_id}"
     namespace = var.test_namespace
     labels    = {
       app = "remote-app"
@@ -222,7 +222,7 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
         service_account_name = var.service_account_aws_access
         container {
           name = "back-end"
-          image = var.sample_remote_app_image
+          image = var.python_remote_app_image
           image_pull_policy = "Always"
           args = ["sh", "-c", "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8001 --noreload"]
           env {
@@ -242,11 +242,11 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
   }
 }
 
-resource "kubernetes_service" "sample_remote_app_service" {
-  depends_on = [ kubernetes_deployment.sample_remote_app_deployment ]
+resource "kubernetes_service" "python_r_app_service" {
+  depends_on = [ kubernetes_deployment.python_r_app_deployment ]
 
   metadata {
-    name = "sample-remote-app-service"
+    name = "python-r-app-service"
     namespace = var.test_namespace
   }
   spec {
@@ -263,6 +263,6 @@ resource "kubernetes_service" "sample_remote_app_service" {
   }
 }
 
-output "sample_app_endpoint" {
-  value = kubernetes_ingress_v1.sample-app-ingress.status.0.load_balancer.0.ingress.0.hostname
+output "python_app_endpoint" {
+  value = kubernetes_ingress_v1.python-app-ingress.status.0.load_balancer.0.ingress.0.hostname
 }
