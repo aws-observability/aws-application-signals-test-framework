@@ -30,7 +30,7 @@ variable "sample_app_zip" {
 }
 
 variable "get_adot_wheel_command" {
-  default = "aws s3 cp s3://<bucket-name>/<whl> ./<whl> && pip install <whl>""
+  default = "aws s3 cp s3://<bucket-name>/<whl> ./<whl> && pip install <whl>"
 }
 
 variable "get_cw_agent_rpm_command" {
