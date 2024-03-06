@@ -95,15 +95,6 @@ jobs:
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
           --region ${{ inputs.aws-region }} \
           --approve
-          eksctl create iamserviceaccount \
-          --name cloudwatch-service-account-${{ env.TESTING_ID }} \
-          --namespace amazon-cloudwatch \
-          --cluster ${{ inputs.test-cluster-name }} \
-          --role-name eks-cloudwatch-access-${{ env.TESTING_ID }} \
-          --attach-policy-arn arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess \
-          --attach-policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy \
-          --region ${{ inputs.aws-region }} \
-          --approve
 
       - name: Install Helm
         uses: azure/setup-helm@v3
@@ -120,13 +111,12 @@ jobs:
         working-directory: amazon-cloudwatch-agent-operator/helm/
         run: |
           cp values.yaml ./values-copy.yaml
-          sed -i 's/clusterName:/clusterName: e2e-python-canary-test/g' values.yaml
-          sed -i 's/region:/region: us-east-1/g' values.yaml
+          sed -i 's/clusterName:/clusterName: ${{ inputs.test-cluster-name }}/g' values.yaml
+          sed -i 's/region:/region: ${{ inputs.aws-region }}/g' values.yaml
           sed -i 's/repository: cloudwatch-agent-operator/repository: cwagent-operator-pre-release/g' values.yaml
           sed -i 's/tag: 1.0.2/tag: latest/g' values.yaml
           sed -i 's/tag: 0.43b0/tag: latest/g' values.yaml
           sed -i '0,/public: public.ecr.aws\/cloudwatch-agent/s//public: ${{ secrets.TEST_CW_AGENT_REPO }}/' values.yaml
-          sed -i 's/# override agent service account name/cloudwatch-service-account-${{ env.TESTING_ID }}/g' values.yaml
           if [ ${{ inputs.appsignals-adot-image-name }} != "" ]; then
             sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: ${{ inputs.appsignals-adot-image-name }}~g' values.yaml
           else
@@ -134,13 +124,13 @@ jobs:
             sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: ${{ secrets.TEST_APP_SIGNALS_PYTHON_ADOT_IMAGE }}~g' values.yaml
           fi
 
-          sed -i 's/clusterName:/clusterName: e2e-python-canary-test/g' values-copy.yaml
-          sed -i 's/region:/region: us-east-1/g' values-copy.yaml
+          sed -i 's/clusterName:/clusterName: ${{ inputs.test-cluster-name }}/g' values-copy.yaml
+          sed -i 's/region:/region: ${{ inputs.aws-region }}/g' values-copy.yaml
           sed -i 's/repository: cloudwatch-agent-operator/repository: cwagent-operator-pre-release/g' values-copy.yaml
           sed -i 's/tag: 1.0.2/tag: latest/g' values-copy.yaml
           sed -i 's/tag: 0.43b0/tag: latest/g' values-copy.yaml
           sed -i '0,/public: public.ecr.aws\/cloudwatch-agent/s//public: test.test.test/' values-copy.yaml
-          sed -i 's/# override agent service account name/service-account-${{ env.TESTING_ID }}/g' values-copy.yaml
+          sed -i 's/# override agent service account name/cloudwatch-service-account-${{ env.TESTING_ID }}/g' values-copy.yaml
           if [ ${{ inputs.appsignals-adot-image-name }} != "" ]; then
             sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: test2/test2/test2~g' values-copy.yaml
           else
@@ -201,21 +191,8 @@ jobs:
             # If the deployment_failed is still 0, then the terraform deployment succeeded and now try to connect to the endpoint 
             # after installing App Signals. Attempts to connect will be made for up to 10 minutes
             if [ $deployment_failed -eq 0 ]; then          
-              echo "Attempting to connect to the endpoint"
-              sample_app_endpoint=http://$(terraform output sample_app_endpoint)
-              attempt_counter=0
-              max_attempts=60
-              until $(curl --output /dev/null --silent --head --fail $(echo "$sample_app_endpoint" | tr -d '"')); do
-                if [ ${attempt_counter} -eq ${max_attempts} ];then
-                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-                  deployment_failed=1
-                  break
-                fi
-          
-                printf '.'
-                attempt_counter=$(($attempt_counter+1))
-                sleep 10
-              done
+
+              kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
 
               echo "Installing app signals to the sample app"
 
@@ -224,15 +201,14 @@ jobs:
               helm template amazon-cloudwatch-observability ./helm --include-crds --namespace amazon-cloudwatch | kubectl apply --namespace amazon-cloudwatch --server-side --force-conflicts -f -
 
               kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-              sleep 10
               kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
               kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
               cd ${{ github.workspace }}/terraform/python/eks
 
-              echo "Attempting to connect to the endpoint again"
+              echo "Attempting to connect to the endpoint"
               sample_app_endpoint=http://$(terraform output sample_app_endpoint)
               attempt_counter=0
-              max_attempts=30
+              max_attempts=60
               until $(curl --output /dev/null --silent --head --fail $(echo "$sample_app_endpoint" | tr -d '"')); do
                 if [ ${attempt_counter} -eq ${max_attempts} ];then
                   echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
@@ -276,6 +252,19 @@ jobs:
               echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
               exit 1
             fi
+          done
+
+          aws eks list-nodegroups --cluster-name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }} |\
+          jq -r '.nodegroups[]' |\
+          while read -r node_group;
+          do
+            node_role=$(\
+              aws eks describe-nodegroup  --cluster-name ${{ inputs.test-cluster-name }} --nodegroup-name $node_group --region ${{ inputs.aws-region }} |\
+              jq -r '.nodegroup.nodeRole' |\
+              cut -d'/' -f2
+            )
+            aws iam attach-role-policy --role-name $node_role --policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy --region ${{ inputs.aws-region }}
+            aws iam attach-role-policy --role-name $node_role --policy-arn arn:aws:iam::aws:policy/AWSXRayWriteOnlyAccess --region ${{ inputs.aws-region }}
           done
 
       - name: Get remote service pod name and IP
@@ -416,9 +405,3 @@ jobs:
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-cluster-name }} \
           --region ${{ inputs.aws-region }}
-          eksctl delete iamserviceaccount \
-          --name cloudwatch-service-account-${{ env.TESTING_ID }} \
-          --namespace amazon-cloudwatch \
-          --cluster ${{ inputs.test-cluster-name }} \
-          --region ${{ inputs.aws-region }} \
-          --approve
