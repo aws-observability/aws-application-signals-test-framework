@@ -30,11 +30,12 @@ env:
   # It is not redundant
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   ENABLEMENT_SCRIPT_S3_BUCKET: ${{ secrets.APP_SIGNALS_E2E_ENABLEMENT_SCRIPT }}
-  SAMPLE_APP_NAMESPACE: kube-system
+  SAMPLE_APP_NAMESPACE: sample-app-namespace
   SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}
   SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/eks
+  TEST_RESOURCES_FOLDER: /home/runner/work/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 jobs:
   e2e-eks-test:
@@ -77,19 +78,15 @@ jobs:
 
       - name: Install eksctl
         run: |
+          source ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
           mkdir ${{ github.workspace }}/eksctl
           curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
-          tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz
+          execute_and_retry 2 "tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz"
           echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
 
       - name: Create role for AWS access from the sample app
         id: create_service_account
         run: |
-          eksctl utils associate-iam-oidc-provider \
-          --cluster ${{ inputs.test-cluster-name }} \
-          --region ${{ inputs.aws-region }} \
-          --approve
-
           eksctl create iamserviceaccount \
           --name service-account-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
