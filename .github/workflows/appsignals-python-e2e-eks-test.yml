@@ -85,6 +85,11 @@ jobs:
       - name: Create role for AWS access from the sample app
         id: create_service_account
         run: |
+          eksctl utils associate-iam-oidc-provider \
+          --cluster ${{ inputs.test-cluster-name }} \
+          --region ${{ inputs.aws-region }} \
+          --approve
+
           eksctl create iamserviceaccount \
           --name service-account-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
