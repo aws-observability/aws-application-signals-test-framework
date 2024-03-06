@@ -123,7 +123,7 @@ resource "null_resource" "main_service_setup" {
 
       # Get ADOT Wheel and install it
       "${var.get_adot_wheel_command}",
-      "echo Get get_adot_wheel_command !!!!!!!!!!!!"
+      "echo Get get_adot_wheel_command !!!!!!!!!!!!",
       "echo ${var.get_adot_wheel_command}",
 
       # Get and run the sample application with configuration
@@ -201,7 +201,7 @@ resource "null_resource" "remote_service_setup" {
 
       # Get ADOT Wheel and install it
       "${var.get_adot_wheel_command}",
-      "echo Get get_adot_wheel_command !!!!!!!!!!!!"
+      "echo Get get_adot_wheel_command !!!!!!!!!!!!",
       "echo ${var.get_adot_wheel_command}",
 
       # Get and run the sample application with configuration
