@@ -93,6 +93,8 @@ jobs:
           --cluster ${{ inputs.test-cluster-name }} \
           --role-name eks-s3-access-${{ env.TESTING_ID }} \
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+          --attach-policy-arn arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess \
+          --attach-policy-arn arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy \
           --region ${{ inputs.aws-region }} \
           --approve
 
@@ -110,16 +112,32 @@ jobs:
       - name: Edit helm values
         working-directory: amazon-cloudwatch-agent-operator/helm/
         run: |
+          cp values.yaml ./values-copy.yaml
           sed -i 's/clusterName:/clusterName: e2e-python-canary-test/g' values.yaml
           sed -i 's/region:/region: us-east-1/g' values.yaml
           sed -i 's/repository: cloudwatch-agent-operator/repository: cwagent-operator-pre-release/g' values.yaml
           sed -i 's/tag: 1.0.2/tag: latest/g' values.yaml
           sed -i 's/tag: 0.43b0/tag: latest/g' values.yaml
+          sed -i '0,/public: public.ecr.aws\/cloudwatch-agent/s//public: ${{ secrets.TEST_CW_AGENT_REPO }}/' values.yaml
           if [ ${{ inputs.appsignals-adot-image-name }} != "" ]; then
             sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: ${{ inputs.appsignals-adot-image-name }}~g' values.yaml
           else
+            echo "appsignals-adot-image-name is empty"
             sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: ${{ secrets.TEST_APP_SIGNALS_PYTHON_ADOT_IMAGE }}~g' values.yaml
           fi
+
+          sed -i 's/clusterName:/clusterName: e2e-python-canary-test/g' values-copy.yaml
+          sed -i 's/region:/region: us-east-1/g' values-copy.yaml
+          sed -i 's/repository: cloudwatch-agent-operator/repository: cwagent-operator-pre-release/g' values-copy.yaml
+          sed -i 's/tag: 1.0.2/tag: latest/g' values-copy.yaml
+          sed -i 's/tag: 0.43b0/tag: latest/g' values-copy.yaml
+          sed -i '0,/public: public.ecr.aws\/cloudwatch-agent/s//public: test.test.test/' values-copy.yaml
+          if [ ${{ inputs.appsignals-adot-image-name }} != "" ]; then
+            sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: test2/test2/test2~g' values-copy.yaml
+          else
+            sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: test/test/test~g' values-copy.yaml
+          fi
+          cat values-copy.yaml
 
       - name: Create CWA Operator Namespace file
         working-directory: amazon-cloudwatch-agent-operator/
@@ -195,6 +213,9 @@ jobs:
               cd ${{ github.workspace }}/amazon-cloudwatch-agent-operator/
               kubectl apply -f namespace.yaml
               helm template amazon-cloudwatch-observability ./helm --include-crds --namespace amazon-cloudwatch | kubectl apply --namespace amazon-cloudwatch --server-side --force-conflicts -f -
+
+              kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+              sleep 10
               kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
               kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
               cd ${{ github.workspace }}/terraform/python/eks
