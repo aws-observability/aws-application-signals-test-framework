@@ -1,4 +1,4 @@
-# Reusuable Action for executing commands and retrying them if it fails
+# Reusable Action for executing commands and retrying them if it fails
 name: Command Retry Logic
 
 inputs:
@@ -65,12 +65,3 @@ runs:
       env:
         POST_COMMAND: ${{ inputs.post-command }}
       run: $POST_COMMAND
-
-
-
-
-
-
-
-
-
