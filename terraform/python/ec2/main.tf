@@ -113,7 +113,7 @@ resource "null_resource" "main_service_setup" {
       "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
-      "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
+      "agent_config='${replace(replace(file("../../ec2/amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
@@ -142,7 +142,7 @@ resource "null_resource" "main_service_setup" {
       "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
       "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
-      "export OTEL_SERVICE_NAME=sample-application-${var.test_id}",
+      "export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
       "python3.9 manage.py migrate",
@@ -220,7 +220,7 @@ resource "null_resource" "remote_service_setup" {
       "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
       "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
-      "export OTEL_SERVICE_NAME=sample-remote-application-${var.test_id}",
+      "export OTEL_SERVICE_NAME=python-sample-remote-application-${var.test_id}",
       "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
       "python3.9 manage.py migrate",

@@ -24,7 +24,7 @@ env:
   # It is not redundant
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
-  SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
+  SAMPLE_APP_ZIP: s3://${{ secrets.E2E_TEST_BUCKET }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/generic
   TEST: ${{ inputs.test }}
@@ -32,7 +32,7 @@ env:
 
 
 jobs:
-  e2e-ec2-test:
+  python-e2e-ec2-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
