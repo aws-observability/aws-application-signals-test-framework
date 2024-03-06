@@ -114,7 +114,6 @@ jobs:
           sed -i 's/region:/region: us-east-1/g' values.yaml
           sed -i 's/repository: cloudwatch-agent-operator/repository: cwagent-operator-pre-release/g' values.yaml
           sed -i 's/tag: 1.0.2/tag: latest/g' values.yaml
-          sed -i 's/public: public.ecr.aws\/cloudwatch-agent/public: ${{ secrets.TEST_CW_AGENT_REPO }}/g' values.yaml
           sed -i 's/tag: 0.43b0/tag: latest/g' values.yaml
           if [ ${{ inputs.appsignals-adot-image-name }} != "" ]; then
             sed -i 's~repository: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-python~repository: ${{ inputs.appsignals-adot-image-name }}~g' values.yaml
@@ -193,16 +192,10 @@ jobs:
 
               echo "Installing app signals to the sample app"
 
-              echo "SAMPLE_APP_POD"=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app -o jsonpath='{.items[0].metadata.name}') >> $GITHUB_ENV
-              echo "REMOTE_APP_POD"=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}') >> $GITHUB_ENV
-
               cd ${{ github.workspace }}/amazon-cloudwatch-agent-operator/
-
               kubectl apply -f namespace.yaml
               helm template amazon-cloudwatch-observability ./helm --include-crds --namespace amazon-cloudwatch | kubectl apply --namespace amazon-cloudwatch --server-side --force-conflicts -f -
-              kubectl delete pods ${{ env.SAMPLE_APP_POD }} -n ${{ env.SAMPLE_APP_NAMESPACE }}
-              kubectl delete pods ${{ env.REMOTE_APP_POD }} -n ${{ env.SAMPLE_APP_NAMESPACE }}
-              kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+              kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
               kubectl wait --for=condition=Ready pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
               cd ${{ github.workspace }}/terraform/python/eks
 
