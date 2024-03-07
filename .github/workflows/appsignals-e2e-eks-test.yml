@@ -222,7 +222,7 @@ jobs:
             # resources created from terraform and try again.
             if [ $deployment_failed -eq 1 ]; then
               echo "Cleaning up App Signal"
-              ./clean-app-signals.sh \
+              ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/scripts/eks/appsignals/clean-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.SAMPLE_APP_NAMESPACE }}
