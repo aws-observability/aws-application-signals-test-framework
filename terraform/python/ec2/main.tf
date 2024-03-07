@@ -45,8 +45,8 @@ data "aws_ami" "ami" {
   owners = ["amazon"]
   most_recent      = true
   filter {
-    name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+   name = "name"
+   values = ["al2023-ami-2023.3.20240117.0-kernel-6.1-x86_64"]
   }
   filter {
     name   = "state"
@@ -79,7 +79,7 @@ data "aws_ami" "ami" {
 
 resource "aws_instance" "main_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.micro"
+  instance_type                         = "t3.small"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -104,33 +104,46 @@ resource "null_resource" "main_service_setup" {
 
   provisioner "remote-exec" {
     inline = [
-      # Make the Terraform fail if any step throws an error
-      "set -o errexit",
-      # Install Java 11 and wget
-      "sudo yum install wget java-11-amazon-corretto -y",
+      # Install Python and wget
+      "sudo yum install wget -y",
+      "sudo yum install unzip -y",
+      "sudo dnf install -y python3.9",
+      "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
-      "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
+      "agent_config='${replace(replace(file("../../ec2/amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
-      "${var.get_cw_agent_rpm_command}",
+      "wget -O cw-agent.rpm https://amazoncloudwatch-agent-us-east-1.s3.us-east-1.amazonaws.com/amazon_linux/amd64/1.300031.0b313/amazon-cloudwatch-agent.rpm",
       "sudo rpm -U ./cw-agent.rpm",
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
-      # Get ADOT
-      "${var.get_adot_jar_command}",
+      # Get ADOT Wheel and install it
+      "${var.get_adot_wheel_command}",
 
       # Get and run the sample application with configuration
-      "aws s3 cp ${var.sample_app_jar} ./main-service.jar",
+      "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
+      "unzip -o python-sample-app.zip",
 
-      "JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \\",
-      "OTEL_METRICS_EXPORTER=none \\",
-      "OTEL_SMP_ENABLED=true \\",
-      "OTEL_AWS_SMP_EXPORTER_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2,service.name=sample-application-${var.test_id} \\",
-      "nohup java -jar main-service.jar &> nohup.out &",
+      # Export environment variables for instrumentation
+      "cd ./django_frontend_service",
+      "python3.9 -m pip install -r requirements.txt",
+      "export DJANGO_SETTINGS_MODULE=\"django_frontend_service.settings\"",
+      "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
+      "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
+      "export OTEL_METRICS_EXPORTER=none",
+      "export OTEL_TRACES_EXPORTER=otlp",
+      "export OTEL_AWS_APP_SIGNALS_ENABLED=true",
+      "export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315",
+      "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315",
+      "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
+      "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
+      "export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}",
+      "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
+      "export OTEL_TRACES_SAMPLER=always_on",
+      "python3.9 manage.py migrate",
+      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload &",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       "sleep 30"
@@ -142,7 +155,7 @@ resource "null_resource" "main_service_setup" {
 
 resource "aws_instance" "remote_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.micro"
+  instance_type                         = "t3.small"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -167,33 +180,47 @@ resource "null_resource" "remote_service_setup" {
 
   provisioner "remote-exec" {
     inline = [
-      # Make the Terraform fail if any step throws an error
-      "set -o errexit",
-      # Install Java 11 and wget
-      "sudo yum install wget java-11-amazon-corretto -y",
+      # Install Python and wget
+      "sudo yum install wget -y",
+      "sudo yum install unzip -y",
+      "sudo dnf install -y python3.9",
+      "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
-      "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
+      "agent_config='${replace(replace(file("../../ec2/amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
-       "${var.get_cw_agent_rpm_command}",
+      "wget -O cw-agent.rpm https://amazoncloudwatch-agent-us-east-1.s3.us-east-1.amazonaws.com/amazon_linux/amd64/1.300031.0b313/amazon-cloudwatch-agent.rpm",
       "sudo rpm -U ./cw-agent.rpm",
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
-      # Get ADOT
-      "${var.get_adot_jar_command}",
+      # Get ADOT Wheel and install it
+      "${var.get_adot_wheel_command}",
 
       # Get and run the sample application with configuration
-      "aws s3 cp ${var.sample_remote_app_jar} ./remote-service.jar",
+      "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
+      "unzip -o python-sample-app.zip",
 
-      "JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \\",
-      "OTEL_METRICS_EXPORTER=none \\",
-      "OTEL_SMP_ENABLED=true \\",
-      "OTEL_AWS_SMP_EXPORTER_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2,service.name=sample-remote-application-${var.test_id} \\",
-      "nohup java -jar remote-service.jar &> nohup.out &",
+      # Export environment variables for instrumentation
+      "cd ./django_remote_service",
+      "export DJANGO_SETTINGS_MODULE=\"django_remote_service.settings\"",
+      "python3.9 -m pip install -r requirements.txt --force-reinstall",
+      "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
+      "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
+      "export OTEL_METRICS_EXPORTER=none",
+      "export OTEL_TRACES_EXPORTER=otlp",
+      "export OTEL_AWS_APP_SIGNALS_ENABLED=true",
+      "export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315",
+      "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315",
+      "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
+      "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
+      "export OTEL_SERVICE_NAME=python-sample-remote-application-${var.test_id}",
+      "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
+      "export OTEL_TRACES_SAMPLER=always_on",
+      "python3.9 manage.py migrate",
+      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload &",
+
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       "sleep 30"
