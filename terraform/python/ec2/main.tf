@@ -22,9 +22,7 @@ terraform {
 }
 
 # Define the provider for AWS
-provider "aws" {
-  region = "${var.aws_region}"
-}
+provider "aws" {}
 
 resource "aws_default_vpc" "default" {}
 
