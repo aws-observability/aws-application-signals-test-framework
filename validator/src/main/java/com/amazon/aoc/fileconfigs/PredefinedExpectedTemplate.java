@@ -39,7 +39,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   EKS_CLIENT_CALL_METRIC("/expected-data-template/eks/client-call-metric.mustache"),
   EKS_CLIENT_CALL_TRACE("/expected-data-template/eks/client-call-trace.mustache"),
 
-  /** EC2 Test Case Validations */
+  /** Java EC2 Test Case Validations */
   EC2_OUTGOING_HTTP_CALL_LOG("/expected-data-template/ec2/outgoing-http-call-log.mustache"),
   EC2_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/ec2/outgoing-http-call-metric.mustache"),
   EC2_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/ec2/outgoing-http-call-trace.mustache"),
@@ -72,6 +72,23 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EKS_CLIENT_CALL_LOG("/expected-data-template/python/eks/client-call-log.mustache"),
   PYTHON_EKS_CLIENT_CALL_METRIC("/expected-data-template/python/eks/client-call-metric.mustache"),
   PYTHON_EKS_CLIENT_CALL_TRACE("/expected-data-template/python/eks/client-call-trace.mustache"),
+
+  /** Python EC2 Test Case Validations */
+  PYTHON_EC2_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/ec2/outgoing-http-call-log.mustache"),
+  PYTHON_EC2_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/ec2/outgoing-http-call-metric.mustache"),
+  PYTHON_EC2_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/python/ec2/outgoing-http-call-trace.mustache"),
+
+  PYTHON_EC2_AWS_SDK_CALL_LOG("/expected-data-template/python/ec2/aws-sdk-call-log.mustache"),
+  PYTHON_EC2_AWS_SDK_CALL_METRIC("/expected-data-template/python/ec2/aws-sdk-call-metric.mustache"),
+  PYTHON_EC2_AWS_SDK_CALL_TRACE("/expected-data-template/python/ec2/aws-sdk-call-trace.mustache"),
+
+  PYTHON_EC2_REMOTE_SERVICE_LOG("/expected-data-template/python/ec2/remote-service-log.mustache"),
+  PYTHON_EC2_REMOTE_SERVICE_METRIC("/expected-data-template/python/ec2/remote-service-metric.mustache"),
+  PYTHON_EC2_REMOTE_SERVICE_TRACE("/expected-data-template/python/ec2/remote-service-trace.mustache"),
+
+  PYTHON_EC2_CLIENT_CALL_LOG("/expected-data-template/python/ec2/client-call-log.mustache"),
+  PYTHON_EC2_CLIENT_CALL_METRIC("/expected-data-template/python/ec2/client-call-metric.mustache"),
+  PYTHON_EC2_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/client-call-trace.mustache"),
   ;
 
   private String path;
