@@ -64,7 +64,7 @@ jobs:
 #          sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
       - name: Generate testing id
-        run: echo TESTING_ID="eu-central-2-8128075427-1707" >> $GITHUB_ENV
+        run: echo TESTING_ID="eu-central-2-8123888903-1657" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -221,8 +221,8 @@ jobs:
 #
       - name: Get remote service pod name and IP
         run: |
-          echo "REMOTE_SERVICE_DEPLOYMENT_NAME=sample-r-app-deployment-eu-central-2-8128075427-1707" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_POD_IP=10.0.105.236" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_DEPLOYMENT_NAME=sample-r-app-deployment-eu-central-2-8123888903-1657" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_POD_IP=10.0.103.138" >> $GITHUB_ENV
 #
 #      - name: Verify pod Adot image
 #        run: |
