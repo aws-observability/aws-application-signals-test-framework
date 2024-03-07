@@ -1,3 +1,4 @@
+<!-- TODO: Check if this repository can be refactored with a common kubeconfig.tpl file -->
 apiVersion: v1
 clusters:
 - cluster:
