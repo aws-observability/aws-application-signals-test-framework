@@ -56,6 +56,23 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   EC2_CLIENT_CALL_METRIC("/expected-data-template/ec2/client-call-metric.mustache"),
   EC2_CLIENT_CALL_TRACE("/expected-data-template/ec2/client-call-trace.mustache"),
 
+ /** Python EKS Test Case Validations */
+  PYTHON_EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/eks/outgoing-http-call-log.mustache"),
+  PYTHON_EKS_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/eks/outgoing-http-call-metric.mustache"),
+  PYTHON_EKS_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/python/eks/outgoing-http-call-trace.mustache"),
+
+  PYTHON_EKS_AWS_SDK_CALL_LOG("/expected-data-template/python/eks/aws-sdk-call-log.mustache"),
+  PYTHON_EKS_AWS_SDK_CALL_METRIC("/expected-data-template/python/eks/aws-sdk-call-metric.mustache"),
+  PYTHON_EKS_AWS_SDK_CALL_TRACE("/expected-data-template/python/eks/aws-sdk-call-trace.mustache"),
+
+  PYTHON_EKS_REMOTE_SERVICE_LOG("/expected-data-template/python/eks/remote-service-log.mustache"),
+  PYTHON_EKS_REMOTE_SERVICE_METRIC("/expected-data-template/python/eks/remote-service-metric.mustache"),
+  PYTHON_EKS_REMOTE_SERVICE_TRACE("/expected-data-template/python/eks/remote-service-trace.mustache"),
+
+  PYTHON_EKS_CLIENT_CALL_LOG("/expected-data-template/python/eks/client-call-log.mustache"),
+  PYTHON_EKS_CLIENT_CALL_METRIC("/expected-data-template/python/eks/client-call-metric.mustache"),
+  PYTHON_EKS_CLIENT_CALL_TRACE("/expected-data-template/python/eks/client-call-trace.mustache"),
+
   /** Python EC2 Test Case Validations */
   PYTHON_EC2_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/ec2/outgoing-http-call-log.mustache"),
   PYTHON_EC2_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/ec2/outgoing-http-call-metric.mustache"),
