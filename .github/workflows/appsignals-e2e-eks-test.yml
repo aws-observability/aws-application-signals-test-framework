@@ -56,12 +56,6 @@ jobs:
             scripts/eks/appsignals/clean-app-signals.sh
           sparse-checkout-cone-mode: false
 
-      # TODO: remove this step next Monday and update validator with appropriate changes
-      - name: Temporary override addon version
-        working-directory: enablement-script/scripts/eks/appsignals
-        run: |
-          sed -i '\#--addon-name amazon-cloudwatch-observability \\#a--addon-version v1.2.2-eksbuild.1 \\' enable-app-signals.sh
-
       - name: Remove log group deletion command
         if: always()
         working-directory: enablement-script/scripts/eks/appsignals
