@@ -80,18 +80,19 @@ public class FrontendServiceController {
   // test aws calls instrumentation
   @GetMapping("/aws-sdk-call")
   @ResponseBody
-  public String awssdkCall(@RequestParam(name = "id", required = false) String id) {
+  public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
     String bucketName = "e2e-test-bucket-name";
-    // Add an (pod) ID to bucketname to associate buckets to specific test runs
-    if (id != null) {
-      bucketName += "-" + id;
+    // Add a unique test ID to bucketname to associate buckets to specific test runs
+    if (testingId != null) {
+      bucketName += "-" + testingId;
     }
     GetBucketLocationRequest bucketLocationRequest =
         GetBucketLocationRequest.builder().bucket(bucketName).build();
     try {
       s3.getBucketLocation(bucketLocationRequest);
     } catch (Exception e) {
-      // e2e-test-bucket-name does not exist, so this is expected.
+      // bucketName does not exist, so this is expected.
+      logger.error("Error occurred when trying to get bucket location of: " + bucketName);
       logger.error("Could not retrieve http request:" + e.getLocalizedMessage());
     }
     return getXrayTraceId();
