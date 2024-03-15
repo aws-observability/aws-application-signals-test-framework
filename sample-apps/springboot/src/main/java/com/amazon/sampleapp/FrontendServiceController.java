@@ -80,11 +80,11 @@ public class FrontendServiceController {
   // test aws calls instrumentation
   @GetMapping("/aws-sdk-call")
   @ResponseBody
-  public String awssdkCall(@RequestParam(name = "ip", required = false) String ip) {
+  public String awssdkCall(@RequestParam(name = "id", required = false) String id) {
     String bucketName = "e2e-test-bucket-name";
     // Add an (pod) ID to bucketname to associate buckets to specific test runs
-    if (ip != null) {
-      bucketName += "-" + ip;
+    if (id != null) {
+      bucketName += "-" + id;
     }
     GetBucketLocationRequest bucketLocationRequest =
         GetBucketLocationRequest.builder().bucket(bucketName).build();
