@@ -50,9 +50,9 @@ def aws_sdk_call(request):
     bucket_name = "e2e-test-bucket-name"
 
     # Add an (pod) ID to bucketname to associate buckets to specific test runs
-    ip = request.GET.get('ip', None)
-    if ip is not None:
-        bucket_name += "-" + ip
+    bucket_id = request.GET.get('id', None)
+    if bucket_id is not None:
+        bucket_name += "-" + bucket_id
     s3_client = boto3.client("s3")
     try:
         s3_client.get_bucket_location(
