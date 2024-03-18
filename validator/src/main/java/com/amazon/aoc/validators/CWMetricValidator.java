@@ -40,7 +40,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class CWMetricValidator implements IValidator {
-  private static int DEFAULT_MAX_RETRY_COUNT = 30;
+  private static int DEFAULT_MAX_RETRY_COUNT = 80;
 
   private MustacheHelper mustacheHelper = new MustacheHelper();
   private ICaller caller;
