@@ -22,7 +22,7 @@ import java.net.URL;
  * resources/expected-data-templates.
  */
 public enum PredefinedExpectedTemplate implements FileConfig {
-  /** EKS Test Case Validations */
+  /** Java EKS Test Case Validations */
   EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/eks/outgoing-http-call-log.mustache"),
   EKS_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/eks/outgoing-http-call-metric.mustache"),
   EKS_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/eks/outgoing-http-call-trace.mustache"),
@@ -55,6 +55,23 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   EC2_CLIENT_CALL_LOG("/expected-data-template/ec2/client-call-log.mustache"),
   EC2_CLIENT_CALL_METRIC("/expected-data-template/ec2/client-call-metric.mustache"),
   EC2_CLIENT_CALL_TRACE("/expected-data-template/ec2/client-call-trace.mustache"),
+
+  /** Java EC2 Test Case Validations */
+  K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/k8s/outgoing-http-call-log.mustache"),
+  K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/k8s/outgoing-http-call-metric.mustache"),
+  K8S_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/k8s/outgoing-http-call-trace.mustache"),
+
+  K8S_AWS_SDK_CALL_LOG("/expected-data-template/k8s/aws-sdk-call-log.mustache"),
+  K8S_AWS_SDK_CALL_METRIC("/expected-data-template/k8s/aws-sdk-call-metric.mustache"),
+  K8S_AWS_SDK_CALL_TRACE("/expected-data-template/k8s/aws-sdk-call-trace.mustache"),
+
+  K8S_REMOTE_SERVICE_LOG("/expected-data-template/k8s/remote-service-log.mustache"),
+  K8S_REMOTE_SERVICE_METRIC("/expected-data-template/k8s/remote-service-metric.mustache"),
+  K8S_REMOTE_SERVICE_TRACE("/expected-data-template/k8s/remote-service-trace.mustache"),
+
+  K8S_CLIENT_CALL_LOG("/expected-data-template/k8s/client-call-log.mustache"),
+  K8S_CLIENT_CALL_METRIC("/expected-data-template/k8s/client-call-metric.mustache"),
+  K8S_CLIENT_CALL_TRACE("/expected-data-template/k8s/client-call-trace.mustache"),
 
  /** Python EKS Test Case Validations */
   PYTHON_EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/eks/outgoing-http-call-log.mustache"),
