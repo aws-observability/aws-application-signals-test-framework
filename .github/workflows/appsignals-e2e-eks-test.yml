@@ -180,8 +180,8 @@ jobs:
               ${{ env.SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}"
           
-              execute_and_retry 1 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
-              execute_and_retry 1 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
+              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
+              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
           
               echo "Attempting to connect to the main sample app endpoint"
               main_sample_app_endpoint=http://$(terraform output sample_app_endpoint)
