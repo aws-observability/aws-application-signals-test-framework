@@ -132,25 +132,27 @@ public class CWLogValidator implements IValidator {
 
   private Map<String, Object> getActualLog(
       String operation, String remoteService, String remoteOperation) throws Exception {
-    String filterPattern = null;
+    String dependencyFilter = null;
+    String asgFilter = null;
 
     // Dependency calls will have the remoteService and remoteOperation attribute, but service calls
     // will not. A service call will have
     // null remoteService and null remoteOperation and the filter expression must be adjusted
     // accordingly.
     if (remoteService == null && remoteOperation == null) {
-      filterPattern =
-          String.format(
-              "{ ($.Service = %s) && ($.Operation = \"%s\") && "
-                  + "($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS) }",
-              context.getServiceName(), operation);
+      dependencyFilter = "($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS)";
     } else {
-      filterPattern =
-          String.format(
-              "{ ($.Service = %s) && ($.Operation = \"%s\") && "
-                  + "($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\") }",
-              context.getServiceName(), operation, remoteService, remoteOperation);
+      dependencyFilter = String.format("($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")", remoteService, remoteOperation);
     }
+
+    // EC2 Instances created by an ASG will have the EC2.InstanceId property.
+    if (context.getInstanceId().equals("")) {
+      asgFilter = "($.['EC2.InstanceId'] NOT EXISTS)";
+    } else {
+      asgFilter = String.format("($.['EC2.InstanceId'] = \"%s\")", context.getInstanceId());
+    }
+
+    String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") && %s && %s }", context.getServiceName(), operation, dependencyFilter, asgFilter);
     log.info("Filter Pattern for Log Search: " + filterPattern);
 
     List<FilteredLogEvent> retrievedLogs =

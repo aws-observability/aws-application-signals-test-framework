@@ -31,8 +31,8 @@ env:
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   ENABLEMENT_SCRIPT_S3_BUCKET: ${{ secrets.APP_SIGNALS_E2E_ENABLEMENT_SCRIPT }}
   SAMPLE_APP_NAMESPACE: sample-app-namespace
-  SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}
-  SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}
+  SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}
+  SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/eks
   TEST_RESOURCES_FOLDER: /home/runner/work/aws-application-signals-test-framework/aws-application-signals-test-framework
@@ -290,7 +290,7 @@ jobs:
       - name: Call endpoint and validate generated EMF logs
         id: log-validation
         if: steps.deploy-sample-app.outcome == 'success' && !cancelled()
-        run: ./gradlew validator:run --args='-c eks/log-validation.yml
+        run: ./gradlew validator:run --args='-c java/eks/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ inputs.aws-region }}
@@ -307,7 +307,7 @@ jobs:
       - name: Call endpoints and validate generated metrics
         id: metric-validation
         if: (steps.deploy-sample-app.outcome == 'success' || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c eks/metric-validation.yml
+        run: ./gradlew validator:run --args='-c java/eks/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ inputs.aws-region }}
@@ -325,7 +325,7 @@ jobs:
       - name: Call endpoints and validate generated traces
         id: trace-validation
         if: (steps.deploy-sample-app.outcome == 'success' || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c eks/trace-validation.yml
+        run: ./gradlew validator:run --args='-c java/eks/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ inputs.aws-region }}
