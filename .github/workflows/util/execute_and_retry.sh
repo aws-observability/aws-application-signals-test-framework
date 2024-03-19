@@ -5,6 +5,8 @@
 # $2: Command to execute
 # $3: (Optional) Command for cleaning up resources if $2 fails
 execute_and_retry () {
+  # Warning: The variables called in this function are not local and will be shared with the calling function.
+  # Make sure that the variable names do not conflict
   execute_retry_counter=0
   max_execute_retry=$1
   command=$2
