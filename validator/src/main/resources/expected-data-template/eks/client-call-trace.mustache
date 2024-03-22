@@ -1,10 +1,10 @@
 [{
   "name": "^{{serviceName}}$",
   "annotations": {
-    "aws.local.service": "^{{serviceName}}$",
-    "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
-    "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
-    "aws.local.operation": "^InternalOperation$"
+    "aws_local_service": "^{{serviceName}}$",
+    "HostedIn_K8s_Namespace": "^{{appNamespace}}$",
+    "HostedIn_EKS_Cluster": "^{{platformInfo}}$",
+    "aws_local_operation": "^InternalOperation$"
   },
   "metadata": {
     "default": {
@@ -23,12 +23,12 @@
           }
       },
       "annotations": {
-        "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
-        "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
-        "aws.local.service": "^{{serviceName}}$",
-        "aws.local.operation": "^InternalOperation$",
-        "aws.remote.service": "^local-root-client-call$",
-        "aws.remote.operation": "GET /"
+        "HostedIn_K8s_Namespace": "^{{appNamespace}}$",
+        "HostedIn_EKS_Cluster": "^{{platformInfo}}$",
+        "aws_local_service": "^{{serviceName}}$",
+        "aws_local_operation": "^InternalOperation$",
+        "aws_remote_service": "^local-root-client-call$",
+        "aws_remote_operation": "GET /"
       },
       "metadata": {
         "default": {
@@ -38,4 +38,20 @@
       "namespace": "^remote$"
     }
   ]
+},
+{
+    "name": "^local-root-client-call$",
+    "http": {
+        "request": {
+            "url": "^http://local-root-client-call$",
+            "method": "^GET$"
+        },
+        "response": {
+            "content_length": 0
+        }
+    },
+    "annotations": {
+        "aws_local_service": "^local-root-client-call$",
+        "aws_local_operation": "^GET /$"
+    }
 }]
