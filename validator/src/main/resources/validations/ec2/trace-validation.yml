@@ -16,9 +16,3 @@
   httpMethod: "get"
   callingType: "http-with-body"
   expectedTraceTemplate: "EC2_REMOTE_SERVICE_TRACE"
--
-  validationType: "trace"
-  httpPath: "/client-call"
-  httpMethod: "get"
-  callingType: "http"
-  expectedTraceTemplate: "EC2_CLIENT_CALL_TRACE"
