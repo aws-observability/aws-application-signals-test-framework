@@ -13,10 +13,10 @@
     "account_id": "^{{accountId}}$"
   },
   "annotations": {
-    "aws.local.service": "^{{serviceName}}$",
-    "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
-    "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
-    "aws.local.operation": "^GET /outgoing-http-call$"
+    "aws_local_service": "^{{serviceName}}$",
+    "HostedIn_K8s_Namespace": "^{{appNamespace}}$",
+    "HostedIn_EKS_Cluster": "^{{platformInfo}}$",
+    "aws_local_operation": "^GET /outgoing-http-call$"
   },
   "metadata": {
       "default": {
@@ -38,12 +38,12 @@
             }
           },
           "annotations": {
-            "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
-            "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
-            "aws.local.service": "^{{serviceName}}$",
-            "aws.local.operation": "^GET /outgoing-http-call$",
-            "aws.remote.service": "^www.amazon.com$",
-            "aws.remote.operation": "^GET /$"
+            "HostedIn_K8s_Namespace": "^{{appNamespace}}$",
+            "HostedIn_EKS_Cluster": "^{{platformInfo}}$",
+            "aws_local_service": "^{{serviceName}}$",
+            "aws_local_operation": "^GET /outgoing-http-call$",
+            "aws_remote_service": "^www.amazon.com$",
+            "aws_remote_operation": "^GET /$"
           },
           "metadata": {
             "default": {
