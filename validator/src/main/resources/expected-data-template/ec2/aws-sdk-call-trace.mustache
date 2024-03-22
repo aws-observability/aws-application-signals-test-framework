@@ -13,9 +13,9 @@
     "account_id": "^{{accountId}}$"
   },
   "annotations": {
-    "aws.local.service": "^{{serviceName}}$",
-    "HostedIn.Environment": "^EC2$",
-    "aws.local.operation": "^GET /aws-sdk-call$"
+    "aws_local_service": "^{{serviceName}}$",
+    "HostedIn_Environment": "^EC2$",
+    "aws_local_operation": "^GET /aws-sdk-call$"
   },
   "metadata": {
     "default": {
@@ -37,12 +37,12 @@
             }
           },
           "annotations": {
-            "HostedIn.Environment": "^EC2$",
-            "aws.local.service": "^{{serviceName}}$",
-            "aws.local.operation": "^GET /aws-sdk-call$",
-            "aws.remote.service": "^AWS\\.SDK\\.S3$",
-            "aws.remote.operation": "^GetBucketLocation$",
-            "aws.remote.target": "^::s3:::e2e-test-bucket-name$"
+            "HostedIn_Environment": "^EC2$",
+            "aws_local_service": "^{{serviceName}}$",
+            "aws_local_operation": "^GET /aws-sdk-call$",
+            "aws_remote_service": "^AWS\\.SDK\\.S3$",
+            "aws_remote_operation": "^GetBucketLocation$",
+            "aws_remote_target": "^::s3:::e2e-test-bucket-name$"
           },
           "metadata": {
             "default": {
