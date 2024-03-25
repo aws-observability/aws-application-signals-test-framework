@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-r-app-deployment-${TESTING_ID}
+  namespace: sample-app-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: remote-app
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: remote-app
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
+    spec:
+      containers:
+        - name: remote
+          image: ${IMAGE}
+          ports:
+            - containerPort: 8081
+      imagePullSecrets:
+        - name: ecr-secret
