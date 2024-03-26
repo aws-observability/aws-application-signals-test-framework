@@ -7,7 +7,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Latency
@@ -21,7 +21,7 @@
       value: InternalOperation
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Latency
@@ -35,24 +35,7 @@
       value: InternalOperation
     -
       name: HostedIn.EC2.Environment
-      value: EC2
-    -
-      name: RemoteService
-      value: local-root-client-call
-    -
-      name: RemoteOperation
-      value: GET /
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -69,7 +52,24 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
+    -
+      name: RemoteService
+      value: local-root-client-call
+    -
+      name: RemoteOperation
+      value: GET /
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EC2.Environment
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -83,7 +83,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Error
@@ -97,7 +97,7 @@
       value: InternalOperation
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Error
@@ -111,7 +111,7 @@
       value: InternalOperation
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -128,7 +128,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -145,7 +145,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -159,7 +159,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Fault
@@ -173,7 +173,7 @@
       value: InternalOperation
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Fault
@@ -187,7 +187,7 @@
       value: InternalOperation
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -204,7 +204,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -221,7 +221,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: local-root-client-call

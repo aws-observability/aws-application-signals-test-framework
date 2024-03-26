@@ -43,7 +43,7 @@ jobs:
           fetch-depth: 0
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-0" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
