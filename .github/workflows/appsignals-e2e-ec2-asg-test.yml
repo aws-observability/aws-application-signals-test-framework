@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: App Signals Enablement E2E Testing - EC2 Use Case
+name: App Signals Enablement E2E Testing - EC2 ASG Use Case
 on:
   workflow_call:
     inputs:
@@ -29,7 +29,6 @@ env:
   APP_SIGNALS_ADOT_JAR: "https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/ec2
-  TEST: ${{ inputs.test }}
   GET_ADOT_JAR_COMMAND: "wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
   GET_CW_AGENT_RPM_COMMAND: "aws s3 cp s3://app-signals-preview/test-rpm/amd64/amazon-cloudwatch-agent.rpm ./cw-agent.rpm"
   TEST_RESOURCES_FOLDER: /home/runner/work/aws-application-signals-test-framework/aws-application-signals-test-framework
@@ -44,7 +43,7 @@ jobs:
           fetch-depth: 0
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-2" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${{ github.job }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -56,13 +55,13 @@ jobs:
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids:
-            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+            ACCOUNT_ID, region-account/${{ env.AWS_DEFAULT_REGION }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
-          aws-region: ${{ inputs.aws-region }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -90,13 +89,12 @@ jobs:
             echo "Attempt $retry_counter"
             deployment_failed=0
             terraform apply -auto-approve \
-              -var="aws_region=${{ inputs.aws-region }}" \
+              -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="sample_app_jar=${{ env.SAMPLE_APP_FRONTEND_SERVICE_JAR }}" \
               -var="sample_remote_app_jar=${{ env.SAMPLE_APP_REMOTE_SERVICE_JAR }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="get_adot_jar_command=${{ env.GET_ADOT_JAR_COMMAND }}" \
-              -var="instance_number=2" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
@@ -109,9 +107,10 @@ jobs:
               for i in {0..1}
               do
                 echo "Attempting to connect to the endpoint number $i"
-                main_service_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names asg-${{ env.TESTING_ID }} --region ${{ inputs.aws-region }} --query "AutoScalingGroups[].Instances[$i].InstanceId" --output text)
-                main_service_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ inputs.aws-region }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
+                main_service_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.AWS_DEFAULT_REGION }} --query "AutoScalingGroups[].Instances[$i].InstanceId" --output text)
+                main_service_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
                 main_service_sample_app_endpoint=http://$main_service_public_ip:8080
+                echo "The main service endpoint for instance number $i is $main_service_sample_app_endpoint"
           
                 attempt_counter=0
                 max_attempts=30
@@ -171,10 +170,10 @@ jobs:
 
       - name: Get the sample app endpoint
         run: |
-          main_service_one_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names asg-${{ env.TESTING_ID }} --region ${{ inputs.aws-region }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
-          main_service_two_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names asg-${{ env.TESTING_ID }} --region ${{ inputs.aws-region }} --query "AutoScalingGroups[].Instances[1].InstanceId" --output text)
-          main_service_one_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_one_instance_id --region ${{ inputs.aws-region }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
-          main_service_two_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_two_instance_id --region ${{ inputs.aws-region }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
+          main_service_one_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.AWS_DEFAULT_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
+          main_service_two_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.AWS_DEFAULT_REGION }} --query "AutoScalingGroups[].Instances[1].InstanceId" --output text)
+          main_service_one_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_one_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
+          main_service_two_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_two_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
           echo "INSTANCE_ID_ONE=$main_service_one_instance_id" >> $GITHUB_ENV
           echo "INSTANCE_ID_TWO=$main_service_two_instance_id" >> $GITHUB_ENV
           echo "MAIN_SERVICE_ONE_ENDPOINT=$main_service_one_public_ip:8080" >> $GITHUB_ENV
@@ -183,18 +182,18 @@ jobs:
         working-directory: terraform/ec2/asg
 
       # This steps increases the speed of the validation by creating the telemetry data in advance
-      - name: Call all test APIs for first endpoint
+      - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/outgoing-http-call/
-          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/aws-sdk-call/
-          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/
-          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/client-call/
+          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/outgoing-http-call/; echo
+          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/aws-sdk-call/; echo
+          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/; echo
+          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/client-call/; echo
           
-          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/outgoing-http-call/
-          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/aws-sdk-call/
-          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/
-          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/client-call/
+          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/outgoing-http-call/; echo
+          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/aws-sdk-call/; echo
+          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/; echo
+          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/client-call/; echo
 
       - name: Build Gradlew
         uses: ./.github/workflows/actions/execute_and_retry
@@ -209,7 +208,7 @@ jobs:
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -217,7 +216,7 @@ jobs:
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --asg-name asg-${{ env.TESTING_ID }}
+          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID_ONE }}
           --rollup'
 
@@ -228,7 +227,7 @@ jobs:
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -236,7 +235,7 @@ jobs:
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --asg-name asg-${{ env.TESTING_ID }}
+          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID_ONE }}
           --rollup'
 
@@ -247,7 +246,7 @@ jobs:
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -255,7 +254,7 @@ jobs:
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --asg-name asg-${{ env.TESTING_ID }}
+          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID_ONE }}
           --rollup'
 
@@ -266,7 +265,7 @@ jobs:
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -274,7 +273,7 @@ jobs:
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --asg-name asg-${{ env.TESTING_ID }}
+          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID_TWO }}
           --rollup'
 
@@ -285,7 +284,7 @@ jobs:
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -293,7 +292,7 @@ jobs:
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --asg-name asg-${{ env.TESTING_ID }}
+          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID_TWO }}
           --rollup'
 
@@ -304,7 +303,7 @@ jobs:
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -312,7 +311,7 @@ jobs:
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --asg-name asg-${{ env.TESTING_ID }}
+          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID_TWO }}
           --rollup'
 
@@ -325,13 +324,13 @@ jobs:
             --metric-name Failure \
             --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
             --value 0.0 \
-            --region ${{ inputs.aws-region }}
+            --region ${{ env.AWS_DEFAULT_REGION }}
           else
             aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
             --metric-name Failure \
             --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
             --value 1.0 \
-            --region ${{ inputs.aws-region }}
+            --region ${{ env.AWS_DEFAULT_REGION }}
           fi
 
       # Clean up Procedures

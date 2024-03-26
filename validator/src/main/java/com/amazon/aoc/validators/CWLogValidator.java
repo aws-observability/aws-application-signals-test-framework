@@ -133,7 +133,7 @@ public class CWLogValidator implements IValidator {
   private Map<String, Object> getActualLog(
       String operation, String remoteService, String remoteOperation) throws Exception {
     String dependencyFilter = null;
-    String asgFilter = null;
+    String instanceIdFilter = null;
 
     // Dependency calls will have the remoteService and remoteOperation attribute, but service calls
     // will not. A service call will have
@@ -146,13 +146,13 @@ public class CWLogValidator implements IValidator {
     }
 
     // EC2 Instances created by an ASG will have the EC2.InstanceId property.
-    if (context.getInstanceId().equals("")) {
-      asgFilter = "($.['EC2.InstanceId'] NOT EXISTS)";
+    if (context.getInstanceId().equals("defaultId")) {
+      instanceIdFilter = "($.['EC2.InstanceId'] NOT EXISTS)";
     } else {
-      asgFilter = String.format("($.['EC2.InstanceId'] = \"%s\")", context.getInstanceId());
+      instanceIdFilter = String.format("($.['EC2.InstanceId'] = \"%s\")", context.getInstanceId());
     }
 
-    String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") && %s && %s }", context.getServiceName(), operation, dependencyFilter, asgFilter);
+    String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") && %s && %s }", context.getServiceName(), operation, dependencyFilter, instanceIdFilter);
     log.info("Filter Pattern for Log Search: " + filterPattern);
 
     List<FilteredLogEvent> retrievedLogs =

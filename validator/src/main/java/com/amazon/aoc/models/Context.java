@@ -57,8 +57,6 @@ public class Context {
 
   private String instanceAmi;
 
-  private String asgName;
-
   private String instanceId;
 
   private ECSContext ecsContext;

@@ -10,7 +10,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Latency
@@ -24,35 +24,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
-    -
-      name: RemoteOperation
-      value: GET /
-    -
-      name: RemoteService
-      value: www.amazon.com
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.EC2.Environment
-      value: EC2
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteOperation
       value: GET /
@@ -69,7 +41,35 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EC2.Environment
+      value: {{platformInfo}}
+    -
+      name: RemoteOperation
+      value: GET /
+    -
+      name: RemoteService
+      value: www.amazon.com
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EC2.Environment
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: www.amazon.com
@@ -86,7 +86,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Error
@@ -100,7 +100,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteOperation
       value: GET /
@@ -117,7 +117,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Error
@@ -128,7 +128,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteOperation
       value: GET /
@@ -145,7 +145,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: www.amazon.com
@@ -162,7 +162,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Fault
@@ -176,7 +176,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteOperation
       value: GET /
@@ -193,7 +193,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
 
 -
   metricName: Fault
@@ -204,7 +204,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteOperation
       value: GET /
@@ -221,7 +221,7 @@
       value: {{serviceName}}
     -
       name: HostedIn.EC2.Environment
-      value: EC2
+      value: {{platformInfo}}
     -
       name: RemoteService
       value: www.amazon.com

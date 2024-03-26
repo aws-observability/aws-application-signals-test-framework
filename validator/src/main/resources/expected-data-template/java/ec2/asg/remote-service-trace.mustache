@@ -14,13 +14,12 @@
   },
   "annotations": {
     "aws_local_service": "^{{serviceName}}$",
-    "HostedIn_EC2_Environment": "^EC2$",
+    "HostedIn_EC2_Environment": "^{{platformInfo}}$",
     "aws_local_operation": "^GET /remote-service$"
   },
   "metadata": {
       "default": {
-          "otel.resource.aws.hostedin.environment": "^EC2$",
-          "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{asgName}}$",
+          "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
           "otel.resource.host.id": "^{{instanceId}}$",
           "otel.resource.host.image.id": "^{{instanceAmi}}$",
           "otel.resource.host.type": "^t3.micro$",
@@ -70,7 +69,6 @@
   },
   "metadata": {
       "default": {
-          "otel.resource.aws.hostedin.environment": "^EC2$",
           "otel.resource.host.image.id": "^{{instanceAmi}}$",
           "otel.resource.host.type": "^t3.micro$",
           "aws.span.kind": "^LOCAL_ROOT$"

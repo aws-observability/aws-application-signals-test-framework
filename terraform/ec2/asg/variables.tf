@@ -40,7 +40,3 @@ variable "get_cw_agent_rpm_command" {
 variable "get_adot_jar_command" {
   default = "<command> s3://<bucket-name>/<jar>"
 }
-
-variable "instance_number" {
-    default = 1
-}
