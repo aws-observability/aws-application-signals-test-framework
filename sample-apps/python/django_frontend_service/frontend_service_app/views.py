@@ -49,16 +49,18 @@ def healthcheck(request):
 def aws_sdk_call(request):
     bucket_name = "e2e-test-bucket-name"
 
-    # Add an (pod) ID to bucketname to associate buckets to specific test runs
-    ip = request.GET.get('ip', None)
-    if ip is not None:
-        bucket_name += "-" + ip
+    # Add a unique test ID to bucketname to associate buckets to specific test runs
+    testing_id = request.GET.get('testingId', None)
+    if testing_id is not None:
+        bucket_name += "-" + testing_id
     s3_client = boto3.client("s3")
     try:
         s3_client.get_bucket_location(
             Bucket=bucket_name,
         )
     except Exception as e:
+        # bucket_name does not exist, so this is expected.
+        logger.error("Error occurred when trying to get bucket location of: " + bucket_name)
         logger.error("Could not retrieve http request:" + str(e))
 
     return get_xray_trace_id()

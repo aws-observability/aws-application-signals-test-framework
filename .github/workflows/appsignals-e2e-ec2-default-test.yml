@@ -67,8 +67,8 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
-          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list \
-          sudo apt update && sudo apt install terraform'
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          && sudo apt update && sudo apt install terraform'
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -179,8 +179,9 @@ jobs:
       - name: Build Gradlew
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          max_retry: 4
+          max_retry: 2
           command: "./gradlew"
+          cleanup: "./gradlew clean"
 
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
