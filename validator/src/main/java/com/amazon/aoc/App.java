@@ -43,12 +43,6 @@ public class App implements Callable<Integer> {
       defaultValue = "dummy-id")
   private String testingId;
 
-  @CommandLine.Option(names = {"--account-id"})
-  private String accountId;
-
-  @CommandLine.Option(names = {"--language"})
-  private String language;
-
   @CommandLine.Option(
       names = {"--metric-namespace"},
       defaultValue = "AWSObservability/CloudWatchOTService")
@@ -152,7 +146,6 @@ public class App implements Callable<Integer> {
     final Instant startTime = Instant.now();
     // build context
     Context context = new Context(this.testingId, this.region, this.isCanary, this.isRollup);
-    context.setAccountId(this.accountId);
     context.setAvailabilityZone(this.availabilityZone);
     context.setMetricNamespace(this.metricNamespace);
     context.setAppNamespace(this.appNamespace);
@@ -170,7 +163,6 @@ public class App implements Callable<Integer> {
     context.setMockedServerValidatingUrl(mockedServerValidatingUrl);
     context.setCortexInstanceEndpoint(this.cortexInstanceEndpoint);
     context.setTestcase(testcase);
-    context.setLanguage(language);
     context.setInstanceAmi(this.instanceAmi);
 
     log.info(context);

@@ -23,10 +23,6 @@ import lombok.NonNull;
 public class Context {
   @NonNull private String testingId;
 
-  private String accountId;
-
-  private String language;
-
   @NonNull private String region;
 
   private String availabilityZone;
