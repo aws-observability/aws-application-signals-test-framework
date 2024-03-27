@@ -33,7 +33,7 @@ env:
   GET_CW_AGENT_RPM_COMMAND: "wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/1.300035.0b547/amazon-cloudwatch-agent.rpm"
 
 jobs:
-  e2e-ec2-test:
+  e2e-ec2-default-test:
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
