@@ -35,7 +35,7 @@ env:
 
 
 jobs:
-  e2e-ec2-test:
+  e2e-ec2-asg-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
           fetch-depth: 0
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${{ github.job }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -67,8 +67,8 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
-          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list \
-          sudo apt update && sudo apt install terraform'
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          && sudo apt update && sudo apt install terraform'
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
