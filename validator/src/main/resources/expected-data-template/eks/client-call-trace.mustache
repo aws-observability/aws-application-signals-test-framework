@@ -38,4 +38,20 @@
       "namespace": "^remote$"
     }
   ]
+},
+{
+    "name": "^local-root-client-call$",
+    "http": {
+        "request": {
+            "url": "^http://local-root-client-call$",
+            "method": "^GET$"
+        },
+        "response": {
+            "content_length": 0
+        }
+    },
+    "annotations": {
+        "aws.local.service": "^local-root-client-call$",
+        "aws.local.operation": "^GET /$"
+    }
 }]
