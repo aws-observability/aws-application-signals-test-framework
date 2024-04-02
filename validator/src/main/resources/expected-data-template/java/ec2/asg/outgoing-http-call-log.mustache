@@ -4,7 +4,9 @@
   "Operation": "GET /outgoing-http-call",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "aws.span.kind": "^LOCAL_ROOT$"
+  "aws.span.kind": "^LOCAL_ROOT$",
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "host.name": "^{{privateDnsName}}$"
 },
 {
   "EC2.AutoScalingGroupName":  "^{{platformInfo}}$",
@@ -14,5 +16,7 @@
   "Version": "^1$",
   "RemoteService": "www.amazon.com",
   "RemoteOperation": "GET /",
-  "aws.span.kind": "^CLIENT$"
+  "aws.span.kind": "^CLIENT$",
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "host.name": "^{{privateDnsName}}$"
 }]
