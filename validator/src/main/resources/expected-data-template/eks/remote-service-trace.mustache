@@ -13,10 +13,10 @@
     "account_id": "^{{accountId}}$"
   },
   "annotations": {
-    "aws_local_service": "^{{serviceName}}$",
-    "HostedIn_K8s_Namespace": "^{{appNamespace}}$",
-    "HostedIn_EKS_Cluster": "^{{platformInfo}}$",
-    "aws_local_operation": "^GET /remote-service$"
+    "aws.local.service": "^{{serviceName}}$",
+    "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
+    "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
+    "aws.local.operation": "^GET /remote-service$"
   },
   "metadata": {
       "default": {
@@ -38,10 +38,10 @@
             }
           },
           "annotations": {
-            "aws_local_service": "^{{serviceName}}$",
-            "aws_local_operation": "^GET /remote-service$",
-            "aws_remote_service": "^{{remoteServiceDeploymentName}}$",
-            "aws_remote_operation": "^GET /healthcheck$"
+            "aws.local.service": "^{{serviceName}}$",
+            "aws.local.operation": "^GET /remote-service$",
+            "aws.remote.service": "^{{remoteServiceDeploymentName}}$",
+            "aws.remote.operation": "^GET /healthcheck$"
           },
           "metadata": {
               "default": {
@@ -63,10 +63,10 @@
     }
   },
   "annotations": {
-    "aws_local_service": "^{{remoteServiceDeploymentName}}$",
-    "HostedIn_K8s_Namespace": "^{{appNamespace}}$",
-    "HostedIn_EKS_Cluster": "^{{platformInfo}}$",
-    "aws_local_operation": "^GET /healthcheck$"
+    "aws.local.service": "^{{remoteServiceDeploymentName}}$",
+    "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
+    "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
+    "aws.local.operation": "^GET /healthcheck$"
   },
   "metadata": {
       "default": {
@@ -80,9 +80,9 @@
     {
       "name": "^RemoteServiceController.healthcheck$",
       "annotations": {
-        "HostedIn_K8s_Namespace": "^sample-app-namespace$",
-        "HostedIn_EKS_Cluster": "^{{platformInfo}}$",
-        "aws_local_operation": "^GET /healthcheck$"
+        "HostedIn.K8s.Namespace": "^sample-app-namespace$",
+        "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
+        "aws.local.operation": "^GET /healthcheck$"
       }
     }
   ]
