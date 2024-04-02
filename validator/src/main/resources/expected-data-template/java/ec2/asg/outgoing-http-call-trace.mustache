@@ -23,7 +23,9 @@
           "otel.resource.host.id": "^{{instanceId}}$",
           "otel.resource.host.image.id": "^{{instanceAmi}}$",
           "otel.resource.host.type": "^t3.micro$",
-          "aws.span.kind": "^LOCAL_ROOT$"
+          "aws.span.kind": "^LOCAL_ROOT$",
+          "otel.resource.host.name": "^{{privateDnsName}}$",
+          "EC2.InstanceId": "^{{instanceId}}$"
       }
   },
   "subsegments": [
@@ -46,7 +48,8 @@
           },
           "metadata": {
             "default": {
-              "aws.span.kind": "^CLIENT$"
+              "aws.span.kind": "^CLIENT$",
+              "EC2.InstanceId": "^{{instanceId}}$"
             }
           },
           "namespace": "^remote$"

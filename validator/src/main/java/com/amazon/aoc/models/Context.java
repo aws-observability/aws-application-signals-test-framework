@@ -59,6 +59,8 @@ public class Context {
 
   private String instanceId;
 
+  private String privateDnsName;
+
   private ECSContext ecsContext;
 
   private CloudWatchContext cloudWatchContext;

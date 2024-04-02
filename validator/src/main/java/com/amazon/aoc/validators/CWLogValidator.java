@@ -145,7 +145,8 @@ public class CWLogValidator implements IValidator {
       dependencyFilter = String.format("($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")", remoteService, remoteOperation);
     }
 
-    // EC2 Instances created by an ASG will have the EC2.InstanceId property.
+    // Use the EC2.InstanceId to distinguish between the different EC2 Instances created by an ASG. Note, all logs
+    // running on EC2 instances will have this attribute.
     if (context.getInstanceId().equals("defaultId")) {
       instanceIdFilter = "($.['EC2.InstanceId'] NOT EXISTS)";
     } else {

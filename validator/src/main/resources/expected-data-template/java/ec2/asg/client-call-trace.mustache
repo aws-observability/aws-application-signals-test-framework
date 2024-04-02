@@ -10,8 +10,8 @@
         "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
         "otel.resource.host.id": "^{{instanceId}}$",
         "otel.resource.host.image.id": "^{{instanceAmi}}$",
-        "otel.resource.host.type": "^t3.micro$"
-
+        "otel.resource.host.type": "^t3.micro$",
+        "otel.resource.host.name": "^{{privateDnsName}}$"
     }
   },
   "subsegments": [
@@ -32,7 +32,8 @@
       },
       "metadata": {
         "default": {
-          "aws.span.kind": "^LOCAL_ROOT$"
+          "aws.span.kind": "^LOCAL_ROOT$",
+          "EC2.InstanceId": "^{{instanceId}}$"
         }
       },
       "namespace": "^remote$"
