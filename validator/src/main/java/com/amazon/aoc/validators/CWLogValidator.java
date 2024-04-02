@@ -140,20 +140,20 @@ public class CWLogValidator implements IValidator {
     // null remoteService and null remoteOperation and the filter expression must be adjusted
     // accordingly.
     if (remoteService == null && remoteOperation == null) {
-      dependencyFilter = "($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS)";
+      dependencyFilter = "&& ($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS)";
     } else {
-      dependencyFilter = String.format("($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")", remoteService, remoteOperation);
+      dependencyFilter = String.format("&& ($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")", remoteService, remoteOperation);
     }
 
     // Use the EC2.InstanceId to distinguish between the different EC2 Instances created by an ASG. Note, all logs
-    // running on EC2 instances will have this attribute.
+    // running on EC2 instances will have this attribute. (Including EKS)
     if (context.getInstanceId().equals("defaultId")) {
-      instanceIdFilter = "($.['EC2.InstanceId'] NOT EXISTS)";
+      instanceIdFilter = "";
     } else {
-      instanceIdFilter = String.format("($.['EC2.InstanceId'] = \"%s\")", context.getInstanceId());
+      instanceIdFilter = String.format("&& ($.['EC2.InstanceId'] = \"%s\")", context.getInstanceId());
     }
 
-    String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") && %s && %s }", context.getServiceName(), operation, dependencyFilter, instanceIdFilter);
+    String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") %s %s }", context.getServiceName(), operation, dependencyFilter, instanceIdFilter);
     log.info("Filter Pattern for Log Search: " + filterPattern);
 
     List<FilteredLogEvent> retrievedLogs =
