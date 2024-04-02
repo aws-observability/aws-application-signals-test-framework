@@ -13,9 +13,9 @@
     "account_id": "^{{accountId}}$"
   },
   "annotations": {
-    "aws_local_service": "^{{serviceName}}$",
-    "HostedIn_Environment": "^EC2$",
-    "aws_local_operation": "^GET outgoing-http-call$"
+    "aws.local.service": "^{{serviceName}}$",
+    "HostedIn.Environment": "^EC2$",
+    "aws.local.operation": "^GET outgoing-http-call$"
   },
   "metadata": {
       "default": {
@@ -35,11 +35,11 @@
         }
       },
       "annotations": {
-        "HostedIn_Environment": "^EC2$",
-        "aws_local_service": "^{{serviceName}}$",
-        "aws_local_operation": "^GET outgoing-http-call$",
-        "aws_remote_service": "^www.amazon.com$",
-        "aws_remote_operation": "^GET /$"
+        "HostedIn.Environment": "^EC2$",
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^GET outgoing-http-call$",
+        "aws.remote.service": "^www.amazon.com$",
+        "aws.remote.operation": "^GET /$"
       },
       "metadata": {
         "default": {
