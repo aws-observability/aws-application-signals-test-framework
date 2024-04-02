@@ -13,10 +13,10 @@
     "account_id": "^{{accountId}}$"
   },
   "annotations": {
-    "aws_local_service": "^{{serviceName}}$",
-    "HostedIn_K8s_Namespace": "^{{appNamespace}}$",
-    "HostedIn_EKS_Cluster": "^{{platformInfo}}$",
-    "aws_local_operation": "^GET aws-sdk-call$"
+    "aws.local.service": "^{{serviceName}}$",
+    "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
+    "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
+    "aws.local.operation": "^GET aws-sdk-call$"
   },
   "metadata": {
     "default": {
@@ -39,13 +39,13 @@
         "operation": "^GetBucketLocation$"
       },
       "annotations": {
-        "HostedIn_K8s_Namespace": "^{{appNamespace}}$",
-        "HostedIn_EKS_Cluster": "^{{platformInfo}}$",
-        "aws_local_service": "^{{serviceName}}$",
-        "aws_local_operation": "^GET aws-sdk-call$",
-        "aws_remote_service": "^AWS\\.SDK\\.S3$",
-        "aws_remote_operation": "GetBucketLocation",
-        "aws_remote_target": "::s3:::e2e-test-bucket-name"
+        "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
+        "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^GET aws-sdk-call$",
+        "aws.remote.service": "^AWS\\.SDK\\.S3$",
+        "aws.remote.operation": "GetBucketLocation",
+        "aws.remote.target": "::s3:::e2e-test-bucket-name"
       },
       "metadata": {
         "default": {
