@@ -13,9 +13,9 @@
     "account_id": "^{{accountId}}$"
   },
   "annotations": {
-    "aws_local_service": "^{{serviceName}}$",
-    "HostedIn_Environment": "^EC2$",
-    "aws_local_operation": "^GET remote-service$"
+    "aws.local.service": "^{{serviceName}}$",
+    "HostedIn.Environment": "^EC2$",
+    "aws.local.operation": "^GET /remote-service$"
   },
   "metadata": {
       "default": {
@@ -35,10 +35,10 @@
         }
       },
       "annotations": {
-        "aws_local_service": "^{{serviceName}}$",
-        "aws_local_operation": "^GET remote-service$",
-        "aws_remote_service": "^{{remoteServiceDeploymentName}}$",
-        "aws_remote_operation": "^GET /healthcheck$"
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^GET remote-service$",
+        "aws.remote.service": "^{{remoteServiceDeploymentName}}$",
+        "aws.remote.operation": "^GET /healthcheck$"
       },
       "metadata": {
           "default": {
@@ -58,9 +58,9 @@
     }
   },
   "annotations": {
-    "HostedIn_Environment": "^EC2$",
-    "aws_local_service": "^{{remoteServiceName}}$",
-    "aws_local_operation": "^GET healthcheck$"
+    "HostedIn.Environment": "^EC2$",
+    "aws.local.service": "^{{remoteServiceName}}$",
+    "aws.local.operation": "^GET healthcheck$"
   },
   "metadata": {
       "default": {
