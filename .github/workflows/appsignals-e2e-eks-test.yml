@@ -21,6 +21,10 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
+  cancel-in-progress: false
+
 permissions:
   id-token: write
   contents: read
