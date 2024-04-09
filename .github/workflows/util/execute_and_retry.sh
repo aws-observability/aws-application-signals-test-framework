@@ -30,4 +30,4 @@ execute_and_retry () {
   done
 }
 
-export -f execute_and_retry
+export VARIABLE=execute_and_retry
