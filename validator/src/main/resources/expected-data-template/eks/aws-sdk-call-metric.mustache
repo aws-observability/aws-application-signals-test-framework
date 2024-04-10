@@ -9,11 +9,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Latency
@@ -26,17 +23,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -46,11 +40,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Latency
@@ -60,14 +51,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -77,17 +65,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -100,20 +85,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
 
 -
   metricName: Latency
@@ -123,20 +108,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
 
 -
   metricName: Error
@@ -149,11 +134,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Error
@@ -166,17 +148,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Error
@@ -186,11 +165,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Error
@@ -200,14 +176,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Error
@@ -217,17 +190,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Error
@@ -240,20 +210,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
 
 -
   metricName: Error
@@ -263,20 +233,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
 
 -
   metricName: Fault
@@ -289,11 +259,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Fault
@@ -306,17 +273,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -326,11 +290,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Fault
@@ -340,14 +301,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -357,17 +315,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -380,20 +335,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
 
 -
   metricName: Fault
@@ -403,17 +358,17 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
