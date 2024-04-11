@@ -41,11 +41,7 @@ jobs:
   e2e-eks-test:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/aws-observability/aws-application-signals-test-framework
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.PAT_PACKAGE_READ_ACCESS_TOKEN }}
-
+      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     steps:
       - uses: actions/checkout@v4
         with:
