@@ -80,7 +80,7 @@
     {
       "name": "^RemoteServiceController.healthcheck$",
       "annotations": {
-        "HostedIn.K8s.Namespace": "^sample-app-namespace$",
+        "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
         "HostedIn.EKS.Cluster": "^{{platformInfo}}$",
         "aws.local.operation": "^GET /healthcheck$"
       }
