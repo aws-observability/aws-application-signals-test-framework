@@ -265,6 +265,12 @@ jobs:
           curl -S -s http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}/
           curl -S -s http://${{ env.APP_ENDPOINT }}/client-call/
 
+      - name: Initiate Gradlew Daemon
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "./gradlew"
+          cleanup: "./gradlew clean"
+
       # Validation for app signals telemetry data
       - name: Call endpoint and validate generated EMF logs
         id: log-validation
