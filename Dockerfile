@@ -40,9 +40,19 @@ RUN mv /tmp/eksctl /usr/local/bin
 COPY gradlew .
 COPY settings.gradle.kts .
 COPY gradlew.bat .
+COPY gradle.properties .
 COPY gradle/ /gradle/
 COPY buildSrc/ /buildSrc/
 COPY validator/ /validator/
 
 # Build gradlew here so that the canary doesn't spend time downloading and building the package
 RUN ./gradlew
+
+# Set a custom Gradle user home directory
+ENV GRADLE_USER_HOME=/.gradle/
+
+# Create the custom Gradle user home directory
+RUN mkdir -p $GRADLE_USER_HOME
+
+# Copy the Gradle cache from the default location to the custom location
+RUN cp -r ~/.gradle/* $GRADLE_USER_HOME
