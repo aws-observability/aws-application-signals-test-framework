@@ -131,7 +131,7 @@ resource "aws_launch_configuration" "launch_configuration" {
 }
 
 resource "aws_autoscaling_group" "asg" {
-  name = "ec2-single-asg-${var.test_id}"
+  name = "asg-${var.test_id}"
   min_size = 2
   max_size = 2
   launch_configuration = aws_launch_configuration.launch_configuration.name

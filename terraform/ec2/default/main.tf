@@ -104,36 +104,41 @@ resource "null_resource" "main_service_setup" {
 
   provisioner "remote-exec" {
     inline = [
+      <<-EOF
       # Make the Terraform fail if any step throws an error
-      "set -o errexit",
+      set -o errexit
       # Install Java 11 and wget
-      "sudo yum install wget java-11-amazon-corretto -y",
+      sudo yum install wget java-11-amazon-corretto -y
 
       # Copy in CW Agent configuration
-      "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
-      "echo $agent_config > amazon-cloudwatch-agent.json",
+      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
+      echo $agent_config > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
-      "${var.get_cw_agent_rpm_command}",
-      "sudo rpm -U ./cw-agent.rpm",
-      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
+      ${var.get_cw_agent_rpm_command}
+      sudo rpm -U ./cw-agent.rpm
+      sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
       # Get ADOT
-      "${var.get_adot_jar_command}",
+      ${var.get_adot_jar_command}
 
       # Get and run the sample application with configuration
-      "aws s3 cp ${var.sample_app_jar} ./main-service.jar",
+      aws s3 cp ${var.sample_app_jar} ./main-service.jar
 
-      "JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \\",
-      "OTEL_METRICS_EXPORTER=none \\",
-      "OTEL_SMP_ENABLED=true \\",
-      "OTEL_AWS_SMP_EXPORTER_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2,service.name=sample-application-${var.test_id} \\",
-      "nohup java -jar main-service.jar &> nohup.out &",
+      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
+      OTEL_METRICS_EXPORTER=none \
+      OTEL_LOGS_EXPORT=none \
+      OTEL_AWS_APP_SIGNALS_ENABLED=true \
+      OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
+      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
+      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \
+      nohup java -jar main-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
-      "sleep 30"
+      sleep 30
+
+      EOF
     ]
   }
 
@@ -167,36 +172,41 @@ resource "null_resource" "remote_service_setup" {
 
   provisioner "remote-exec" {
     inline = [
+      <<-EOF
       # Make the Terraform fail if any step throws an error
-      "set -o errexit",
+      set -o errexit
       # Install Java 11 and wget
-      "sudo yum install wget java-11-amazon-corretto -y",
+      sudo yum install wget java-11-amazon-corretto -y
 
       # Copy in CW Agent configuration
-      "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
-      "echo $agent_config > amazon-cloudwatch-agent.json",
+      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
+      echo $agent_config > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
        "${var.get_cw_agent_rpm_command}",
-      "sudo rpm -U ./cw-agent.rpm",
-      "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
+      sudo rpm -U ./cw-agent.rpm
+      sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
       # Get ADOT
-      "${var.get_adot_jar_command}",
+      ${var.get_adot_jar_command}
 
       # Get and run the sample application with configuration
-      "aws s3 cp ${var.sample_remote_app_jar} ./remote-service.jar",
+      aws s3 cp ${var.sample_remote_app_jar} ./remote-service.jar
 
-      "JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \\",
-      "OTEL_METRICS_EXPORTER=none \\",
-      "OTEL_SMP_ENABLED=true \\",
-      "OTEL_AWS_SMP_EXPORTER_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2,service.name=sample-remote-application-${var.test_id} \\",
-      "nohup java -jar remote-service.jar &> nohup.out &",
+      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
+      OTEL_METRICS_EXPORTER=none \
+      OTEL_LOGS_EXPORT=none \
+      OTEL_AWS_APP_SIGNALS_ENABLED=true \
+      OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
+      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
+      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \
+      nohup java -jar remote-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
-      "sleep 30"
+      sleep 30
+
+      EOF
     ]
   }
 
