@@ -162,6 +162,7 @@ public class CWMetricValidatorTest {
     context.setServiceName(SERVICE_NAME);
     context.setRemoteServiceName(REMOTE_SERVICE_NAME);
     context.setRemoteServiceDeploymentName(REMOTE_SERVICE_DEPLOYMENT_NAME);
+    context.setRemoteTargetName(REMOTE_TARGET_NAME);
     return context;
   }
 

@@ -42,7 +42,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class CWMetricValidator implements IValidator {
-  private static int DEFAULT_MAX_RETRY_COUNT = 10;
+  private static int DEFAULT_MAX_RETRY_COUNT = 80;
 
   private MustacheHelper mustacheHelper = new MustacheHelper();
   private ICaller caller;
@@ -92,8 +92,8 @@ public class CWMetricValidator implements IValidator {
     RetryHelper.retry(
         maxRetryCount,
         () -> {
-          // We will query both the Service and RemoteService dimensions to ensure we get all
-          // metrics from all aggregations, specifically the [RemoteService] aggregation.
+          // We will query metrics with specific [Service], [RemoteService], or [RemoteService, RemoteTarget] dimension
+          // values to ensure we get all metrics from all aggregations, specifically the [RemoteService] aggregation.
           List<String> serviceNames =
               Lists.newArrayList(
                   context.getServiceName(), context.getRemoteServiceDeploymentName());
@@ -106,26 +106,28 @@ public class CWMetricValidator implements IValidator {
 
           List<Metric> actualMetricList = Lists.newArrayList();
 
-          // Add sets of dimesion filters to use for each query to CloudWatch
+          // Add sets of dimesion filters to use for each query to CloudWatch.
           List<List<Pair<String, String>>> dimensionLists = Lists.newArrayList();
-          // Query metrics for rolled up into the [serviceDimension] dimension
+          // Query metrics that includes any of these <service> values.
           for (String serviceName : serviceNames) {
             dimensionLists.add(
                 Arrays.asList(new Pair<>(CloudWatchService.SERVICE_DIMENSION, serviceName)));
           }
-          // Query metrics for rolled up into the [remoteServiceDimension] dimension
+          // Query metrics that includes any of these <remoteService> values.
           for (String remoteServiceName : remoteServiceNames) {
             dimensionLists.add(
                 Arrays.asList(
                     new Pair<>(CloudWatchService.REMOTE_SERVICE_DIMENSION, remoteServiceName)));
           }
-          // Query metrics for rolled up into the [remoteServiceDimension, remoteTargetDemsion] dimensions
+          // Query for metrics that includes both of these <remoteService, remoteTarget> values.
+          // Querying just 'remoteService="AWS.SDK.S3"' would also work, but that will result in
+          // returning too many canary metrics and may cause issues.
           dimensionLists.add(
               Arrays.asList(
                   new Pair<>(CloudWatchService.REMOTE_SERVICE_DIMENSION, "AWS.SDK.S3"),
                   new Pair<>(CloudWatchService.REMOTE_TARGET_DIMENSION, context.getRemoteTargetName())));
 
-          // Populate actualMetricList with metrics that pass through one of the dimension filters
+          // Populate actualMetricList with metrics that pass through at least one of the dimension filters
           for (List<Pair<String, String>> dimensionList : dimensionLists) {
             addMetrics(dimensionList, expectedMetricList, actualMetricList);
           }
