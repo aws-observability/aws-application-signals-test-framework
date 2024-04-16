@@ -8,7 +8,7 @@
   validationType: "cw-metric"
   httpPath: "/aws-sdk-call"
   httpMethod: "get"
-  callingType: "http"
+  callingType: "http-with-body"
   expectedMetricTemplate: "EKS_AWS_SDK_CALL_METRIC"
 -
   validationType: "cw-metric"

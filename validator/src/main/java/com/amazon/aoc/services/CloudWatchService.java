@@ -28,6 +28,8 @@ import com.amazonaws.services.logs.model.GetLogEventsResult;
 import com.amazonaws.services.logs.model.OutputLogEvent;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+import kotlin.Pair;
 import lombok.extern.log4j.Log4j2;
 
 /** a wrapper of cloudwatch client. */
@@ -35,6 +37,7 @@ import lombok.extern.log4j.Log4j2;
 public class CloudWatchService {
   public static final String SERVICE_DIMENSION = "Service";
   public static final String REMOTE_SERVICE_DIMENSION = "RemoteService";
+  public static final String REMOTE_TARGET_DIMENSION = "RemoteTarget";
 
   private static final int MAX_QUERY_PERIOD = 60;
   private static final String REQUESTER = "integrationTest";
@@ -62,15 +65,20 @@ public class CloudWatchService {
   public List<Metric> listMetrics(
       final String namespace,
       final String metricName,
-      final String dimensionKey,
-      final String dimensionValue) {
-    final DimensionFilter dimensionFilter =
-        new DimensionFilter().withName(dimensionKey).withValue(dimensionValue);
+      final List<Pair<String, String>> dimensionList) {
+    final List<DimensionFilter> dimensionFilters =
+        dimensionList.stream()
+            .map(
+                dimension ->
+                    new DimensionFilter()
+                        .withName(dimension.getFirst())
+                        .withValue(dimension.getSecond()))
+            .collect(Collectors.toList());
     final ListMetricsRequest listMetricsRequest =
         new ListMetricsRequest()
             .withNamespace(namespace)
             .withMetricName(metricName)
-            .withDimensions(dimensionFilter)
+            .withDimensions(dimensionFilters)
             .withRecentlyActive("PT3H");
     return amazonCloudWatch.listMetrics(listMetricsRequest).getMetrics();
   }
