@@ -63,7 +63,7 @@ runs:
             echo "Command executed successfully for execute_and_retry"
             break
           fi
-          if [[ $retry_counter -eq $MAX_RETRY ]]; then
+          if [[ $retry_counter -ge $MAX_RETRY ]]; then
             echo "Max retry reached, command failed to execute properly. Exiting action"
             exit 1
           fi
