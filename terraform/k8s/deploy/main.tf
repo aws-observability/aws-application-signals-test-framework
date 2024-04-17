@@ -40,7 +40,7 @@ resource "null_resource" "deploy" {
       git clone https://github.com/aws/amazon-cloudwatch-agent-operator -q
       cd amazon-cloudwatch-agent-operator/helm/
       echo "LOG: Installing CloudWatch Agent Operator using Helm"
-      helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=us-east-1 --set clusterName=k8s-cluster-${var.test_id}
+      helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${var.aws_region} --set clusterName=k8s-cluster-${var.test_id}
 
       # Wait for pods to exist before checking if they're ready
       sleep 60
