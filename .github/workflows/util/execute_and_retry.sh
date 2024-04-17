@@ -3,8 +3,8 @@
 # This function is for retrying commands in the case they fail. It accepts three arguments
 # $1: Number of retries it will attempt
 # $2: Command to execute
-# $3: Sleep time between run
-# $4: (Optional) Command for cleaning up resources if $2 fails
+# $3: (Optional) Sleep time between run. Default value is 10 seconds
+# $4: (Optional) Command for cleaning up resources if $2 fails. If this variable needs to be used then the sleep time has to be defined first
 execute_and_retry () {
   # Warning: The variables called in this function are not local and will be shared with the calling function.
   # Make sure that the variable names do not conflict
@@ -23,13 +23,13 @@ execute_and_retry () {
      echo "Command failed for execute_and_retry.sh, executing cleanup command for another attempt"
      eval "$cleanup"
      execute_retry_counter=$(($execute_retry_counter+1))
-     sleep $sleep_time
+     sleep "${sleep_time:-10}"
    else
      echo "Command executed successfully for execute_and_retry.sh, exiting script"
      break
    fi
 
-   if [ "$execute_retry_counter" -eq "$max_execute_retry" ]; then
+   if [ "$execute_retry_counter" -ge "$max_execute_retry" ]; then
      echo "Max retry reached, command failed to execute properly. Exiting execute_and_retry.sh script"
      exit 1
    fi
