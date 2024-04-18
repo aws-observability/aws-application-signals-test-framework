@@ -17,6 +17,12 @@ dependencyResolutionManagement {
     }
 }
 
+buildCache {
+    local {
+        isEnabled = true
+    }
+}
+
 
 // End to end tests
 include(":validator")
