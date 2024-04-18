@@ -108,6 +108,12 @@ jobs:
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
           --region ${{ inputs.aws-region }} \
           --approve"
+          cleanup: "eksctl delete iamserviceaccount \
+          --name service-account-${{ env.TESTING_ID }} \
+          --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
+          --cluster ${{ inputs.test-cluster-name }} \
+          --region ${{ inputs.aws-region }}"
+          sleep_time: 60
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -148,7 +154,7 @@ jobs:
             # after installing App Signals. Attempts to connect will be made for up to 10 minutes
             if [ $deployment_failed -eq 0 ]; then
               . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
-              execute_and_retry 2 \
+              execute_and_retry 3 \
               "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
@@ -157,10 +163,11 @@ jobs:
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.SAMPLE_APP_NAMESPACE }} && \
-              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}"
+              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
+              60
           
-              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
+              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
+              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
           
               echo "Attempting to connect to the main sample app endpoint"
               main_sample_app_endpoint=http://$(terraform output sample_app_endpoint)
@@ -224,7 +231,7 @@ jobs:
               break
             fi
           
-            if [ $retry_counter -eq $max_retry ]; then
+            if [ $retry_counter -ge $max_retry ]; then
               echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
               exit 1
             fi
