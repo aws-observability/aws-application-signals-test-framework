@@ -270,6 +270,8 @@ jobs:
         with:
           command: "./gradlew"
           cleanup: "./gradlew clean"
+          max_retry: 4
+          sleep_time: 30
 
       # Validation for app signals telemetry data
       - name: Call endpoint and validate generated EMF logs
