@@ -16,7 +16,6 @@ on:
         type: string
       application-signals-adot-image:
         required: false
-        required: false
         type: string
       application-signals-adot-image-tag:
         required: false
