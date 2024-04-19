@@ -23,9 +23,6 @@ on:
       caller-workflow-name:
         required: true
         type: string
-#      test-resource-folder:
-#        required: true
-#        type: string
 
 permissions:
   id-token: write
@@ -37,7 +34,7 @@ env:
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/eks
-#  TEST_RESOURCES_FOLDER: ${{ inputs.test-resource-folder }}
+  TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 jobs:
   python-e2e-eks-test:
@@ -52,7 +49,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download enablement script
-        uses: ${{ inputs.test-resource-folder }}/.github/workflows/actions/execute_and_retry
+        uses: ./.github/workflows/actions/execute_and_retry
         with:
           pre-command: "mkdir enablement-script && cd enablement-script"
           command: "wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/enable-app-signals.sh 
@@ -101,7 +98,7 @@ jobs:
 
       - name: Create role for AWS access from the sample app
         id: create_service_account
-        uses: ${{ inputs.test-resource-folder }}/.github/workflows/actions/execute_and_retry
+        uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "eksctl create iamserviceaccount \
           --name service-account-${{ env.TESTING_ID }} \
@@ -119,9 +116,9 @@ jobs:
           sleep_time: 60
 
       - name: Initiate Terraform
-        uses: ${{ inputs.test-resource-folder }}/.github/workflows/actions/execute_and_retry
+        uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${GITHUB_WORKSPACE}/terraform/python/eks && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
@@ -148,7 +145,7 @@ jobs:
               -var="python_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}" \
               -var="python_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}" \
             || deployment_failed=$?
-                    
+          
             if [ $deployment_failed -eq 1 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
             fi
@@ -158,14 +155,14 @@ jobs:
             if [ $deployment_failed -eq 0 ]; then          
               echo "Installing application signals to the sample app"
               echo "TEST_RESOURCES_FOLDER:"
-              echo ${{ inputs.test-resource-folder }}
-              . ${{ inputs.test-resource-folder }}/.github/workflows/util/execute_and_retry.sh
+              echo ${GITHUB_WORKSPACE}
+              . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
               execute_and_retry 3 \
-              "${{ inputs.test-resource-folder }}/enablement-script/enable-app-signals.sh \
+              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" \
-              "${{ inputs.test-resource-folder }}/enablement-script/clean-app-signals.sh \
+              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} && \
@@ -179,7 +176,7 @@ jobs:
                 execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
                 execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
               fi
-              
+          
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 10
 
@@ -204,7 +201,7 @@ jobs:
             # resources created from terraform and try again.
             if [ $deployment_failed -eq 1 ]; then
               echo "Cleaning up Application Signal"
-              ${{ inputs.test-resource-folder }}/enablement-script/clean-app-signals.sh \
+              ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}
