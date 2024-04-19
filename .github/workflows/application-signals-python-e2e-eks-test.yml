@@ -37,7 +37,8 @@ env:
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/eks
-  TEST_RESOURCES_FOLDER: ${{ inputs.test-resource-folder }}
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+#  TEST_RESOURCES_FOLDER: ${{ inputs.test-resource-folder }}
 
 jobs:
   python-e2e-eks-test:
