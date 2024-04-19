@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ${{ inputs.caller-workflow-name == 'appsignals-remote-eks-canary-test' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
-          ref: ${{ inputs.caller-workflow-name == 'appsignals-remote-eks-canary-test' && 'main' || github.ref }}
+          ref: ${{ inputs.caller-workflow-name == 'appsignals-remote-eks-canary-test' && 'python_e2e_migration' || github.ref }}
           fetch-depth: 0
 
       - name: Download enablement script
