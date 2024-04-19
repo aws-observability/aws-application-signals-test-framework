@@ -73,7 +73,13 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   K8S_CLIENT_CALL_METRIC("/expected-data-template/k8s/client-call-metric.mustache"),
   K8S_CLIENT_CALL_TRACE("/expected-data-template/k8s/client-call-trace.mustache"),
 
- /** Python EKS Test Case Validations */
+  /** Metric Limiter Test Case Validations */
+  METRIC_LIMITER_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/metric_limiter/outgoing-http-call-metric.mustache"),
+  METRIC_LIMITER_AWS_SDK_CALL_METRIC("/expected-data-template/metric_limiter/aws-sdk-call-metric.mustache"),
+  METRIC_LIMITER_REMOTE_SERVICE_METRIC("/expected-data-template/metric_limiter/remote-service-metric.mustache"),
+  METRIC_LIMITER_CLIENT_CALL_METRIC("/expected-data-template/metric_limiter/client-call-metric.mustache"),
+
+  /** Python EKS Test Case Validations */
   PYTHON_EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/eks/outgoing-http-call-log.mustache"),
   PYTHON_EKS_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/eks/outgoing-http-call-metric.mustache"),
   PYTHON_EKS_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/python/eks/outgoing-http-call-trace.mustache"),
