@@ -44,6 +44,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: ${{ inputs.caller-workflow-name == 'appsignals-remote-eks-canary-test' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
+          ref: ${{ inputs.caller-workflow-name == 'appsignals-remote-eks-canary-test' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Download enablement script
@@ -152,6 +154,8 @@ jobs:
             # after installing Application Signals. Attempts to connect will be made for up to 10 minutes
             if [ $deployment_failed -eq 0 ]; then          
               echo "Installing application signals to the sample app"
+              echo "TEST_RESOURCES_FOLDER:"
+              echo ${GITHUB_WORKSPACE}
               . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
               execute_and_retry 3 \
               "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
