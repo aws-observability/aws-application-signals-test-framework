@@ -24,9 +24,8 @@ on:
         required: true
         type: string
       test-resource-folder:
-        required: false
+        required: true
         type: string
-        default: ${{ github.workspace }}
 
 permissions:
   id-token: write
@@ -38,7 +37,7 @@ env:
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/eks
-  TEST_RESOURCES_FOLDER: ${{ inputs.test-resource-folder }}
+#  TEST_RESOURCES_FOLDER: ${{ inputs.test-resource-folder }}
 
 jobs:
   python-e2e-eks-test:
@@ -120,7 +119,7 @@ jobs:
           sleep_time: 60
 
       - name: Initiate Terraform
-        uses: ./.github/workflows/actions/execute_and_retry
+        uses: ${{ inputs.test-resource-folder }}/.github/workflows/actions/execute_and_retry
         with:
           command: "cd ${GITHUB_WORKSPACE}/terraform/python/eks && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
@@ -159,14 +158,14 @@ jobs:
             if [ $deployment_failed -eq 0 ]; then          
               echo "Installing application signals to the sample app"
               echo "TEST_RESOURCES_FOLDER:"
-              echo ${{ env.TEST_RESOURCES_FOLDER }}
-              . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
+              echo ${{ inputs.test-resource-folder }}
+              . ${{ inputs.test-resource-folder }}/.github/workflows/util/execute_and_retry.sh
               execute_and_retry 3 \
-              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
+              "${{ inputs.test-resource-folder }}/enablement-script/enable-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" \
-              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
+              "${{ inputs.test-resource-folder }}/enablement-script/clean-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} && \
@@ -205,7 +204,7 @@ jobs:
             # resources created from terraform and try again.
             if [ $deployment_failed -eq 1 ]; then
               echo "Cleaning up Application Signal"
-              ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
+              ${{ inputs.test-resource-folder }}/enablement-script/clean-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}
