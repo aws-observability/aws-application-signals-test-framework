@@ -26,13 +26,13 @@ permissions:
 env:
   # The precense of this env var is required for use by terraform and AWS CLI commands
   # It is not redundant
-  AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
-  TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
+#  AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+#  TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
   SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/generic
   ADOT_WHEEL_NAME: ${{ inputs.staging_wheel_name }}
-  TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
   python-e2e-ec2-test:

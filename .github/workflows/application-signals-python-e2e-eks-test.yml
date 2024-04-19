@@ -31,11 +31,10 @@ permissions:
 env:
   # The precense of this env var is required for use by terraform and AWS CLI commands
   # It is not redundant
-  AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+#  AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/eks
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
-#  TEST_RESOURCES_FOLDER: ${{ inputs.test-resource-folder }}
 
 jobs:
   python-e2e-eks-test:
