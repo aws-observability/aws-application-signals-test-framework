@@ -23,6 +23,9 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      test-resource-folder:
+        required: true
+        type: string
 
 permissions:
   id-token: write
@@ -34,7 +37,7 @@ env:
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   METRIC_NAMESPACE: AppSignals
   LOG_GROUP_NAME: /aws/appsignals/eks
-  TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
+  TEST_RESOURCES_FOLDER: ${{ inputs.aws-region }}
 
 jobs:
   python-e2e-eks-test:
@@ -155,7 +158,7 @@ jobs:
             if [ $deployment_failed -eq 0 ]; then          
               echo "Installing application signals to the sample app"
               echo "TEST_RESOURCES_FOLDER:"
-              echo ${GITHUB_WORKSPACE}
+              echo ${{ env.TEST_RESOURCES_FOLDER }}
               . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
               execute_and_retry 3 \
               "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
