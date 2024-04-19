@@ -23,9 +23,9 @@ on:
       caller-workflow-name:
         required: true
         type: string
-      test-resource-folder:
-        required: true
-        type: string
+#      test-resource-folder:
+#        required: true
+#        type: string
 
 permissions:
   id-token: write
