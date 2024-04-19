@@ -52,7 +52,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download enablement script
-        uses: ./.github/workflows/actions/execute_and_retry
+        uses: ${{ inputs.test-resource-folder }}/.github/workflows/actions/execute_and_retry
         with:
           pre-command: "mkdir enablement-script && cd enablement-script"
           command: "wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/enable-app-signals.sh 
@@ -101,7 +101,7 @@ jobs:
 
       - name: Create role for AWS access from the sample app
         id: create_service_account
-        uses: ./.github/workflows/actions/execute_and_retry
+        uses: ${{ inputs.test-resource-folder }}/.github/workflows/actions/execute_and_retry
         with:
           command: "eksctl create iamserviceaccount \
           --name service-account-${{ env.TESTING_ID }} \
