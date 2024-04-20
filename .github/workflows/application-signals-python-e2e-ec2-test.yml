@@ -42,8 +42,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.caller-workflow-name == 'appsignals-remote-ec2-canary-test' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
-          ref: ${{ inputs.caller-workflow-name == 'appsignals-remote-ec2-canary-test' && 'python_e2e_migration' || github.ref }}
+          repository: ${{ inputs.caller-workflow-name == 'main-build' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'python_e2e_migration' || github.ref }}
           fetch-depth: 0
 
       - name: Set CW Agent RPM environment variable
