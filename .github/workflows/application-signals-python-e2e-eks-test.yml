@@ -222,7 +222,7 @@ jobs:
               break
             fi
           
-            if [ $retry_counter -eq $max_retry ]; then
+            if [ $retry_counter -ge $max_retry ]; then
               echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
               exit 1
             fi
@@ -251,10 +251,10 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/outgoing-http-call
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/client-call
+          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/outgoing-http-call; echo
+          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call; echo
+          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}; echo
+          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/client-call; echo
 
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
@@ -308,7 +308,6 @@ jobs:
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ inputs.aws-region }}
           --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --app-namespace ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}
           --platform-info ${{ inputs.test-cluster-name }}
