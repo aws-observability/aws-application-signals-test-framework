@@ -42,8 +42,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: aws-observability/aws-application-signals-test-framework
-          ref: ga-python-migrated
-          fetch-depth: 0
+          ref: ga-python
 
       - name: Download enablement script
         uses: ./.github/workflows/actions/execute_and_retry
