@@ -10,7 +10,6 @@
   "PlatformType": "^AWS::EKS$",
   "Service": "^{{serviceName}}$",
   "Operation": "GET remote-service",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "Telemetry.Source": "^LocalRootSpan$",
   "Host": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
@@ -28,7 +27,6 @@
   "PlatformType": "^AWS::EKS$",
   "Service": "^{{serviceName}}$",
   "Operation": "GET remote-service",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "RemoteService": "{{remoteServiceDeploymentName}}",
   "RemoteOperation": "GET /healthcheck",
