@@ -39,6 +39,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: ${{ inputs.caller-workflow-name == 'main-build' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Generate testing id
