@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: aws-observability/aws-application-signals-test-framework
-          ref: ga-python
+          ref: ga-python-migrated
           fetch-depth: 0
 
       - name: Download enablement script
