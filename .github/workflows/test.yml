@@ -9,7 +9,7 @@ name: Test
 on:
   push:
     branches:
-      - ga-python
+      - ga-python-migrated
   workflow_dispatch:
 
 permissions:
