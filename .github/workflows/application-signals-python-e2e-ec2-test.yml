@@ -25,11 +25,12 @@ permissions:
 
 env:
   SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
-  METRIC_NAMESPACE: AppSignals
-  LOG_GROUP_NAME: /aws/appsignals/generic
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_WHEEL_NAME: ${{ inputs.staging_wheel_name }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
-  GET_CW_AGENT_RPM_COMMAND: "wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/1.300035.0b547/amazon-cloudwatch-agent.rpm"
+  GET_ADOT_JAR_COMMAND: "aws s3api get-object --bucket metric-schema-changes --key aws-opentelemetry-agent.jar adot.jar"
+  GET_CW_AGENT_RPM_COMMAND: "aws s3api get-object --bucket private-cloudwatch-agent-apm-beta --key linux_amd64/amazon-cloudwatch-agent.rpm cw-agent.rpm"
 
 jobs:
   python-e2e-ec2-test:
@@ -39,9 +40,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.caller-workflow-name == 'main-build' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'adot-pending-release' || github.ref }}
-          fetch-depth: 0
+          repository: aws-observability/aws-application-signals-test-framework
+          ref: ga-python
+
+      - name: Set CW Agent RPM environment variable
+        run: echo GET_CW_AGENT_RPM_COMMAND="aws s3api get-object --bucket private-cloudwatch-agent-apm-beta --key linux_amd64/amazon-cloudwatch-agent.rpm cw-agent.rpm" >> $GITHUB_ENV
 
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.job }}-${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
@@ -161,6 +164,7 @@ jobs:
         run: |
           echo "MAIN_SERVICE_ENDPOINT=$(terraform output sample_app_main_service_public_dns):8000" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_public_ip)" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
         working-directory: terraform/python/ec2
 
       # This steps increases the speed of the validation by creating the telemetry data in advance
@@ -194,6 +198,7 @@ jobs:
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
       - name: Validate generated metrics
@@ -210,6 +215,7 @@ jobs:
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
       - name: Validate generated traces
@@ -227,6 +233,7 @@ jobs:
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
       - name: Publish metric on test result

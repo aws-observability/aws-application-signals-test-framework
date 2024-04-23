@@ -29,8 +29,8 @@ permissions:
   contents: read
 
 env:
-  METRIC_NAMESPACE: AppSignals
-  LOG_GROUP_NAME: /aws/appsignals/eks
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
@@ -41,8 +41,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.caller-workflow-name == 'main-build' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'adot-pending-release' || github.ref }}
+          repository: aws-observability/aws-application-signals-test-framework
+          ref: ga-python
           fetch-depth: 0
 
       - name: Download enablement script
@@ -64,7 +64,7 @@ jobs:
         if: always()
         working-directory: enablement-script
         run: |
-          delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP_NAME }}' --region \$REGION"
+          delete_log_group="aws logs delete-log-group --log-group-name '/aws/appsignals/eks' --region \$REGION"
           sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
       - name: Generate testing id and python sample app namespace
@@ -171,13 +171,21 @@ jobs:
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
 
-              if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
-                echo "Patching staging adot image for main build:"
-                execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-                -p='[{"op": \"replace\", \"path\": \"/spec/template/spec/containers/0/args/2\", \"value\": \"--auto-instrumentation-python-image=${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}\"}]'"
-                execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
-                execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
-              fi
+#              if [ "${{ inputs.caller-workflow-name }}" == "main-build" ]; then
+#                echo "Patching staging adot image for main build:"
+#                execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+#                -p='[{"op": \"replace\", \"path\": \"/spec/template/spec/containers/0/args/0\", \"value\": \"--auto-instrumentation-python-image=${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}\"}]'"
+#                execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
+#                execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
+#              fi
+
+              echo "Patching staging adot image for main build"
+              execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+              -p='[{"op": \"replace\", \"path\": \"/spec/template/spec/containers/0/args/2\", \"value\": \"--auto-instrumentation-python-image=${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}\"}]'"
+
+              execute_and_retry 2 "kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": "public.ecr.aws/y8s3a7r9/cloudwatch-agent:latest"}]'"
+              execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
+              execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
           
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 10
