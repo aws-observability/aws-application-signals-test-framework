@@ -11,7 +11,7 @@
   "Service": "^{{serviceName}}$",
   "Operation": "InternalOperation",
   "Version": "^1$",
-  "Telemetry.Span": "^LocalRootSpan$",
+  "Telemetry.Source": "^LocalRootSpan$",
   "Host": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
 },
 {
@@ -29,6 +29,6 @@
   "Version": "^1$",
   "RemoteService": "local-root-client-call",
   "RemoteOperation": "GET /",
-  "Telemetry.Span": "^ClientSpan$",
+  "Telemetry.Source": "^ClientSpan$",
   "Host": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
 }]
