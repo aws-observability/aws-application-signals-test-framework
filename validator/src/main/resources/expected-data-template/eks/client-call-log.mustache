@@ -1,5 +1,5 @@
 [{
-  "EC2.AutoScalingGroupName": "^eks-.+",
+  "EC2.AutoScalingGroup": "^eks-.+",
   "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
   "EKS.Cluster": "^{{platformInfo}}$",
   "Environment": "^eks:{{platformInfo}}/{{appNamespace}}$",
@@ -10,13 +10,12 @@
   "PlatformType": "^AWS::EKS$",
   "Service": "^{{serviceName}}$",
   "Operation": "InternalOperation",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "aws.span.kind": "^LOCAL_ROOT$",
-  "host.name": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
+  "Telemetry.Span": "^LocalRootSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
 },
 {
-  "EC2.AutoScalingGroupName": "^eks-.+",
+  "EC2.AutoScalingGroup": "^eks-.+",
   "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
   "EKS.Cluster": "^{{platformInfo}}$",
   "Environment": "^eks:{{platformInfo}}/{{appNamespace}}$",
@@ -27,10 +26,9 @@
   "PlatformType": "^AWS::EKS$",
   "Service": "^{{serviceName}}$",
   "Operation": "InternalOperation",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "RemoteService": "local-root-client-call",
   "RemoteOperation": "GET /",
-  "aws.span.kind": "^CLIENT$",
-  "host.name": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
+  "Telemetry.Span": "^ClientSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
 }]
