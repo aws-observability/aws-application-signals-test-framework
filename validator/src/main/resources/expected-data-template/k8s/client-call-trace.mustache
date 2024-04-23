@@ -2,9 +2,8 @@
   "name": "^{{serviceName}}$",
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
-    "HostedIn.K8s.Cluster": "^{{platformInfo}}$",
-    "aws.local.operation": "^InternalOperation$"
+    "aws.local.operation": "^InternalOperation$",
+    "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
   },
   "metadata": {
     "default": {
@@ -23,12 +22,11 @@
           }
       },
       "annotations": {
-        "HostedIn.K8s.Namespace": "^{{appNamespace}}$",
-        "HostedIn.K8s.Cluster": "^{{platformInfo}}$",
         "aws.local.service": "^{{serviceName}}$",
         "aws.local.operation": "^InternalOperation$",
         "aws.remote.service": "^local-root-client-call$",
-        "aws.remote.operation": "GET /"
+        "aws.remote.operation": "GET /",
+        "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
       },
       "metadata": {
         "default": {

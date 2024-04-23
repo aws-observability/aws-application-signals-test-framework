@@ -28,10 +28,12 @@ env:
   # It is not redundant
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
-  METRIC_NAMESPACE: AppSignals
-  LOG_GROUP_NAME: /aws/appsignals/k8s
+  CW_AGENT_IMAGE_RELEASE_VERSION: public.ecr.aws/y8s3a7r9/cloudwatch-agent:latest
+  APP_SIGNALS_ADOT_IMAGE_RELEASE_VERSION: public.ecr.aws/y8s3a7r9/cloudwatch-agent:java
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
   MASTER_NODE_SSH_KEY: ${{ secrets.APP_SIGNALS_E2E_K8S_SSH_KEY_IAD }}
-  MAIN_SERVICE_ENDPOINT: ${{ secrets.APP_SIGNALS_E2E_K8S_MASTER_NODE_ENDPOINT }}
+  MAIN_SERVICE_ENDPOINT: ${{ secrets.APP_SIGNALS_E2E_K8S_GA_MASTER_NODE_ENDPOINT }}
   SAMPLE_APP_NAMESPACE: sample-app-namespace
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
 
@@ -89,12 +91,30 @@ jobs:
             -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="ssh_key=${{ env.MASTER_NODE_SSH_KEY }}" \
-            -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}"
+            -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}" \
+            -var="cwagent_image=${{ env.CW_AGENT_IMAGE_RELEASE_VERSION }}" \
+            -var="adot_image=${{ env.APP_SIGNALS_ADOT_IMAGE_RELEASE_VERSION }}"
 
       - name: Get Remote Service IP
         run: |
           echo REMOTE_SERVICE_IP="$(aws ssm get-parameter --region ${{ env.AWS_DEFAULT_REGION }} --name remote-service-ip | jq -r '.Parameter.Value')" >> $GITHUB_ENV
 
+
+      - name: Wait for app endpoint to come online
+        id: endpoint-check
+        run: |
+          attempt_counter=0
+          max_attempts=30
+          until $(curl --output /dev/null --silent --head --fail http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100/); do
+            if [ ${attempt_counter} -eq ${max_attempts} ];then
+              echo "Max attempts reached"
+              exit 1
+            fi
+          
+            printf '.'
+            attempt_counter=$(($attempt_counter+1))
+            sleep 10
+          done
       # This steps increases the speed of the validation by creating the telemetry data in advance
       # It is run after the gradle build to give the app time to initialize after the pods become ready
       - name: Call all test APIs
