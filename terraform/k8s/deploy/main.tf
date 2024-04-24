@@ -36,9 +36,9 @@ resource "null_resource" "deploy" {
       [ ! -e remote-service-depl.yaml ] || rm remote-service-depl.yaml
 
       # Clone and install operator onto cluster
-      echo "LOG: Cloning operator repo"
-      git clone https://github.com/aws/amazon-cloudwatch-agent-operator -q
-      cd amazon-cloudwatch-agent-operator/helm/
+      echo "LOG: Cloning helm-charts repo"
+      git clone https://github.com/aws-observability/helm-charts -q
+      cd helm-charts/charts/amazon-cloudwatch-observability/
       echo "LOG: Installing CloudWatch Agent Operator using Helm"
       helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${var.aws_region} --set clusterName=k8s-cluster-${var.test_id}
 
