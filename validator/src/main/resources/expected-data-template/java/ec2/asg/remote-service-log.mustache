@@ -1,24 +1,22 @@
 [{
-  "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+  "EC2.AutoScalingGroup": "^{{platformInfo}}$",
   "EC2.InstanceId": "^{{instanceId}}$",
   "Environment": "^ec2:{{platformInfo}}$",
   "PlatformType": "^AWS::EC2$",
   "Operation": "GET /remote-service",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "aws.span.kind": "^LOCAL_ROOT$",
-  "host.name": "^{{privateDnsName}}$"
+  "Telemetry.Source": "^ClientSpan$",
+  "Host": "^{{privateDnsName}}$"
 },
 {
-  "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+  "EC2.AutoScalingGroup": "^{{platformInfo}}$",
   "EC2.InstanceId": "^{{instanceId}}$",
   "Environment": "^ec2:{{platformInfo}}$",
   "PlatformType": "^AWS::EC2$",
   "Operation": "GET /remote-service",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "RemoteService": "{{remoteServiceDeploymentName}}",
   "RemoteOperation": "GET /healthcheck",
-  "aws.span.kind": "^CLIENT$",
-  "host.name": "^{{privateDnsName}}$"
+  "Telemetry.Source": "^ClientSpan$",
+  "Host": "^{{privateDnsName}}$"
 }]

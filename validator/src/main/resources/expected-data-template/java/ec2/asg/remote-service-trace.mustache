@@ -19,7 +19,7 @@
   },
   "metadata": {
     "default": {
-      "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+      "EC2.AutoScalingGroup": "^{{platformInfo}}$",
       "EC2.InstanceId": "^{{instanceId}}$",
       "PlatformType": "^AWS::EC2$",
       "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
@@ -50,7 +50,7 @@
           },
           "metadata": {
             "default": {
-              "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+              "EC2.AutoScalingGroup": "^{{platformInfo}}$",
               "EC2.InstanceId": "^{{instanceId}}$",
               "PlatformType": "^AWS::EC2$",
               "aws.span.kind": "^CLIENT$"

@@ -1,24 +1,22 @@
 [{
-  "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+  "EC2.AutoScalingGroup": "^{{platformInfo}}$",
   "EC2.InstanceId": "^{{instanceId}}$",
   "Environment": "^ec2:{{platformInfo}}$",
   "PlatformType": "^AWS::EC2$",
   "Operation": "InternalOperation",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "aws.span.kind": "^LOCAL_ROOT$",
-  "host.name": "^{{privateDnsName}}$"
+  "Telemetry": "^LocalRootSpan$",
+  "Host": "^{{privateDnsName}}$"
 },
 {
-  "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+  "EC2.AutoScalingGroup": "^{{platformInfo}}$",
   "EC2.InstanceId": "^{{instanceId}}$",
   "Environment": "^ec2:{{platformInfo}}$",
   "PlatformType": "^AWS::EC2$",
   "Operation": "InternalOperation",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "RemoteService": "local-root-client-call",
   "RemoteOperation": "GET /",
-  "aws.span.kind": "^CLIENT$",
-  "host.name": "^{{privateDnsName}}$"
+  "Telemetry.Source": "^ClientSpan$",
+  "Host": "^{{privateDnsName}}$"
 }]

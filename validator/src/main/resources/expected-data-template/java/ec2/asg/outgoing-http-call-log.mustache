@@ -1,24 +1,22 @@
 [{
-  "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+  "EC2.AutoScalingGroup": "^{{platformInfo}}$",
   "EC2.InstanceId": "^{{instanceId}}$",
   "Environment": "^ec2:{{platformInfo}}$",
   "PlatformType": "^AWS::EC2$",
   "Operation": "GET /outgoing-http-call",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "aws.span.kind": "^LOCAL_ROOT$",
-  "host.name": "^{{privateDnsName}}$"
+  "Telemetry.Source": "^LocalRootSpan$",
+  "Host": "^{{privateDnsName}}$"
 },
 {
-  "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+  "EC2.AutoScalingGroup": "^{{platformInfo}}$",
   "EC2.InstanceId": "^{{instanceId}}$",
   "Environment": "^ec2:{{platformInfo}}$",
   "PlatformType": "^AWS::EC2$",
   "Operation": "GET /outgoing-http-call",
-  "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "RemoteService": "www.amazon.com",
   "RemoteOperation": "GET /",
-  "aws.span.kind": "^CLIENT$",
-  "host.name": "^{{privateDnsName}}$"
+  "Telemetry.Source": "^ClientSpan$",
+  "Host": "^{{privateDnsName}}$"
 }]
