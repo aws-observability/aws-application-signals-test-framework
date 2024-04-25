@@ -117,6 +117,7 @@ jobs:
         with:
           command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          sleep_time: 60
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-python-app
