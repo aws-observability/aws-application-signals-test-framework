@@ -81,6 +81,7 @@ jobs:
         with:
           command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/k8s/deploy && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          sleep_time: 60
 
       - name: Deploy Operator and Sample App using Terraform
         working-directory: terraform/k8s/deploy
