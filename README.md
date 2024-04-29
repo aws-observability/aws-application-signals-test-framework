@@ -79,13 +79,13 @@ Note: If you do not want to test all 5 regions, you can create one for us-east-1
 ### 4. Building Sample App to ECR
 Create two ECR repositories: one for the sample app main service and another for the sample app remote service.
 Follow the instructions to build the sample app image and upload it to the ECR:
-- [Java Sample App build instruction](https://github.com/aws-observability/aws-application-signals-test-framework/blob/main/sample-apps/README.md#eks-use-case-uploading-to-ecr),
+- [Java Sample App build instruction](https://github.com/aws-observability/aws-application-signals-test-framework/blob/main/sample-apps/README.md#eks-use-case-uploading-to-ecr)
 - [Python Sample App build instruction](https://github.com/aws-observability/aws-application-signals-test-framework/blob/main/sample-apps/python/README.md#eks-use-case-uploading-to-ecr)
 
 ### 5. Building Sample App to S3 Bucket
 Create an S3 Bucket to store the artifacts for the sample app main service and sample app remote service.
 Follow the instructions to build the sample app .jar and upload it to the bucket:
-- [Java .jar files build instruction](https://github.com/aws-observability/aws-application-signals-test-framework/blob/main/sample-apps/README.md#ec2-use-case-building-the-jar-files),
+- [Java .jar files build instruction](https://github.com/aws-observability/aws-application-signals-test-framework/blob/main/sample-apps/README.md#ec2-use-case-building-the-jar-files)
 - [Python .zip file build instruction](https://github.com/aws-observability/aws-application-signals-test-framework/blob/main/sample-apps/python/README.md#ec2-use-case-building-the-jar-files)
 
 ### 6. Setting up repository
