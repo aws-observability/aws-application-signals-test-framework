@@ -22,7 +22,7 @@ docker push ${REPOSITORY_PREFIX}/pythonsampleapp/remote-service:latest
 ```
 
 
-## EC2 Use Case: Building the JAR Files:
+## EC2 Use Case: Building the ZIP File:
 1. Compress the folder with: `zip -r python-sample-app.zip .`
 2. Login to the testing account
 3. Create a new S3 bucket if there's no existing one.
