@@ -97,7 +97,7 @@ public class CWMetricValidator implements IValidator {
           List<String> serviceNames =
               Lists.newArrayList(
                   context.getServiceName(), context.getRemoteServiceDeploymentName());
-          // TODO - Put the following back in: "www.amazon.com",  "AWS.SDK.S3"
+          // TODO - Put the following back in: "www.amazon.com"
           List<String> remoteServiceNames =
               Lists.newArrayList(context.getRemoteServiceDeploymentName());
           if (context.getRemoteServiceName() != null && !context.getRemoteServiceName().isEmpty()) {
@@ -120,12 +120,14 @@ public class CWMetricValidator implements IValidator {
                     new Pair<>(CloudWatchService.REMOTE_SERVICE_DIMENSION, remoteServiceName)));
           }
           // Query for metrics that includes both of these <remoteService, remoteTarget> values.
-          // Querying just 'remoteService="AWS.SDK.S3"' would also work, but that will result in
+          // Querying just 'remoteService="AWS.SDK.S3"' would also work, but that can result in
           // returning too many canary metrics and may cause issues.
-          dimensionLists.add(
-              Arrays.asList(
-                  new Pair<>(CloudWatchService.REMOTE_SERVICE_DIMENSION, "AWS.SDK.S3"),
-                  new Pair<>(CloudWatchService.REMOTE_TARGET_DIMENSION, context.getRemoteTargetName())));
+          if (context.getRemoteTargetName() != null && !context.getRemoteTargetName().isEmpty()) {
+            dimensionLists.add(
+                Arrays.asList(
+                    new Pair<>(CloudWatchService.REMOTE_SERVICE_DIMENSION, "AWS.SDK.S3"),
+                    new Pair<>(CloudWatchService.REMOTE_TARGET_DIMENSION, context.getRemoteTargetName())));
+          }
 
           // Populate actualMetricList with metrics that pass through at least one of the dimension filters
           for (List<Pair<String, String>> dimensionList : dimensionLists) {
