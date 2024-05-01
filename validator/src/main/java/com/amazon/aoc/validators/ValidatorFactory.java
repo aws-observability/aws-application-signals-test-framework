@@ -68,7 +68,7 @@ public class ValidatorFactory {
         // ONLY ONE OF THESE CAN BE USED PER VALIDATOR CALL
         caller =
             new HttpCaller(
-                context.getEndpoint(), validationConfig.getHttpPath(), context.getRequestBody());
+                context.getEndpoint(), validationConfig.getHttpPath(), context.getQueryString());
         break;
       case "none":
         caller = null;
