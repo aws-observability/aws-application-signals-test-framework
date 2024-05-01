@@ -288,7 +288,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
       - name: Call endpoints and validate generated metrics
@@ -306,7 +306,7 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Call endpoints and validate generated traces
@@ -323,7 +323,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
       - name: Publish metric on test result

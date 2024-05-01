@@ -28,7 +28,7 @@ public class ValidationConfig {
 
   String httpPath;
   String httpMethod;
-  String requestBody;
+  String queryString;
 
   String expectedResultPath;
   Boolean shouldValidateMetricValue;

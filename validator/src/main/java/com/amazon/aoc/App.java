@@ -81,8 +81,8 @@ public class App implements Callable<Integer> {
   @CommandLine.Option(names = {"--endpoint"})
   private String endpoint;
 
-  @CommandLine.Option(names = {"--request-body"})
-  private String requestBody;
+  @CommandLine.Option(names = {"--query-string"})
+  private String queryString;
 
   @CommandLine.Option(
       names = {"--log-group"},
@@ -165,7 +165,7 @@ public class App implements Callable<Integer> {
     context.setRemoteServiceDeploymentName(this.remoteServiceDeploymentName);
     context.setRemoteTargetName(this.remoteTargetName);
     context.setEndpoint(this.endpoint);
-    context.setRequestBody(this.requestBody);
+    context.setQueryString(this.queryString);
     context.setLogGroup(this.logGroup);
     context.setEcsContext(buildJsonContext(ecsContext, ECSContext.class));
     context.setEc2Context(buildJsonContext(ec2Context, EC2Context.class));

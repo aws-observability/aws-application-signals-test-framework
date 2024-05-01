@@ -190,7 +190,7 @@ jobs:
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
-          --request-body ip=${{ env.REMOTE_SERVICE_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --rollup'
 
@@ -206,7 +206,7 @@ jobs:
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
-          --request-body ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --rollup'
 
@@ -223,7 +223,7 @@ jobs:
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
-          --request-body ip=${{ env.REMOTE_SERVICE_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --rollup'
 
