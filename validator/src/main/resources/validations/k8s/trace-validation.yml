@@ -14,7 +14,7 @@
   validationType: "trace"
   httpPath: "/remote-service"
   httpMethod: "get"
-  callingType: "http-with-body"
+  callingType: "http-with-query"
   expectedTraceTemplate: "K8S_REMOTE_SERVICE_TRACE"
 -
   validationType: "trace"

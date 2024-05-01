@@ -14,7 +14,7 @@
   validationType: "cw-log"
   httpPath: "/remote-service"
   httpMethod: "get"
-  callingType: "http-with-body"
+  callingType: "http-with-query"
   expectedLogStructureTemplate: "PYTHON_EKS_REMOTE_SERVICE_LOG"
 -
   validationType: "cw-log"
