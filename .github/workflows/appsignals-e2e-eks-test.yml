@@ -306,7 +306,6 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --remote-target-name ::s3:::e2e-test-bucket-name-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 

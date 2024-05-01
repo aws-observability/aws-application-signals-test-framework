@@ -182,6 +182,7 @@ jobs:
       - name: Validate generated EMF logs
         id: log-validation
         run: ./gradlew validator:run --args='-c python/ec2/log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
           --region ${{ inputs.aws-region }}
@@ -197,6 +198,7 @@ jobs:
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c python/ec2/metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
           --region ${{ inputs.aws-region }}
@@ -204,7 +206,6 @@ jobs:
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
-          --remote-target-name ::s3:::e2e-test-bucket-name-${{ env.TESTING_ID }}
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --rollup'
@@ -213,6 +214,7 @@ jobs:
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c python/ec2/trace-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
           --region ${{ inputs.aws-region }}
