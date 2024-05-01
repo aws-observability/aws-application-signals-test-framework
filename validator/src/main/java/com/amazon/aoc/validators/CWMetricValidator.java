@@ -92,8 +92,8 @@ public class CWMetricValidator implements IValidator {
     RetryHelper.retry(
         maxRetryCount,
         () -> {
-          // We will query metrics with specific [Service], [RemoteService], or [RemoteService, RemoteTarget] dimension
-          // values to ensure we get all metrics from all aggregations, specifically the [RemoteService] aggregation.
+          // We will query metrics that include Service, RemoteService, or RemoteTarget dimensions
+          // to ensure we get all metrics from all aggregations, specifically the [RemoteService] aggregation.
           List<String> serviceNames =
               Lists.newArrayList(
                   context.getServiceName(), context.getRemoteServiceDeploymentName());
@@ -106,7 +106,7 @@ public class CWMetricValidator implements IValidator {
 
           List<Metric> actualMetricList = Lists.newArrayList();
 
-          // Add sets of dimesion filters to use for each query to CloudWatch.
+          // Add sets of dimension filters to use for each query to CloudWatch.
           List<List<Pair<String, String>>> dimensionLists = Lists.newArrayList();
           // Query metrics that includes any of these <service> values.
           for (String serviceName : serviceNames) {
@@ -122,11 +122,11 @@ public class CWMetricValidator implements IValidator {
           // Query for metrics that includes both of these <remoteService, remoteTarget> values.
           // Querying just 'remoteService="AWS.SDK.S3"' would also work, but that can result in
           // returning too many canary metrics and may cause issues.
-          if (context.getRemoteTargetName() != null && !context.getRemoteTargetName().isEmpty()) {
+          if (context.getTestingId() != null && !context.getTestingId().isEmpty()) {
             dimensionLists.add(
                 Arrays.asList(
                     new Pair<>(CloudWatchService.REMOTE_SERVICE_DIMENSION, "AWS.SDK.S3"),
-                    new Pair<>(CloudWatchService.REMOTE_TARGET_DIMENSION, context.getRemoteTargetName())));
+                    new Pair<>(CloudWatchService.REMOTE_TARGET_DIMENSION, "::s3:::e2e-test-bucket-name-" + context.getTestingId())));
           }
 
           // Populate actualMetricList with metrics that pass through at least one of the dimension filters
