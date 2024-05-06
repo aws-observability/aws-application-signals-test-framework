@@ -30,14 +30,12 @@ import com.amazonaws.services.cloudwatch.model.Metric;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import kotlin.Pair;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -92,46 +90,37 @@ public class CWMetricValidator implements IValidator {
     RetryHelper.retry(
         maxRetryCount,
         () -> {
-          // We will query metrics that include Service, RemoteService, or RemoteTarget dimensions
-          // to ensure we get all metrics from all aggregations, specifically the [RemoteService] aggregation.
+          // We will query the Service, RemoteService, and RemoteTarget dimensions to ensure we
+          // get all metrics from all aggregations, specifically the [RemoteService] aggregation.
           List<String> serviceNames =
               Lists.newArrayList(
                   context.getServiceName(), context.getRemoteServiceDeploymentName());
           List<String> remoteServiceNames =
               Lists.newArrayList(context.getRemoteServiceDeploymentName());
+          List<String> remoteTargetNames = Lists.newArrayList();
           if (context.getRemoteServiceName() != null && !context.getRemoteServiceName().isEmpty()) {
             serviceNames.add(context.getRemoteServiceName());
           }
+          if (context.getTestingId() != null && !context.getTestingId().isEmpty()) {
+            remoteTargetNames.add("::s3:::e2e-test-bucket-name-" + context.getTestingId());
+          }
 
           List<Metric> actualMetricList = Lists.newArrayList();
-
-          // Add sets of dimension filters to use for each query to CloudWatch.
-          List<List<Pair<String, String>>> dimensionLists = Lists.newArrayList();
-          // Query metrics that includes any of these <service> values.
-          for (String serviceName : serviceNames) {
-            dimensionLists.add(
-                Arrays.asList(new Pair<>(CloudWatchService.SERVICE_DIMENSION, serviceName)));
-          }
-          // Query metrics that includes any of these <remoteService> values.
-          for (String remoteServiceName : remoteServiceNames) {
-            dimensionLists.add(
-                Arrays.asList(
-                    new Pair<>(CloudWatchService.REMOTE_SERVICE_DIMENSION, remoteServiceName)));
-          }
-          // Query for metrics that includes both of these <remoteService, remoteTarget> values.
-          // Querying just 'remoteService="AWS.SDK.S3"' would also work, but that can result in
-          // returning too many canary metrics and may cause issues.
-          if (context.getTestingId() != null && !context.getTestingId().isEmpty()) {
-            dimensionLists.add(
-                Arrays.asList(
-                    new Pair<>(CloudWatchService.REMOTE_SERVICE_DIMENSION, "AWS.SDK.S3"),
-                    new Pair<>(CloudWatchService.REMOTE_TARGET_DIMENSION, "::s3:::e2e-test-bucket-name-" + context.getTestingId())));
-          }
-
-          // Populate actualMetricList with metrics that pass through at least one of the dimension filters
-          for (List<Pair<String, String>> dimensionList : dimensionLists) {
-            addMetrics(dimensionList, expectedMetricList, actualMetricList);
-          }
+          addMetrics(
+              CloudWatchService.SERVICE_DIMENSION,
+              serviceNames,
+              expectedMetricList,
+              actualMetricList);
+          addMetrics(
+              CloudWatchService.REMOTE_SERVICE_DIMENSION,
+              remoteServiceNames,
+              expectedMetricList,
+              actualMetricList);
+          addMetrics(
+              CloudWatchService.REMOTE_TARGET_DIMENSION,
+              remoteTargetNames,
+              expectedMetricList,
+              actualMetricList);
 
           // remove the skip dimensions
           log.info("dimensions to be skipped in validation: {}", skippedDimensionNameList);
@@ -151,12 +140,16 @@ public class CWMetricValidator implements IValidator {
   }
 
   private void addMetrics(
-      List<Pair<String, String>> dimensionList,
+      String dimensionName,
+      List<String> dimensionValues,
       List<Metric> expectedMetricList,
       List<Metric> actualMetricList)
       throws Exception {
-    actualMetricList.addAll(
-        this.listMetricFromCloudWatch(cloudWatchService, expectedMetricList, dimensionList));
+    for (String dimensionValue : dimensionValues) {
+      actualMetricList.addAll(
+          this.listMetricFromCloudWatch(
+              cloudWatchService, expectedMetricList, dimensionName, dimensionValue));
+    }
   }
 
   /**
@@ -209,7 +202,8 @@ public class CWMetricValidator implements IValidator {
   private List<Metric> listMetricFromCloudWatch(
       CloudWatchService cloudWatchService,
       List<Metric> expectedMetricList,
-      List<Pair<String, String>> dimensionList)
+      String dimensionKey,
+      String dimensionValue)
       throws IOException {
     // put namespace into the map key, so that we can use it to search metric
     HashMap<String, String> metricNameMap = new HashMap<>();
@@ -221,7 +215,8 @@ public class CWMetricValidator implements IValidator {
     List<Metric> result = new ArrayList<>();
     for (String metricName : metricNameMap.keySet()) {
       result.addAll(
-          cloudWatchService.listMetrics(metricNameMap.get(metricName), metricName, dimensionList));
+          cloudWatchService.listMetrics(
+              metricNameMap.get(metricName), metricName, dimensionKey, dimensionValue));
     }
     return result;
   }
