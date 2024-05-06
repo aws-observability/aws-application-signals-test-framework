@@ -97,7 +97,6 @@ public class CWMetricValidator implements IValidator {
           List<String> serviceNames =
               Lists.newArrayList(
                   context.getServiceName(), context.getRemoteServiceDeploymentName());
-          // TODO - Put the following back in: "www.amazon.com"
           List<String> remoteServiceNames =
               Lists.newArrayList(context.getRemoteServiceDeploymentName());
           if (context.getRemoteServiceName() != null && !context.getRemoteServiceName().isEmpty()) {
