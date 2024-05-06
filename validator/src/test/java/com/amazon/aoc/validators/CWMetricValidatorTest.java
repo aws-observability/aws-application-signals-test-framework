@@ -52,8 +52,8 @@ public class CWMetricValidatorTest {
       "file://" + System.getProperty("user.dir") + "/src/test/test-resources/";
   private static final String SERVICE_NAME = "serviceName";
   private static final String REMOTE_SERVICE_NAME = "remoteServiceName";
-  private static final String REMOTE_TARGET_NAME = "remoteTargetName";
   private static final String REMOTE_SERVICE_DEPLOYMENT_NAME = "remoteServiceDeploymentName";
+  private static final String TESTING_ID = "testIdentifier";
 
   private Context context;
   private HttpCaller httpCaller;
@@ -162,7 +162,7 @@ public class CWMetricValidatorTest {
     context.setServiceName(SERVICE_NAME);
     context.setRemoteServiceName(REMOTE_SERVICE_NAME);
     context.setRemoteServiceDeploymentName(REMOTE_SERVICE_DEPLOYMENT_NAME);
-    context.setRemoteTargetName(REMOTE_TARGET_NAME);
+    context.setTestingId(TESTING_ID);
     return context;
   }
 
@@ -225,7 +225,7 @@ public class CWMetricValidatorTest {
             eq(
                 Arrays.asList(
                     new Pair<String, String>(REMOTE_SERVICE_DIMENSION, "AWS.SDK.S3"),
-                    new Pair<String, String>(REMOTE_TARGET_DIMENSION, REMOTE_TARGET_NAME)))))
+                    new Pair<String, String>(REMOTE_TARGET_DIMENSION, "::s3:::e2e-test-bucket-name-" + context.getTestingId())))))
         .thenReturn(remoteMetricsWithS3Target);
     return cloudWatchService;
   }

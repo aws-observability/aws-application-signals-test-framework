@@ -14,7 +14,7 @@ on:
       test-cluster-name:
         required: true
         type: string
-      application-signals-adot-image:
+      appsignals-adot-image-name:
         required: false
         type: string
       caller-workflow-name:
