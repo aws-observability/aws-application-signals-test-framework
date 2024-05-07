@@ -90,16 +90,19 @@ public class CWMetricValidator implements IValidator {
     RetryHelper.retry(
         maxRetryCount,
         () -> {
-          // We will query both the Service and RemoteService dimensions to ensure we get all
-          // metrics from all aggregations, specifically the [RemoteService] aggregation.
+          // We will query the Service, RemoteService, and RemoteTarget dimensions to ensure we
+          // get all metrics from all aggregations, specifically the [RemoteService] aggregation.
           List<String> serviceNames =
               Lists.newArrayList(
                   context.getServiceName(), context.getRemoteServiceDeploymentName());
-          // TODO - Put the following back in: "www.amazon.com",  "AWS.SDK.S3"
           List<String> remoteServiceNames =
               Lists.newArrayList(context.getRemoteServiceDeploymentName());
+          List<String> remoteTargetNames = Lists.newArrayList();
           if (context.getRemoteServiceName() != null && !context.getRemoteServiceName().isEmpty()) {
             serviceNames.add(context.getRemoteServiceName());
+          }
+          if (context.getTestingId() != null && !context.getTestingId().isEmpty()) {
+            remoteTargetNames.add("::s3:::e2e-test-bucket-name-" + context.getTestingId());
           }
 
           List<Metric> actualMetricList = Lists.newArrayList();
@@ -111,6 +114,11 @@ public class CWMetricValidator implements IValidator {
           addMetrics(
               CloudWatchService.REMOTE_SERVICE_DIMENSION,
               remoteServiceNames,
+              expectedMetricList,
+              actualMetricList);
+          addMetrics(
+              CloudWatchService.REMOTE_TARGET_DIMENSION,
+              remoteTargetNames,
               expectedMetricList,
               actualMetricList);
 

@@ -14,7 +14,7 @@
   validationType: "cw-metric"
   httpPath: "/remote-service"
   httpMethod: "get"
-  callingType: "http-with-body"
+  callingType: "http-with-query"
   expectedMetricTemplate: "K8S_REMOTE_SERVICE_METRIC"
 -
   validationType: "cw-metric"

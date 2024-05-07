@@ -35,6 +35,7 @@ import lombok.extern.log4j.Log4j2;
 public class CloudWatchService {
   public static final String SERVICE_DIMENSION = "Service";
   public static final String REMOTE_SERVICE_DIMENSION = "RemoteService";
+  public static final String REMOTE_TARGET_DIMENSION = "RemoteTarget";
 
   private static final int MAX_QUERY_PERIOD = 60;
   private static final String REQUESTER = "integrationTest";
