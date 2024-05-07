@@ -261,10 +261,10 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s http://${{ env.APP_ENDPOINT }}/outgoing-http-call/
-          curl -S -s http://${{ env.APP_ENDPOINT }}/aws-sdk-call/
-          curl -S -s http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}/
-          curl -S -s http://${{ env.APP_ENDPOINT }}/client-call/
+          curl -S -s http://${{ env.APP_ENDPOINT }}/outgoing-http-call
+          curl -S -s http://${{ env.APP_ENDPOINT }}/aws-sdk-call?testingId=${{ env.TESTING_ID }}
+          curl -S -s http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          curl -S -s http://${{ env.APP_ENDPOINT }}/client-call
 
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
@@ -289,7 +289,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
       - name: Call endpoints and validate generated metrics
@@ -307,7 +307,7 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Call endpoints and validate generated traces
@@ -324,7 +324,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
       - name: Publish metric on test result

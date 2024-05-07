@@ -95,7 +95,7 @@
       value: AWS.SDK.S3
     -
       name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
 
 -
   metricName: Latency
@@ -115,7 +115,35 @@
       value: AWS.SDK.S3
     -
       name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.Environment
+      value: EC2
+    -
+      name: RemoteService
+      value: AWS.SDK.S3
+    -
+      name: RemoteTarget
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: AWS.SDK.S3
+    -
+      name: RemoteTarget
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
 
 -
   metricName: Error
@@ -214,7 +242,7 @@
       value: AWS.SDK.S3
     -
       name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
 
 -
   metricName: Error
@@ -234,7 +262,35 @@
       value: AWS.SDK.S3
     -
       name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.Environment
+      value: EC2
+    -
+      name: RemoteService
+      value: AWS.SDK.S3
+    -
+      name: RemoteTarget
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: AWS.SDK.S3
+    -
+      name: RemoteTarget
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
 
 -
   metricName: Fault
@@ -333,7 +389,7 @@
       value: AWS.SDK.S3
     -
       name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
 
 -
   metricName: Fault
@@ -353,6 +409,33 @@
       value: AWS.SDK.S3
     -
       name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
 
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.Environment
+      value: EC2
+    -
+      name: RemoteService
+      value: AWS.SDK.S3
+    -
+      name: RemoteTarget
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: AWS.SDK.S3
+    -
+      name: RemoteTarget
+      value: ::s3:::e2e-test-bucket-name-{{testingId}}
 

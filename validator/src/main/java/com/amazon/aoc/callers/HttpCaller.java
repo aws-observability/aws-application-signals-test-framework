@@ -32,7 +32,7 @@ import okhttp3.Response;
 public class HttpCaller implements ICaller {
   private String url;
   private String path;
-  private String requestBody;
+  private String queryString;
 
   /**
    * construct httpCaller.
@@ -51,11 +51,11 @@ public class HttpCaller implements ICaller {
    *
    * @param endpoint the endpoint to call, for example "http://127.0.0.1:8080"
    * @param path the path to call, for example "/test"
-   * @param requestBody the request body, for example "key=value"
+   * @param queryString the query string, for example "key1=value1&key2=value2"
    */
-  public HttpCaller(String endpoint, String path, String requestBody) {
+  public HttpCaller(String endpoint, String path, String queryString) {
     this.path = path;
-    this.url = endpoint + path + "?" + requestBody + "/";
+    this.url = endpoint + path + "?" + queryString;
     log.info("validator is trying to hit this {} endpoint", this.url);
   }
 

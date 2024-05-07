@@ -253,7 +253,7 @@ jobs:
         continue-on-error: true
         run: |
           curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/outgoing-http-call; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call; echo
+          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call?testingId=${{ env.TESTING_ID }}; echo
           curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}; echo
           curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/client-call; echo
 
@@ -280,7 +280,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
       - name: Call endpoints and validate generated metrics
@@ -298,7 +298,7 @@ jobs:
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-name python-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Call endpoints and validate generated traces
@@ -314,7 +314,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --request-body ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
           --rollup'
 
       - name: Publish metric on test result

@@ -45,11 +45,13 @@ public class CWMetricValidatorTest {
   private CWMetricHelper cwMetricHelper = new CWMetricHelper();
   private static final String SERVICE_DIMENSION = "Service";
   private static final String REMOTE_SERVICE_DIMENSION = "RemoteService";
+  private static final String REMOTE_TARGET_DIMENSION = "RemoteTarget";
   private static final String TEMPLATE_ROOT =
       "file://" + System.getProperty("user.dir") + "/src/test/test-resources/";
   private static final String SERVICE_NAME = "serviceName";
   private static final String REMOTE_SERVICE_NAME = "remoteServiceName";
   private static final String REMOTE_SERVICE_DEPLOYMENT_NAME = "remoteServiceDeploymentName";
+  private static final String TESTING_ID = "testIdentifier";
 
   private Context context;
   private HttpCaller httpCaller;
@@ -97,6 +99,7 @@ public class CWMetricValidatorTest {
     List<Metric> remoteMetricsWithRemoteApp = getTestMetrics("endToEnd_remoteMetricsWithRemoteApp");
     List<Metric> remoteMetricsWithAmazon = getTestMetrics("endToEnd_remoteMetricsWithAmazon");
     List<Metric> remoteMetricsWithAwsSdk = getTestMetrics("endToEnd_remoteMetricsWithAwsSdk");
+    List<Metric> remoteMetricsWithS3Target = getTestMetrics("endToEnd_remoteMetricsWithS3Target");
 
     CloudWatchService cloudWatchService =
         mockCloudWatchService(
@@ -104,7 +107,8 @@ public class CWMetricValidatorTest {
             remoteServiceMetrics,
             remoteMetricsWithRemoteApp,
             remoteMetricsWithAmazon,
-            remoteMetricsWithAwsSdk);
+            remoteMetricsWithAwsSdk,
+            remoteMetricsWithS3Target);
 
     validate(validationConfig, cloudWatchService);
   }
@@ -120,6 +124,8 @@ public class CWMetricValidatorTest {
     List<Metric> remoteMetricsWithRemoteApp = Lists.newArrayList();
     List<Metric> remoteMetricsWithAmazon = getTestMetrics("endToEnd_remoteMetricsWithAmazon");
     List<Metric> remoteMetricsWithAwsSdk = getTestMetrics("endToEnd_remoteMetricsWithAwsSdk");
+    List<Metric> remoteMetricsWithAwsSdkWithTarget =
+        getTestMetrics("endToEnd_remoteMetricsWithAwsSdk");
 
     CloudWatchService cloudWatchService =
         mockCloudWatchService(
@@ -127,7 +133,8 @@ public class CWMetricValidatorTest {
             remoteServiceMetrics,
             remoteMetricsWithRemoteApp,
             remoteMetricsWithAmazon,
-            remoteMetricsWithAwsSdk);
+            remoteMetricsWithAwsSdk,
+            remoteMetricsWithAwsSdkWithTarget);
 
     try {
       validate(validationConfig, cloudWatchService);
@@ -153,6 +160,7 @@ public class CWMetricValidatorTest {
     context.setServiceName(SERVICE_NAME);
     context.setRemoteServiceName(REMOTE_SERVICE_NAME);
     context.setRemoteServiceDeploymentName(REMOTE_SERVICE_DEPLOYMENT_NAME);
+    context.setTestingId(TESTING_ID);
     return context;
   }
 
@@ -175,7 +183,8 @@ public class CWMetricValidatorTest {
       List<Metric> remoteServiceMetrics,
       List<Metric> remoteMetricsWithRemoteApp,
       List<Metric> remoteMetricsWithAmazon,
-      List<Metric> remoteMetricsWithAwsSdk) {
+      List<Metric> remoteMetricsWithAwsSdk,
+      List<Metric> remoteMetricsWithS3Target) {
     CloudWatchService cloudWatchService = mock(CloudWatchService.class);
     when(cloudWatchService.listMetrics(any(), any(), eq(SERVICE_DIMENSION), eq(SERVICE_NAME)))
         .thenReturn(localServiceMetrics);
@@ -191,6 +200,9 @@ public class CWMetricValidatorTest {
     when(cloudWatchService.listMetrics(
             any(), any(), eq(REMOTE_SERVICE_DIMENSION), eq("AWS.SDK.S3")))
         .thenReturn(remoteMetricsWithAwsSdk);
+    when(cloudWatchService.listMetrics(
+            any(), any(), eq(REMOTE_TARGET_DIMENSION), eq("::s3:::e2e-test-bucket-name-" + context.getTestingId())))
+        .thenReturn(remoteMetricsWithS3Target);
     return cloudWatchService;
   }
 
