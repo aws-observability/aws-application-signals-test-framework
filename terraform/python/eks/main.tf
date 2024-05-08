@@ -116,10 +116,6 @@ resource "kubernetes_deployment" "python_app_deployment" {
               value = "python-application-${var.test_id}"
             }
           env {
-              name = "PYTHONPATH"
-              value = "/django_frontend_app"
-            }
-          env {
               name = "DJANGO_SETTINGS_MODULE"
               value = "django_frontend_service.settings"
             }
@@ -225,10 +221,6 @@ resource "kubernetes_deployment" "python_r_app_deployment" {
           image = var.python_remote_app_image
           image_pull_policy = "Always"
           args = ["sh", "-c", "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8001 --noreload"]
-          env {
-              name = "PYTHONPATH"
-              value = "/django_remote_app"
-            }
           env {
               name = "DJANGO_SETTINGS_MODULE"
               value = "django_remote_service.settings"
