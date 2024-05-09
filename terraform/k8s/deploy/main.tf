@@ -42,7 +42,7 @@ resource "null_resource" "deploy" {
       # Temporarily override helm chart version to current latest so new releases do not cause alarms
       cd helm-charts/
       git reset --hard 78d4b094afb622fea7238e784bc4c07ffe340766
-      cd amazon-cloudwatch-observability/
+      cd charts/amazon-cloudwatch-observability/
 
       echo "LOG: Installing CloudWatch Agent Operator using Helm"
       helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${var.aws_region} --set clusterName=k8s-cluster-${var.test_id}
