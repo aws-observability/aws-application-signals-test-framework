@@ -54,6 +54,12 @@ jobs:
           cleanup: "rm -f enable-app-signals.sh && rm -f clean-app-signals.sh"
           post-command: "chmod +x enable-app-signals.sh && chmod +x clean-app-signals.sh"
 
+      # In preparation for next release so we do not get alarms once the release is done
+      - name: Enforce EKS add on v1.6.0-eksbuild.1
+        working-directory: enablement-script
+        run: |
+          sed -i '\#--addon-name amazon-cloudwatch-observability \\#a--addon-version v1.6.0-eksbuild.1 \\' enable-app-signals.sh
+
       - name: Remove log group deletion command
         if: always()
         working-directory: enablement-script
