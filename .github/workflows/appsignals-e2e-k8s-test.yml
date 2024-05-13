@@ -120,7 +120,7 @@ jobs:
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-r-app-deployment-${{ env.TESTING_ID }}
-          --query-string ip=${{ env.REMOTE_SERVICE_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Validate generated metrics
@@ -156,7 +156,7 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-r-app-deployment-${{ env.TESTING_ID }}
           --remote-service-deployment-name sample-r-app-deployment-${{ env.TESTING_ID }}
-          --query-string ip=${{ env.REMOTE_SERVICE_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Publish metric on test result
