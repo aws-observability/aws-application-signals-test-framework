@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: aws-observability/aws-application-signals-test-framework
-          ref: add-ec2-platform-for-python-ga
+          ref: ga-python
 
       - name: Set CW Agent RPM environment variable
         run: echo GET_CW_AGENT_RPM_COMMAND="aws s3api get-object --bucket private-cloudwatch-agent-apm-beta --key linux_amd64/amazon-cloudwatch-agent.rpm cw-agent.rpm" >> $GITHUB_ENV
