@@ -20,6 +20,6 @@
   "Version": "^1$",
   "RemoteService": "AWS.SDK.S3",
   "RemoteOperation": "GetBucketLocation",
-  "RemoteTarget": "::s3:::e2e-test-bucket-name",
+  "RemoteTarget": "^::s3:::e2e-test-bucket-name-{{testingId}}$",
   "aws.span.kind": "^CLIENT$"
 }]
