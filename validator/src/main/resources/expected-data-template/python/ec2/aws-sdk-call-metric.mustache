@@ -30,7 +30,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -55,7 +55,7 @@
       value: EC2
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -72,7 +72,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -92,10 +92,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -112,10 +109,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -129,21 +123,7 @@
       value: EC2
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+      value: AWS::S3
 
 -
   metricName: Error
@@ -177,7 +157,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Error
@@ -202,7 +182,7 @@
       value: EC2
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Error
@@ -219,7 +199,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Error
@@ -239,10 +219,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+      value: AWS::S3
 
 -
   metricName: Error
@@ -259,10 +236,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+      value: AWS::S3
 
 -
   metricName: Error
@@ -276,21 +250,7 @@
       value: EC2
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -324,7 +284,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -349,7 +309,7 @@
       value: EC2
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -366,7 +326,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -386,10 +346,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -406,10 +363,7 @@
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -423,19 +377,5 @@
       value: EC2
     -
       name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
+      value: AWS::S3
 
