@@ -43,9 +43,6 @@ jobs:
           repository: aws-observability/aws-application-signals-test-framework
           ref: ga-python
 
-      - name: Set CW Agent RPM environment variable
-        run: echo GET_CW_AGENT_RPM_COMMAND="aws s3api get-object --bucket private-cloudwatch-agent-apm-beta --key linux_amd64/amazon-cloudwatch-agent.rpm cw-agent.rpm" >> $GITHUB_ENV
-
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.job }}-${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
 
@@ -86,6 +83,7 @@ jobs:
 #          else
 #            echo GET_ADOT_WHEEL_COMMAND="python3.9 -m pip install ${{ env.ADOT_WHEEL_NAME }}==0.1.1" >> $GITHUB_ENV
 #          fi
+
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -197,7 +195,7 @@ jobs:
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
-          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
