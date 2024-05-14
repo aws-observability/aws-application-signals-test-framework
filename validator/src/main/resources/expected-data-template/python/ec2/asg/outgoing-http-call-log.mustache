@@ -1,0 +1,23 @@
+[{
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:{{platformInfo}}$",
+  "PlatformType": "^AWS::EC2$",
+  "Operation": "GET outgoing-http-call",
+  "OTelLib": "^AwsSpanMetricsProcessor$",
+  "Version": "^1$",
+  "aws.span.kind": "^LOCAL_ROOT$",
+  "host.name": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
+},
+{
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:{{platformInfo}}$",
+  "PlatformType": "^AWS::EC2$",
+  "Operation": "GET outgoing-http-call",
+  "OTelLib": "^AwsSpanMetricsProcessor$",
+  "Version": "^1$",
+  "RemoteService": "www.amazon.com",
+  "RemoteOperation": "GET /",
+  "aws.span.kind": "^CLIENT$",
+  "host.name": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
+}]
+
