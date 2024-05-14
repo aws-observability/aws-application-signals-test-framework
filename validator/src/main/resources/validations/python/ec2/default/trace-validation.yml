@@ -14,7 +14,7 @@
   validationType: "trace"
   httpPath: "/remote-service"
   httpMethod: "get"
-  callingType: "http-with-body"
+  callingType: "http-with-query"
   expectedTraceTemplate: "PYTHON_EC2_DEFAULT_REMOTE_SERVICE_TRACE"
 -
   validationType: "trace"

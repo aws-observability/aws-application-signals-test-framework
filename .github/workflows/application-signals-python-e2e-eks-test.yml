@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: aws-observability/aws-application-signals-test-framework
-          ref: ga-python
+          ref: add-ec2-platform-for-python-ga
 
       - name: Download enablement script
         uses: ./.github/workflows/actions/execute_and_retry
@@ -285,7 +285,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Call endpoints and validate generated metrics
