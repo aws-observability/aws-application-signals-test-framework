@@ -43,15 +43,6 @@ resource "aws_key_pair" "aws_ssh_key" {
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
-# resource "aws_key_pair" "aws_ssh_key" {
-#   key_name   = "myKey"
-#   public_key = tls_private_key.ssh_key.public_key_openssh
-#
-#   provisioner "local-exec" { # Create a "myKey.pem" to your computer!!
-#     command = "echo '${tls_private_key.ssh_key.private_key_pem}' > ./myKey.pem"
-#   }
-# }
-
 locals {
   ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
   private_key_content = tls_private_key.ssh_key.private_key_pem
