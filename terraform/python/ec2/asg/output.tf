@@ -20,8 +20,3 @@ output "sample_app_remote_service_public_ip" {
 output "ec2_instance_ami" {
   value = data.aws_ami.ami.id
 }
-
-output "private_key" {
-  value     = tls_private_key.ssh_key.private_key_pem
-  sensitive = true
-}
