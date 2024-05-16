@@ -40,9 +40,8 @@
         "HostedIn.Environment": "^EC2$",
         "aws.local.service": "^{{serviceName}}$",
         "aws.local.operation": "^GET aws-sdk-call$",
-        "aws.remote.service": "^AWS\\.SDK\\.S3$",
-        "aws.remote.operation": "^GetBucketLocation$",
-        "aws.remote.target": "^::s3:::e2e-test-bucket-name-{{testingId}}$"
+        "aws.remote.service": "^AWS::S3$",
+        "aws.remote.operation": "^GetBucketLocation$"
       },
       "metadata": {
         "default": {
