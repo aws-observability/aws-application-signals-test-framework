@@ -14,12 +14,13 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "HostedIn.Environment": "^EC2$",
-    "aws.local.operation": "^GET /remote-service$"
+    "aws.local.operation": "^GET /remote-service$",
+    "aws.local.environment": "^EC2$"
   },
   "metadata": {
       "default": {
-          "otel.resource.aws.hostedin.environment": "^EC2$",
+          "EC2.InstanceId": "^{{instanceId}}$",
+          "PlatformType": "^AWS::EC2$",
           "otel.resource.host.image.id": "^{{instanceAmi}}$",
           "otel.resource.host.type": "^t3.micro$",
           "aws.span.kind": "^LOCAL_ROOT$"
@@ -40,10 +41,13 @@
             "aws.local.service": "^{{serviceName}}$",
             "aws.local.operation": "^GET /remote-service$",
             "aws.remote.service": "^{{remoteServiceDeploymentName}}$",
-            "aws.remote.operation": "^GET /healthcheck$"
+            "aws.remote.operation": "^GET /healthcheck$",
+            "aws.local.environment": "^EC2$"
           },
           "metadata": {
               "default": {
+                  "EC2.InstanceId": "^{{instanceId}}$",
+                  "PlatformType": "^AWS::EC2$",
                   "aws.span.kind": "^CLIENT$"
               }
            },
@@ -62,13 +66,14 @@
     }
   },
   "annotations": {
-    "HostedIn.Environment": "^EC2$",
     "aws.local.service": "^{{remoteServiceName}}$",
-    "aws.local.operation": "^GET /healthcheck$"
+    "aws.local.operation": "^GET /healthcheck$",
+    "aws.local.environment": "^EC2$"
   },
   "metadata": {
       "default": {
-          "otel.resource.aws.hostedin.environment": "^EC2$",
+          "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
+          "PlatformType": "^AWS::EC2$",
           "otel.resource.host.image.id": "^{{instanceAmi}}$",
           "otel.resource.host.type": "^t3.micro$",
           "aws.span.kind": "^LOCAL_ROOT$"
@@ -78,7 +83,7 @@
     {
       "name": "^RemoteServiceController.healthcheck$",
       "annotations": {
-        "HostedIn.Environment": "^EC2$",
+        "aws.local.environment": "^EC2$",
         "aws.local.operation": "^GET /healthcheck$"
       }
     }

@@ -9,7 +9,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
 
 -
@@ -23,35 +23,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: RemoteOperation
-      value: GET /
-    -
-      name: RemoteService
-      value: www.amazon.com
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
     -
       name: RemoteOperation
@@ -68,7 +40,35 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
+      value: EC2
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: EC2
+    -
+      name: RemoteOperation
+      value: GET /
+    -
+      name: RemoteService
+      value: www.amazon.com
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
       value: EC2
     -
       name: RemoteService
@@ -85,7 +85,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
 
 -
@@ -99,7 +99,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
     -
       name: RemoteOperation
@@ -116,7 +116,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
 
 -
@@ -127,7 +127,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
     -
       name: RemoteOperation
@@ -144,7 +144,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
     -
       name: RemoteService
@@ -161,7 +161,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
 
 -
@@ -175,7 +175,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
     -
       name: RemoteOperation
@@ -192,7 +192,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
 
 -
@@ -203,7 +203,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
     -
       name: RemoteOperation
@@ -220,7 +220,7 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.Environment
+      name: Environment
       value: EC2
     -
       name: RemoteService

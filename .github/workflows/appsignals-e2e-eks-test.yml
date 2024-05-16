@@ -36,16 +36,10 @@ env:
   ENABLEMENT_SCRIPT_S3_BUCKET: ${{ secrets.APP_SIGNALS_E2E_ENABLEMENT_SCRIPT }}
   SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}
   SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}
-<<<<<<< HEAD
-  METRIC_NAMESPACE: AppSignals
-  LOG_GROUP_NAME: /aws/appsignals/eks
-  TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
-=======
   CW_AGENT_IMAGE_RELEASE_VERSION: public.ecr.aws/y8s3a7r9/cloudwatch-agent:latest
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  TEST_RESOURCES_FOLDER: /home/runner/work/aws-application-signals-test-framework/aws-application-signals-test-framework
->>>>>>> 656f004 ([EKS] GA Metric Schema Update 1)
+  TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 jobs:
   e2e-eks-test:
@@ -180,10 +174,6 @@ jobs:
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
           
-<<<<<<< HEAD
-              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
-=======
               # Patch ADOT and CW Agent images, then restart the CW pods
               echo "LOG: Describing operator deployment"
               kubectl describe deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager
@@ -198,7 +188,6 @@ jobs:
           
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
->>>>>>> 656f004 ([EKS] GA Metric Schema Update 1)
           
               echo "Attempting to connect to the main sample app endpoint"
               main_sample_app_endpoint=http://$(terraform output sample_app_endpoint)
