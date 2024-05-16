@@ -1,16 +1,22 @@
 [{
-  "HostedIn.Environment": "^EC2$",
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^EC2$",
+  "PlatformType": "^AWS::EC2$",
   "Operation": "InternalOperation",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "aws.span.kind": "^LOCAL_ROOT$"
+  "Telemetry.Source": "^LocalRootSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
 },
 {
-  "HostedIn.Environment": "^EC2$",
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^EC2$",
+  "PlatformType": "^AWS::EC2$",
   "Operation": "InternalOperation",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "RemoteService": "local-root-client-call",
   "RemoteOperation": "GET /",
-  "aws.span.kind": "^CLIENT$"
+  "Telemetry.Source": "^ClientSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
 }]
