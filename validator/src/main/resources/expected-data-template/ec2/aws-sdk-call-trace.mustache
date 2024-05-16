@@ -29,7 +29,7 @@
     {
       "subsegments": [
         {
-          "name": "^S3$",
+          "name": "^AWS::S3$",
           "http": {
             "request": {
               "url": "^https://e2e-test-bucket-name-{{testingId}}.s3.{{region}}.amazonaws.com\\?location$",
@@ -46,7 +46,9 @@
           },
           "metadata": {
             "default": {
-              "aws.span.kind": "^CLIENT$"
+              "aws.span.kind": "^CLIENT$",
+              "aws.remote.resource.type": "^AWS::S3::Bucket$",
+              "aws.remote.resource.identifier": "^e2e-test-bucket-name$"
             }
           },
           "namespace": "^aws$"
@@ -56,7 +58,7 @@
   ]
 },
 {
-  "name": "^S3$",
+  "name": "^AWS::S3$",
   "aws": {
     "operation": "^GetBucketLocation$"
   }

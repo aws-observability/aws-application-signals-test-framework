@@ -10,8 +10,7 @@
   "Operation": "GET /aws-sdk-call",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "RemoteService": "AWS.SDK.S3",
+  "RemoteService": "AWS::S3",
   "RemoteOperation": "GetBucketLocation",
-  "RemoteTarget": "^::s3:::e2e-test-bucket-name-{{testingId}}$",
   "aws.span.kind": "^CLIENT$"
 }]
