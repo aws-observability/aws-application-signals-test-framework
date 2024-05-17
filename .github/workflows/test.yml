@@ -1,0 +1,246 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+## This workflow aims to run the Application Signals end-to-end tests as a canary to
+## test the artifacts for App Signals enablement. It will deploy a sample app and remote
+## service on two EC2 instances, call the APIs, and validate the generated telemetry,
+## including logs, metrics, and traces.
+name: Test
+on:
+  push:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+#  e2e-ec2-test-1:
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: ['us-east-1']
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+#  e2e-ec2-test-2:
+#    needs: [e2e-ec2-test-1]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+#  e2e-ec2-test-3:
+#    needs: [e2e-ec2-test-2]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+#  e2e-ec2-test-4:
+#    needs: [ e2e-ec2-test-3 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+#  e2e-ec2-test-5:
+#    needs: [ e2e-ec2-test-4 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+#  e2e-ec2-test-6:
+#    needs: [ e2e-ec2-test-5 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+#  e2e-ec2-test-7:
+#    needs: [ e2e-ec2-test-6 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+#  e2e-ec2-test-8:
+#    needs: [ e2e-ec2-test-7 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+#  e2e-ec2-test-9:
+#    needs: [ e2e-ec2-test-8 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+#  e2e-ec2-test-10:
+#    needs: [ e2e-ec2-test-9 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      caller-workflow-name: 'ec2-test'
+
+  e2e-eks-test-1:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: ['us-east-1']
+    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: "eks-test"
+      appsignals-adot-image-name: '417921506511.dkr.ecr.us-east-1.amazonaws.com/aws-opentelemetry-agent/metric-schema-changes:latest'
+#  e2e-eks-test-2:
+#    needs: [e2e-eks-test-1]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: ['us-east-1']
+#    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: "eks-test"
+#  e2e-eks-test-3:
+#    needs: [e2e-eks-test-2]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: ['us-east-1']
+#    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: "eks-test"
+#  e2e-eks-test-4:
+#    needs: [ e2e-eks-test-3 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: "eks-test"
+#  e2e-eks-test-5:
+#    needs: [ e2e-eks-test-4 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: "eks-test"
+#  e2e-eks-test-6:
+#    needs: [ e2e-eks-test-5 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: "eks-test"
+#  e2e-eks-test-7:
+#    needs: [ e2e-eks-test-6 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: "eks-test"
+#  e2e-eks-test-8:
+#    needs: [ e2e-eks-test-7 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: "eks-test"
+#  e2e-eks-test-9:
+#    needs: [ e2e-eks-test-8 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: "eks-test"
+#  e2e-eks-test-10:
+#    needs: [ e2e-eks-test-9 ]
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: "eks-test"
