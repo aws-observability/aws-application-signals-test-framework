@@ -45,8 +45,8 @@ data "aws_ami" "ami" {
   owners = ["amazon"]
   most_recent      = true
   filter {
-   name = "name"
-   values = ["al20*-ami-minimal-*-x86_64"]
+    name = "name"
+    values = ["al20*-ami-minimal-*-x86_64"]
   }
   filter {
     name   = "state"
@@ -140,7 +140,6 @@ resource "null_resource" "main_service_setup" {
       "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
       "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
       "export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}",
-      "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
       "python3.9 manage.py migrate",
       "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload &",
@@ -216,7 +215,6 @@ resource "null_resource" "remote_service_setup" {
       "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
       "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
       "export OTEL_SERVICE_NAME=python-sample-remote-application-${var.test_id}",
-      "export OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2",
       "export OTEL_TRACES_SAMPLER=always_on",
       "python3.9 manage.py migrate",
       "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload &",
