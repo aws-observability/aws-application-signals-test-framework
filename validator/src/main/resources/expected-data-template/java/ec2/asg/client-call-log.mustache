@@ -1,0 +1,18 @@
+[{
+  "EC2.AutoScalingGroupName":  "^{{asgName}}$",
+  "HostedIn.EC2.Environment": "^EC2$",
+  "Operation": "InternalOperation",
+  "OTelLib": "^AwsSpanMetricsProcessor$",
+  "Version": "^1$",
+  "aws.span.kind": "^LOCAL_ROOT$"
+},
+{
+  "EC2.AutoScalingGroupName":  "^{{asgName}}$",
+  "HostedIn.EC2.Environment": "^EC2$",
+  "Operation": "InternalOperation",
+  "OTelLib": "^AwsSpanMetricsProcessor$",
+  "Version": "^1$",
+  "RemoteService": "local-root-client-call",
+  "RemoteOperation": "GET /",
+  "aws.span.kind": "^CLIENT$"
+}]

@@ -138,6 +138,15 @@ public class App implements Callable<Integer> {
       defaultValue = "")
   private String instanceAmi;
 
+  @CommandLine.Option(
+          names = {"--asg-name"},
+          defaultValue = "")
+  private String asgName;
+
+  @CommandLine.Option(
+          names = {"--instance-id"},
+          defaultValue = "")
+  private String instanceId;
   private static final String TEST_CASE_DIM_KEY = "testcase";
   private static final String CANARY_NAMESPACE = "Otel/Canary";
   private static final String CANARY_METRIC_NAME = "Success";
@@ -172,6 +181,8 @@ public class App implements Callable<Integer> {
     context.setTestcase(testcase);
     context.setLanguage(language);
     context.setInstanceAmi(this.instanceAmi);
+    context.setAsgName(this.asgName);
+    context.setInstanceId(this.instanceId);
 
     log.info(context);
 
