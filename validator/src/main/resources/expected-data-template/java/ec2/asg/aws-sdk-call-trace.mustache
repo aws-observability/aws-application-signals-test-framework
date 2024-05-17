@@ -2,7 +2,7 @@
   "name": "^{{serviceName}}$",
   "http": {
     "request": {
-      "url": "^{{endpoint}}/aws-sdk-call$",
+      "url": "^{{endpoint}}/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
       "method": "^GET$"
     },
     "response": {
@@ -36,7 +36,7 @@
           "name": "^S3$",
           "http": {
             "request": {
-              "url": "^https://e2e-test-bucket-name.s3.{{region}}.amazonaws.com\\?location$",
+              "url": "^https://e2e-test-bucket-name-{{testingId}}.s3.{{region}}.amazonaws.com\\?location$",
               "method": "^GET$"
             }
           },
@@ -46,7 +46,7 @@
             "aws.remote.service": "^AWS::S3$",
             "aws.remote.operation": "^GetBucketLocation$",
             "aws.remote.resource.type": "^AWS::S3::Bucket$",
-            "aws.remote.resource.identifier": "^e2e-test-bucket-name$",
+            "aws.remote.resource.identifier": "^e2e-test-bucket-name-{{testingId}}$",
             "aws.local.environment": "^ec2:{{platformInfo}}$"
           },
           "metadata": {
