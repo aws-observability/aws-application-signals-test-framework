@@ -1,6 +1,6 @@
 [{
   "EC2.InstanceId": "^{{instanceId}}$",
-  "Environment": "^EC2$",
+  "Environment": "^ec2:default$",
   "PlatformType": "^AWS::EC2$",
   "Operation": "GET /outgoing-http-call",
   "OTelLib": "^AwsSpanMetricsProcessor$",
@@ -10,7 +10,7 @@
 },
 {
   "EC2.InstanceId": "^{{instanceId}}$",
-  "Environment": "^EC2$",
+  "Environment": "^ec2:default$",
   "PlatformType": "^AWS::EC2$",
   "Operation": "GET /outgoing-http-call",
   "OTelLib": "^AwsSpanMetricsProcessor$",

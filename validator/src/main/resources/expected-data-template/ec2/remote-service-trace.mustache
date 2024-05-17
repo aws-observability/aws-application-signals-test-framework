@@ -15,7 +15,7 @@
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
     "aws.local.operation": "^GET /remote-service$",
-    "aws.local.environment": "^EC2$"
+    "aws.local.environment": "^ec2:default$"
   },
   "metadata": {
       "default": {
@@ -42,7 +42,7 @@
             "aws.local.operation": "^GET /remote-service$",
             "aws.remote.service": "^{{remoteServiceDeploymentName}}$",
             "aws.remote.operation": "^GET /healthcheck$",
-            "aws.local.environment": "^EC2$"
+            "aws.local.environment": "^ec2:default$"
           },
           "metadata": {
               "default": {
@@ -68,7 +68,7 @@
   "annotations": {
     "aws.local.service": "^{{remoteServiceName}}$",
     "aws.local.operation": "^GET /healthcheck$",
-    "aws.local.environment": "^EC2$"
+    "aws.local.environment": "^ec2:default$"
   },
   "metadata": {
       "default": {
@@ -83,7 +83,7 @@
     {
       "name": "^RemoteServiceController.healthcheck$",
       "annotations": {
-        "aws.local.environment": "^EC2$",
+        "aws.local.environment": "^ec2:default$",
         "aws.local.operation": "^GET /healthcheck$"
       }
     }
