@@ -373,31 +373,4 @@
       name: RemoteResourceType
       value: AWS::S3::Bucket
 
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: HostedIn.Environment
-      value: EC2
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: RemoteService
-      value: AWS.SDK.S3
-    -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name-{{testingId}}
 

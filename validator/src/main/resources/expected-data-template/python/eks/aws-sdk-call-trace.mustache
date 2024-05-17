@@ -32,7 +32,7 @@
   },
   "subsegments": [
     {
-      "name": "^S3$",
+      "name": "^AWS::S3$",
       "http": {
         "response": {
           "status": "^404$"
@@ -48,7 +48,7 @@
         "aws.remote.service": "^AWS::S3$",
         "aws.remote.operation": "^GetBucketLocation$",
         "aws.remote.resource.type": "^AWS::S3::Bucket$",
-        "aws.remote.resource.identifier": "^e2e-test-bucket-name$",
+        "aws.remote.resource.identifier": "^e2e-test-bucket-name-{{testingId}}$",
         "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
       },
       "metadata": {
@@ -65,7 +65,7 @@
   ]
 },
 {
-  "name": "^S3$",
+  "name": "^AWS::S3$",
   "aws": {
     "operation": "^GetBucketLocation$"
   }

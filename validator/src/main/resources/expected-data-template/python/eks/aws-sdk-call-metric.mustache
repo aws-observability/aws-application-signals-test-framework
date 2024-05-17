@@ -98,7 +98,7 @@
       value: AWS::S3::Bucket
     -
       name: RemoteResourceIdentifier
-      value: e2e-test-bucket-name
+      value: e2e-test-bucket-name-{{testingId}}
 
 -
   metricName: Latency
@@ -121,7 +121,7 @@
       value: AWS::S3::Bucket
     -
       name: RemoteResourceIdentifier
-      value: e2e-test-bucket-name
+      value: e2e-test-bucket-name-{{testingId}}
 
 -
   metricName: Error
