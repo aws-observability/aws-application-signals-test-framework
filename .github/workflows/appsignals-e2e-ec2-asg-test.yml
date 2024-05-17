@@ -20,23 +20,25 @@ permissions:
   contents: read
 
 env:
-  # The precense of this env var is required for use by terraform and AWS CLI commands
+  # The presence of this env var is required for use by terraform and AWS CLI commands
   # It is not redundant
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
   SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/main-service.jar
   SAMPLE_APP_REMOTE_SERVICE_JAR: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/remote-service.jar
   APP_SIGNALS_ADOT_JAR: "https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
-  METRIC_NAMESPACE: AppSignals
-  LOG_GROUP_NAME: /aws/appsignals/ec2
-  GET_ADOT_JAR_COMMAND: "wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
-  GET_CW_AGENT_RPM_COMMAND: "aws s3 cp s3://app-signals-preview/test-rpm/amd64/amazon-cloudwatch-agent.rpm ./cw-agent.rpm"
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
+  GET_ADOT_JAR_COMMAND: "aws s3api get-object --bucket metric-schema-changes --key aws-opentelemetry-agent.jar adot.jar"
+  GET_CW_AGENT_RPM_COMMAND: "aws s3api get-object --bucket private-cloudwatch-agent-apm-beta --key linux_amd64/amazon-cloudwatch-agent.rpm cw-agent.rpm"
   TEST_RESOURCES_FOLDER: /home/runner/work/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 
 jobs:
-  e2e-ec2-asg-test:
+  e2e-ec2-single-asg-test:
     runs-on: ubuntu-latest
+    container:
+      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,17 +65,10 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
-      - name: Set up terraform
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
-          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          && sudo apt update && sudo apt install terraform'
-
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/ec2/asg && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/ec2/default && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
@@ -104,27 +99,24 @@ jobs:
             # If the deployment_failed is still 0, then the terraform deployment succeeded and now try to connect to the endpoint.
             # Attempts to connect will be made for up to 10 minutes
             if [ $deployment_failed -eq 0 ]; then
-              for i in {0..1}
-              do
-                echo "Attempting to connect to the endpoint number $i"
-                main_service_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.AWS_DEFAULT_REGION }} --query "AutoScalingGroups[].Instances[$i].InstanceId" --output text)
-                main_service_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
-                main_service_sample_app_endpoint=http://$main_service_public_ip:8080
-                echo "The main service endpoint for instance number $i is $main_service_sample_app_endpoint"
+              echo "Attempting to connect to the endpoint"
+              main_service_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.AWS_DEFAULT_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
+              main_service_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
+              main_service_sample_app_endpoint=http://$main_service_public_ip:8080
+              echo "The main service endpoint is $main_service_sample_app_endpoint"
+        
+              attempt_counter=0
+              max_attempts=30
+              until $(curl --output /dev/null --silent --head --fail $(echo "$main_service_sample_app_endpoint" | tr -d '"')); do
+                if [ ${attempt_counter} -eq ${max_attempts} ];then
+                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
+                  deployment_failed=1
+                  break
+                fi
           
-                attempt_counter=0
-                max_attempts=30
-                until $(curl --output /dev/null --silent --head --fail $(echo "$main_service_sample_app_endpoint" | tr -d '"')); do
-                  if [ ${attempt_counter} -eq ${max_attempts} ];then
-                    echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-                    deployment_failed=1
-                    break
-                  fi
-            
-                  printf '.'
-                  attempt_counter=$(($attempt_counter+1))
-                  sleep 10
-                done
+                printf '.'
+                attempt_counter=$(($attempt_counter+1))
+                sleep 10
               done
           
               echo "Attempting to connect to the remote sample app endpoint"
@@ -163,54 +155,33 @@ jobs:
             fi
           done
 
-      - name: Get the ec2 instance ami id
+      - name: Get sample app and EC2 instance information
         working-directory: terraform/ec2/asg
         run: |
+          main_service_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.AWS_DEFAULT_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
+          main_service_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
+          main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
+          echo "INSTANCE_ID=$main_service_instance_id" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_ENDPOINT=$main_service_public_ip:8080" >> $GITHUB_ENV
+          echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> $GITHUB_ENV
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
-
-      - name: Get the sample app endpoint
-        working-directory: terraform/ec2/asg
-        run: |
-          main_service_one_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.AWS_DEFAULT_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
-          main_service_two_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.AWS_DEFAULT_REGION }} --query "AutoScalingGroups[].Instances[1].InstanceId" --output text)
-          main_service_one_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_one_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
-          main_service_two_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_two_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
-          main_service_one_private_dns_name=$(aws ec2 describe-instances --instance-ids $main_service_one_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
-          main_service_two_private_dns_name=$(aws ec2 describe-instances --instance-ids $main_service_two_instance_id --region ${{ env.AWS_DEFAULT_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
-          echo "INSTANCE_ID_ONE=$main_service_one_instance_id" >> $GITHUB_ENV
-          echo "INSTANCE_ID_TWO=$main_service_two_instance_id" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_ONE_ENDPOINT=$main_service_one_public_ip:8080" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_TWO_ENDPOINT=$main_service_two_public_ip:8080" >> $GITHUB_ENV
-          echo "PRIVATE_DNS_NAME_ONE=$main_service_one_private_dns_name" >> $GITHUB_ENV
-          echo "PRIVATE_DNS_NAME_TWO=$main_service_two_private_dns_name" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_public_ip)" >> $GITHUB_ENV
 
       # This steps increases the speed of the validation by creating the telemetry data in advance
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/outgoing-http-call/; echo
-          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/aws-sdk-call/; echo
-          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/; echo
-          curl -S -s http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}/client-call/; echo
-          
-          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/outgoing-http-call/; echo
-          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/aws-sdk-call/; echo
-          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/; echo
-          curl -S -s http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}/client-call/; echo
-
-      - name: Build Gradlew
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          max_retry: 4
-          command: "./gradlew"
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/outgoing-http-call/; echo
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/aws-sdk-call/; echo
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}/; echo
+          curl -S -s http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call/; echo
 
       # Validation for pulse telemetry data
-      - name: Validate generated EMF logs for first endpoint
-        id: log-validation-1
+      - name: Validate generated EMF logs
+        id: log-validation
         run: ./gradlew validator:run --args='-c java/ec2/asg/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
           --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
@@ -221,16 +192,16 @@ jobs:
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --platform-info ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID_ONE }}
-          --private-dns-name ${{ env.PRIVATE_DNS_NAME_ONE }}
+          --instance-id ${{ env.INSTANCE_ID }}
+          --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
-      - name: Validate generated metrics for first endpoint
-        id: metric-validation-1
+      - name: Validate generated metrics
+        id: metric-validation
         if: (success() || steps.log-validation-1.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c java/ec2/asg/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
           --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
@@ -241,16 +212,16 @@ jobs:
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --platform-info ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID_ONE }}
-          --private-dns-name ${{ env.PRIVATE_DNS_NAME_ONE }}
+          --instance-id ${{ env.INSTANCE_ID }}
+          --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
-      - name: Validate generated traces for first endpoint
-        id: trace-validation-1
+      - name: Validate generated traces
+        id: trace-validation
         if: (success() || steps.log-validation-1.outcome == 'failure' || steps.metric-validation-1.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c java/ec2/asg/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_ONE_ENDPOINT }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
           --region ${{ env.AWS_DEFAULT_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
@@ -261,75 +232,14 @@ jobs:
           --request-body ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --platform-info ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID_ONE }}
-          --private-dns-name ${{ env.PRIVATE_DNS_NAME_ONE }}
-          --rollup'
-
-      # Validation for pulse telemetry data
-      - name: Validate generated EMF logs for second endpoint
-        id: log-validation-2
-        run: ./gradlew validator:run --args='-c java/ec2/asg/log-validation.yml
-          --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ env.AWS_DEFAULT_REGION }}
-          --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
-          --request-body ip=${{ env.REMOTE_SERVICE_IP }}
-          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID_TWO }}
-          --private-dns-name ${{ env.PRIVATE_DNS_NAME_TWO }}
-          --rollup'
-
-      - name: Validate generated metrics for second endpoint
-        id: metric-validation-2
-        if: (success() || steps.log-validation-2.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c java/ec2/asg/metric-validation.yml
-          --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ env.AWS_DEFAULT_REGION }}
-          --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
-          --request-body ip=${{ env.REMOTE_SERVICE_IP }}
-          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID_TWO }}
-          --private-dns-name ${{ env.PRIVATE_DNS_NAME_TWO }}
-          --rollup'
-
-      - name: Validate generated traces for second endpoint
-        id: trace-validation-2
-        if: (success() || steps.log-validation-2.outcome == 'failure' || steps.metric-validation-2.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c java/ec2/asg/trace-validation.yml
-          --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_TWO_ENDPOINT }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ env.AWS_DEFAULT_REGION }}
-          --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
-          --request-body ip=${{ env.REMOTE_SERVICE_IP }}
-          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID_TWO }}
-          --private-dns-name ${{ env.PRIVATE_DNS_NAME_TWO }}
+          --instance-id ${{ env.INSTANCE_ID }}
+          --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
       - name: Publish metric on test result
         if: always()
         run: |
-          if [[ "${{ steps.log-validation-1.outcome }}" == "success" && "${{ steps.metric-validation-1.outcome }}" == "success" && "${{ steps.trace-validation-1.outcome }}" == "success" 
-          && "${{ steps.log-validation-2.outcome }}" == "success" && "${{ steps.metric-validation-2.outcome }}" == "success" && "${{ steps.trace-validation-2.outcome }}" == "success" ]]; then
+          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
             aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
             --metric-name Failure \
             --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \

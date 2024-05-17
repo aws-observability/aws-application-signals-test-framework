@@ -13,19 +13,20 @@
     "account_id": "^{{accountId}}$"
   },
   "annotations": {
-    "aws_local_service": "^{{serviceName}}$",
-    "HostedIn_EC2_Environment": "^{{platformInfo}}$",
-    "aws_local_operation": "^GET /aws-sdk-call$"
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET /aws-sdk-call$",
+    "aws.local.environment": "^ec2:{{platformInfo}}$"
   },
   "metadata": {
     "default": {
-        "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
-        "otel.resource.host.id": "^{{instanceId}}$",
-        "otel.resource.host.image.id": "^{{instanceAmi}}$",
-        "otel.resource.host.type": "^t3.micro$",
-        "aws.span.kind": "^LOCAL_ROOT$",
-        "otel.resource.host.name": "^{{privateDnsName}}$",
-        "EC2.InstanceId": "^{{instanceId}}$"
+      "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+      "EC2.InstanceId": "^{{instanceId}}$",
+      "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
+      "otel.resource.host.id": "^{{instanceId}}$",
+      "otel.resource.host.image.id": "^{{instanceAmi}}$",
+      "otel.resource.host.type": "^t3.micro$",
+      "aws.span.kind": "^LOCAL_ROOT$",
+      "otel.resource.host.name": "^{{privateDnsName}}$"
     }
   },
   "subsegments": [
@@ -40,17 +41,20 @@
             }
           },
           "annotations": {
-            "HostedIn_EC2_Environment": "^{{platformInfo}}$",
-            "aws_local_service": "^{{serviceName}}$",
-            "aws_local_operation": "^GET /aws-sdk-call$",
-            "aws_remote_service": "^AWS\\.SDK\\.S3$",
-            "aws_remote_operation": "^GetBucketLocation$",
-            "aws_remote_target": "^::s3:::e2e-test-bucket-name$"
+            "aws.local.service": "^{{serviceName}}$",
+            "aws.local.operation": "^GET /aws-sdk-call$",
+            "aws.remote.service": "^AWS::S3$",
+            "aws.remote.operation": "^GetBucketLocation$",
+            "aws.remote.resource.type": "^AWS::S3::Bucket$",
+            "aws.remote.resource.identifier": "^e2e-test-bucket-name$",
+            "aws.local.environment": "^ec2:{{platformInfo}}$"
           },
           "metadata": {
             "default": {
-              "aws.span.kind": "^CLIENT$",
-              "EC2.InstanceId": "^{{instanceId}}$"
+              "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+              "EC2.InstanceId": "^{{instanceId}}$",
+              "PlatformType": "^AWS::EC2$",
+              "aws.span.kind": "^CLIENT$"
             }
           },
           "namespace": "^aws$"

@@ -1,39 +1,41 @@
 [{
   "name": "^{{serviceName}}$",
   "annotations": {
-    "aws_local_service": "^{{serviceName}}$",
-    "HostedIn_EC2_Environment": "^{{platformInfo}}$",
-    "aws_local_operation": "^InternalOperation$"
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^InternalOperation$",
+    "aws.local.environment": "^ec2:{{platformInfo}}$"
   },
   "metadata": {
     "default": {
-        "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
-        "otel.resource.host.id": "^{{instanceId}}$",
-        "otel.resource.host.image.id": "^{{instanceAmi}}$",
-        "otel.resource.host.type": "^t3.micro$",
-        "otel.resource.host.name": "^{{privateDnsName}}$"
+      "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
+      "otel.resource.host.id": "^{{instanceId}}$",
+      "otel.resource.host.image.id": "^{{instanceAmi}}$",
+      "otel.resource.host.type": "^t3.micro$",
+      "otel.resource.host.name": "^{{privateDnsName}}$"
     }
   },
   "subsegments": [
     {
       "name": "^local-root-client-call$",
       "http": {
-          "request": {
-              "url": "^http://local-root-client-call$",
-              "method": "^GET$"
-          }
+        "request": {
+          "url": "^http://local-root-client-call$",
+          "method": "^GET$"
+        }
       },
       "annotations": {
-        "HostedIn_EC2_Environment": "^{{platformInfo}}$",
-        "aws_local_service": "^{{serviceName}}$",
-        "aws_local_operation": "^InternalOperation$",
-        "aws_remote_service": "^local-root-client-call$",
-        "aws_remote_operation": "GET /"
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^InternalOperation$",
+        "aws.remote.service": "^local-root-client-call$",
+        "aws.remote.operation": "GET /",
+        "aws.local.environment": "^ec2:{{platformInfo}}$"
       },
       "metadata": {
         "default": {
-          "aws.span.kind": "^LOCAL_ROOT$",
-          "EC2.InstanceId": "^{{instanceId}}$"
+          "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+          "EC2.InstanceId": "^{{instanceId}}$",
+          "PlatformType": "^AWS::EC2$",
+          "aws.span.kind": "^LOCAL_ROOT$"
         }
       },
       "namespace": "^remote$"
@@ -41,18 +43,18 @@
   ]
 },
 {
-    "name": "^local-root-client-call$",
-    "http": {
-        "request": {
-            "url": "^http://local-root-client-call$",
-            "method": "^GET$"
-        },
-        "response": {
-            "content_length": 0
-        }
+  "name": "^local-root-client-call$",
+  "http": {
+    "request": {
+      "url": "^http://local-root-client-call$",
+      "method": "^GET$"
     },
-    "annotations": {
-        "aws_local_service": "^local-root-client-call$",
-        "aws_local_operation": "^GET /$"
+    "response": {
+      "content_length": 0
     }
+  },
+  "annotations": {
+    "aws.local.service": "^local-root-client-call$",
+    "aws.local.operation": "^GET /$"
+  }
 }]

@@ -132,8 +132,8 @@ resource "aws_launch_configuration" "launch_configuration" {
 
 resource "aws_autoscaling_group" "asg" {
   name = "ec2-single-asg-${var.test_id}"
-  min_size = 2
-  max_size = 2
+  min_size = 1
+  max_size = 1
   launch_configuration = aws_launch_configuration.launch_configuration.name
   vpc_zone_identifier = [data.aws_subnets.default_subnets.ids.0]
 }
@@ -198,6 +198,7 @@ resource "null_resource" "remote_service_setup" {
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
+
       EOF
     ]
   }

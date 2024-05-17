@@ -13,20 +13,22 @@
     "account_id": "^{{accountId}}$"
   },
   "annotations": {
-    "aws_local_service": "^{{serviceName}}$",
-    "HostedIn_EC2_Environment": "^{{platformInfo}}$",
-    "aws_local_operation": "^GET /remote-service$"
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET /remote-service$",
+    "aws.local.environment": "^ec2:{{platformInfo}}$"
   },
   "metadata": {
-      "default": {
-          "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
-          "otel.resource.host.id": "^{{instanceId}}$",
-          "otel.resource.host.image.id": "^{{instanceAmi}}$",
-          "otel.resource.host.type": "^t3.micro$",
-          "aws.span.kind": "^LOCAL_ROOT$",
-          "otel.resource.host.name": "^{{privateDnsName}}$",
-          "EC2.InstanceId": "^{{instanceId}}$"
-      }
+    "default": {
+      "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+      "EC2.InstanceId": "^{{instanceId}}$",
+      "PlatformType": "^AWS::EC2$",
+      "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
+      "otel.resource.host.id": "^{{instanceId}}$",
+      "otel.resource.host.image.id": "^{{instanceAmi}}$",
+      "otel.resource.host.type": "^t3.micro$",
+      "otel.resource.host.name": "^{{privateDnsName}}$",
+      "aws.span.kind": "^LOCAL_ROOT$"
+    }
   },
   "subsegments": [
     {
@@ -40,16 +42,19 @@
             }
           },
           "annotations": {
-            "aws_local_service": "^{{serviceName}}$",
-            "aws_local_operation": "^GET /remote-service$",
-            "aws_remote_service": "^{{remoteServiceDeploymentName}}$",
-            "aws_remote_operation": "^GET /healthcheck$"
+            "aws.local.service": "^{{serviceName}}$",
+            "aws.local.operation": "^GET /remote-service$",
+            "aws.remote.service": "^{{remoteServiceDeploymentName}}$",
+            "aws.remote.operation": "^GET /healthcheck$",
+            "aws.local.environment": "^ec2:{{platformInfo}}$"
           },
           "metadata": {
-              "default": {
-                  "aws.span.kind": "^CLIENT$",
-                  "EC2.InstanceId": "^{{instanceId}}$"
-              }
+            "default": {
+              "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+              "EC2.InstanceId": "^{{instanceId}}$",
+              "PlatformType": "^AWS::EC2$",
+              "aws.span.kind": "^CLIENT$"
+            }
            },
           "namespace": "^remote$"
         }
@@ -66,23 +71,31 @@
     }
   },
   "annotations": {
-    "HostedIn_EC2_Environment": "^EC2$",
-    "aws_local_service": "^{{remoteServiceName}}$",
-    "aws_local_operation": "^GET /healthcheck$"
+    "aws.local.service": "^{{remoteServiceName}}$",
+    "aws.local.operation": "^GET /healthcheck$",
+    "aws.local.environment": "^ec2:default$"
   },
   "metadata": {
-      "default": {
-          "otel.resource.host.image.id": "^{{instanceAmi}}$",
-          "otel.resource.host.type": "^t3.micro$",
-          "aws.span.kind": "^LOCAL_ROOT$"
-      }
+    "default": {
+      "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
+      "PlatformType": "^AWS::EC2$",
+      "otel.resource.host.image.id": "^{{instanceAmi}}$",
+      "otel.resource.host.type": "^t3.micro$",
+      "aws.span.kind": "^LOCAL_ROOT$"
+    }
   },
   "subsegments": [
     {
       "name": "^RemoteServiceController.healthcheck$",
       "annotations": {
-        "HostedIn_EC2_Environment": "^EC2$",
-        "aws_local_operation": "^GET /healthcheck$"
+        "aws.local.operation": "^GET /healthcheck$",
+        "aws.local.environment": "^ec2:default$"
+      },
+      "metadata": {
+        "default": {
+          "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
+          "PlatformType": "^AWS::EC2$"
+        }
       }
     }
   ]

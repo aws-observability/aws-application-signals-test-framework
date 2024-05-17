@@ -1,23 +1,26 @@
 [{
-  "EC2.AutoScalingGroupName":  "^{{platformInfo}}$",
-  "HostedIn.EC2.Environment": "^{{platformInfo}}$",
+  "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:{{platformInfo}}$",
+  "PlatformType": "^AWS::EC2$",
   "Operation": "GET /aws-sdk-call",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
   "aws.span.kind": "^LOCAL_ROOT$",
-  "EC2.InstanceId": "^{{instanceId}}$",
   "host.name": "^{{privateDnsName}}$"
 },
 {
-  "EC2.AutoScalingGroupName":  "^{{platformInfo}}$",
-  "HostedIn.EC2.Environment": "^{{platformInfo}}$",
+  "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:{{platformInfo}}$",
+  "PlatformType": "^AWS::EC2$",
   "Operation": "GET /aws-sdk-call",
   "OTelLib": "^AwsSpanMetricsProcessor$",
   "Version": "^1$",
-  "RemoteService": "AWS.SDK.S3",
+  "RemoteService": "AWS::S3",
   "RemoteOperation": "GetBucketLocation",
-  "RemoteTarget": "::s3:::e2e-test-bucket-name",
+  "RemoteResourceIdentifier": "^e2e-test-bucket-name$",
+  "RemoteResourceType": "^AWS::S3::Bucket$",
   "aws.span.kind": "^CLIENT$",
-  "EC2.InstanceId": "^{{instanceId}}$",
-  "host.name": "^{{privateDnsName}}$"
+  "host.name": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
 }]

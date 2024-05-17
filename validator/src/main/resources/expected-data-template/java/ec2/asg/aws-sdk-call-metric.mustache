@@ -9,8 +9,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
 
 -
   metricName: Latency
@@ -23,14 +23,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -40,8 +40,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
 
 -
   metricName: Latency
@@ -51,11 +51,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -65,14 +65,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Latency
@@ -85,17 +85,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
 -
   metricName: Latency
@@ -105,17 +108,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
 -
   metricName: Error
@@ -128,8 +134,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
 
 -
   metricName: Error
@@ -142,14 +148,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Error
@@ -159,8 +165,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
 
 -
   metricName: Error
@@ -170,11 +176,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Error
@@ -184,14 +190,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Error
@@ -204,17 +210,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
 -
   metricName: Error
@@ -224,17 +233,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
 -
   metricName: Fault
@@ -247,8 +259,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
 
 -
   metricName: Fault
@@ -261,14 +273,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -278,8 +290,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
 
 -
   metricName: Fault
@@ -289,11 +301,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -303,14 +315,14 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
 
 -
   metricName: Fault
@@ -323,17 +335,20 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
 -
   metricName: Fault
@@ -343,16 +358,19 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EC2.Environment
-      value: {{platformInfo}}
+      name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
-      value: AWS.SDK.S3
+      value: AWS::S3
     -
-      name: RemoteTarget
-      value: ::s3:::e2e-test-bucket-name
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
 
