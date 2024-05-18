@@ -2,7 +2,7 @@
   "name": "^{{serviceName}}$",
   "http": {
     "request": {
-      "url": "^{{endpoint}}/remote-service\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})$",
+      "url": "^{{endpoint}}/remote-service\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
       "method": "^GET$"
     },
     "response": {
@@ -19,7 +19,7 @@
   },
   "metadata": {
     "default": {
-      "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+      "EC2.AutoScalingGroup": "^{{platformInfo}}$",
       "EC2.InstanceId": "^{{instanceId}}$",
       "PlatformType": "^AWS::EC2$",
       "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
@@ -48,7 +48,7 @@
       },
       "metadata": {
         "default": {
-          "EC2.AutoScalingGroupName": "^{{platformInfo}}$",
+          "EC2.AutoScalingGroup": "^{{platformInfo}}$",
           "EC2.InstanceId": "^{{instanceId}}$",
           "PlatformType": "^AWS::EC2$",
           "aws.span.kind": "^CLIENT$"

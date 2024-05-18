@@ -8,7 +8,7 @@
   validationType: "trace"
   httpPath: "/aws-sdk-call"
   httpMethod: "get"
-  callingType: "http"
+  callingType: "http-with-query"
   expectedTraceTemplate: "PYTHON_EC2_ASG_AWS_SDK_CALL_TRACE"
 -
   validationType: "trace"
