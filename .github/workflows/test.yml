@@ -7,9 +7,6 @@
 ## including logs, metrics, and traces.
 name: Test - Python
 on:
-  push:
-    branches:
-      - ga-python
   workflow_dispatch:
 
 permissions:
