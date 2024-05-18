@@ -68,6 +68,26 @@
       name: Environment
       value: eks:{{platformInfo}}/{{appNamespace}}
     -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name-{{testingId}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
       name: RemoteOperation
       value: GetBucketLocation
     -
@@ -193,6 +213,26 @@
       name: Environment
       value: eks:{{platformInfo}}/{{appNamespace}}
     -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name-{{testingId}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
       name: RemoteOperation
       value: GetBucketLocation
     -
@@ -306,6 +346,26 @@
     -
       name: RemoteService
       value: AWS::S3
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name-{{testingId}}
 
 -
   metricName: Fault

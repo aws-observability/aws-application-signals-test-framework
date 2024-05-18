@@ -68,6 +68,26 @@
       name: Environment
       value: ec2:default
     -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name-{{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
       name: RemoteOperation
       value: GetBucketLocation
     -
@@ -193,6 +213,26 @@
       name: Environment
       value: ec2:default
     -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name-{{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
       name: RemoteOperation
       value: GetBucketLocation
     -
@@ -306,6 +346,26 @@
     -
       name: RemoteService
       value: AWS::S3
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceIdentifier
+      value: e2e-test-bucket-name-{{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
 -
   metricName: Fault
