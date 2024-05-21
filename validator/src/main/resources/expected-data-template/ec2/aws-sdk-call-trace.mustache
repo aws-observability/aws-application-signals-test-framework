@@ -30,7 +30,7 @@
     {
       "subsegments": [
         {
-          "name": "^AWS::S3$",
+          "name": "^S3$",
           "http": {
             "request": {
               "url": "^https://e2e-test-bucket-name-{{testingId}}.s3.{{region}}.amazonaws.com\\?location$",
@@ -60,7 +60,7 @@
   ]
 },
 {
-  "name": "^AWS::S3$",
+  "name": "^S3$",
   "aws": {
     "operation": "^GetBucketLocation$"
   }
