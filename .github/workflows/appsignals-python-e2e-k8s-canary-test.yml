@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   e2e-k8s-test:
-    uses: ./.github/workflows/appsignals-e2e-python-k8s-test.yml
+    uses: ./.github/workflows/application-signals-python-e2e-k8s-test.yml
     secrets: inherit
     with:
       # To run in more regions, a cluster must be provisioned manually on EC2 instances in that region
