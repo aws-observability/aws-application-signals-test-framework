@@ -112,6 +112,23 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_CLIENT_CALL_LOG("/expected-data-template/python/ec2/client-call-log.mustache"),
   PYTHON_EC2_CLIENT_CALL_METRIC("/expected-data-template/python/ec2/client-call-metric.mustache"),
   PYTHON_EC2_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/client-call-trace.mustache"),
+
+  /** Python K8S Test Case Validations */
+  PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
+  PYTHON_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/k8s/outgoing-http-call-metric.mustache"),
+  PYTHON_K8S_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/python/k8s/outgoing-http-call-trace.mustache"),
+
+  PYTHON_K8S_AWS_SDK_CALL_LOG("/expected-data-template/python/k8s/aws-sdk-call-log.mustache"),
+  PYTHON_K8S_AWS_SDK_CALL_METRIC("/expected-data-template/python/k8s/aws-sdk-call-metric.mustache"),
+  PYTHON_K8S_AWS_SDK_CALL_TRACE("/expected-data-template/python/k8s/aws-sdk-call-trace.mustache"),
+
+  PYTHON_K8S_REMOTE_SERVICE_LOG("/expected-data-template/python/k8s/remote-service-log.mustache"),
+  PYTHON_K8S_REMOTE_SERVICE_METRIC("/expected-data-template/python/k8s/remote-service-metric.mustache"),
+  PYTHON_K8S_REMOTE_SERVICE_TRACE("/expected-data-template/python/k8s/remote-service-trace.mustache"),
+
+  PYTHON_K8S_CLIENT_CALL_LOG("/expected-data-template/python/k8s/client-call-log.mustache"),
+  PYTHON_K8S_CLIENT_CALL_METRIC("/expected-data-template/python/k8s/client-call-metric.mustache"),
+  PYTHON_K8S_CLIENT_CALL_TRACE("/expected-data-template/python/k8s/client-call-trace.mustache"),
   ;
 
   private String path;
