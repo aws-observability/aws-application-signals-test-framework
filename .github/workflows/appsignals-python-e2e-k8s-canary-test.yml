@@ -4,7 +4,7 @@
 ## Operator and our sample app and remote service onto a native K8s cluster, call the
 ## APIs, and validate the generated telemetry, including logs, metrics, and traces.
 ## It will then clean up the cluster and EC2 instance it runs on for the next test run.
-name: App Signals Enablement - Python E2E EC2 Canary Testing
+name: App Signals Enablement - Python E2E K8s Canary Testing
 on:
   #  schedule:
   #    - cron: '*/15 * * * *' # run the workflow every 15 minutes

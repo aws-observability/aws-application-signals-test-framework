@@ -34,11 +34,3 @@ variable "host" {
   default = "<HOST_IP_OR_DNS>"
   description = "This variable is responsible for defining which host (ec2 instance) we connect to for the K8s-on-EC2 test"
 }
-
-variable "adot_image" {
-  default = "<cw_agent_image_address:latest>"
-}
-
-variable "cwagent_image" {
-  default = "<adot_image_address:latest>"
-}

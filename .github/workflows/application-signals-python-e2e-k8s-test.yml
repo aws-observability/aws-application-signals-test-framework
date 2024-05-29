@@ -28,8 +28,6 @@ env:
   # It is not redundant
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
-  CW_AGENT_IMAGE_RELEASE_VERSION: public.ecr.aws/y8s3a7r9/cloudwatch-agent:latest
-  APP_SIGNALS_ADOT_PYTHON_IMAGE_RELEASE_VERSION: 654654176582.dkr.ecr.us-east-1.amazonaws.com/aws-opentelemetry-distro/metric-schema-changes:latest
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   MASTER_NODE_SSH_KEY: ${{ secrets.APP_SIGNALS_E2E_K8S_SSH_KEY_IAD }}
@@ -91,9 +89,7 @@ jobs:
             -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="ssh_key=${{ env.MASTER_NODE_SSH_KEY }}" \
-            -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}" \
-            -var="cwagent_image=${{ env.CW_AGENT_IMAGE_RELEASE_VERSION }}" \
-            -var="adot_image=${{ env.APP_SIGNALS_ADOT_PYTHON_IMAGE_RELEASE_VERSION }}"
+            -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}"
 
       - name: Get Remote Service IP
         run: |
