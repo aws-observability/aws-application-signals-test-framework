@@ -36,7 +36,6 @@ env:
   ENABLEMENT_SCRIPT_S3_BUCKET: ${{ secrets.APP_SIGNALS_E2E_ENABLEMENT_SCRIPT }}
   SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}
   SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}
-  CW_AGENT_IMAGE_RELEASE_VERSION: public.ecr.aws/y8s3a7r9/cloudwatch-agent:latest
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
@@ -167,19 +166,7 @@ jobs:
               ${{ env.SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
-          
-              # Patch ADOT and CW Agent images, then restart the CW pods (Will leave it here for now for future releases)
-              # echo "LOG: Describing operator deployment"
-              # kubectl describe deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager
-              # echo "LOG: Patching operator deployment with ADOT image"
-              # kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-              # -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/1", "value": "--auto-instrumentation-java-image=${{ inputs.appsignals-adot-image-name }}"}]'
-              # echo "LOG: Describing operator deployment for the second time"
-              # kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": "${{ env.CW_AGENT_IMAGE_RELEASE_VERSION }}"}]'
-              
-              execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
-              execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
-          
+                  
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
           
