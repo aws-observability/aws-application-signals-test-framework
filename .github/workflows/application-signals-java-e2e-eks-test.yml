@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: App Signals Enablement E2E Testing - EKS
+name: Application Signals Enablement E2E Testing - Java EKS Use Case
 on:
   workflow_call:
     inputs:
@@ -59,12 +59,6 @@ jobs:
           && wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/clean-app-signals.sh"
           cleanup: "rm -f enable-app-signals.sh && rm -f clean-app-signals.sh"
           post-command: "chmod +x enable-app-signals.sh && chmod +x clean-app-signals.sh"
-
-      # In preparation for next release so we do not get alarms once the release is done
-      - name: Enforce EKS add on v1.6.0-eksbuild.1
-        working-directory: enablement-script
-        run: |
-          sed -i '\#--addon-name amazon-cloudwatch-observability \\#a--addon-version v1.6.0-eksbuild.1 \\' enable-app-signals.sh
 
       - name: Remove log group deletion command
         if: always()
@@ -174,14 +168,14 @@ jobs:
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
           
-              # Patch ADOT and CW Agent images, then restart the CW pods
-              echo "LOG: Describing operator deployment"
-              kubectl describe deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager
-              echo "LOG: Patching operator deployment with ADOT image"
-              kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-              -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/1", "value": "--auto-instrumentation-java-image=${{ inputs.appsignals-adot-image-name }}"}]'
-              echo "LOG: Describing operator deployment for the second time"
-              kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": "${{ env.CW_AGENT_IMAGE_RELEASE_VERSION }}"}]'
+              # Patch ADOT and CW Agent images, then restart the CW pods (Will leave it here for now for future releases)
+              # echo "LOG: Describing operator deployment"
+              # kubectl describe deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager
+              # echo "LOG: Patching operator deployment with ADOT image"
+              # kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+              # -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/1", "value": "--auto-instrumentation-java-image=${{ inputs.appsignals-adot-image-name }}"}]'
+              # echo "LOG: Describing operator deployment for the second time"
+              # kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": "${{ env.CW_AGENT_IMAGE_RELEASE_VERSION }}"}]'
               
               execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
               execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
