@@ -29,7 +29,6 @@ env:
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_WHEEL_NAME: ${{ inputs.staging_wheel_name }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
-  GET_ADOT_JAR_COMMAND: "aws s3api get-object --bucket metric-schema-changes --key aws-opentelemetry-agent.jar adot.jar"
   GET_CW_AGENT_RPM_COMMAND: "wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
 
 jobs:

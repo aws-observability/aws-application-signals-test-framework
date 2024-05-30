@@ -163,15 +163,6 @@ jobs:
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
-
-              # Commenting this code out for now until future releases
-              # echo "Patching staging adot image for main build"
-              # execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-              # -p='[{"op": \"replace\", \"path\": \"/spec/template/spec/containers/0/args/2\", \"value\": \"--auto-instrumentation-python-image=${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}\"}]'"
-
-              # execute_and_retry 2 "kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": "public.ecr.aws/y8s3a7r9/cloudwatch-agent:latest"}]'"
-              # execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
-              # execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
           
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 10
