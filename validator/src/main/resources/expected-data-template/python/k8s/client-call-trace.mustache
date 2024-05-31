@@ -3,12 +3,13 @@
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
     "aws.local.operation": "^InternalOperation$",
-    "aws.local.environment": "^ec2:default$"
+    "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
   },
   "metadata": {
     "default": {
-        "otel.resource.host.image.id": "^{{instanceAmi}}$",
-        "otel.resource.host.type": "^t3.micro$"
+          "otel.resource.K8s.Workload": "^python-sample-app-deployment-{{testingId}}$",
+          "otel.resource.K8s.Node": "^i-[A-Za-z0-9]{17}$",
+          "otel.resource.K8s.Pod": "^python-sample-app-deployment-{{testingId}}(-[A-Za-z0-9]*)*$"
     }
   },
   "subsegments": [
@@ -16,7 +17,7 @@
       "name": "^local-root-client-call$",
       "http": {
           "request": {
-              "url": "^http://local-root-client-call$",
+              "url": "^http://local-root-client-call/$",
               "method": "^GET$"
           }
       },
@@ -25,12 +26,10 @@
         "aws.local.operation": "^InternalOperation$",
         "aws.remote.service": "^local-root-client-call$",
         "aws.remote.operation": "GET /",
-        "aws.local.environment": "^ec2:default$"
+        "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
       },
       "metadata": {
         "default": {
-          "EC2.InstanceId": "^{{instanceId}}$",
-          "PlatformType": "^AWS::EC2$",
           "aws.span.kind": "^LOCAL_ROOT$"
         }
       },
@@ -42,7 +41,7 @@
     "name": "^local-root-client-call$",
     "http": {
         "request": {
-            "url": "^http://local-root-client-call$",
+            "url": "^http://local-root-client-call/$",
             "method": "^GET$"
         },
         "response": {

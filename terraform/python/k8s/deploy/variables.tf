@@ -13,18 +13,24 @@
 # permissions and limitations under the License.
 # -------------------------------------------------------------------------
 
-output "sample_app_main_service_public_dns" {
-  value = aws_instance.main_service_instance.public_dns
+variable "test_id" {
+  default = "dummy-123"
 }
 
-output "sample_app_remote_service_public_ip" {
-  value = aws_instance.remote_service_instance.public_ip
+variable "aws_region" {
+  default = "<aws-region>"
 }
 
-output "main_service_instance_id" {
-  value = aws_instance.main_service_instance.id
+variable "user" {
+  default = "ec2-user"
 }
 
-output "ec2_instance_ami" {
-  value = data.aws_ami.ami.id
+variable "ssh_key" {
+  default = "<MASTER_NODE_SSH_KEY>"
+  description = "This variable is responsible for providing the SSH key of the master node to allow terraform to interact with the cluster"
+}
+
+variable "host" {
+  default = "<HOST_IP_OR_DNS>"
+  description = "This variable is responsible for defining which host (ec2 instance) we connect to for the K8s-on-EC2 test"
 }

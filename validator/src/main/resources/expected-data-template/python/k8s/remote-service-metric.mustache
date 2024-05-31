@@ -4,13 +4,13 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET remote-service
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Latency
@@ -18,19 +18,19 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET remote-service
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Latency
@@ -38,13 +38,13 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: Operation
-      value: GET /healthcheck
+      value: GET healthcheck
     -
       name: Service
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Latency
@@ -55,7 +55,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Latency
@@ -63,10 +63,10 @@
   dimensions:
     -
       name: Service
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Latency
@@ -77,10 +77,10 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Latency
@@ -91,13 +91,13 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Latency
@@ -105,7 +105,7 @@
   dimensions:
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Latency
@@ -113,13 +113,13 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Service
       value: {{serviceName}}
@@ -130,16 +130,16 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Service
       value: {{serviceName}}
@@ -150,19 +150,19 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: Operation
-      value: GET /remote-service
+      value: GET remote-service
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Service
       value: {{serviceName}}
@@ -173,13 +173,13 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET remote-service
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Error
@@ -187,19 +187,19 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET remote-service
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Error
@@ -207,13 +207,13 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: Operation
-      value: GET /healthcheck
+      value: GET healthcheck
     -
       name: Service
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Error
@@ -224,7 +224,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Error
@@ -232,10 +232,10 @@
   dimensions:
     -
       name: Service
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Error
@@ -246,10 +246,10 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Error
@@ -260,13 +260,13 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Error
@@ -274,7 +274,7 @@
   dimensions:
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Error
@@ -282,13 +282,13 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Service
       value: {{serviceName}}
@@ -299,16 +299,16 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Service
       value: {{serviceName}}
@@ -319,19 +319,19 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: Operation
-      value: GET /remote-service
+      value: GET remote-service
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Service
       value: {{serviceName}}
@@ -342,13 +342,13 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET remote-service
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Fault
@@ -356,19 +356,19 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: GET remote-service
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Fault
@@ -376,13 +376,13 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: Operation
-      value: GET /healthcheck
+      value: GET healthcheck
     -
       name: Service
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Fault
@@ -393,7 +393,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Fault
@@ -401,10 +401,10 @@
   dimensions:
     -
       name: Service
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Fault
@@ -415,10 +415,10 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Fault
@@ -429,13 +429,13 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Fault
@@ -443,7 +443,7 @@
   dimensions:
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
 
 -
   metricName: Fault
@@ -451,13 +451,13 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Service
       value: {{serviceName}}
@@ -468,16 +468,16 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Service
       value: {{serviceName}}
@@ -488,19 +488,19 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: Operation
-      value: GET /remote-service
+      value: GET remote-service
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceName}}
     -
       name: Service
       value: {{serviceName}}
