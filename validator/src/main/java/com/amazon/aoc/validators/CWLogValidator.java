@@ -132,19 +132,25 @@ public class CWLogValidator implements IValidator {
 
   private Map<String, Object> getActualLog(
       String operation, String remoteService, String remoteOperation) throws Exception {
-    String dependencyFilter = null;
+    String filterPattern = null;
 
     // Dependency calls will have the remoteService and remoteOperation attribute, but service calls
     // will not. A service call will have
     // null remoteService and null remoteOperation and the filter expression must be adjusted
     // accordingly.
     if (remoteService == null && remoteOperation == null) {
-      dependencyFilter = "&& ($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS)";
+      filterPattern =
+          String.format(
+              "{ ($.Service = %s) && ($.Operation = \"%s\") && "
+                  + "($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS) }",
+              context.getServiceName(), operation);
     } else {
-      dependencyFilter = String.format("&& ($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")", remoteService, remoteOperation);
+      filterPattern =
+          String.format(
+              "{ ($.Service = %s) && ($.Operation = \"%s\") && "
+                  + "($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\") }",
+              context.getServiceName(), operation, remoteService, remoteOperation);
     }
-
-    String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") %s }", context.getServiceName(), operation, dependencyFilter);
     log.info("Filter Pattern for Log Search: " + filterPattern);
 
     List<FilteredLogEvent> retrievedLogs =

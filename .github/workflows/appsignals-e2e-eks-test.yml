@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Application Signals Enablement E2E Testing - Java EKS Use Case
+name: App Signals Enablement E2E Testing - EKS
 on:
   workflow_call:
     inputs:
@@ -30,14 +30,14 @@ permissions:
   contents: read
 
 env:
-  # The presence of this env var is required for use by terraform and AWS CLI commands
+  # The precense of this env var is required for use by terraform and AWS CLI commands
   # It is not redundant
   AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   ENABLEMENT_SCRIPT_S3_BUCKET: ${{ secrets.APP_SIGNALS_E2E_ENABLEMENT_SCRIPT }}
   SAMPLE_APP_FRONTEND_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}
   SAMPLE_APP_REMOTE_SERVICE_IMAGE: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}.dkr.ecr.${{ inputs.aws-region }}.amazonawss.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}
-  METRIC_NAMESPACE: ApplicationSignals
-  LOG_GROUP_NAME: /aws/application-signals/data
+  METRIC_NAMESPACE: AppSignals
+  LOG_GROUP_NAME: /aws/appsignals/eks
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 jobs:
@@ -58,6 +58,12 @@ jobs:
           && wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/clean-app-signals.sh"
           cleanup: "rm -f enable-app-signals.sh && rm -f clean-app-signals.sh"
           post-command: "chmod +x enable-app-signals.sh && chmod +x clean-app-signals.sh"
+
+      # In preparation for next release so we do not get alarms once the release is done
+      - name: Enforce EKS add on v1.6.0-eksbuild.1
+        working-directory: enablement-script
+        run: |
+          sed -i '\#--addon-name amazon-cloudwatch-observability \\#a--addon-version v1.6.0-eksbuild.1 \\' enable-app-signals.sh
 
       - name: Remove log group deletion command
         if: always()

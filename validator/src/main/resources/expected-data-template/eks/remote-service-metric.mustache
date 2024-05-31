@@ -9,8 +9,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
 
 -
   metricName: Latency
@@ -23,8 +26,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
@@ -37,8 +43,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: Operation
       value: GET /healthcheck
@@ -54,8 +63,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
 
 -
   metricName: Latency
@@ -65,8 +77,11 @@
       name: Service
       value: {{remoteServiceDeploymentName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
 
 -
   metricName: Latency
@@ -76,8 +91,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: RemoteService
       value: {{remoteServiceDeploymentName}}
@@ -90,8 +108,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
@@ -112,31 +133,14 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
     -
-      name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-    -
-      name: Service
-      value: {{serviceName}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GET /healthcheck
+      name: K8s.RemoteNamespace
+      value: {{appNamespace}}
     -
       name: RemoteService
       value: {{remoteServiceDeploymentName}}
@@ -149,160 +153,14 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
     -
-      name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
-      name: Operation
-      value: GET /remote-service
-    -
-      name: RemoteOperation
-      value: GET /healthcheck
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-    -
-      name: Service
-      value: {{serviceName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /remote-service
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /remote-service
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GET /healthcheck
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-    -
-      name: Operation
-      value: GET /healthcheck
-    -
-      name: Service
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceDeploymentName}}
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GET /healthcheck
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-    -
-      name: Service
-      value: {{serviceName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: K8s.RemoteNamespace
+      value: {{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
@@ -314,15 +172,18 @@
       value: {{serviceName}}
 
 -
-  metricName: Error
+  metricName: Latency
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
     -
-      name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: K8s.RemoteNamespace
+      value: {{appNamespace}}
     -
       name: Operation
       value: GET /remote-service
@@ -337,6 +198,205 @@
       value: {{serviceName}}
 
 -
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: Operation
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: K8s.RemoteNamespace
+      value: {{appNamespace}}
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: Service
+      value: {{serviceName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: K8s.RemoteNamespace
+      value: {{appNamespace}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: Service
+      value: {{serviceName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: K8s.RemoteNamespace
+      value: {{appNamespace}}
+    -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: Service
+      value: {{serviceName}}
+
+-
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
@@ -347,8 +407,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
 
 -
   metricName: Fault
@@ -361,8 +424,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
@@ -375,8 +441,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: Operation
       value: GET /healthcheck
@@ -392,8 +461,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
 
 -
   metricName: Fault
@@ -403,8 +475,11 @@
       name: Service
       value: {{remoteServiceDeploymentName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
 
 -
   metricName: Fault
@@ -414,8 +489,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: RemoteService
       value: {{remoteServiceDeploymentName}}
@@ -428,8 +506,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
+    -
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
@@ -450,11 +531,14 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
     -
-      name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: K8s.RemoteNamespace
+      value: {{appNamespace}}
     -
       name: RemoteService
       value: {{remoteServiceDeploymentName}}
@@ -467,11 +551,14 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
     -
-      name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: K8s.RemoteNamespace
+      value: {{appNamespace}}
     -
       name: RemoteOperation
       value: GET /healthcheck
@@ -487,11 +574,14 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.EKS.Cluster
+      value: {{platformInfo}}
     -
-      name: RemoteEnvironment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      name: HostedIn.K8s.Namespace
+      value: {{appNamespace}}
+    -
+      name: K8s.RemoteNamespace
+      value: {{appNamespace}}
     -
       name: Operation
       value: GET /remote-service
