@@ -41,8 +41,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: aws-observability/aws-application-signals-test-framework
-          ref: ga-python
+          repository: ${{ inputs.caller-workflow-name == 'main-build' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
+          ref: ${{ github.ref }}
+          fetch-depth: 0
 
       - name: Download enablement script
         uses: ./.github/workflows/actions/execute_and_retry
