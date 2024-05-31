@@ -170,8 +170,8 @@ jobs:
                 --region ${{ inputs.aws-region }} \
                 --configuration-values '{"agent":{"config":{"logs":{"metrics_collected":{"app_signals":{"limiter":{"drop_threshold":2}}}}}}}'
                     
-              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}"
+              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
+              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
                     
               echo "Attempting to connect to the main sample app endpoint"
               main_sample_app_endpoint=http://$(terraform output sample_app_endpoint)
@@ -272,10 +272,10 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s "http://${{ env.APP_ENDPOINT }}/outgoing-http-call"
-          curl -S -s "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
-          curl -S -s "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
-          curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/outgoing-http-call"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"; echo
 
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
