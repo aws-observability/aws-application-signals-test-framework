@@ -39,8 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: aws-observability/aws-application-signals-test-framework
-          ref: ga-python
+          repository: ${{ inputs.caller-workflow-name == 'main-build' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
+          ref: ${{ github.ref }}
+          fetch-depth: 0
 
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.job }}-${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
