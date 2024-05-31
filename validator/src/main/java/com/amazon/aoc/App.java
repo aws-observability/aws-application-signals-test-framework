@@ -135,7 +135,7 @@ public class App implements Callable<Integer> {
 
   @CommandLine.Option(
       names = {"--instance-ami"},
-      defaultValue = "")
+      defaultValue = "defaultAmi")
   private String instanceAmi;
 
   @CommandLine.Option(
