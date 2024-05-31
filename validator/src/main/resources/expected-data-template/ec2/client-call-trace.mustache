@@ -2,13 +2,15 @@
   "name": "^{{serviceName}}$",
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^InternalOperation$",
-    "aws.local.environment": "^ec2:default$"
+    "HostedIn.Environment": "^EC2$",
+    "aws.local.operation": "^InternalOperation$"
   },
   "metadata": {
     "default": {
+        "otel.resource.aws.hostedin.environment": "^EC2$",
         "otel.resource.host.image.id": "^{{instanceAmi}}$",
         "otel.resource.host.type": "^t3.micro$"
+
     }
   },
   "subsegments": [
@@ -21,16 +23,14 @@
           }
       },
       "annotations": {
+        "HostedIn.Environment": "^EC2$",
         "aws.local.service": "^{{serviceName}}$",
         "aws.local.operation": "^InternalOperation$",
         "aws.remote.service": "^local-root-client-call$",
-        "aws.remote.operation": "GET /",
-        "aws.local.environment": "^ec2:default$"
+        "aws.remote.operation": "GET /"
       },
       "metadata": {
         "default": {
-          "EC2.InstanceId": "^{{instanceId}}$",
-          "PlatformType": "^AWS::EC2$",
           "aws.span.kind": "^LOCAL_ROOT$"
         }
       },
