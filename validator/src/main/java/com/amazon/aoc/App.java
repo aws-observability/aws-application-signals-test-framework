@@ -135,7 +135,7 @@ public class App implements Callable<Integer> {
 
   @CommandLine.Option(
       names = {"--instance-ami"},
-      defaultValue = "defaultAmi")
+      defaultValue = "")
   private String instanceAmi;
 
   @CommandLine.Option(
@@ -177,7 +177,6 @@ public class App implements Callable<Integer> {
     context.setTestcase(testcase);
     context.setLanguage(language);
     context.setInstanceAmi(this.instanceAmi);
-    context.setInstanceId(this.instanceId);
 
     log.info(context);
 
