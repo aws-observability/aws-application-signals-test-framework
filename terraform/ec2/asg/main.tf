@@ -94,7 +94,6 @@ resource "aws_launch_configuration" "launch_configuration" {
 
   user_data = <<-EOF
     #!/bin/bash
-    mkdir test222
     # Make the Terraform fail if any step throws an error
     set -o errexit
     # Install Java 11 and wget

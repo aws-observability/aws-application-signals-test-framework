@@ -31,12 +31,6 @@
     -
       name: RemoteService
       value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: e2e-test-bucket-name-{{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
 
 -
   metricName: Latency
@@ -115,6 +109,7 @@
       value: {{serviceName}}
     -
       name: Environment
+      value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
       value: GetBucketLocation

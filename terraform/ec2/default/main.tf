@@ -200,8 +200,8 @@ resource "null_resource" "remote_service_setup" {
       OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
       OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \
-      nohup java -jar main-service.jar &> nohup.out &
+      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \
+      nohup java -jar remote-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
