@@ -139,8 +139,8 @@ public class App implements Callable<Integer> {
   private String instanceAmi;
 
   @CommandLine.Option(
-          names = {"--instance-id"},
-          defaultValue = "defaultId")
+      names = {"--instance-id"},
+      defaultValue = "defaultId")
   private String instanceId;
 
   private static final String TEST_CASE_DIM_KEY = "testcase";
