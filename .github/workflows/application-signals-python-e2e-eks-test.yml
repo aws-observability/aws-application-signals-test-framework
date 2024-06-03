@@ -41,8 +41,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: aws-observability/aws-application-signals-test-framework
-          ref: ga-python
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
 
       - name: Download enablement script
         uses: ./.github/workflows/actions/execute_and_retry
@@ -52,12 +53,6 @@ jobs:
           && wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/clean-app-signals.sh"
           cleanup: "rm -f enable-app-signals.sh && rm -f clean-app-signals.sh"
           post-command: "chmod +x enable-app-signals.sh && chmod +x clean-app-signals.sh"
-
-      # In preparation for next release so we do not get alarms once the release is done
-      - name: Enforce EKS add on v1.6.0-eksbuild.1
-        working-directory: enablement-script
-        run: |
-          sed -i '\#--addon-name amazon-cloudwatch-observability \\#a--addon-version v1.6.0-eksbuild.1 \\' enable-app-signals.sh
 
       - name: Remove log group deletion command
         if: always()
@@ -169,14 +164,14 @@ jobs:
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
-
-              echo "Patching staging adot image for main build"
-              execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-              -p='[{"op": \"replace\", \"path\": \"/spec/template/spec/containers/0/args/2\", \"value\": \"--auto-instrumentation-python-image=${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}\"}]'"
-
-              execute_and_retry 2 "kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": "public.ecr.aws/y8s3a7r9/cloudwatch-agent:latest"}]'"
-              execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
-              execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
+          
+              if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
+                echo "Patching staging adot image for main build:"
+                execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+                -p='[{"op": \"replace\", \"path\": \"/spec/template/spec/containers/0/args/2\", \"value\": \"--auto-instrumentation-python-image=${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}\"}]'"
+                execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
+                execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
+              fi
           
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 10
@@ -257,10 +252,10 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/outgoing-http-call; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call?testingId=${{ env.TESTING_ID }}; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/client-call; echo
+          curl -S -s -o /dev/null "http://${{ env.APP_ENDPOINT }}/outgoing-http-call"; echo
+          curl -S -s -o /dev/null "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s -o /dev/null "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s -o /dev/null "http://${{ env.APP_ENDPOINT }}/client-call"; echo
 
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
@@ -285,7 +280,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Call endpoints and validate generated metrics
@@ -319,7 +314,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Publish metric on test result

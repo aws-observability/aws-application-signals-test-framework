@@ -8,8 +8,13 @@
   validationType: "trace"
   httpPath: "/aws-sdk-call"
   httpMethod: "get"
+<<<<<<< HEAD:validator/src/main/resources/validations/python/ec2/default/trace-validation.yml
   callingType: "http"
   expectedTraceTemplate: "PYTHON_EC2_DEFAULT_AWS_SDK_CALL_TRACE"
+=======
+  callingType: "http-with-query"
+  expectedTraceTemplate: "PYTHON_EC2_AWS_SDK_CALL_TRACE"
+>>>>>>> main:validator/src/main/resources/validations/python/ec2/trace-validation.yml
 -
   validationType: "trace"
   httpPath: "/remote-service"

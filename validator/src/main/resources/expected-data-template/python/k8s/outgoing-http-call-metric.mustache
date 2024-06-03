@@ -4,16 +4,13 @@
   dimensions:
     -
       name: Operation
-      value: AllOtherOperations
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Latency
@@ -21,19 +18,16 @@
   dimensions:
     -
       name: Operation
-      value: AllOtherOperations
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
-      value: AllOtherRemoteOperations
+      value: GET /
     -
       name: RemoteService
       value: www.amazon.com
@@ -46,11 +40,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Latency
@@ -60,14 +51,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
-      value: AllOtherRemoteOperations
+      value: GET /
     -
       name: RemoteService
       value: www.amazon.com
@@ -80,11 +68,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: www.amazon.com
@@ -95,16 +80,13 @@
   dimensions:
     -
       name: Operation
-      value: AllOtherOperations
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Error
@@ -112,19 +94,16 @@
   dimensions:
     -
       name: Operation
-      value: AllOtherOperations
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
-      value: AllOtherRemoteOperations
+      value: GET /
     -
       name: RemoteService
       value: www.amazon.com
@@ -137,11 +116,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Error
@@ -151,14 +127,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
-      value: AllOtherRemoteOperations
+      value: GET /
     -
       name: RemoteService
       value: www.amazon.com
@@ -171,11 +144,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: www.amazon.com
@@ -186,16 +156,13 @@
   dimensions:
     -
       name: Operation
-      value: AllOtherOperations
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Fault
@@ -203,19 +170,16 @@
   dimensions:
     -
       name: Operation
-      value: AllOtherOperations
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
-      value: AllOtherRemoteOperations
+      value: GET /
     -
       name: RemoteService
       value: www.amazon.com
@@ -228,11 +192,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Fault
@@ -242,14 +203,11 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteOperation
-      value: AllOtherRemoteOperations
+      value: GET /
     -
       name: RemoteService
       value: www.amazon.com
@@ -262,11 +220,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.EKS.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: www.amazon.com
