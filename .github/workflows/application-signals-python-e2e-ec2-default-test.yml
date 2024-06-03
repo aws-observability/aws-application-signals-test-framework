@@ -24,7 +24,6 @@ permissions:
   contents: read
 
 env:
-  AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
@@ -45,7 +44,7 @@ jobs:
           fetch-depth: 0
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -57,13 +56,13 @@ jobs:
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids:
-            ACCOUNT_ID, region-account/${{ env.AWS_DEFAULT_REGION }}
+            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          aws-region: ${{ inputs.aws-region }}
 
       - uses: actions/download-artifact@v3
         if: inputs.caller-workflow-name == 'main-build'
@@ -103,7 +102,7 @@ jobs:
             echo "Attempt $retry_counter"
             deployment_failed=0
             terraform apply -auto-approve \
-              -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
+              -var="aws_region=${{ inputs.aws-region }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
@@ -169,10 +168,10 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s -o /dev/null "http://${{ env.MAIN_SERVICE_ENDPOINT }}/outgoing-http-call"; echo
-          curl -S -s -o /dev/null "http://${{ env.MAIN_SERVICE_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"; echo
-          curl -S -s -o /dev/null "http://${{ env.MAIN_SERVICE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"; echo
-          curl -S -s -o /dev/null "http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call"; echo
+          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/outgoing-http-call"; echo
+          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call"; echo
 
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
@@ -189,7 +188,7 @@ jobs:
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
-          --region ${{ env.AWS_DEFAULT_REGION }}
+          --region ${{ inputs.aws-region }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
@@ -206,7 +205,7 @@ jobs:
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
-          --region ${{ env.AWS_DEFAULT_REGION }}
+          --region ${{ inputs.aws-region }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
@@ -223,7 +222,7 @@ jobs:
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
-          --region ${{ env.AWS_DEFAULT_REGION }}
+          --region ${{ inputs.aws-region }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -242,13 +241,13 @@ jobs:
             --metric-name Failure \
             --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
             --value 0.0 \
-            --region ${{ env.AWS_DEFAULT_REGION }}
+            --region ${{ inputs.aws-region }}
           else
             aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
             --metric-name Failure \
             --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
             --value 1.0 \
-            --region ${{ env.AWS_DEFAULT_REGION }}
+            --region ${{ inputs.aws-region }}
           fi
 
       # Clean up Procedures

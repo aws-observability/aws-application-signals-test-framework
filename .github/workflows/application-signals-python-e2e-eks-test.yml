@@ -58,7 +58,7 @@ jobs:
         if: always()
         working-directory: enablement-script
         run: |
-          delete_log_group="aws logs delete-log-group --log-group-name '/aws/appsignals/eks' --region \$REGION"
+          delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP_NAME }}' --region \$REGION"
           sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
       - name: Generate testing id and python sample app namespace
@@ -252,10 +252,10 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s -o /dev/null "http://${{ env.APP_ENDPOINT }}/outgoing-http-call"; echo
-          curl -S -s -o /dev/null "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
-          curl -S -s -o /dev/null "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
-          curl -S -s -o /dev/null "http://${{ env.APP_ENDPOINT }}/client-call"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/outgoing-http-call"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"; echo
 
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
@@ -298,7 +298,7 @@ jobs:
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-name python-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Call endpoints and validate generated traces

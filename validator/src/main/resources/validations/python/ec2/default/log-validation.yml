@@ -8,13 +8,8 @@
   validationType: "cw-log"
   httpPath: "/aws-sdk-call"
   httpMethod: "get"
-<<<<<<< HEAD:validator/src/main/resources/validations/python/ec2/default/log-validation.yml
-  callingType: "http"
-  expectedLogStructureTemplate: "PYTHON_EC2_DEFAULT_AWS_SDK_CALL_LOG"
-=======
   callingType: "http-with-query"
-  expectedLogStructureTemplate: "PYTHON_EC2_AWS_SDK_CALL_LOG"
->>>>>>> main:validator/src/main/resources/validations/python/ec2/log-validation.yml
+  expectedLogStructureTemplate: "PYTHON_EC2_DEFAULT_AWS_SDK_CALL_LOG"
 -
   validationType: "cw-log"
   httpPath: "/remote-service"
