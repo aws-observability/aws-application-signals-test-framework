@@ -47,11 +47,18 @@
             "aws.remote.operation": "^GetBucketLocation$",
             "aws.remote.resource.type": "^AWS::S3::Bucket$",
             "aws.remote.resource.identifier": "^e2e-test-bucket-name-{{testingId}}$",
+<<<<<<< HEAD:validator/src/main/resources/expected-data-template/java/ec2/asg/aws-sdk-call-trace.mustache
             "aws.local.environment": "^ec2:{{platformInfo}}$"
           },
           "metadata": {
             "default": {
               "EC2.AutoScalingGroup": "^{{platformInfo}}$",
+=======
+            "aws.local.environment": "^ec2:default$"
+          },
+          "metadata": {
+            "default": {
+>>>>>>> main:validator/src/main/resources/expected-data-template/ec2/aws-sdk-call-trace.mustache
               "EC2.InstanceId": "^{{instanceId}}$",
               "PlatformType": "^AWS::EC2$",
               "aws.span.kind": "^CLIENT$"

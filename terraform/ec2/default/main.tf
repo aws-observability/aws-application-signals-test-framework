@@ -125,15 +125,13 @@ resource "null_resource" "main_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_app_jar} ./main-service.jar
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
-      OTEL_METRICS_EXPORTER=none \
-      OTEL_LOGS_EXPORT=none \
-      OTEL_AWS_APP_SIGNALS_ENABLED=true \
-      OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \
-      nohup java -jar main-service.jar &> nohup.out &
+      "JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \\",
+      "OTEL_METRICS_EXPORTER=none \\",
+      "OTEL_SMP_ENABLED=true \\",
+      "OTEL_AWS_SMP_EXPORTER_ENDPOINT=http://localhost:4315 \\",
+      "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315 \\",
+      "OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \\",
+      "nohup java -jar main-service.jar &> nohup.out &",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -193,15 +191,13 @@ resource "null_resource" "remote_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_remote_app_jar} ./remote-service.jar
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
-      OTEL_METRICS_EXPORTER=none \
-      OTEL_LOGS_EXPORT=none \
-      OTEL_AWS_APP_SIGNALS_ENABLED=true \
-      OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \
-      nohup java -jar remote-service.jar &> nohup.out &
+      "JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \\",
+      "OTEL_METRICS_EXPORTER=none \\",
+      "OTEL_SMP_ENABLED=true \\",
+      "OTEL_AWS_SMP_EXPORTER_ENDPOINT=http://localhost:4315 \\",
+      "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315 \\",
+      "OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \\",
+      "nohup java -jar remote-service.jar &> nohup.out &",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
