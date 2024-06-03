@@ -29,8 +29,8 @@ permissions:
   contents: read
 
 env:
-  METRIC_NAMESPACE: AppSignals
-  LOG_GROUP_NAME: /aws/appsignals/eks
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
@@ -41,8 +41,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.caller-workflow-name == 'main-build' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'adot-pending-release' || github.ref }}
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Download enablement script
@@ -53,12 +53,6 @@ jobs:
           && wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/clean-app-signals.sh"
           cleanup: "rm -f enable-app-signals.sh && rm -f clean-app-signals.sh"
           post-command: "chmod +x enable-app-signals.sh && chmod +x clean-app-signals.sh"
-
-      # In preparation for next release so we do not get alarms once the release is done
-      - name: Enforce EKS add on v1.6.0-eksbuild.1
-        working-directory: enablement-script
-        run: |
-          sed -i '\#--addon-name amazon-cloudwatch-observability \\#a--addon-version v1.6.0-eksbuild.1 \\' enable-app-signals.sh
 
       - name: Remove log group deletion command
         if: always()
@@ -170,7 +164,7 @@ jobs:
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
-
+          
               if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
                 echo "Patching staging adot image for main build:"
                 execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
