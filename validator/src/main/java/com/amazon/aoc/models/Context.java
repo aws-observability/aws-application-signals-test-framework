@@ -51,11 +51,13 @@ public class Context {
 
   private String endpoint;
 
-  private String requestBody;
+  private String queryString;
 
   private String logGroup;
 
   private String instanceAmi;
+
+  private String instanceId;
 
   private ECSContext ecsContext;
 

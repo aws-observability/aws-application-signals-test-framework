@@ -78,8 +78,8 @@ public class App implements Callable<Integer> {
   @CommandLine.Option(names = {"--endpoint"})
   private String endpoint;
 
-  @CommandLine.Option(names = {"--request-body"})
-  private String requestBody;
+  @CommandLine.Option(names = {"--query-string"})
+  private String queryString;
 
   @CommandLine.Option(
       names = {"--log-group"},
@@ -135,8 +135,13 @@ public class App implements Callable<Integer> {
 
   @CommandLine.Option(
       names = {"--instance-ami"},
-      defaultValue = "")
+      defaultValue = "defaultAmi")
   private String instanceAmi;
+
+  @CommandLine.Option(
+      names = {"--instance-id"},
+      defaultValue = "defaultId")
+  private String instanceId;
 
   private static final String TEST_CASE_DIM_KEY = "testcase";
   private static final String CANARY_NAMESPACE = "Otel/Canary";
@@ -161,7 +166,7 @@ public class App implements Callable<Integer> {
     context.setRemoteServiceName(this.remoteServiceName);
     context.setRemoteServiceDeploymentName(this.remoteServiceDeploymentName);
     context.setEndpoint(this.endpoint);
-    context.setRequestBody(this.requestBody);
+    context.setQueryString(this.queryString);
     context.setLogGroup(this.logGroup);
     context.setEcsContext(buildJsonContext(ecsContext, ECSContext.class));
     context.setEc2Context(buildJsonContext(ec2Context, EC2Context.class));
@@ -172,6 +177,7 @@ public class App implements Callable<Integer> {
     context.setTestcase(testcase);
     context.setLanguage(language);
     context.setInstanceAmi(this.instanceAmi);
+    context.setInstanceId(this.instanceId);
 
     log.info(context);
 

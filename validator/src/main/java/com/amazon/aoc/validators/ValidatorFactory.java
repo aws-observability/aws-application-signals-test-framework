@@ -64,11 +64,11 @@ public class ValidatorFactory {
       case "http":
         caller = new HttpCaller(context.getEndpoint(), validationConfig.getHttpPath());
         break;
-      case "http-with-body":
+      case "http-with-query":
         // ONLY ONE OF THESE CAN BE USED PER VALIDATOR CALL
         caller =
             new HttpCaller(
-                context.getEndpoint(), validationConfig.getHttpPath(), context.getRequestBody());
+                context.getEndpoint(), validationConfig.getHttpPath(), context.getQueryString());
         break;
       case "none":
         caller = null;

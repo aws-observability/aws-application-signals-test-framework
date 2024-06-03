@@ -129,7 +129,7 @@ resource "null_resource" "main_service_setup" {
       "OTEL_SMP_ENABLED=true \\",
       "OTEL_AWS_SMP_EXPORTER_ENDPOINT=http://localhost:4315 \\",
       "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2,service.name=sample-application-${var.test_id} \\",
+      "OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \\",
       "nohup java -jar main-service.jar &> nohup.out &",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
@@ -177,7 +177,7 @@ resource "null_resource" "remote_service_setup" {
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
-       "${var.get_cw_agent_rpm_command}",
+      "${var.get_cw_agent_rpm_command}",
       "sudo rpm -U ./cw-agent.rpm",
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
@@ -192,7 +192,7 @@ resource "null_resource" "remote_service_setup" {
       "OTEL_SMP_ENABLED=true \\",
       "OTEL_AWS_SMP_EXPORTER_ENDPOINT=http://localhost:4315 \\",
       "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315 \\",
-      "OTEL_RESOURCE_ATTRIBUTES=aws.hostedin.environment=EC2,service.name=sample-remote-application-${var.test_id} \\",
+      "OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \\",
       "nohup java -jar remote-service.jar &> nohup.out &",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds

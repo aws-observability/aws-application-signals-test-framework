@@ -2,7 +2,7 @@
   "name": "^{{serviceName}}$",
   "http": {
     "request": {
-      "url": "^{{endpoint}}/aws-sdk-call$",
+      "url": "^{{endpoint}}/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
       "method": "^GET$"
     },
     "response": {
@@ -14,12 +14,13 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "HostedIn.Environment": "^EC2$",
-    "aws.local.operation": "^GET /aws-sdk-call$"
+    "aws.local.operation": "^GET /aws-sdk-call$",
+    "aws.local.environment": "^ec2:default$"
   },
   "metadata": {
     "default": {
-        "otel.resource.aws.hostedin.environment": "^EC2$",
+        "EC2.InstanceId": "^{{instanceId}}$",
+        "PlatformType": "^AWS::EC2$",
         "otel.resource.host.image.id": "^{{instanceAmi}}$",
         "otel.resource.host.type": "^t3.micro$",
         "aws.span.kind": "^LOCAL_ROOT$"
@@ -32,20 +33,23 @@
           "name": "^S3$",
           "http": {
             "request": {
-              "url": "^https://e2e-test-bucket-name.s3.{{region}}.amazonaws.com\\?location$",
+              "url": "^https://e2e-test-bucket-name-{{testingId}}.s3.{{region}}.amazonaws.com\\?location$",
               "method": "^GET$"
             }
           },
           "annotations": {
-            "HostedIn.Environment": "^EC2$",
             "aws.local.service": "^{{serviceName}}$",
             "aws.local.operation": "^GET /aws-sdk-call$",
-            "aws.remote.service": "^AWS\\.SDK\\.S3$",
+            "aws.remote.service": "^AWS::S3$",
             "aws.remote.operation": "^GetBucketLocation$",
-            "aws.remote.target": "^::s3:::e2e-test-bucket-name$"
+            "aws.remote.resource.type": "^AWS::S3::Bucket$",
+            "aws.remote.resource.identifier": "^e2e-test-bucket-name-{{testingId}}$",
+            "aws.local.environment": "^ec2:default$"
           },
           "metadata": {
             "default": {
+              "EC2.InstanceId": "^{{instanceId}}$",
+              "PlatformType": "^AWS::EC2$",
               "aws.span.kind": "^CLIENT$"
             }
           },
