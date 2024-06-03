@@ -41,8 +41,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.caller-workflow-name == 'main-build' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
-          ref: ${{ github.ref }}
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Download enablement script
@@ -164,6 +164,14 @@ jobs:
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
+          
+              if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
+                echo "Patching staging adot image for main build:"
+                execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+                -p='[{"op": \"replace\", \"path\": \"/spec/template/spec/containers/0/args/2\", \"value\": \"--auto-instrumentation-python-image=${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}\"}]'"
+                execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
+                execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
+              fi
           
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 10
