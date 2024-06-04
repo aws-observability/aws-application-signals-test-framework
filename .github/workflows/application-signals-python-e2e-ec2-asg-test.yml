@@ -24,7 +24,6 @@ permissions:
   contents: read
 
 env:
-  AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
