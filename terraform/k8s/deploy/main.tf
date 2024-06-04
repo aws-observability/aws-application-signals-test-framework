@@ -39,10 +39,7 @@ resource "null_resource" "deploy" {
       echo "LOG: Cloning helm-charts repo"
       git clone https://github.com/aws-observability/helm-charts -q
 
-      # Temporarily override helm chart version to current latest so new releases do not cause alarms
-      cd helm-charts/
-      git reset --hard 78d4b094afb622fea7238e784bc4c07ffe340766
-      cd charts/amazon-cloudwatch-observability/
+      cd helm-charts/charts/amazon-cloudwatch-observability/
 
       echo "LOG: Installing CloudWatch Agent Operator using Helm"
       helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${var.aws_region} --set clusterName=k8s-cluster-${var.test_id}
@@ -88,24 +85,6 @@ resource "null_resource" "deploy" {
 
       # Wait for sample app to be reach ready state
       kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n sample-app-namespace
-
-      echo "LOG: Patching operator deployment with ADOT image for the metric schema change"
-      kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-      -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/1", "value": "--auto-instrumentation-java-image=${var.adot_image}"}]'
-
-      echo "LOG: Patching cloudwatch agent for the metric schema change"
-      kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": "${var.cwagent_image}"}]'
-
-      echo "LOG: Wait for patch to take effect"
-      kubectl delete pods --all -n amazon-cloudwatch
-      kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-
-      # Sleeping for 30 second because occasionally the sample-app-namespace gets deleted before the operator change takes effect
-      sleep 30
-
-      echo "LOG: Delete sample-app-namespace and wait for patch to take effect"
-      kubectl delete pods --all -n sample-app-namespace
-      kubectl wait --for=condition=Ready pod --all -n sample-app-namespace
 
       # Emit remote service pod IP
       echo "LOG: Outputting remote service pod IP to SSM using put-parameter API"
