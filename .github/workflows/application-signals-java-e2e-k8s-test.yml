@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: App Signals Enablement E2E Testing - K8s on EC2 Use Case
+name: Application Signals Enablement E2E Testing - Java E2E K8s on EC2 Use Case
 on:
   workflow_call:
     inputs:
@@ -26,10 +26,9 @@ permissions:
 env:
   # The presence of this env var is required for use by terraform and AWS CLI commands
   # It is not redundant
-  AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
-  METRIC_NAMESPACE: AppSignals
-  LOG_GROUP_NAME: /aws/appsignals/k8s
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
   MASTER_NODE_SSH_KEY: ${{ secrets.APP_SIGNALS_E2E_K8S_SSH_KEY_IAD }}
   MAIN_SERVICE_ENDPOINT: ${{ secrets.APP_SIGNALS_E2E_K8S_MASTER_NODE_ENDPOINT }}
   SAMPLE_APP_NAMESPACE: sample-app-namespace
@@ -46,7 +45,7 @@ jobs:
           fetch-depth: 0
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ env.AWS_DEFAULT_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ inputs.aws-region }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -58,23 +57,23 @@ jobs:
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids:
-            ACCOUNT_ID, region-account/${{ env.AWS_DEFAULT_REGION }}
+            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          aws-region: ${{ inputs.aws-region }}
 
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/k8s/deploy/resources
         run: |
           sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' frontend-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}#' frontend-service-depl.yaml
+          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}#' frontend-service-depl.yaml
           sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' remote-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}#' remote-service-depl.yaml
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ env.AWS_DEFAULT_REGION }} --key frontend-service-depl.yaml --body frontend-service-depl.yaml
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ env.AWS_DEFAULT_REGION }} --key remote-service-depl.yaml --body remote-service-depl.yaml
+          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}#' remote-service-depl.yaml
+          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }} --key frontend-service-depl.yaml --body frontend-service-depl.yaml
+          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }} --key remote-service-depl.yaml --body remote-service-depl.yaml
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -87,15 +86,30 @@ jobs:
         working-directory: terraform/k8s/deploy
         run: |
           terraform apply -auto-approve \
-            -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
+            -var="aws_region=${{ inputs.aws-region }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="ssh_key=${{ env.MASTER_NODE_SSH_KEY }}" \
             -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}"
 
       - name: Get Remote Service IP
         run: |
-          echo REMOTE_SERVICE_IP="$(aws ssm get-parameter --region ${{ env.AWS_DEFAULT_REGION }} --name remote-service-ip | jq -r '.Parameter.Value')" >> $GITHUB_ENV
+          echo REMOTE_SERVICE_IP="$(aws ssm get-parameter --region ${{ inputs.aws-region }} --name remote-service-ip | jq -r '.Parameter.Value')" >> $GITHUB_ENV
 
+      - name: Wait for app endpoint to come online
+        id: endpoint-check
+        run: |
+          attempt_counter=0
+          max_attempts=30
+          until $(curl --output /dev/null --silent --head --fail http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100/); do
+            if [ ${attempt_counter} -eq ${max_attempts} ];then
+              echo "Max attempts reached"
+              exit 1
+            fi
+          
+            printf '.'
+            attempt_counter=$(($attempt_counter+1))
+            sleep 10
+          done
       # This steps increases the speed of the validation by creating the telemetry data in advance
       # It is run after the gradle build to give the app time to initialize after the pods become ready
       - name: Call all test APIs
@@ -112,7 +126,7 @@ jobs:
         run: ./gradlew validator:run --args='-c k8s/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
-          --region ${{ env.AWS_DEFAULT_REGION }}
+          --region ${{ inputs.aws-region }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -129,7 +143,7 @@ jobs:
         run: ./gradlew validator:run --args='-c k8s/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
-          --region ${{ env.AWS_DEFAULT_REGION }}
+          --region ${{ inputs.aws-region }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -147,7 +161,7 @@ jobs:
         run: ./gradlew validator:run --args='-c k8s/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
-          --region ${{ env.AWS_DEFAULT_REGION }}
+          --region ${{ inputs.aws-region }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -167,13 +181,13 @@ jobs:
             --metric-name Failure \
             --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
             --value 0.0 \
-            --region ${{ env.AWS_DEFAULT_REGION }}
+            --region ${{ inputs.aws-region }}
           else
             aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
             --metric-name Failure \
             --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
             --value 1.0 \
-            --region ${{ env.AWS_DEFAULT_REGION }}
+            --region ${{ inputs.aws-region }}
           fi
 
       # Clean up Procedures
@@ -189,7 +203,7 @@ jobs:
         working-directory: terraform/k8s/cleanup
         run: |
           terraform apply -auto-approve \
-            -var="aws_region=${{ env.AWS_DEFAULT_REGION }}" \
+            -var="aws_region=${{ inputs.aws-region }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="ssh_key=${{ env.MASTER_NODE_SSH_KEY }}" \
             -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}"
