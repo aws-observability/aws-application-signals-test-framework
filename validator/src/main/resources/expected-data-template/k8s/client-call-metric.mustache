@@ -9,11 +9,8 @@
       name: Operation
       value: GET /client-call
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Latency
@@ -23,28 +20,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Operation
-      value: InternalOperation
-    -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Latency
@@ -57,11 +34,22 @@
       name: Operation
       value: InternalOperation
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
     -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: InternalOperation
+    -
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -77,11 +65,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -97,11 +82,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -117,11 +99,8 @@
       name: Operation
       value: GET /client-call
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Error
@@ -131,28 +110,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Operation
-      value: InternalOperation
-    -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Error
@@ -165,11 +124,22 @@
       name: Operation
       value: InternalOperation
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
     -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: InternalOperation
+    -
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -185,11 +155,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -205,11 +172,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -225,11 +189,8 @@
       name: Operation
       value: GET /client-call
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Fault
@@ -239,28 +200,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Operation
-      value: InternalOperation
-    -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
 
 -
   metricName: Fault
@@ -273,11 +214,22 @@
       name: Operation
       value: InternalOperation
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
     -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: InternalOperation
+    -
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -293,11 +245,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: local-root-client-call
@@ -313,11 +262,8 @@
       name: Service
       value: {{serviceName}}
     -
-      name: HostedIn.K8s.Cluster
-      value: {{platformInfo}}
-    -
-      name: HostedIn.K8s.Namespace
-      value: {{appNamespace}}
+      name: Environment
+      value: k8s:{{platformInfo}}/{{appNamespace}}
     -
       name: RemoteService
       value: local-root-client-call
