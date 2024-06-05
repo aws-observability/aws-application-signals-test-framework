@@ -100,9 +100,17 @@ jobs:
               echo "Attempting to connect to the endpoint"
               main_service_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ inputs.aws-region }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
               main_service_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ inputs.aws-region }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
+              main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ inputs.aws-region }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
+
+              echo "INSTANCE_ID=$main_service_instance_id" >> $GITHUB_ENV
+              echo "MAIN_SERVICE_ENDPOINT=$main_service_public_ip:8080" >> $GITHUB_ENV
+              echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> $GITHUB_ENV
+              echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
+              echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_public_ip)" >> $GITHUB_ENV
+
               main_service_sample_app_endpoint=http://$main_service_public_ip:8080
               echo "The main service endpoint is $main_service_sample_app_endpoint"
-
+          
               attempt_counter=0
               max_attempts=30
               until $(curl --output /dev/null --silent --head --fail $(echo "$main_service_sample_app_endpoint" | tr -d '"')); do
@@ -152,18 +160,6 @@ jobs:
               exit 1
             fi
           done
-
-      - name: Get sample app and EC2 instance information
-        working-directory: terraform/ec2/asg
-        run: |
-          main_service_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ inputs.aws-region }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
-          main_service_public_ip=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ inputs.aws-region }} --query "Reservations[].Instances[].PublicIpAddress" --output text)
-          main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ inputs.aws-region }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
-          echo "INSTANCE_ID=$main_service_instance_id" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_ENDPOINT=$main_service_public_ip:8080" >> $GITHUB_ENV
-          echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> $GITHUB_ENV
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_public_ip)" >> $GITHUB_ENV
 
       # This steps increases the speed of the validation by creating the telemetry data in advance
       - name: Call all test APIs
