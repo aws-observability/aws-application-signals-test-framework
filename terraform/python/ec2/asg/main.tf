@@ -102,7 +102,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     sudo dnf install -y python3.9-pip
 
     # Copy in CW Agent configuration
-    agent_config='${replace(replace(file("../../../ec2/amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
+    agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
     echo $agent_config > amazon-cloudwatch-agent.json
 
     # Get and run CW agent rpm
@@ -188,7 +188,7 @@ resource "null_resource" "remote_service_setup" {
       sudo dnf install -y python3.9-pip
 
       # Copy in CW Agent configuration
-      agent_config='${replace(replace(file("../../../ec2/amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
+      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
