@@ -5,7 +5,7 @@
 ## test the artifacts for App Signals enablement. It will deploy a sample app and remote
 ## service onto an EKS cluster, call the APIs, and validate the generated telemetry,
 ## including logs, metrics, and traces.
-name: Application Signals Enablement - E2E EKS Canary Testing
+name: Application Signals Enablement - Java E2E EKS Canary Testing
 on:
   schedule:
     - cron: '*/15 * * * *' # run the workflow every 15 minutes
