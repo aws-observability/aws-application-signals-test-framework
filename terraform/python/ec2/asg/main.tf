@@ -128,8 +128,8 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
     export OTEL_METRICS_EXPORTER=none
     export OTEL_TRACES_EXPORTER=otlp
-    export OTEL_AWS_APP_SIGNALS_ENABLED=true
-    export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
+    export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+    export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
     export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
     export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
     export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
@@ -211,8 +211,8 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
       export OTEL_METRICS_EXPORTER=none
       export OTEL_TRACES_EXPORTER=otlp
-      export OTEL_AWS_APP_SIGNALS_ENABLED=true
-      export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
+      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
