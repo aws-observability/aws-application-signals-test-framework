@@ -73,8 +73,25 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_ASG_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/asg/client-call-metric.mustache"),
   JAVA_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/asg/client-call-trace.mustache"),
 
+  /** Java EC2 K8s Test Case Validations */
+  JAVA_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/k8s/outgoing-http-call-log.mustache"),
+  JAVA_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/k8s/outgoing-http-call-metric.mustache"),
+  JAVA_K8S_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/java/k8s/outgoing-http-call-trace.mustache"),
+
+  JAVA_K8S_AWS_SDK_CALL_LOG("/expected-data-template/java/k8s/aws-sdk-call-log.mustache"),
+  JAVA_K8S_AWS_SDK_CALL_METRIC("/expected-data-template/java/k8s/aws-sdk-call-metric.mustache"),
+  JAVA_K8S_AWS_SDK_CALL_TRACE("/expected-data-template/java/k8s/aws-sdk-call-trace.mustache"),
+
+  JAVA_K8S_REMOTE_SERVICE_LOG("/expected-data-template/java/k8s/remote-service-log.mustache"),
+  JAVA_K8S_REMOTE_SERVICE_METRIC("/expected-data-template/java/k8s/remote-service-metric.mustache"),
+  JAVA_K8S_REMOTE_SERVICE_TRACE("/expected-data-template/java/k8s/remote-service-trace.mustache"),
+
+  JAVA_K8S_CLIENT_CALL_LOG("/expected-data-template/java/k8s/client-call-log.mustache"),
+  JAVA_K8S_CLIENT_CALL_METRIC("/expected-data-template/java/k8s/client-call-metric.mustache"),
+  JAVA_K8S_CLIENT_CALL_TRACE("/expected-data-template/java/k8s/client-call-trace.mustache"),
+
   /** Metric Limiter Test Case Validations */
-  METRIC_LIMITER_METRIC("/expected-data-template/metric_limiter/metric-limiter-metric.mustache"),
+  JAVA_METRIC_LIMITER_METRIC("/expected-data-template/java/metric_limiter/metric-limiter-metric.mustache"),
 
   /** Python EKS Test Case Validations */
   PYTHON_EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/eks/outgoing-http-call-log.mustache"),

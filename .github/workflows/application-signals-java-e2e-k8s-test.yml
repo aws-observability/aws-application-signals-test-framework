@@ -66,7 +66,7 @@ jobs:
           aws-region: ${{ inputs.aws-region }}
 
       - name: Prepare and upload sample app deployment files
-        working-directory: terraform/k8s/deploy/resources
+        working-directory: terraform/java/k8s/deploy/resources
         run: |
           sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' frontend-service-depl.yaml
           sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}#' frontend-service-depl.yaml
@@ -78,12 +78,12 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/k8s/deploy && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/k8s/deploy && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           sleep_time: 60
 
       - name: Deploy Operator and Sample App using Terraform
-        working-directory: terraform/k8s/deploy
+        working-directory: terraform/java/k8s/deploy
         run: |
           terraform apply -auto-approve \
             -var="aws_region=${{ inputs.aws-region }}" \
@@ -123,7 +123,7 @@ jobs:
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
         id: log-validation
-        run: ./gradlew validator:run --args='-c k8s/log-validation.yml
+        run: ./gradlew validator:run --args='-c java/k8s/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
           --region ${{ inputs.aws-region }}
@@ -140,7 +140,7 @@ jobs:
       - name: Validate generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c k8s/metric-validation.yml
+        run: ./gradlew validator:run --args='-c java/k8s/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
           --region ${{ inputs.aws-region }}
@@ -158,7 +158,7 @@ jobs:
       - name: Validate generated traces
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c k8s/trace-validation.yml
+        run: ./gradlew validator:run --args='-c java/k8s/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
           --region ${{ inputs.aws-region }}
@@ -195,12 +195,12 @@ jobs:
         if: always()
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/k8s/cleanup && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/k8s/cleanup && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
       - name: Clean Up Operator and Sample App using Terraform
         if: always()
-        working-directory: terraform/k8s/cleanup
+        working-directory: terraform/java/k8s/cleanup
         run: |
           terraform apply -auto-approve \
             -var="aws_region=${{ inputs.aws-region }}" \
@@ -211,7 +211,7 @@ jobs:
       - name: Terraform destroy - deployment
         if: always()
         continue-on-error: true
-        working-directory: terraform/k8s/deploy
+        working-directory: terraform/java/k8s/deploy
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
@@ -219,7 +219,7 @@ jobs:
       - name: Terraform destroy - cleanup
         if: always()
         continue-on-error: true
-        working-directory: terraform/k8s/cleanup
+        working-directory: terraform/java/k8s/cleanup
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"

@@ -115,13 +115,13 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/eks && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           sleep_time: 60
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-sample-app
-        working-directory: terraform/eks
+        working-directory: terraform/java/eks
         run: |  
           # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online. 
           # There may be occasional failures due to transitivity issues, so try up to 2 times. 
@@ -266,7 +266,7 @@ jobs:
 
       - name: Get the sample app endpoint
         run: echo "APP_ENDPOINT=$(terraform output sample_app_endpoint)" >> $GITHUB_ENV
-        working-directory: terraform/eks
+        working-directory: terraform/java/eks
 
       # This steps increases the speed of the validation by creating the telemetry data in advance
       - name: Call all test APIs
@@ -288,7 +288,7 @@ jobs:
       - name: Call endpoints and validate generated metrics
         id: other-operation-metric-validation
         if: steps.deploy-sample-app.outcome == 'success' && !cancelled()
-        run: ./gradlew validator:run --args='-c metric_limiter/metric-validation.yml
+        run: ./gradlew validator:run --args='-c java/metric_limiter/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ inputs.aws-region }}
@@ -343,7 +343,7 @@ jobs:
         if: always()
         continue-on-error: true
         timeout-minutes: 5
-        working-directory: terraform/eks
+        working-directory: terraform/java/eks
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}" \
