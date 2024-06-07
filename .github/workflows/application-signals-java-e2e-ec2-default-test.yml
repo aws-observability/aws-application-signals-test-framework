@@ -65,11 +65,11 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/ec2/default && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/ec2/default && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
-        working-directory: terraform/ec2/default
+        working-directory: terraform/java/ec2/default
         run: |
           # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online.
           # There may be occasional failures due to transitivity issues, so try up to 2 times.
@@ -149,12 +149,12 @@ jobs:
           done
 
       - name: Get the ec2 instance ami id
-        working-directory: terraform/ec2/default
+        working-directory: terraform/java/ec2/default
         run: |
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
 
       - name: Get the sample app and EC2 instance information
-        working-directory: terraform/ec2/default
+        working-directory: terraform/java/ec2/default
         run: |
           echo "MAIN_SERVICE_ENDPOINT=$(terraform output sample_app_main_service_public_dns):8080" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_public_ip)" >> $GITHUB_ENV
@@ -252,7 +252,7 @@ jobs:
       - name: Terraform destroy
         if: always()
         continue-on-error: true
-        working-directory: terraform/ec2/default
+        working-directory: terraform/java/ec2/default
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"

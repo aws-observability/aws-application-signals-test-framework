@@ -66,11 +66,11 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/ec2/asg && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/ec2/asg && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
-        working-directory: terraform/ec2/asg
+        working-directory: terraform/java/ec2/asg
         run: |
           # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
           # There may be occasional failures due to transitivity issues, so try up to 2 times. 
@@ -251,7 +251,7 @@ jobs:
       - name: Terraform destroy
         if: always()
         continue-on-error: true
-        working-directory: terraform/ec2/asg
+        working-directory: terraform/java/ec2/asg
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
