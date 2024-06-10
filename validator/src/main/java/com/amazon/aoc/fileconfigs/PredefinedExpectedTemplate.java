@@ -22,59 +22,76 @@ import java.net.URL;
  * resources/expected-data-templates.
  */
 public enum PredefinedExpectedTemplate implements FileConfig {
-  /** Java EKS Test Case Validations */
-  EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/eks/outgoing-http-call-log.mustache"),
-  EKS_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/eks/outgoing-http-call-metric.mustache"),
-  EKS_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/eks/outgoing-http-call-trace.mustache"),
+  /** JAVA EKS Test Case Validations */
+  JAVA_EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/eks/outgoing-http-call-log.mustache"),
+  JAVA_EKS_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/eks/outgoing-http-call-metric.mustache"),
+  JAVA_EKS_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/java/eks/outgoing-http-call-trace.mustache"),
 
-  EKS_AWS_SDK_CALL_LOG("/expected-data-template/eks/aws-sdk-call-log.mustache"),
-  EKS_AWS_SDK_CALL_METRIC("/expected-data-template/eks/aws-sdk-call-metric.mustache"),
-  EKS_AWS_SDK_CALL_TRACE("/expected-data-template/eks/aws-sdk-call-trace.mustache"),
+  JAVA_EKS_AWS_SDK_CALL_LOG("/expected-data-template/java/eks/aws-sdk-call-log.mustache"),
+  JAVA_EKS_AWS_SDK_CALL_METRIC("/expected-data-template/java/eks/aws-sdk-call-metric.mustache"),
+  JAVA_EKS_AWS_SDK_CALL_TRACE("/expected-data-template/java/eks/aws-sdk-call-trace.mustache"),
 
-  EKS_REMOTE_SERVICE_LOG("/expected-data-template/eks/remote-service-log.mustache"),
-  EKS_REMOTE_SERVICE_METRIC("/expected-data-template/eks/remote-service-metric.mustache"),
-  EKS_REMOTE_SERVICE_TRACE("/expected-data-template/eks/remote-service-trace.mustache"),
+  JAVA_EKS_REMOTE_SERVICE_LOG("/expected-data-template/java/eks/remote-service-log.mustache"),
+  JAVA_EKS_REMOTE_SERVICE_METRIC("/expected-data-template/java/eks/remote-service-metric.mustache"),
+  JAVA_EKS_REMOTE_SERVICE_TRACE("/expected-data-template/java/eks/remote-service-trace.mustache"),
 
-  EKS_CLIENT_CALL_LOG("/expected-data-template/eks/client-call-log.mustache"),
-  EKS_CLIENT_CALL_METRIC("/expected-data-template/eks/client-call-metric.mustache"),
-  EKS_CLIENT_CALL_TRACE("/expected-data-template/eks/client-call-trace.mustache"),
+  JAVA_EKS_CLIENT_CALL_LOG("/expected-data-template/java/eks/client-call-log.mustache"),
+  JAVA_EKS_CLIENT_CALL_METRIC("/expected-data-template/java/eks/client-call-metric.mustache"),
+  JAVA_EKS_CLIENT_CALL_TRACE("/expected-data-template/java/eks/client-call-trace.mustache"),
 
-  /** Java EC2 Test Case Validations */
-  EC2_OUTGOING_HTTP_CALL_LOG("/expected-data-template/ec2/outgoing-http-call-log.mustache"),
-  EC2_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/ec2/outgoing-http-call-metric.mustache"),
-  EC2_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/ec2/outgoing-http-call-trace.mustache"),
+  /** Java EC2 Default Test Case Validations */
+  JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/default/outgoing-http-call-log.mustache"),
+  JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/ec2/default/outgoing-http-call-metric.mustache"),
+  JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/java/ec2/default/outgoing-http-call-trace.mustache"),
 
-  EC2_AWS_SDK_CALL_LOG("/expected-data-template/ec2/aws-sdk-call-log.mustache"),
-  EC2_AWS_SDK_CALL_METRIC("/expected-data-template/ec2/aws-sdk-call-metric.mustache"),
-  EC2_AWS_SDK_CALL_TRACE("/expected-data-template/ec2/aws-sdk-call-trace.mustache"),
+  JAVA_EC2_DEFAULT_AWS_SDK_CALL_LOG("/expected-data-template/java/ec2/default/aws-sdk-call-log.mustache"),
+  JAVA_EC2_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/java/ec2/default/aws-sdk-call-metric.mustache"),
+  JAVA_EC2_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/java/ec2/default/aws-sdk-call-trace.mustache"),
 
-  EC2_REMOTE_SERVICE_LOG("/expected-data-template/ec2/remote-service-log.mustache"),
-  EC2_REMOTE_SERVICE_METRIC("/expected-data-template/ec2/remote-service-metric.mustache"),
-  EC2_REMOTE_SERVICE_TRACE("/expected-data-template/ec2/remote-service-trace.mustache"),
+  JAVA_EC2_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/java/ec2/default/remote-service-log.mustache"),
+  JAVA_EC2_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/java/ec2/default/remote-service-metric.mustache"),
+  JAVA_EC2_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/java/ec2/default/remote-service-trace.mustache"),
 
-  EC2_CLIENT_CALL_LOG("/expected-data-template/ec2/client-call-log.mustache"),
-  EC2_CLIENT_CALL_METRIC("/expected-data-template/ec2/client-call-metric.mustache"),
-  EC2_CLIENT_CALL_TRACE("/expected-data-template/ec2/client-call-trace.mustache"),
+  JAVA_EC2_DEFAULT_CLIENT_CALL_LOG("/expected-data-template/java/ec2/default/client-call-log.mustache"),
+  JAVA_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/default/client-call-metric.mustache"),
+  JAVA_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/default/client-call-trace.mustache"),
 
-  /** Java EC2 Test Case Validations */
-  K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/k8s/outgoing-http-call-log.mustache"),
-  K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/k8s/outgoing-http-call-metric.mustache"),
-  K8S_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/k8s/outgoing-http-call-trace.mustache"),
+  /** Java EC2 ASG Test Case Validations */
+  JAVA_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/asg/outgoing-http-call-log.mustache"),
+  JAVA_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/ec2/asg/outgoing-http-call-metric.mustache"),
+  JAVA_EC2_ASG_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/java/ec2/asg/outgoing-http-call-trace.mustache"),
 
-  K8S_AWS_SDK_CALL_LOG("/expected-data-template/k8s/aws-sdk-call-log.mustache"),
-  K8S_AWS_SDK_CALL_METRIC("/expected-data-template/k8s/aws-sdk-call-metric.mustache"),
-  K8S_AWS_SDK_CALL_TRACE("/expected-data-template/k8s/aws-sdk-call-trace.mustache"),
+  JAVA_EC2_ASG_AWS_SDK_CALL_LOG("/expected-data-template/java/ec2/asg/aws-sdk-call-log.mustache"),
+  JAVA_EC2_ASG_AWS_SDK_CALL_METRIC("/expected-data-template/java/ec2/asg/aws-sdk-call-metric.mustache"),
+  JAVA_EC2_ASG_AWS_SDK_CALL_TRACE("/expected-data-template/java/ec2/asg/aws-sdk-call-trace.mustache"),
 
-  K8S_REMOTE_SERVICE_LOG("/expected-data-template/k8s/remote-service-log.mustache"),
-  K8S_REMOTE_SERVICE_METRIC("/expected-data-template/k8s/remote-service-metric.mustache"),
-  K8S_REMOTE_SERVICE_TRACE("/expected-data-template/k8s/remote-service-trace.mustache"),
+  JAVA_EC2_ASG_REMOTE_SERVICE_LOG("/expected-data-template/java/ec2/asg/remote-service-log.mustache"),
+  JAVA_EC2_ASG_REMOTE_SERVICE_METRIC("/expected-data-template/java/ec2/asg/remote-service-metric.mustache"),
+  JAVA_EC2_ASG_REMOTE_SERVICE_TRACE("/expected-data-template/java/ec2/asg/remote-service-trace.mustache"),
 
-  K8S_CLIENT_CALL_LOG("/expected-data-template/k8s/client-call-log.mustache"),
-  K8S_CLIENT_CALL_METRIC("/expected-data-template/k8s/client-call-metric.mustache"),
-  K8S_CLIENT_CALL_TRACE("/expected-data-template/k8s/client-call-trace.mustache"),
+  JAVA_EC2_ASG_CLIENT_CALL_LOG("/expected-data-template/java/ec2/asg/client-call-log.mustache"),
+  JAVA_EC2_ASG_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/asg/client-call-metric.mustache"),
+  JAVA_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/asg/client-call-trace.mustache"),
+
+  /** Java EC2 K8s Test Case Validations */
+  JAVA_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/k8s/outgoing-http-call-log.mustache"),
+  JAVA_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/k8s/outgoing-http-call-metric.mustache"),
+  JAVA_K8S_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/java/k8s/outgoing-http-call-trace.mustache"),
+
+  JAVA_K8S_AWS_SDK_CALL_LOG("/expected-data-template/java/k8s/aws-sdk-call-log.mustache"),
+  JAVA_K8S_AWS_SDK_CALL_METRIC("/expected-data-template/java/k8s/aws-sdk-call-metric.mustache"),
+  JAVA_K8S_AWS_SDK_CALL_TRACE("/expected-data-template/java/k8s/aws-sdk-call-trace.mustache"),
+
+  JAVA_K8S_REMOTE_SERVICE_LOG("/expected-data-template/java/k8s/remote-service-log.mustache"),
+  JAVA_K8S_REMOTE_SERVICE_METRIC("/expected-data-template/java/k8s/remote-service-metric.mustache"),
+  JAVA_K8S_REMOTE_SERVICE_TRACE("/expected-data-template/java/k8s/remote-service-trace.mustache"),
+
+  JAVA_K8S_CLIENT_CALL_LOG("/expected-data-template/java/k8s/client-call-log.mustache"),
+  JAVA_K8S_CLIENT_CALL_METRIC("/expected-data-template/java/k8s/client-call-metric.mustache"),
+  JAVA_K8S_CLIENT_CALL_TRACE("/expected-data-template/java/k8s/client-call-trace.mustache"),
 
   /** Metric Limiter Test Case Validations */
-  METRIC_LIMITER_METRIC("/expected-data-template/metric_limiter/metric-limiter-metric.mustache"),
+  JAVA_METRIC_LIMITER_METRIC("/expected-data-template/java/metric_limiter/metric-limiter-metric.mustache"),
 
   /** Python EKS Test Case Validations */
   PYTHON_EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/eks/outgoing-http-call-log.mustache"),
