@@ -143,6 +143,11 @@ public class App implements Callable<Integer> {
       defaultValue = "defaultId")
   private String instanceId;
 
+  @CommandLine.Option(
+          names = {"--private-dns-name"},
+          defaultValue = "defaultDnsName")
+  private String privateDnsName;
+
   private static final String TEST_CASE_DIM_KEY = "testcase";
   private static final String CANARY_NAMESPACE = "Otel/Canary";
   private static final String CANARY_METRIC_NAME = "Success";
@@ -178,6 +183,7 @@ public class App implements Callable<Integer> {
     context.setLanguage(language);
     context.setInstanceAmi(this.instanceAmi);
     context.setInstanceId(this.instanceId);
+    context.setPrivateDnsName(this.privateDnsName);
 
     log.info(context);
 
