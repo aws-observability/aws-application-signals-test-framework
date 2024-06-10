@@ -144,8 +144,8 @@ public class App implements Callable<Integer> {
   private String instanceId;
 
   @CommandLine.Option(
-          names = {"--private-dns-name"},
-          defaultValue = "defaultDnsName")
+      names = {"--private-dns-name"},
+      defaultValue = "defaultDnsName")
   private String privateDnsName;
 
   private static final String TEST_CASE_DIM_KEY = "testcase";

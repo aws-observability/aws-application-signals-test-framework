@@ -111,7 +111,7 @@ resource "null_resource" "main_service_setup" {
       "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
-      "agent_config='${replace(replace(file("../../ec2/amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
+      "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
@@ -134,8 +134,8 @@ resource "null_resource" "main_service_setup" {
       "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
       "export OTEL_METRICS_EXPORTER=none",
       "export OTEL_TRACES_EXPORTER=otlp",
-      "export OTEL_AWS_APP_SIGNALS_ENABLED=true",
-      "export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315",
+      "export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true",
+      "export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
       "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
@@ -186,7 +186,7 @@ resource "null_resource" "remote_service_setup" {
       "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
-      "agent_config='${replace(replace(file("../../ec2/amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
+      "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
       "echo $agent_config > amazon-cloudwatch-agent.json",
 
       # Get and run CW agent rpm
@@ -209,8 +209,8 @@ resource "null_resource" "remote_service_setup" {
       "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
       "export OTEL_METRICS_EXPORTER=none",
       "export OTEL_TRACES_EXPORTER=otlp",
-      "export OTEL_AWS_APP_SIGNALS_ENABLED=true",
-      "export OTEL_AWS_APP_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315",
+      "export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true",
+      "export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
       "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
