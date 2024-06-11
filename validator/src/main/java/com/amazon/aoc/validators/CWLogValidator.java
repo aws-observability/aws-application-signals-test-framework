@@ -55,32 +55,32 @@ public class CWLogValidator implements IValidator {
     log.info("Values of expected logs: {}", expectedAttributesArray);
 
     RetryHelper.retry(
-        this.maxRetryCount,
-        () -> {
+      this.maxRetryCount,
+      () -> {
 
-          // Call sample app to generate logs
-          this.caller.callSampleApp();
+        // Call sample app to generate logs
+        this.caller.callSampleApp();
 
-          // Iterate through each expected template to check if the log is present
-          for (Map<String, Object> expectedAttributes : expectedAttributesArray) {
-            // All attributes are in REGEX for preciseness except operation, remoteService and
-            // remoteOperation
-            // which are in normal text as they are needed for
-            // the filter expressions for retrieving the actual logs.
-            log.info("Searching for expected log: {}", expectedAttributes);
-            String operation = (String) expectedAttributes.get("Operation");
-            String remoteService = (String) expectedAttributes.get("RemoteService");
-            String remoteOperation = (String) expectedAttributes.get("RemoteOperation");
+        // Iterate through each expected template to check if the log is present
+        for (Map<String, Object> expectedAttributes : expectedAttributesArray) {
+          // All attributes are in REGEX for preciseness except operation, remoteService and
+          // remoteOperation
+          // which are in normal text as they are needed for
+          // the filter expressions for retrieving the actual logs.
+          log.info("Searching for expected log: {}", expectedAttributes);
+          String operation = (String) expectedAttributes.get("Operation");
+          String remoteService = (String) expectedAttributes.get("RemoteService");
+          String remoteOperation = (String) expectedAttributes.get("RemoteOperation");
 
-            Map<String, Object> actualLog =
-                this.getActualLog(operation, remoteService, remoteOperation);
-            log.info("Value of an actual log: {}", actualLog);
+          Map<String, Object> actualLog =
+                  this.getActualLog(operation, remoteService, remoteOperation);
+          log.info("Value of an actual log: {}", actualLog);
 
-            if (actualLog == null) throw new BaseException(ExceptionCode.EXPECTED_LOG_NOT_FOUND);
+          if (actualLog == null) throw new BaseException(ExceptionCode.EXPECTED_LOG_NOT_FOUND);
 
-            validateLogs(expectedAttributes, actualLog);
-          }
-        });
+          validateLogs(expectedAttributes, actualLog);
+        }
+      });
 
     log.info("Log validation is passed for path {}", caller.getCallingPath());
   }
@@ -101,10 +101,10 @@ public class CWLogValidator implements IValidator {
 
       if (!matcher.find()) {
         log.error(
-            "Log Validation Failure: Value for Key: {} was expected to be: {}, but actual was: {}",
-            expectedKey,
-            expectedValue,
-            actualLog.get(expectedKey));
+          "Log Validation Failure: Value for Key: {} was expected to be: {}, but actual was: {}",
+          expectedKey,
+          expectedValue,
+          actualLog.get(expectedKey));
         throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
       }
     }
@@ -117,12 +117,12 @@ public class CWLogValidator implements IValidator {
     try {
       // flattened JSON object to a map while keeping the arrays
       Map<String, Object> flattenedJsonMapForExpectedLog =
-          new JsonFlattener(jsonExpectedLog)
-              .withFlattenMode(FlattenMode.KEEP_ARRAYS)
-              .flattenAsMap();
+        new JsonFlattener(jsonExpectedLog)
+          .withFlattenMode(FlattenMode.KEEP_ARRAYS)
+          .flattenAsMap();
 
       flattenedJsonMapForExpectedLogArray =
-          (JsonifyArrayList) flattenedJsonMapForExpectedLog.get("root");
+              (JsonifyArrayList) flattenedJsonMapForExpectedLog.get("root");
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -132,33 +132,27 @@ public class CWLogValidator implements IValidator {
 
   private Map<String, Object> getActualLog(
       String operation, String remoteService, String remoteOperation) throws Exception {
-    String filterPattern = null;
+    String dependencyFilter = null;
 
     // Dependency calls will have the remoteService and remoteOperation attribute, but service calls
     // will not. A service call will have
     // null remoteService and null remoteOperation and the filter expression must be adjusted
     // accordingly.
     if (remoteService == null && remoteOperation == null) {
-      filterPattern =
-          String.format(
-              "{ ($.Service = %s) && ($.Operation = \"%s\") && "
-                  + "($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS) }",
-              context.getServiceName(), operation);
+      dependencyFilter = "&& ($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS)";
     } else {
-      filterPattern =
-          String.format(
-              "{ ($.Service = %s) && ($.Operation = \"%s\") && "
-                  + "($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\") }",
-              context.getServiceName(), operation, remoteService, remoteOperation);
+      dependencyFilter = String.format("&& ($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")", remoteService, remoteOperation);
     }
+
+    String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") %s }", context.getServiceName(), operation, dependencyFilter);
     log.info("Filter Pattern for Log Search: " + filterPattern);
 
     List<FilteredLogEvent> retrievedLogs =
-        this.cloudWatchService.filterLogs(
-            context.getLogGroup(),
-            filterPattern,
-            System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
-            10);
+      this.cloudWatchService.filterLogs(
+        context.getLogGroup(),
+        filterPattern,
+        System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
+        10);
 
     if (retrievedLogs == null || retrievedLogs.isEmpty()) {
       throw new BaseException(ExceptionCode.EMPTY_LIST);

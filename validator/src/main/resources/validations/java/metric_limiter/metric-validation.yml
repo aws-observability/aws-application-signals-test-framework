@@ -1,0 +1,6 @@
+-
+  validationType: "cw-metric"
+  httpPath: "/outgoing-http-call"
+  httpMethod: "get"
+  callingType: "http"
+  expectedMetricTemplate: "JAVA_METRIC_LIMITER_METRIC"

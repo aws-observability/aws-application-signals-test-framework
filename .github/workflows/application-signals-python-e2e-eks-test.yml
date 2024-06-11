@@ -29,8 +29,8 @@ permissions:
   contents: read
 
 env:
-  METRIC_NAMESPACE: AppSignals
-  LOG_GROUP_NAME: /aws/appsignals/eks
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.caller-workflow-name == 'main-build' && 'aws-observability/aws-application-signals-test-framework' || github.repository }}
+          repository: 'aws-observability/aws-application-signals-test-framework'
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
@@ -164,7 +164,7 @@ jobs:
               ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
-
+          
               if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
                 echo "Patching staging adot image for main build:"
                 execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
@@ -182,7 +182,7 @@ jobs:
               max_attempts=60
               until $(curl --output /dev/null --silent --head --fail $(echo "$python_app_endpoint" | tr -d '"')); do
                 if [ ${attempt_counter} -eq ${max_attempts} ];then
-                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
+                  echo "Failed to connect to endpoint ($python_app_endpoint). Will attempt to redeploy sample app."
                   deployment_failed=1
                   break
                 fi
@@ -252,10 +252,10 @@ jobs:
       - name: Call all test APIs
         continue-on-error: true
         run: |
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/outgoing-http-call; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/aws-sdk-call?testingId=${{ env.TESTING_ID }}; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}; echo
-          curl -S -s -o /dev/null http://${{ env.APP_ENDPOINT }}/client-call; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/outgoing-http-call"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"; echo
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"; echo
 
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
@@ -280,7 +280,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Call endpoints and validate generated metrics
@@ -314,7 +314,7 @@ jobs:
           --platform-info ${{ inputs.test-cluster-name }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}
+          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Publish metric on test result
