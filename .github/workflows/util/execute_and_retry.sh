@@ -21,7 +21,7 @@ execute_and_retry () {
 
    if [ $attempt_failed -ne 0 ]; then
      echo "Command failed for execute_and_retry.sh, executing cleanup command for another attempt"
-     eval "$cleanup"
+     eval "$cleanup" || true
      execute_retry_counter=$(($execute_retry_counter+1))
      sleep "${sleep_time:-10}"
    else
