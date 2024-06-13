@@ -185,6 +185,7 @@ jobs:
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
         with:
           command: "./gradlew"
           cleanup: "./gradlew clean"
