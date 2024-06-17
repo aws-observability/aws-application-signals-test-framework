@@ -43,6 +43,16 @@ jobs:
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
 
@@ -88,6 +98,8 @@ jobs:
         with:
           command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/default && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
         working-directory: terraform/python/ec2/default
@@ -190,12 +202,14 @@ jobs:
           curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call"; echo
 
       - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
         with:
           command: "./gradlew"
           cleanup: "./gradlew clean"
-          max_retry: 4
-          sleep_time: 30
+          max_retry: 3
+          sleep_time: 60
 
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
