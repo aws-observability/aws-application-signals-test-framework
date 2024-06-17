@@ -45,6 +45,16 @@ jobs:
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
       - name: Download enablement script
         uses: ./.github/workflows/actions/execute_and_retry
         with:
@@ -69,7 +79,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.E2E_SECRET_TEST_ROLE_ARN }}
+          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
           aws-region: us-east-1
 
       - name: Retrieve account
@@ -117,6 +127,7 @@ jobs:
         with:
           command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
           sleep_time: 60
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
@@ -183,6 +194,23 @@ jobs:
               until $(curl --output /dev/null --silent --head --fail $(echo "$python_app_endpoint" | tr -d '"')); do
                 if [ ${attempt_counter} -eq ${max_attempts} ];then
                   echo "Failed to connect to endpoint ($python_app_endpoint). Will attempt to redeploy sample app."
+                  deployment_failed=1
+                  break
+                fi
+          
+                printf '.'
+                attempt_counter=$(($attempt_counter+1))
+                sleep 10
+              done
+          
+              echo "Attempting to connect to the remote sample app endpoint"
+              remote_sample_app_endpoint=http://$(terraform output python_r_app_endpoint)/healthcheck
+              echo $remote_sample_app_endpoint
+              attempt_counter=0
+              max_attempts=30
+              until $(curl --output /dev/null --silent --head --fail $(echo "$remote_sample_app_endpoint" | tr -d '"')); do
+                if [ ${attempt_counter} -eq ${max_attempts} ];then
+                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
                   deployment_failed=1
                   break
                 fi
@@ -258,12 +286,14 @@ jobs:
           curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"; echo
 
       - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
         with:
           command: "./gradlew"
           cleanup: "./gradlew clean"
-          max_retry: 4
-          sleep_time: 30
+          max_retry: 3
+          sleep_time: 60
 
       # Validation for application signals telemetry data
       - name: Call endpoint and validate generated EMF logs
