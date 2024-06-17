@@ -45,6 +45,16 @@ jobs:
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
       - name: Download enablement script
         uses: ./.github/workflows/actions/execute_and_retry
         with:
@@ -117,6 +127,7 @@ jobs:
         with:
           command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
           sleep_time: 60
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
@@ -275,12 +286,14 @@ jobs:
           curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"; echo
 
       - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
         with:
           command: "./gradlew"
           cleanup: "./gradlew clean"
-          max_retry: 4
-          sleep_time: 30
+          max_retry: 3
+          sleep_time: 60
 
       # Validation for application signals telemetry data
       - name: Call endpoint and validate generated EMF logs
