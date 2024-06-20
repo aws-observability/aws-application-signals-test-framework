@@ -8,8 +8,8 @@
 ## It will then clean up the cluster and EC2 instance it runs on for the next test run.
 name: Application Signals Enablement - Java E2E K8s Canary Testing
 on:
-  schedule:
-    - cron: '*/15 * * * *' # run the workflow every 15 minutes
+#  schedule:
+#    - cron: '*/15 * * * *' # run the workflow every 15 minutes
   workflow_dispatch: # be able to run the workflow on demand
 
 permissions:

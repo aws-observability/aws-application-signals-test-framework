@@ -20,6 +20,11 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Connection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -74,7 +79,7 @@ public class FrontendServiceController {
   @GetMapping("/")
   @ResponseBody
   public String healthcheck() {
-    return "healthcheck";
+      return "healthcheck";
   }
 
   // test aws calls instrumentation
@@ -82,7 +87,7 @@ public class FrontendServiceController {
   @ResponseBody
   public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
     String bucketName = "e2e-test-bucket-name";
-    // Add a unique test ID to bucketname to associate buckets to specific test runs
+    // Add a unique test ID to bucket name to associate buckets to specific test runs
     if (testingId != null) {
       bucketName += "-" + testingId;
     }
@@ -158,6 +163,25 @@ public class FrontendServiceController {
     // call was received but to not use this
     // traceId.
     return "{\"traceId\": \"1-00000000-000000000000000000000000\"}";
+  }
+
+  // Uses the /mysql endpoint to make an SQL call
+  @GetMapping("/mysql")
+  @ResponseBody
+  public String mysql() {
+    logger.info("mysql received");
+    try {
+      Connection connection = DriverManager.getConnection(
+              System.getenv().get("RDS_MYSQL_CLUSTER_CONNECTION_URL"),
+              System.getenv().get("RDS_MYSQL_CLUSTER_USERNAME"),
+              System.getenv().get("RDS_MYSQL_CLUSTER_PASSWORD"));
+      Statement statement = connection.createStatement();
+      statement.executeQuery("SELECT * FROM tables LIMIT 1;");
+      return "SQL request executed successfully";
+    } catch (SQLException e) {
+        logger.error("Could not complete SQL request:{}", e.getMessage());
+      throw new RuntimeException(e);
+    }
   }
 
   // get x-ray trace id

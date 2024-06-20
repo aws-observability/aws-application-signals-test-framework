@@ -125,6 +125,21 @@ jobs:
           --region ${{ inputs.aws-region }}"
           sleep_time: 60
 
+      - name: Get RDS database cluster metadata
+        run: |
+          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region eu-west-1 --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint | [0]" --output text)
+          echo RDS_MYSQL_CLUSTER_ENDPOINT="$RDS_MYSQL_CLUSTER_ENDPOINT" >> $GITHUB_ENV
+          RDS_MYSQL_CLUSTER_IDENTIFIER=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region eu-west-1 --query "DBClusterEndpoints[?EndpointType=='WRITER'].DBClusterIdentifier | [0]" --output text)
+          RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME=$(aws secretsmanager list-secrets --region eu-west-1 --query "SecretList[?Tags[?Value=='arn:aws:rds:${{inputs.aws-region}}:${{env.ACCOUNT_ID}}:cluster:$RDS_MYSQL_CLUSTER_IDENTIFIER']].Name | [0]" --output text)
+          echo RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME="$RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME" >> $GITHUB_ENV
+
+      - name: Get RDS database credentials from SecretsManager
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            RDS_MYSQL_CLUSTER_SECRETS, ${{env.RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME}}
+          parse-json-secrets: true
+
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
@@ -136,9 +151,9 @@ jobs:
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-sample-app
         working-directory: terraform/java/eks
-        run: |  
-          # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online. 
-          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
+        run: |
+          # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online.
+          # There may be occasional failures due to transitivity issues, so try up to 2 times.
           # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
           # that it failed at some point
           retry_counter=0
@@ -156,13 +171,16 @@ jobs:
               -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
               -var="sample_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}" \
               -var="sample_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}" \
+              -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
+              -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
+              -var="rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}" \
             || deployment_failed=$?
-                    
+
             if [ $deployment_failed -ne 0 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
             fi
 
-            # If the deployment_failed is still 0, then the terraform deployment succeeded and now try to connect to the endpoint 
+            # If the deployment_failed is still 0, then the terraform deployment succeeded and now try to connect to the endpoint
             # after installing App Signals. Attempts to connect will be made for up to 10 minutes
             if [ $deployment_failed -eq 0 ]; then
               . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
@@ -177,10 +195,10 @@ jobs:
               ${{ env.SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
-          
+
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
-          
+
               echo "Attempting to connect to the main sample app endpoint"
               main_sample_app_endpoint=http://$(terraform output sample_app_endpoint)
               attempt_counter=0
@@ -191,12 +209,12 @@ jobs:
                   deployment_failed=1
                   break
                 fi
-          
+
                 printf '.'
                 attempt_counter=$(($attempt_counter+1))
                 sleep 10
               done
-          
+
               echo "Attempting to connect to the remote sample app endpoint"
               remote_sample_app_endpoint=http://$(terraform output sample_remote_app_endpoint)/healthcheck
               echo $remote_sample_app_endpoint
@@ -208,13 +226,13 @@ jobs:
                   deployment_failed=1
                   break
                 fi
-          
+
                 printf '.'
                 attempt_counter=$(($attempt_counter+1))
                 sleep 10
               done
             fi
-          
+
             # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
             # resources created from terraform and try again.
             if [ $deployment_failed -eq 1 ]; then
@@ -223,10 +241,10 @@ jobs:
               ${{ inputs.test-cluster-name }} \
               ${{ inputs.aws-region }} \
               ${{ env.SAMPLE_APP_NAMESPACE }}
-          
+
               # Running clean-app-signal.sh removes the current cluster from the config. Update the cluster again for subsequent runs.
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}
-            
+
               echo "Destroying terraform"
               terraform destroy -auto-approve \
                 -var="test_id=${{ env.TESTING_ID }}" \
@@ -236,13 +254,13 @@ jobs:
                 -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
                 -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
                 -var="sample_app_image=${{ env.SAMPLE_APP_IMAGE }}"
-          
+
               retry_counter=$(($retry_counter+1))
             else
               # If deployment succeeded, then exit the loop
               break
             fi
-          
+
             if [ $retry_counter -ge $max_retry ]; then
               echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
               exit 1
