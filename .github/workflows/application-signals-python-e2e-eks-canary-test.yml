@@ -36,6 +36,6 @@ jobs:
     uses: ./.github/workflows/application-signals-python-e2e-eks-test.yml
     secrets: inherit
     with:
-      aws-region: 'us-east-2
+      aws-region: 'us-east-2'
       test-cluster-name: 'python-cluster'
       caller-workflow-name: 'appsignals-python-e2e-eks-canary-test'
