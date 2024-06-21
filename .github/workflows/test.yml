@@ -1,0 +1,51 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+## This workflow aims to run the Application Signals end-to-end tests as a canary to
+## test the artifacts for App Signals enablement. It will deploy a sample app and remote
+## service onto an EKS cluster, call the APIs, and validate the generated telemetry,
+## including logs, metrics, and traces.
+name: Test
+on:
+  push:
+    branches:
+      - majanjua-test
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  e2e-test:
+    uses: ./.github/workflows/application-signals-java-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
+  e2e-test-1:
+    needs: e2e-test
+    uses: ./.github/workflows/application-signals-java-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
+
+  e2e-test-2:
+    needs: e2e-test-1
+    uses: ./.github/workflows/application-signals-java-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
+
+  e2e-test-3:
+    needs: e2e-test-2
+    uses: ./.github/workflows/application-signals-java-e2e-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
