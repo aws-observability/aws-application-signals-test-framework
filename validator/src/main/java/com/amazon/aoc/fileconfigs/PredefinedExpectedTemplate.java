@@ -18,7 +18,8 @@ package com.amazon.aoc.fileconfigs;
 import java.net.URL;
 
 /**
- * PredefinedExpectedTemplate includes all the built-in expected data templates, which are under
+ * PredefinedExpectedTemplate includes all the built-in expected data templates,
+ * which are under
  * resources/expected-data-templates.
  */
 public enum PredefinedExpectedTemplate implements FileConfig {
@@ -41,8 +42,10 @@ public enum PredefinedExpectedTemplate implements FileConfig {
 
   /** Java EC2 Default Test Case Validations */
   JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/default/outgoing-http-call-log.mustache"),
-  JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/ec2/default/outgoing-http-call-metric.mustache"),
-  JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/java/ec2/default/outgoing-http-call-trace.mustache"),
+  JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC(
+      "/expected-data-template/java/ec2/default/outgoing-http-call-metric.mustache"),
+  JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_TRACE(
+      "/expected-data-template/java/ec2/default/outgoing-http-call-trace.mustache"),
 
   JAVA_EC2_DEFAULT_AWS_SDK_CALL_LOG("/expected-data-template/java/ec2/default/aws-sdk-call-log.mustache"),
   JAVA_EC2_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/java/ec2/default/aws-sdk-call-metric.mustache"),
@@ -111,9 +114,12 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EKS_CLIENT_CALL_TRACE("/expected-data-template/python/eks/client-call-trace.mustache"),
 
   /** Python EC2 Default Test Case Validations */
-  PYTHON_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/ec2/default/outgoing-http-call-log.mustache"),
-  PYTHON_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/ec2/default/outgoing-http-call-metric.mustache"),
-  PYTHON_EC2_DEFAULT_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/python/ec2/default/outgoing-http-call-trace.mustache"),
+  PYTHON_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG(
+      "/expected-data-template/python/ec2/default/outgoing-http-call-log.mustache"),
+  PYTHON_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC(
+      "/expected-data-template/python/ec2/default/outgoing-http-call-metric.mustache"),
+  PYTHON_EC2_DEFAULT_OUTGOING_HTTP_CALL_TRACE(
+      "/expected-data-template/python/ec2/default/outgoing-http-call-trace.mustache"),
 
   PYTHON_EC2_DEFAULT_AWS_SDK_CALL_LOG("/expected-data-template/python/ec2/default/aws-sdk-call-log.mustache"),
   PYTHON_EC2_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/python/ec2/default/aws-sdk-call-metric.mustache"),
@@ -125,8 +131,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
 
   PYTHON_EC2_DEFAULT_CLIENT_CALL_LOG("/expected-data-template/python/ec2/default/client-call-log.mustache"),
   PYTHON_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/python/ec2/default/client-call-metric.mustache"),
-  PYTHON_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/default/client-call-trace.mustache"), 
-    
+  PYTHON_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/default/client-call-trace.mustache"),
+
   /** Python EC2 Asg Test Case Validations */
   PYTHON_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/ec2/asg/outgoing-http-call-log.mustache"),
   PYTHON_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/ec2/asg/outgoing-http-call-metric.mustache"),
@@ -160,6 +166,77 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_K8S_CLIENT_CALL_LOG("/expected-data-template/python/k8s/client-call-log.mustache"),
   PYTHON_K8S_CLIENT_CALL_METRIC("/expected-data-template/python/k8s/client-call-metric.mustache"),
   PYTHON_K8S_CLIENT_CALL_TRACE("/expected-data-template/python/k8s/client-call-trace.mustache"),
+
+  /** DotNet EKS Test Case Validations */
+  DOTNET_EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/dotnet/eks/outgoing-http-call-log.mustache"),
+  DOTNET_EKS_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/dotnet/eks/outgoing-http-call-metric.mustache"),
+  DOTNET_EKS_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/dotnet/eks/outgoing-http-call-trace.mustache"),
+
+  DOTNET_EKS_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/eks/aws-sdk-call-log.mustache"),
+  DOTNET_EKS_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/eks/aws-sdk-call-metric.mustache"),
+  DOTNET_EKS_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/eks/aws-sdk-call-trace.mustache"),
+
+  DOTNET_EKS_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/eks/remote-service-log.mustache"),
+  DOTNET_EKS_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/eks/remote-service-metric.mustache"),
+  DOTNET_EKS_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/eks/remote-service-trace.mustache"),
+
+  DOTNET_EKS_CLIENT_CALL_LOG("/expected-data-template/dotnet/eks/client-call-log.mustache"),
+  DOTNET_EKS_CLIENT_CALL_METRIC("/expected-data-template/dotnet/eks/client-call-metric.mustache"),
+  DOTNET_EKS_CLIENT_CALL_TRACE("/expected-data-template/dotnet/eks/client-call-trace.mustache"),
+
+  /** DotNet EC2 Default Test Case Validations */
+  DOTNET_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG(
+      "/expected-data-template/dotnet/ec2/default/outgoing-http-call-log.mustache"),
+  DOTNET_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC(
+      "/expected-data-template/dotnet/ec2/default/outgoing-http-call-metric.mustache"),
+  DOTNET_EC2_DEFAULT_OUTGOING_HTTP_CALL_TRACE(
+      "/expected-data-template/dotnet/ec2/default/outgoing-http-call-trace.mustache"),
+
+  DOTNET_EC2_DEFAULT_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/ec2/default/aws-sdk-call-log.mustache"),
+  DOTNET_EC2_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/ec2/default/aws-sdk-call-metric.mustache"),
+  DOTNET_EC2_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/ec2/default/aws-sdk-call-trace.mustache"),
+
+  DOTNET_EC2_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/ec2/default/remote-service-log.mustache"),
+  DOTNET_EC2_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/ec2/default/remote-service-metric.mustache"),
+  DOTNET_EC2_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/ec2/default/remote-service-trace.mustache"),
+
+  DOTNET_EC2_DEFAULT_CLIENT_CALL_LOG("/expected-data-template/dotnet/ec2/default/client-call-log.mustache"),
+  DOTNET_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/default/client-call-metric.mustache"),
+  DOTNET_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/default/client-call-trace.mustache"),
+
+  /** DotNet EC2 Asg Test Case Validations */
+  DOTNET_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/dotnet/ec2/asg/outgoing-http-call-log.mustache"),
+  DOTNET_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/dotnet/ec2/asg/outgoing-http-call-metric.mustache"),
+  DOTNET_EC2_ASG_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/dotnet/ec2/asg/outgoing-http-call-trace.mustache"),
+
+  DOTNET_EC2_ASG_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/ec2/asg/aws-sdk-call-log.mustache"),
+  DOTNET_EC2_ASG_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/ec2/asg/aws-sdk-call-metric.mustache"),
+  DOTNET_EC2_ASG_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/ec2/asg/aws-sdk-call-trace.mustache"),
+
+  DOTNET_EC2_ASG_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/ec2/asg/remote-service-log.mustache"),
+  DOTNET_EC2_ASG_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/ec2/asg/remote-service-metric.mustache"),
+  DOTNET_EC2_ASG_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/ec2/asg/remote-service-trace.mustache"),
+
+  DOTNET_EC2_ASG_CLIENT_CALL_LOG("/expected-data-template/dotnet/ec2/asg/client-call-log.mustache"),
+  DOTNET_EC2_ASG_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/asg/client-call-metric.mustache"),
+  DOTNET_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/asg/client-call-trace.mustache"),
+
+  /** DotNet K8S Test Case Validations */
+  DOTNET_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/dotnet/k8s/outgoing-http-call-log.mustache"),
+  DOTNET_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/dotnet/k8s/outgoing-http-call-metric.mustache"),
+  DOTNET_K8S_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/dotnet/k8s/outgoing-http-call-trace.mustache"),
+
+  DOTNET_K8S_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/k8s/aws-sdk-call-log.mustache"),
+  DOTNET_K8S_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/k8s/aws-sdk-call-metric.mustache"),
+  DOTNET_K8S_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/k8s/aws-sdk-call-trace.mustache"),
+
+  DOTNET_K8S_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/k8s/remote-service-log.mustache"),
+  DOTNET_K8S_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/k8s/remote-service-metric.mustache"),
+  DOTNET_K8S_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/k8s/remote-service-trace.mustache"),
+
+  DOTNET_K8S_CLIENT_CALL_LOG("/expected-data-template/dotnet/k8s/client-call-log.mustache"),
+  DOTNET_K8S_CLIENT_CALL_METRIC("/expected-data-template/dotnet/k8s/client-call-metric.mustache"),
+  DOTNET_K8S_CLIENT_CALL_TRACE("/expected-data-template/dotnet/k8s/client-call-trace.mustache"),
   ;
 
   private String path;
