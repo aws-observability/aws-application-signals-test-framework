@@ -118,6 +118,7 @@ resource "null_resource" "main_service_setup" {
       echo $agent_config > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
+      sudo yum install -y wget
       ${var.get_cw_agent_rpm_command}
       sudo rpm -U ./cw-agent.rpm
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
@@ -199,6 +200,7 @@ resource "null_resource" "remote_service_setup" {
       echo $agent_config > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
+      sudo yum install -y wget
       ${var.get_cw_agent_rpm_command}
       sudo rpm -U ./cw-agent.rpm
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
