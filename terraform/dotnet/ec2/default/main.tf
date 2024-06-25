@@ -150,7 +150,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
-      dotnet run
+      nohup dotnet run &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -239,7 +239,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
-      dotnet run
+      nohup dotnet run &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
