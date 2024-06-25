@@ -84,7 +84,7 @@ resource "aws_instance" "main_service_instance" {
   iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
   associate_public_ip_address          = true
-  instance_initiated_shutdown_behavior = "stop"
+  instance_initiated_shutdown_behavior = "terminate"
   metadata_options {
     http_tokens = "required"
   }
@@ -170,7 +170,7 @@ resource "aws_instance" "remote_service_instance" {
   iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
   associate_public_ip_address          = true
-  instance_initiated_shutdown_behavior = "stop"
+  instance_initiated_shutdown_behavior = "terminate"
   metadata_options {
     http_tokens = "required"
   }
