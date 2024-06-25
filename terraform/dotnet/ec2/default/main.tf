@@ -104,8 +104,6 @@ resource "null_resource" "main_service_setup" {
 
   provisioner "remote-exec" {
     inline = [
-      #!/bin/bash
-
       # Install DotNet and wget
       "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc",
       "sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo",
@@ -183,8 +181,6 @@ resource "null_resource" "remote_service_setup" {
 
   provisioner "remote-exec" {
     inline = [
-      #!/bin/bash
-
       # Install DotNet and wget
       "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc",
       "sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo",
