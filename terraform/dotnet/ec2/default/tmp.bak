@@ -28,11 +28,11 @@ resource "aws_default_vpc" "default" {}
 
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "aws_ssh_key" {
-  key_name = "instance_key-${var.test_id}"
+  key_name   = "instance_key-${var.test_id}"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
@@ -42,10 +42,10 @@ locals {
 }
 
 data "aws_ami" "ami" {
-  owners = ["amazon"]
-  most_recent      = true
+  owners      = ["amazon"]
+  most_recent = true
   filter {
-    name = "name"
+    name   = "name"
     values = ["al20*-ami-minimal-*-x86_64"]
   }
   filter {
@@ -78,13 +78,13 @@ data "aws_ami" "ami" {
 }
 
 resource "aws_instance" "main_service_instance" {
-  ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.small"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
+  instance_type                        = "t3.small"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
   metadata_options {
     http_tokens = "required"
   }
@@ -96,19 +96,19 @@ resource "aws_instance" "main_service_instance" {
 
 resource "null_resource" "main_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
     inline = [
-      # Install Python and wget
-      "sudo yum install wget -y",
+      # Install DotNet and wget
+      "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc",
+      "sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo",
+      "sudo dnf install -y dotnet-sdk-8.0",
       "sudo yum install unzip -y",
-      "sudo dnf install -y python3.9",
-      "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
       "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
@@ -119,33 +119,35 @@ resource "null_resource" "main_service_setup" {
       "sudo rpm -U ./cw-agent.rpm",
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
-      # Get ADOT Wheel and install it
-      "${var.get_adot_wheel_command}",
+      # Get ADOT distro and unzip it
+      "${var.get_adot_distro_command}",
 
       # Get and run the sample application with configuration
-      "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
-      "unzip -o python-sample-app.zip",
+      "aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip",
+      "unzip -o dotnet-sample-app.zip",
 
       # Export environment variables for instrumentation
-      "cd ./django_frontend_service",
-      "python3.9 -m pip install -r requirements.txt",
-      "export DJANGO_SETTINGS_MODULE=\"django_frontend_service.settings\"",
-      "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
-      "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
-      "export OTEL_METRICS_EXPORTER=none",
-      "export OTEL_TRACES_EXPORTER=otlp",
+      "cd ./asp_frontend_service",
+      "export INSTALL_DIR=../dotnet-distro",
+      "export CORECLR_ENABLE_PROFILING=1",
+      "export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}",
+      "export CORECLR_PROFILER_PATH=${INSTALL_DIR}/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so",
+      "export DOTNET_ADDITIONAL_DEPS=${INSTALL_DIR}/AdditionalDeps",
+      "export DOTNET_SHARED_STORE=${INSTALL_DIR}/store",
+      "export DOTNET_STARTUP_HOOKS=${INSTALL_DIR}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll",
+      "export OTEL_DOTNET_AUTO_HOME=${INSTALL_DIR}",
+      "export OTEL_DOTNET_AUTO_PLUGINS=AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation",
       "export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true",
+      "export OTEL_TRACES_SAMPLER=always_on",
       "export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
       "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
-      "export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}",
-      "export OTEL_TRACES_SAMPLER=always_on",
-      "python3.9 manage.py migrate",
-      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload &",
+      "nohup dotnet run &",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       "sleep 30"
+
     ]
   }
 
@@ -153,13 +155,13 @@ resource "null_resource" "main_service_setup" {
 }
 
 resource "aws_instance" "remote_service_instance" {
-  ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.small"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
+  instance_type                        = "t3.small"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
   metadata_options {
     http_tokens = "required"
   }
@@ -171,19 +173,19 @@ resource "aws_instance" "remote_service_instance" {
 
 resource "null_resource" "remote_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.remote_service_instance.public_ip
+    host        = aws_instance.remote_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
     inline = [
-      # Install Python and wget
-      "sudo yum install wget -y",
+      # Install DotNet and wget
+      "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc",
+      "sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo",
+      "sudo dnf install -y dotnet-sdk-8.0",
       "sudo yum install unzip -y",
-      "sudo dnf install -y python3.9",
-      "sudo dnf install -y python3.9-pip",
 
       # Copy in CW Agent configuration
       "agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'",
@@ -194,31 +196,31 @@ resource "null_resource" "remote_service_setup" {
       "sudo rpm -U ./cw-agent.rpm",
       "sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json",
 
-      # Get ADOT Wheel and install it
-      "${var.get_adot_wheel_command}",
+      # Get ADOT distro and unzip it
+      "${var.get_adot_distro_command}",
 
       # Get and run the sample application with configuration
-      "aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip",
-      "unzip -o python-sample-app.zip",
+      "aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip",
+      "unzip -o dotnet-sample-app.zip",
 
       # Export environment variables for instrumentation
-      "cd ./django_remote_service",
-      "export DJANGO_SETTINGS_MODULE=\"django_remote_service.settings\"",
-      "python3.9 -m pip install -r requirements.txt --force-reinstall",
-      "export OTEL_PYTHON_DISTRO=\"aws_distro\"",
-      "export OTEL_PYTHON_CONFIGURATOR=\"aws_configurator\"",
-      "export OTEL_METRICS_EXPORTER=none",
-      "export OTEL_TRACES_EXPORTER=otlp",
+      "cd ./asp_remote_service",
+      "export INSTALL_DIR=../dotnet-distro",
+      "export CORECLR_ENABLE_PROFILING=1",
+      "export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}",
+      "export CORECLR_PROFILER_PATH=${INSTALL_DIR}/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so",
+      "export DOTNET_ADDITIONAL_DEPS=${INSTALL_DIR}/AdditionalDeps",
+      "export DOTNET_SHARED_STORE=${INSTALL_DIR}/store",
+      "export DOTNET_STARTUP_HOOKS=${INSTALL_DIR}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll",
+      "export OTEL_DOTNET_AUTO_HOME=${INSTALL_DIR}",
+      "export OTEL_DOTNET_AUTO_PLUGINS=AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation",
       "export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true",
+      "export OTEL_TRACES_SAMPLER=always_on",
       "export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315",
       "export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc",
       "export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc",
-      "export OTEL_SERVICE_NAME=python-sample-remote-application-${var.test_id}",
-      "export OTEL_TRACES_SAMPLER=always_on",
-      "python3.9 manage.py migrate",
-      "nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload &",
-
+      "nohup dotnet run &",
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       "sleep 30"
