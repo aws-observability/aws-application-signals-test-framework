@@ -79,7 +79,7 @@ public class FrontendServiceController {
   @GetMapping("/")
   @ResponseBody
   public String healthcheck() {
-      return "healthcheck";
+    return "healthcheck";
   }
 
   // test aws calls instrumentation
@@ -87,7 +87,7 @@ public class FrontendServiceController {
   @ResponseBody
   public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
     String bucketName = "e2e-test-bucket-name";
-    // Add a unique test ID to bucket name to associate buckets to specific test runs
+    // Add a unique test ID to bucketname to associate buckets to specific test runs
     if (testingId != null) {
       bucketName += "-" + testingId;
     }
@@ -179,7 +179,7 @@ public class FrontendServiceController {
       statement.executeQuery("SELECT * FROM tables LIMIT 1;");
       return "SQL request executed successfully";
     } catch (SQLException e) {
-        logger.error("Could not complete SQL request:{}", e.getMessage());
+      logger.error("Could not complete SQL request:{}", e.getMessage());
       throw new RuntimeException(e);
     }
   }

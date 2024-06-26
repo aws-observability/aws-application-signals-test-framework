@@ -50,7 +50,7 @@ variable "sample_remote_app_image" {
 }
 
 variable "rds_mysql_cluster_endpoint" {
-  default = "example.cluster-ro-example.eu-west-1.rds.amazonaws.com"
+  default = "example.cluster-example.eu-west-1.rds.amazonaws.com"
 }
 
 variable "rds_mysql_cluster_username" {
