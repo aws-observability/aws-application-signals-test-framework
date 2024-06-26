@@ -152,8 +152,8 @@ jobs:
         id: deploy-sample-app
         working-directory: terraform/java/eks
         run: |  
-          # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online.
-          # There may be occasional failures due to transitivity issues, so try up to 2 times.
+          # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online. 
+          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
           # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
           # that it failed at some point
           retry_counter=0
@@ -175,7 +175,7 @@ jobs:
               -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
               -var="rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}" \
             || deployment_failed=$?
-          
+                    
             if [ $deployment_failed -ne 0 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
             fi
@@ -244,7 +244,7 @@ jobs:
           
               # Running clean-app-signal.sh removes the current cluster from the config. Update the cluster again for subsequent runs.
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}
-          
+            
               echo "Destroying terraform"
               terraform destroy -auto-approve \
                 -var="test_id=${{ env.TESTING_ID }}" \
