@@ -143,7 +143,7 @@ resource "null_resource" "main_service_setup" {
       export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
       export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
       export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
-      export OTEL_DOTNET_AUTO_PLUGINS="AWS.OpenTelemetry.AutoInstrumentation.Plugin, AWS.OpenTelemetry.AutoInstrumentation"
+      export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
@@ -233,7 +233,7 @@ resource "null_resource" "remote_service_setup" {
       export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
       export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
       export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
-      export OTEL_DOTNET_AUTO_PLUGINS="AWS.OpenTelemetry.AutoInstrumentation.Plugin, AWS.OpenTelemetry.AutoInstrumentation"
+      export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
