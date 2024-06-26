@@ -20,4 +20,4 @@ services:
     container_name: asp_remote_service
     restart: always
     ports:
-      - "8081:8080"
+      - "8081:8081"

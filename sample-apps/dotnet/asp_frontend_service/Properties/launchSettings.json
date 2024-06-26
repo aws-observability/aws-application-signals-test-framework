@@ -4,7 +4,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:8080"
+      "applicationUrl": "http://0.0.0.0:8080"
     }
   },
   "profiles": {
@@ -18,10 +18,10 @@
     "asp_frontend_service": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "http://localhost:8080",
+      "applicationUrl": "http://0.0.0.0:8080",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "LISTEN_ADDRESS": "http://localhost:8080",
+        "LISTEN_ADDRESS": "http://0.0.0.0:8080",
         "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
         "OTEL_EXPORTER_OTLP_INSECURE": "True"
       }
