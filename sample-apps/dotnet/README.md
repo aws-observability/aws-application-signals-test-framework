@@ -31,7 +31,7 @@ docker push ${REPOSITORY_PREFIX}/dotnetsampleapp/remote-service:latest
 
 ## APIs
 The following are the APIs supported:
-1. http://${ FRONTEND_SERVICE_IP }:8000/outgoing-http-call/
-2. http://${ FRONTEND_SERVICE_IP }:8000/aws-sdk-call/
-3. http://${ FRONTEND_SERVICE_IP }:8000/remote-service?ip=${ REMOTE_SERVICE_IP }/
-4. http://${ FRONTEND_SERVICE_IP }:8000/client-call/
+1. http://${ FRONTEND_SERVICE_IP }:8080/outgoing-http-call/
+2. http://${ FRONTEND_SERVICE_IP }:8080/aws-sdk-call/
+3. http://${ FRONTEND_SERVICE_IP }:8080/remote-service?ip=${ REMOTE_SERVICE_IP }/
+4. http://${ FRONTEND_SERVICE_IP }:8080/client-call/
