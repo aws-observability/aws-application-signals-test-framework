@@ -143,13 +143,13 @@ resource "null_resource" "main_service_setup" {
       export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
       export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
       export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
-      export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
-      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED="true"
-      export OTEL_TRACES_SAMPLER="always_on"
-      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
-      export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
-      export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
-      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
+      export OTEL_DOTNET_AUTO_PLUGINS="AWS.OpenTelemetry.AutoInstrumentation.Plugin, AWS.OpenTelemetry.AutoInstrumentation"
+      export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
+      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
+      export OTEL_METRICS_EXPORTER=none
+      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+      export OTEL_TRACES_SAMPLER=always_on
       echo "RUN LOG"
       nohup dotnet run &
 
@@ -233,13 +233,13 @@ resource "null_resource" "remote_service_setup" {
       export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
       export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
       export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
-      export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
-      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED="true"
-      export OTEL_TRACES_SAMPLER="always_on"
-      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
-      export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
-      export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
-      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
+      export OTEL_DOTNET_AUTO_PLUGINS="AWS.OpenTelemetry.AutoInstrumentation.Plugin, AWS.OpenTelemetry.AutoInstrumentation"
+      export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
+      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
+      export OTEL_METRICS_EXPORTER=none
+      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+      export OTEL_TRACES_SAMPLER=always_on
       nohup dotnet run &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
