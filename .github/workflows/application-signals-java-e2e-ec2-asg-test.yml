@@ -36,7 +36,7 @@ jobs:
   e2e-ec2-asg-test:
     runs-on: ubuntu-latest
     container:
-      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
+      image: public.ecr.aws/v6t6x3y1/java-ec2-asg:latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -71,18 +71,10 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
-          aws-region: ${{ inputs.aws-region }}
-
-      - name: Initiate Terraform
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/ec2/asg && terraform init && terraform validate"
-          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
-          max_retry: 6
-          sleep_time: 60
+          aws-region: ${{ inputs.aws-region }}         
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
-        working-directory: terraform/java/ec2/asg
+        working-directory: /terraform
         run: |
           # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
           # There may be occasional failures due to transitivity issues, so try up to 2 times. 
@@ -273,7 +265,7 @@ jobs:
       - name: Terraform destroy
         if: always()
         continue-on-error: true
-        working-directory: terraform/java/ec2/asg
+        working-directory: /terraform
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"

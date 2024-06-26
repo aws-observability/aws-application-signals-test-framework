@@ -2,6 +2,12 @@ name: Create and publish a Docker image
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+      - 'terraform/**'
 
 permissions:
   id-token: write
@@ -10,6 +16,17 @@ permissions:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        canary: [ { repo: 'java-eks', dir: '/terraform/java/eks' },
+                  { repo: 'java-ec2-default', dir: '/terraform/java/ec2/default' },
+                  { repo: 'java-ec2-asg', dir: '/terraform/java/ec2/asg' },
+                  { repo: 'java-k8s', dir: '/terraform/java/k8s' },
+                  { repo: 'java-metric-limiter', dir: '/terraform/java/eks' },
+                  { repo: 'python-eks', dir: '/terraform/python/eks' },
+                  { repo: 'python-ec2-default', dir: '/terraform/python/ec2/default' },
+                  { repo: 'python-ec2-asg', dir: '/terraform/python/ec2/asg' },
+                  { repo: 'python-k8s', dir: '/terraform/python/k8s' } ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,7 +34,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.E2E_SECRET_TEST_ROLE_ARN }}
+          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
           aws-region: us-east-1
 
       - name: Login to Amazon ECR
@@ -30,9 +47,10 @@ jobs:
         id: build-image
         env:
           REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
-          REGISTRY_ALIAS: h6o3z5z9
-          REPOSITORY: aws-application-signals-test-framework-workflow-container
+          REGISTRY_ALIAS: v6t6x3y1
+          REPOSITORY: ${{ matrix.canary.repo }}
+          BUILD_ARG: TERRAFORM_DIR=${{ matrix.canary.dir }}
           IMAGE_TAG: latest
         run: |
-          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG .
+          docker build -t $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG --build-arg $BUILD_ARG .
           docker push $REGISTRY/$REGISTRY_ALIAS/$REPOSITORY:$IMAGE_TAG
