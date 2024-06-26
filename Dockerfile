@@ -5,6 +5,8 @@ FROM openjdk:11-jdk
 ENV JAVA_HOME=/usr/local/openjdk-11
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
+ARG TERRAFORM_DIR
+
 # Install the neccessary commands
 RUN \
     apt-get update -y && \
@@ -56,3 +58,11 @@ RUN mkdir -p $GRADLE_USER_HOME
 
 # Copy the Gradle cache from the default location to the custom location
 RUN cp -r ~/.gradle/* $GRADLE_USER_HOME
+
+COPY "$TERRAFORM_DIR" /terraform/
+RUN if echo "$TERRAFORM_DIR" | grep -q "k8s"; then \
+      terraform -chdir=/terraform/deploy init && terraform -chdir=/terraform/deploy validate ; \
+      terraform -chdir=/terraform/cleanup init && terraform -chdir=/terraform/cleanup validate ; \
+    else \
+      terraform -chdir=/terraform init && terraform -chdir=/terraform validate ; \
+    fi

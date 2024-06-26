@@ -35,7 +35,7 @@ jobs:
   python-e2e-ec2-default-test:
     runs-on: ubuntu-latest
     container:
-      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
+      image: public.ecr.aws/v6t6x3y1/python-ec2-default:latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -84,7 +84,7 @@ jobs:
         run: aws s3 cp ${{ env.ADOT_WHEEL_NAME }} s3://adot-main-build-staging-jar/${{ env.ADOT_WHEEL_NAME }}
 
       - name: Set Get ADOT Wheel command environment variable
-        working-directory: terraform/python/ec2/default
+        working-directory: /terraform
         run: |
           if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
@@ -93,16 +93,8 @@ jobs:
             echo GET_ADOT_WHEEL_COMMAND="python3.9 -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> $GITHUB_ENV
           fi
 
-      - name: Initiate Terraform
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/default && terraform init && terraform validate"
-          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
-          max_retry: 6
-          sleep_time: 60
-
       - name: Deploy sample app via terraform and wait for endpoint to come online
-        working-directory: terraform/python/ec2/default
+        working-directory: /terraform
         run: |
           # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
           # There may be occasional failures due to transitivity issues, so try up to 2 times. 
@@ -183,14 +175,14 @@ jobs:
       - name: Get the ec2 instance ami id
         run: |
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
-        working-directory: terraform/python/ec2/default
+        working-directory: /terraform
 
       - name: Get the sample app endpoint
         run: |
           echo "MAIN_SERVICE_ENDPOINT=$(terraform output sample_app_main_service_public_dns):8000" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_public_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
-        working-directory: terraform/python/ec2/default
+        working-directory: /terraform
 
       # This steps increases the speed of the validation by creating the telemetry data in advance
       - name: Call all test APIs
@@ -284,7 +276,7 @@ jobs:
       - name: Terraform destroy
         if: always()
         continue-on-error: true
-        working-directory: terraform/python/ec2/default
+        working-directory: /terraform
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
