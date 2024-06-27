@@ -16,6 +16,8 @@ permissions:
 jobs:
   e2e-test:
     runs-on: ubuntu-latest
+    container:
+      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     strategy:
       fail-fast: false
       matrix:
@@ -24,6 +26,9 @@ jobs:
                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
                      'us-east-1','us-east-2', 'us-west-1', 'us-west-2']
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/actions/e2e-test/java/ec2-asg
         with:
           aws-region: ${{ matrix.aws-region }}
