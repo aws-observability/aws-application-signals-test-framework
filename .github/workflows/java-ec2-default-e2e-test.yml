@@ -73,10 +73,18 @@ jobs:
           secret-ids:
             ACCOUNT_ID, region-account/${{ inputs.aws-region }}
 
+      - name: Get Role to Assume
+        run: |
+          if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
+            echo ROLE_TO_ASSUME="${{ env.RELEASE_TEST_ROLE_ARN }}" >> $GITHUB_ENV
+          else
+            echo ROLE_TO_ASSUME="arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}" >> $GITHUB_ENV
+          fi
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs.caller-workflow-name == 'main-build' && ${{ env.RELEASE_TEST_ROLE_ARN }} || arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }} }}
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
           aws-region: ${{ inputs.aws-region }}
 
       - uses: actions/download-artifact@v3

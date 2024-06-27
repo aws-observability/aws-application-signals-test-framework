@@ -74,11 +74,19 @@ jobs:
           secret-ids:
             ACCOUNT_ID, region-account/${{ env.AWS_DEFAULT_REGION }}
 
+      - name: Get Role to Assume
+        run: |
+          if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
+            echo ROLE_TO_ASSUME="${{ env.RELEASE_TEST_ROLE_ARN }}" >> $GITHUB_ENV
+          else
+            echo ROLE_TO_ASSUME="arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}" >> $GITHUB_ENV
+          fi
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs.caller-workflow-name == 'main-build' && ${{ env.RELEASE_TEST_ROLE_ARN }} || arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }} }}
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ inputs.aws-region }}
 
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/python/k8s/deploy/resources
