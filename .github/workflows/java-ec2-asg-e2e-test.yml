@@ -18,6 +18,10 @@ on:
         required: false
         default: ''
         type: string
+      release-test-role-arn:
+        required: false
+        default: ''
+        type: string
 
 permissions:
   id-token: write
@@ -33,6 +37,7 @@ env:
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
   CW_AGENT_RPM: ${{ inputs.cw-agent-rpm }}
+  RELEASE_TEST_ROLE_ARN: ${{ inputs.release-test-role-arn }}
 
 jobs:
   java-ec2-asg-e2e-test:
