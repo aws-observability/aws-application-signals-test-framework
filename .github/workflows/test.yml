@@ -14,27 +14,27 @@ permissions:
   contents: read
 
 jobs:
-#  java-ec2-default:
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        aws-region: [ 'us-east-1', 'eu-central-2' ]
-#    uses: ./.github/workflows/java-ec2-default-e2e-test.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ matrix.aws-region }}
-#      caller-workflow-name: 'test'
-#
-#  java-ec2-asg:
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        aws-region: [ 'us-east-1', 'eu-central-2' ]
-#    uses: ./.github/workflows/java-ec2-asg-e2e-test.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ matrix.aws-region }}
-#      caller-workflow-name: 'test'
+  java-ec2-default:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1', 'eu-central-2' ]
+    uses: ./.github/workflows/java-ec2-default-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      caller-workflow-name: 'test'
+
+  java-ec2-asg:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1', 'eu-central-2' ]
+    uses: ./.github/workflows/java-ec2-asg-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      caller-workflow-name: 'test'
 
   python-ec2-default:
     strategy:
@@ -47,51 +47,51 @@ jobs:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'test'
 
-#  python-ec2-asg:
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        aws-region: [ 'us-east-1', 'eu-central-2' ]
-#    uses: ./.github/workflows/python-ec2-asg-e2e-test.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ matrix.aws-region }}
-#      caller-workflow-name: 'test'
-#
-#  java-eks:
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        aws-region: [ 'us-east-1', 'eu-central-2' ]
-#    uses: ./.github/workflows/java-eks-e2e-test.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ matrix.aws-region }}
-#      test-cluster-name: 'e2e-playground'
-#      caller-workflow-name: 'test'
-#
-#  metric-limiter:
-#    needs: [java-eks]
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        aws-region: [ 'us-east-1', 'eu-central-2' ]
-#    uses: ./.github/workflows/java-metric-limiter-e2e-test.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ matrix.aws-region }}
-#      test-cluster-name: 'e2e-playground'
-#      caller-workflow-name: 'test'
-#
-#  python-eks:
-#    needs: [metric-limiter]
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        aws-region: [ 'us-east-1', 'eu-central-2' ]
-#    uses: ./.github/workflows/python-eks-e2e-test.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ matrix.aws-region }}
-#      test-cluster-name: 'e2e-playground'
-#      caller-workflow-name: 'test'
+  python-ec2-asg:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1', 'eu-central-2' ]
+    uses: ./.github/workflows/python-ec2-asg-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      caller-workflow-name: 'test'
+
+  java-eks:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1', 'eu-central-2' ]
+    uses: ./.github/workflows/java-eks-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
+
+  metric-limiter:
+    needs: [java-eks]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1', 'eu-central-2' ]
+    uses: ./.github/workflows/java-metric-limiter-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
+
+  python-eks:
+    needs: [metric-limiter]
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1', 'eu-central-2' ]
+    uses: ./.github/workflows/python-eks-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
