@@ -283,7 +283,7 @@ jobs:
           jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_ENV
 
       - name: Patch the ADOT image and restart CloudWatch pods
-        if: ${{ github.event.repository.name }} == 'aws-otel-java-instrumentation' || ${{ github.event.repository.name }} == 'aws-otel-python-instrumentation'
+        if: ${{ github.event.repository.name == 'aws-otel-java-instrumentation' }}
         run: |
           kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": ${{ env.PATCH_IMAGE_ECR }}}]'
           kubectl delete pods --all -n amazon-cloudwatch
@@ -291,7 +291,7 @@ jobs:
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
       - name: Patch the CloudWatch Agent image and restart CloudWatch pods
-        if: ${{ github.event.repository.name }} == 'amazon-cloudwatch-agent'
+        if: ${{ github.event.repository.name == 'amazon-cloudwatch-agent' }}
         run: |
           kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": ${{ env.PATCH_IMAGE_ECR }}}]'
           kubectl delete pods --all -n amazon-cloudwatch
@@ -299,7 +299,7 @@ jobs:
           kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
 
       - name: Patch the CloudWatch Agent Operator image and restart CloudWatch pods
-        if: ${{ github.event.repository.name }} == 'amazon-cloudwatch-agent-operator'
+        if: ${{ github.event.repository.name == 'amazon-cloudwatch-agent-operator' }}
         run: |
           kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ env.PATCH_IMAGE_ECR }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
           kubectl delete pods --all -n amazon-cloudwatch
@@ -337,7 +337,7 @@ jobs:
           jq '.items[0].status.containerStatuses[0].imageID'
 
       - name: Check if ADOT image has changed
-        if: ${{ github.event.repository.name }} == 'aws-otel-java-instrumentation' || ${{ github.event.repository.name }} == 'aws-otel-python-instrumentation'
+        if: ${{ github.event.repository.name == 'aws-otel-java-instrumentation' }}
         run: |
           if [ ${{ env.DEFAULT_ADOT_IMAGE }} = ${{ env.LATEST_ADOT_IMAGE }} ]; then
             echo "Adot image did not change"
@@ -345,7 +345,7 @@ jobs:
           fi
 
       - name: Check if CW Agent image has changed
-        if: ${{ github.event.repository.name }} == 'amazon-cloudwatch-agent'
+        if: ${{ github.event.repository.name == 'amazon-cloudwatch-agent' }}
         run: |
           if [ ${{ env.DEFAULT_CW_AGENT_IMAGE }} = ${{ env.LATEST_CW_AGENT_IMAGE }} ]; then
             echo "Operator image did not change"
@@ -353,7 +353,7 @@ jobs:
           fi
 
       - name: Check if CW Agent Operator image has changed
-        if: ${{ github.event.repository.name }} == 'amazon-cloudwatch-agent-operator'
+        if: ${{ github.event.repository.name == 'amazon-cloudwatch-agent-operator' }}
         run: |
           if [ ${{ env.DEFAULT_CW_AGENT_OPERATOR_IMAGE }} = ${{ env.LATEST_CW_AGENT_OPERATOR_IMAGE }} ]; then
             echo "Operator image did not change"
