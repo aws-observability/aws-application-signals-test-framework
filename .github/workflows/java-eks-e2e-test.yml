@@ -256,7 +256,7 @@ jobs:
       - name: Save ADOT image ID to environment before patching
         run: |
           echo "DEFAULT_ADOT_IMAGE"=$(kubectl get pods -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} --output json | \
-          jq '.items[0].status.initContainerStatuses[0].imageID'') >> $GITHUB_ENV
+          jq '.items[0].status.initContainerStatuses[0].imageID') >> $GITHUB_ENV
 
       - name: Save CW Agent image ID to environment before patching
         run: |
@@ -299,7 +299,7 @@ jobs:
           jq '.items[0].status.initContainerStatuses[0].imageID'
           
           echo "LATEST_ADOT_IMAGE"=$(kubectl get pods -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} --output json | \
-          jq '.items[0].status.initContainerStatuses[0].imageID'') >> $GITHUB_ENV
+          jq '.items[0].status.initContainerStatuses[0].imageID') >> $GITHUB_ENV
 
       - name: Log pod CW Agent image ID and save image to the environment
         run: |

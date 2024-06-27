@@ -74,7 +74,7 @@ jobs:
           aws-region: ${{ inputs.aws-region }}
 
       - uses: actions/download-artifact@v3
-        if: ${{ github.event.repository.name }} == 'aws-otel-python-instrumentation'
+        if: ${{ github.event.repository.name }} == "aws-otel-python-instrumentation"
         with:
           name: ${{ env.ADOT_WHEEL_NAME }}
 
