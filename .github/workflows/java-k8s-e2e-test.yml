@@ -14,6 +14,10 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      release-test-role-arn:
+        required: false
+        default: ''
+        type: string
 
 concurrency:
   group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
@@ -33,6 +37,7 @@ env:
   MAIN_SERVICE_ENDPOINT: ${{ secrets.APP_SIGNALS_E2E_K8S_MASTER_NODE_ENDPOINT }}
   SAMPLE_APP_NAMESPACE: sample-app-namespace
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
+  RELEASE_TEST_ROLE_ARN: ${{ inputs.release-test-role-arn }}
 
 jobs:
   java-k8s-e2e-test:

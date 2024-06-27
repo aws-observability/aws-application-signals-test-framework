@@ -22,6 +22,10 @@ on:
         required: false
         default: ''
         type: string
+      release-test-role-arn:
+        required: false
+        default: ''
+        type: string
 
 permissions:
   id-token: write
@@ -34,6 +38,7 @@ env:
   ADOT_WHEEL_NAME: ${{ inputs.staging_wheel_name }}
   CW_AGENT_RPM: ${{ inputs.cw-agent-rpm }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  RELEASE_TEST_ROLE_ARN: ${{ inputs.release-test-role-arn }}
 
 jobs:
   python-ec2-asg-e2e-test:

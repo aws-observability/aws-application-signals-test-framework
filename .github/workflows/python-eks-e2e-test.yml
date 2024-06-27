@@ -21,6 +21,10 @@ on:
         required: false
         type: string
         default: ""
+      release-test-role-arn:
+        required: false
+        default: ''
+        type: string
 
 concurrency:
   group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
@@ -35,7 +39,7 @@ env:
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   PATCH_IMAGE_ECR: ${{ inputs.patch-image-ecr }}
-
+  RELEASE_TEST_ROLE_ARN: ${{ inputs.release-test-role-arn }}
 
 jobs:
   python-eks-e2e-test:
