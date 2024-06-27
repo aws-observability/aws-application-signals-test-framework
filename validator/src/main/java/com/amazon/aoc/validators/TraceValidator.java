@@ -134,6 +134,7 @@ public class TraceValidator implements IValidator {
     // Special Case for the /client-call. The API call doesn't return the trace ID of the local root
     // client span, so find the trace by filtering traces generated within the last 60 second
     // with the serviceName and the local_root_client_call keyword.
+    log.info("Tracer ID to fetch: {}", traceIdList);
     if (XRayService.DEFAULT_TRACE_ID.equals(traceIdList.get(0))) {
       List<TraceSummary> retrieveTraceLists =
           xrayService.searchClientCallTraces(context.getServiceName());
@@ -142,6 +143,7 @@ public class TraceValidator implements IValidator {
     } else {
       retrieveTraceList = xrayService.listTraceByIds(traceIdList);
     }
+    log.info("Output trace: {}", retrieveTraceList);
 
     if (retrieveTraceList == null || retrieveTraceList.isEmpty()) {
       throw new BaseException(ExceptionCode.EMPTY_LIST);

@@ -4,7 +4,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -18,7 +18,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -31,20 +31,6 @@
     -
       name: RemoteService
       value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: Operation
-      value: GET healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
 
 -
   metricName: Latency
@@ -113,7 +99,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -127,7 +113,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -140,20 +126,6 @@
     -
       name: RemoteService
       value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: Operation
-      value: GET healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
 
 -
   metricName: Error
@@ -222,7 +194,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -236,7 +208,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -249,20 +221,6 @@
     -
       name: RemoteService
       value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: Operation
-      value: GET healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
 
 -
   metricName: Fault
