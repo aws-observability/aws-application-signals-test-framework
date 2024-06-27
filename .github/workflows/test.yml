@@ -24,7 +24,7 @@ jobs:
                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
                      'us-east-1','us-east-2', 'us-west-1', 'us-west-2']
     steps:
-      uses: ./.github/workflows/actions/e2e-test/java/ec2-asg
-      with:
-        aws-region: ${{ matrix.aws-region }}
-        caller-workflow-name: 'appsignals-e2e-ec2-asg-canary-test'
+      - uses: ./.github/workflows/actions/e2e-test/java/ec2-asg
+        with:
+          aws-region: ${{ matrix.aws-region }}
+          caller-workflow-name: 'appsignals-e2e-ec2-asg-canary-test'
