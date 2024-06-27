@@ -11,12 +11,16 @@ on:
       aws-region:
         required: true
         type: string
+      caller-workflow-name:
+        required: true
+        type: string
       staging_wheel_name:
         required: false
         default: 'aws-opentelemetry-distro'
         type: string
-      caller-workflow-name:
-        required: true
+      cw-agent-rpm:
+        required: false
+        default: ''
         type: string
 
 permissions:
@@ -28,6 +32,7 @@ env:
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_WHEEL_NAME: ${{ inputs.staging_wheel_name }}
+  CW_AGENT_RPM: ${{ inputs.cw-agent-rpm }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
@@ -95,7 +100,7 @@ jobs:
         run: |
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
-            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
+            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp ${{ env.CW_AGENT_RPM }} ./cw-agent.rpm" >> $GITHUB_ENV
           else
             echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
           fi
