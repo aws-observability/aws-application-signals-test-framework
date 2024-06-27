@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Application Signals Enablement E2E Testing - Python K8s
+name: Python K8s on EC2 Use Case
 on:
   workflow_call:
     inputs:
@@ -36,13 +36,15 @@ env:
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 jobs:
-  e2e-k8s-test:
+  python-k8s-e2e-test:
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon
