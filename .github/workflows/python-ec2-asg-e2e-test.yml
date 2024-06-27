@@ -61,12 +61,14 @@ jobs:
         run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
           aws-region: us-east-1
 
       - name: Retrieve account
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids:
@@ -75,7 +77,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          role-to-assume: ${{ inputs['caller-workflow-name'] == 'main-build' && env.RELEASE_TEST_ROLE_ARN || arn:aws:iam::env.ACCOUNT_ID:role/secrets.E2E_TEST_ROLE_ARN }}
           aws-region: ${{ inputs.aws-region }}
 
       - uses: actions/download-artifact@v3
