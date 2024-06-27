@@ -76,7 +76,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ inputs['caller-workflow-name'] == 'main-build' && env.RELEASE_TEST_ROLE_ARN || arn:aws:iam::env.ACCOUNT_ID:role/secrets.E2E_TEST_ROLE_ARN }}
+          role-to-assume: ${{ inputs.caller-workflow-name == 'main-build' && ${{ env.RELEASE_TEST_ROLE_ARN }} || arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }} }}
           aws-region: ${{ inputs.aws-region }}
 
       - name: Prepare and upload sample app deployment files
