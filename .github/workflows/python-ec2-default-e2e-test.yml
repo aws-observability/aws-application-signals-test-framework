@@ -73,6 +73,9 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
           aws-region: ${{ inputs.aws-region }}
 
+      - name: test
+        run: echo ${{ github.event.repository.name }}
+
       - uses: actions/download-artifact@v3
         if: ${{ github.event.repository.name }} == 'aws-otel-python-instrumentation'
         with:
