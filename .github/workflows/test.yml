@@ -84,7 +84,7 @@ jobs:
       caller-workflow-name: 'test'
 
   python-eks:
-    needs: [python-eks]
+    needs: [metric-limiter]
     strategy:
       fail-fast: false
       matrix:
