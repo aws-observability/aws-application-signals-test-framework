@@ -64,43 +64,6 @@
       value: AWS::S3
 
 -
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: ListBuckets
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: ListBuckets
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
@@ -144,43 +107,6 @@
     -
       name: Environment
       value: ec2:{{platformInfo}}
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: ListBuckets
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: ListBuckets
     -
       name: RemoteService
       value: AWS::S3
@@ -266,42 +192,4 @@
     -
       name: RemoteService
       value: AWS::S3
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: ListBuckets
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: ListBuckets
-    -
-      name: RemoteService
-      value: AWS::S3
-
 
