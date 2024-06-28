@@ -71,17 +71,6 @@
       name: Service
       value: {{serviceName}}
     -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
       name: Operation
       value: InternalOperation
     -
@@ -138,17 +127,6 @@
     -
       name: RemoteService
       value: local-root-client-call:80
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
 
 -
   metricName: Fault
