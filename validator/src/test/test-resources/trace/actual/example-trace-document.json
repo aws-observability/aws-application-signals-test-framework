@@ -3,7 +3,7 @@
   "name": "serviceName",
   "http": {
     "request": {
-      "url": "http://127.0.0.1/aws-sdk-call?ip=1.2.3.4&testingId=abc",
+      "url": "http://127.0.0.1/aws-sdk-call?ip=1.2.3.4&testingId=testIdentifier",
       "method": "GET"
     },
     "response": {

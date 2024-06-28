@@ -9,9 +9,6 @@ import com.amazon.aoc.models.SampleAppResponse;
 import com.amazon.aoc.models.ValidationConfig;
 
 public class ValidatorBaseTest {
-    private static final String SERVICE_DIMENSION = "Service";
-    private static final String REMOTE_SERVICE_DIMENSION = "RemoteService";
-    private static final String REMOTE_TARGET_DIMENSION = "RemoteTarget";
     protected static final String TEMPLATE_ROOT =
             "file://" + System.getProperty("user.dir") + "/src/test/test-resources/";
     private static final String SERVICE_NAME = "serviceName";
