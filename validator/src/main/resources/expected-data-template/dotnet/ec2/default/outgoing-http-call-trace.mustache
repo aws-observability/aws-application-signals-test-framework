@@ -14,7 +14,7 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^GET outgoing-http-call$",
+    "aws.local.operation": "^GET /outgoing-http-call$",
     "aws.local.environment": "^ec2:default$"
   },
   "metadata": {
@@ -28,17 +28,17 @@
   },
   "subsegments": [
     {
-      "name": "^www.amazon.com$",
+      "name": "^aws.amazon.com:443$",
       "http": {
         "request": {
-          "url": "^https://www.amazon.com/$",
+          "url": "^https://aws.amazon.com:443/$",
           "method": "^GET$"
         }
       },
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
-        "aws.local.operation": "^GET outgoing-http-call$",
-        "aws.remote.service": "^www.amazon.com$",
+        "aws.local.operation": "^GET /outgoing-http-call$",
+        "aws.remote.service": "^aws.amazon.com:443$",
         "aws.remote.operation": "^GET /$",
         "aws.local.environment": "^ec2:default$"
       },
@@ -54,5 +54,5 @@
   ]
 },
 {
-  "name": "^www.amazon.com$"
+  "name": "^aws.amazon.com:443$"
 }]

@@ -2,7 +2,7 @@
   "name": "^{{serviceName}}$",
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^InternalOperation$",
+    "aws.local.operation": "^GET /",
     "aws.local.environment": "^ec2:default$"
   },
   "metadata": {
@@ -22,7 +22,7 @@
       },
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
-        "aws.local.operation": "^InternalOperation$",
+        "aws.local.operation": "^GET /$",
         "aws.remote.service": "^local-root-client-call$",
         "aws.remote.operation": "GET /",
         "aws.local.environment": "^ec2:default$"
