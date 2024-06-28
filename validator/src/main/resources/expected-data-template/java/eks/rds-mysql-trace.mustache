@@ -1,0 +1,95 @@
+[
+    {
+        "name": "^{{serviceName}}$",
+        "http": {
+            "request": {
+                "url": "^{{endpoint}}/mysql$",
+                "method": "^GET$"
+            },
+            "response": {
+                "status": 200
+            }
+        },
+        "aws": {
+            "account_id": "^{{accountId}}$",
+            "xray": {
+                "auto_instrumentation": true,
+                "sdk": "^opentelemetry for"
+            }
+        },
+        "annotations": {
+            "aws.local.service": "^{{serviceName}}$",
+            "aws.local.operation": "^GET /mysql$"
+        },
+        "metadata": {
+            "default": {
+                "aws.span.kind": "^LOCAL_ROOT$",
+                "net.protocol.name": "^http$",
+                "otel.resource.telemetry.sdk.name": "^opentelemetry$",
+                "http.route": "^/mysql$"
+            }
+        },
+        "subsegments": [
+            {
+                "name": "^FrontendServiceController.mysql$",
+                "aws": {
+                    "account_id": "^{{accountId}}$",
+                    "xray": {
+                        "auto_instrumentation": true,
+                        "sdk": "^opentelemetry for"
+                    }
+                },
+                "annotations": {
+                    "aws.local.operation": "^GET /mysql$"
+                },
+                "subsegments": [
+                    {
+                        "name": "^mysql$",
+                        "sql": {
+                            "url": "^Create connection$",
+                            "database_type": "^mysql$"
+                        },
+                        "annotations": {
+                            "aws.local.operation": "^GET /mysql$",
+                            "aws.remote.resource.type": "^DB::Connection$",
+                            "aws.remote.resource.identifier": "{{remoteResourceIdentifier}}",
+                            "aws.remote.service": "^mysql$",
+                            "aws.local.service": "^{{serviceName}}$"
+                        },
+                        "metadata": {
+                            "default": {
+                                "aws.span.kind": "^CLIENT$",
+                                "network.peer.port": 3306,
+                                "network.transport": "^tcp$"
+                            }
+                        },
+                        "namespace": "^remote$"
+                    },
+                    {
+                        "name": "^mysql$",
+                        "sql": {
+                            "url": "^SELECT information_schema.tables$",
+                            "database_type": "^mysql$"
+                        },
+                        "annotations": {
+                            "aws.remote.operation": "^SELECT$",
+                            "aws.local.operation": "^GET /mysql$",
+                            "aws.remote.resource.type": "^DB::Connection$",
+                            "aws.remote.resource.identifier": "{{remoteResourceIdentifier}}",
+                            "aws.remote.service": "^mysql$",
+                            "aws.local.service": "^{{serviceName}}$"
+                        },
+                        "metadata": {
+                            "default": {
+                                "aws.span.kind": "^CLIENT$",
+                                "db.sql.table": "^tables$",
+                                "db.operation": "^SELECT$"
+                            }
+                        },
+                        "namespace": "^remote$"
+                    }
+                ]
+            }
+        ]
+    }
+]
