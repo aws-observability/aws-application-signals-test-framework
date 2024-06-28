@@ -4,7 +4,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -18,7 +18,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -37,36 +37,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: ec2:default
-    -
-      name: Operation
-      value: GET healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
       value: ec2:{{platformInfo}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
-    -
-      name: Environment
-      value: ec2:default
 
 -
   metricName: Latency
@@ -113,7 +88,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -127,7 +102,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -146,36 +121,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: ec2:default
-    -
-      name: Operation
-      value: GET healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
       value: ec2:{{platformInfo}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
-    -
-      name: Environment
-      value: ec2:default
 
 -
   metricName: Error
@@ -222,7 +172,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -236,7 +186,7 @@
   dimensions:
     -
       name: Operation
-      value: GET remote-service
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -255,36 +205,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: ec2:default
-    -
-      name: Operation
-      value: GET healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
       value: ec2:{{platformInfo}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
-    -
-      name: Environment
-      value: ec2:default
 
 -
   metricName: Fault

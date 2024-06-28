@@ -6,6 +6,9 @@
       name: Service
       value: {{serviceName}}
     -
+      name: Operation
+      value: GET /
+    -
       name: Environment
       value: ec2:{{platformInfo}}
 
@@ -18,27 +21,13 @@
       value: {{serviceName}}
     -
       name: Operation
-      value: InternalOperation
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Operation
-      value: InternalOperation
+      value: GET /
     -
       name: Environment
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: local-root-client-call
+      value: local-root-client-call:80
     -
       name: RemoteOperation
       value: GET /
@@ -55,7 +44,7 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: local-root-client-call
+      value: local-root-client-call:80
     -
       name: RemoteOperation
       value: GET /
@@ -72,7 +61,7 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: local-root-client-call
+      value: local-root-client-call:80
 
 -
   metricName: Error
@@ -81,6 +70,9 @@
     -
       name: Service
       value: {{serviceName}}
+    -
+      name: Operation
+      value: GET /
     -
       name: Environment
       value: ec2:{{platformInfo}}
@@ -94,27 +86,13 @@
       value: {{serviceName}}
     -
       name: Operation
-      value: InternalOperation
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Operation
-      value: InternalOperation
+      value: GET /
     -
       name: Environment
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: local-root-client-call
+      value: local-root-client-call:80
     -
       name: RemoteOperation
       value: GET /
@@ -131,7 +109,7 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: local-root-client-call
+      value: local-root-client-call:80
     -
       name: RemoteOperation
       value: GET /
@@ -148,7 +126,7 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: local-root-client-call
+      value: local-root-client-call:80
 
 -
   metricName: Fault
@@ -157,6 +135,9 @@
     -
       name: Service
       value: {{serviceName}}
+    -
+      name: Operation
+      value: GET /
     -
       name: Environment
       value: ec2:{{platformInfo}}
@@ -170,27 +151,13 @@
       value: {{serviceName}}
     -
       name: Operation
-      value: InternalOperation
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Operation
-      value: InternalOperation
+      value: GET /
     -
       name: Environment
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: local-root-client-call
+      value: local-root-client-call:80
     -
       name: RemoteOperation
       value: GET /
@@ -207,7 +174,7 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: local-root-client-call
+      value: local-root-client-call:80
     -
       name: RemoteOperation
       value: GET /
@@ -224,4 +191,4 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: local-root-client-call
+      value: local-root-client-call:80
