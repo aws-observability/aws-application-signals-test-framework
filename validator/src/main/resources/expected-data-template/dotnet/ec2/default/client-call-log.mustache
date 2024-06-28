@@ -11,9 +11,9 @@
   "EC2.InstanceId": "^{{instanceId}}$",
   "Environment": "^ec2:default$",
   "PlatformType": "^AWS::EC2$",
-  "Operation": "InternalOperation",
+  "Operation": "GET /",
   "Version": "^1$",
-  "RemoteService": "local-root-client-call",
+  "RemoteService": "local-root-client-call:80",
   "RemoteOperation": "GET /",
   "Telemetry.Source": "^ClientSpan$",
   "Host": "^ip(-[0-9]{1,3}){4}.*$"
