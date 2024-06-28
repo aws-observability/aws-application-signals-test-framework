@@ -96,6 +96,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     #!/bin/bash
 
     # Install DotNet and wget
+    sudo yum install -y wget
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
     sudo dnf install -y dotnet-sdk-8.0
@@ -117,23 +118,28 @@ resource "aws_launch_configuration" "launch_configuration" {
     aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
     unzip -o dotnet-sample-app.zip
 
+    # Get Absolute Path
+    current_dir=$(pwd)
+    echo $current_dir
+
     # Export environment variables for instrumentation
     cd ./asp_frontend_service
     export INSTALL_DIR=../dotnet-distro
     export CORECLR_ENABLE_PROFILING=1
     export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
-    export CORECLR_PROFILER_PATH=${INSTALL_DIR}/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
-    export DOTNET_ADDITIONAL_DEPS=${INSTALL_DIR}/AdditionalDeps
-    export DOTNET_SHARED_STORE=${INSTALL_DIR}/store
-    export DOTNET_STARTUP_HOOKS=${INSTALL_DIR}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
-    export OTEL_DOTNET_AUTO_HOME=${INSTALL_DIR}
+    export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+    export DOTNET_ADDITIONAL_DEPS=$current_dir/dotnet-distro/AdditionalDeps
+    export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
+    export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
+    export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
     export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
-    export OTEL_AWS_APPLICATION_SIGNALS_ENABLED="true"
-    export OTEL_TRACES_SAMPLER="always_on"
-    export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
-    export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
-    export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
-    export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
+    export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+    export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
+    export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
+    export OTEL_METRICS_EXPORTER=none
+    export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
+    export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+    export OTEL_TRACES_SAMPLER=always_on
     nohup dotnet run &
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
@@ -201,23 +207,28 @@ resource "null_resource" "remote_service_setup" {
       aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
       unzip -o dotnet-sample-app.zip
 
+
+      # Get Absolute Path
+      current_dir=$(pwd)
+      echo $current_dir
+
       # Export environment variables for instrumentation
       cd ./asp_remote_service
-      export INSTALL_DIR=../dotnet-distro
       export CORECLR_ENABLE_PROFILING=1
       export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
-      export CORECLR_PROFILER_PATH=${INSTALL_DIR}/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
-      export DOTNET_ADDITIONAL_DEPS=${INSTALL_DIR}/AdditionalDeps
-      export DOTNET_SHARED_STORE=${INSTALL_DIR}/store
-      export DOTNET_STARTUP_HOOKS=${INSTALL_DIR}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
-      export OTEL_DOTNET_AUTO_HOME=${INSTALL_DIR}
+      export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      export DOTNET_ADDITIONAL_DEPS=$current_dir/dotnet-distro/AdditionalDeps
+      export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
+      export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
+      export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
       export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
-      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED="true"
-      export OTEL_TRACES_SAMPLER="always_on"
-      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
-      export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
-      export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
-      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
+      export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
+      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
+      export OTEL_METRICS_EXPORTER=none
+      export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
+      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+      export OTEL_TRACES_SAMPLER=always_on
       nohup dotnet run &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds

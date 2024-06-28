@@ -151,7 +151,6 @@ resource "null_resource" "main_service_setup" {
       export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_TRACES_SAMPLER=always_on
-      echo "RUN LOG"
       nohup dotnet run &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
