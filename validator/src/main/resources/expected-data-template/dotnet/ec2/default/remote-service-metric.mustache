@@ -49,17 +49,6 @@
   dimensions:
     -
       name: Service
-      value: {{remoteServiceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
       value: {{serviceName}}
     -
       name: Environment
@@ -144,17 +133,6 @@
   dimensions:
     -
       name: Service
-      value: {{remoteServiceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
       value: {{serviceName}}
     -
       name: Environment
@@ -229,17 +207,6 @@
     -
       name: Service
       value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{remoteServiceName}}
     -
       name: Environment
       value: ec2:default
