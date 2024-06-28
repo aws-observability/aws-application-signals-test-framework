@@ -1,0 +1,58 @@
+[{
+  "name": "^serviceName$",
+  "http": {
+    "request": {
+      "url": "^http://.*/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId=.*",
+      "method": "^GET$"
+    },
+    "response": {
+      "status": "^200$"
+    }
+  },
+  "aws": {
+    "account_id": "[0-9]{13}"
+  },
+  "annotations": {
+    "aws.local.service": "^serviceName$",
+    "aws.local.operation": "^GET /aws-sdk-call$",
+    "aws.local.environment": "^eks:platformInfo/appNamespace$"
+  },
+  "metadata": {
+    "default": {
+        "EC2.AutoScalingGroup": "^eks-.+",
+        "EKS.Cluster": "^platformInfo$",
+        "K8s.Namespace": "^appNamespace",
+        "otel.resource.K8s.Workload": "^sample-app-deployment-.*",
+        "otel.resource.K8s.Node": "^i-[A-Za-z0-9]{17}$",
+        "otel.resource.K8s.Pod": "^sample-app-deployment-.*",
+        "otel.resource.host.name": "^ip(-[0-9]{1,3}){4}.*$",
+        "PlatformType": "^AWS::EKS$",
+        "aws.span.kind": "^LOCAL_ROOT$"
+    }
+  },
+  "subsegments": [
+    {
+      "subsegments": [
+        {
+          "name": "^S3$",
+          "annotations": {
+            "aws.local.operation": "^GET /aws-sdk-call$",
+            "aws.remote.service": "^AWS::S3$",
+            "aws.remote.operation": "^GetBucketLocation$",
+            "aws.remote.resource.type": "^AWS::S3::Bucket$",
+            "aws.remote.resource.identifier": "^e2e-test-bucket-name-.*"
+          },
+          "metadata": {
+            "default": {
+              "EC2.AutoScalingGroup": "^eks-.+",
+              "EKS.Cluster": "^platformInfo$",
+              "PlatformType": "^AWS::EKS$",
+              "aws.span.kind": "^CLIENT$"
+            }
+          },
+          "namespace": "^aws$"
+        }
+      ]
+    }
+  ]
+}]
