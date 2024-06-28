@@ -49,6 +49,13 @@ public class XRayService {
     return batchGetTracesResult.getTraces();
   }
 
+  public List<Trace> listAllTraces() {
+    BatchGetTracesResult batchGetTracesResult =
+            awsxRay.batchGetTraces(new BatchGetTracesRequest());
+
+    return batchGetTracesResult.getTraces();
+  }
+
   // Search for traces generated within the last 60 second.
   public List<TraceSummary> searchClientCallTraces(String serviceName) {
     Date currentDate = new Date();

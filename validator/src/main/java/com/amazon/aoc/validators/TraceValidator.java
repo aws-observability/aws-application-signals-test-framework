@@ -77,6 +77,9 @@ public class TraceValidator implements IValidator {
               Map<String, Object> storedTrace = this.getStoredTrace();
               log.info("value of stored trace map: {}", storedTrace);
 
+              List<Trace> allTraces  = xrayService.listAllTraces();
+              log.info("All Traces: {}", allTraces);
+
               // prepare list of trace IDs to retrieve from X-Ray service
               String traceId = (String) storedTrace.get("[0].trace_id");
               // If the traceId is invalid, then we don't want to try validating the retrieved trace
