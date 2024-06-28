@@ -155,6 +155,18 @@ public class CloudWatchService {
     return result.getEvents();
   }
 
+  public List<OutputLogEvent> getAllLogs(
+          String logGroupName, long startFromTimestamp, int limit) {
+    GetLogEventsRequest request =
+            new GetLogEventsRequest()
+                    .withLogGroupName(logGroupName)
+                    .withStartTime(startFromTimestamp)
+                    .withLimit(limit);
+
+    GetLogEventsResult result = awsLogs.getLogEvents(request);
+    return result.getEvents();
+  }
+
   /**
    * filterLogs filters log entries from CloudWatch.
    *

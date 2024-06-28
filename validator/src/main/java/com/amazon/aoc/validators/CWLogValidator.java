@@ -154,9 +154,8 @@ public class CWLogValidator implements IValidator {
         System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
         10);
     log.info("here is all log");
-    log.info("try 2: {}", this.cloudWatchService.filterLogs(
+    log.info("try 2: {}", this.cloudWatchService.getAllLogs(
             context.getLogGroup(),
-            "*",
             System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
             10));
 
