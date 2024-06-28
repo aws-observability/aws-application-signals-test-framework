@@ -186,6 +186,7 @@ resource "null_resource" "remote_service_setup" {
       #!/bin/bash
 
       # Install DotNet and wget
+      sudo yum install wget -y
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
       sudo dnf install -y dotnet-sdk-8.0
