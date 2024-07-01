@@ -37,6 +37,7 @@ repositories {
 dependencies {
   // junit
   testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.12.0")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
   // log

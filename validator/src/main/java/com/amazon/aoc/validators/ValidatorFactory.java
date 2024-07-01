@@ -22,6 +22,7 @@ import com.amazon.aoc.exception.ExceptionCode;
 import com.amazon.aoc.fileconfigs.FileConfig;
 import com.amazon.aoc.models.Context;
 import com.amazon.aoc.models.ValidationConfig;
+import com.amazon.aoc.services.XRayService;
 
 public class ValidatorFactory {
   private Context context;
@@ -43,7 +44,7 @@ public class ValidatorFactory {
     FileConfig expectedData = null;
     switch (validationConfig.getValidationType()) {
       case "trace":
-        validator = new TraceValidator();
+        validator = new TraceValidator(new XRayService(context.getRegion()), 2, 5);
         expectedData = validationConfig.getExpectedTraceTemplate();
         break;
       case "cw-metric":
