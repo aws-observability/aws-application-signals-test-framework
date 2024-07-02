@@ -96,6 +96,8 @@ resource "aws_launch_configuration" "launch_configuration" {
     #!/bin/bash
     set -o errexit
 
+    cd ~
+
     # Install DotNet and wget
     sudo yum install -y wget >> /var/log/custom-init.log 2>&1
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc >> /var/log/custom-init.log 2>&1
