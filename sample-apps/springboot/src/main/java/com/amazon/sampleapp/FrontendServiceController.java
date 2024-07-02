@@ -20,6 +20,11 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Connection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -158,6 +163,26 @@ public class FrontendServiceController {
     // call was received but to not use this
     // traceId.
     return "{\"traceId\": \"1-00000000-000000000000000000000000\"}";
+  }
+
+  // Uses the /mysql endpoint to make an SQL call
+  @GetMapping("/mysql")
+  @ResponseBody
+  public String mysql() {
+    logger.info("mysql received");
+    try {
+      Connection connection = DriverManager.getConnection(
+              System.getenv().get("RDS_MYSQL_CLUSTER_CONNECTION_URL"),
+              System.getenv().get("RDS_MYSQL_CLUSTER_USERNAME"),
+              System.getenv().get("RDS_MYSQL_CLUSTER_PASSWORD"));
+      Statement statement = connection.createStatement();
+      statement.executeQuery("SELECT * FROM tables LIMIT 1;");
+    } catch (SQLException e) {
+      logger.error("Could not complete SQL request:{}", e.getMessage());
+      throw new RuntimeException(e);
+    }
+
+    return getXrayTraceId();
   }
 
   // get x-ray trace id

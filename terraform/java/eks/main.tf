@@ -111,6 +111,18 @@ resource "kubernetes_deployment" "sample_app_deployment" {
             name = "OTEL_SERVICE_NAME"
             value = "sample-application-${var.test_id}"
           }
+          env {
+            name = "RDS_MYSQL_CLUSTER_CONNECTION_URL"
+            value = "jdbc:mysql://${var.rds_mysql_cluster_endpoint}:3306/information_schema"
+          }
+          env {
+            name = "RDS_MYSQL_CLUSTER_USERNAME"
+            value = var.rds_mysql_cluster_username
+          }
+          env {
+            name = "RDS_MYSQL_CLUSTER_PASSWORD"
+            value = var.rds_mysql_cluster_password
+          }
           port {
             container_port = 8080
           }
