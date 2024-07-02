@@ -95,9 +95,7 @@ resource "aws_launch_configuration" "launch_configuration" {
   user_data = <<-EOF
     #!/bin/bash
     set -o errexit
-
-    # Checkout to folder with permission
-    cd ~
+    cd /home/ec2-user
 
     # Install DotNet and wget
     sudo yum install -y wget
@@ -143,7 +141,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
     export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
     export OTEL_TRACES_SAMPLER=always_on
-    nohup dotnet run &
+    sudo -E nohup dotnet run &
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
