@@ -87,7 +87,7 @@ data "aws_ami" "ami" {
 resource "aws_launch_configuration" "launch_configuration" {
   image_id                    = data.aws_ami.ami.id
   instance_type               = "t3.micro"
-  key_name                    = local.ssh_key_name
+  key_name                    = "DotnetE2EManual"
   associate_public_ip_address = true
   iam_instance_profile        = "APP_SIGNALS_EC2_TEST_ROLE"
   security_groups             = [aws_default_vpc.default.default_security_group_id]
@@ -97,27 +97,27 @@ resource "aws_launch_configuration" "launch_configuration" {
     set -o errexit
 
     # Install DotNet and wget
-    sudo yum install -y wget
-    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-    sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-    sudo dnf install -y dotnet-sdk-8.0
-    sudo yum install unzip -y
+    sudo yum install -y wget >> /var/log/custom-init.log 2>&1
+    sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc >> /var/log/custom-init.log 2>&1
+    sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo >> /var/log/custom-init.log 2>&1
+    sudo dnf install -y dotnet-sdk-8.0 >> /var/log/custom-init.log 2>&1
+    sudo yum install unzip -y >> /var/log/custom-init.log 2>&1
 
     # Copy in CW Agent configuration
     agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
     echo $agent_config > amazon-cloudwatch-agent.json
 
     # Get and run CW agent rpm
-    ${var.get_cw_agent_rpm_command}
-    sudo rpm -U ./cw-agent.rpm
-    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
+    ${var.get_cw_agent_rpm_command} >> /var/log/custom-init.log 2>&1
+    sudo rpm -U ./cw-agent.rpm >> /var/log/custom-init.log 2>&1
+    sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json >> /var/log/custom-init.log 2>&1
 
     # Get ADOT distro and unzip it
-    ${var.get_adot_distro_command}
+    ${var.get_adot_distro_command} >> /var/log/custom-init.log 2>&1
 
     # Get and run the sample application with configuration
-    aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
-    unzip -o dotnet-sample-app.zip
+    aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip >> /var/log/custom-init.log 2>&1
+    unzip -o dotnet-sample-app.zip >> /var/log/custom-init.log 2>&1
 
     # Get Absolute Path
     current_dir=$(pwd)
@@ -140,7 +140,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
     export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
     export OTEL_TRACES_SAMPLER=always_on
-    nohup dotnet run &
+    nohup dotnet run & >> /var/log/custom-init.log 2>&1
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
