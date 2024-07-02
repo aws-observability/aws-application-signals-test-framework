@@ -89,6 +89,9 @@ public class TraceValidator implements IValidator {
                 storedTrace.remove("[0].trace_id");
               }
               List<String> traceIdList = Collections.singletonList(traceId);
+              log.info("traceIdList: {}", traceIdList);
+              Map<String, Object> re = this.getRetrievedTrace(traceIdList);
+              log.info("value of re trace map: {}", re);
 
               // Retry 5 times to since segments might not be immediately available in X-Ray service
               RetryHelper.retry(
