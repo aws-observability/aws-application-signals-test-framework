@@ -177,11 +177,12 @@ public class FrontendServiceController {
               System.getenv().get("RDS_MYSQL_CLUSTER_PASSWORD"));
       Statement statement = connection.createStatement();
       statement.executeQuery("SELECT * FROM tables LIMIT 1;");
-      return getXrayTraceId();
     } catch (SQLException e) {
       logger.error("Could not complete SQL request:{}", e.getMessage());
       throw new RuntimeException(e);
     }
+
+    return getXrayTraceId();
   }
 
   // get x-ray trace id
