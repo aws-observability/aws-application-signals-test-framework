@@ -145,7 +145,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
     export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
     export OTEL_TRACES_SAMPLER=always_on
-    sudo nohup dotnet run & >> /var/log/custom-init.log 2>&1
+    sudo nohup dotnet run &
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
