@@ -1,0 +1,59 @@
+{
+  "trace_id": "1-00000000-000000000000000000000001",
+  "name": "serviceName",
+  "http": {
+    "request": {
+      "url": "http://127.0.0.1/aws-sdk-call?ip=1.2.3.4&testingId=testIdentifier",
+      "method": "GET"
+    },
+    "response": {
+      "status": 200
+    }
+  },
+  "aws": {
+    "account_id": "1234567890123"
+  },
+  "annotations": {
+    "aws.local.service": "serviceName",
+    "aws.local.operation": "GET /aws-sdk-call",
+    "aws.local.environment": "eks:platformInfo/appNamespace"
+  },
+  "metadata": {
+    "default": {
+      "aws.span.kind": "LOCAL_ROOT",
+      "otel.resource.K8s.Node": "i-123456789abcdefgh",
+      "otel.resource.K8s.Workload": "sample-app-deployment-eu-west-1-1234",
+      "EC2.AutoScalingGroup": "eks-1234-abcdefg",
+      "otel.resource.K8s.Pod": "sample-app-deployment-region-abcd",
+      "otel.resource.host.name": "ip-10-0-0-2.ab-west-9.compute.internal",
+      "K8s.Namespace": "appNamespace",
+      "EKS.Cluster": "platformInfo",
+      "PlatformType": "AWS::EKS"
+    }
+  },
+  "subsegments": [
+    {
+      "subsegments": [
+        {
+          "name": "S3",
+          "annotations": {
+            "aws.local.operation": "GET /aws-sdk-call",
+            "aws.remote.service": "AWS::S3",
+            "aws.remote.operation": "GetBucketLocation",
+            "aws.remote.resource.type": "AWS::S3::Bucket",
+            "aws.remote.resource.identifier": "e2e-test-bucket-name-abcd$"
+          },
+          "metadata": {
+            "default": {
+              "EC2.AutoScalingGroup": "eks-abcd",
+              "EKS.Cluster": "platformInfo",
+              "PlatformType": "AWS::EKS",
+              "aws.span.kind": "CLIENT"
+            }
+          },
+          "namespace": "aws"
+        }
+      ]
+    }
+  ]
+}
