@@ -96,6 +96,9 @@ resource "aws_launch_configuration" "launch_configuration" {
     #!/bin/bash
     set -o errexit
 
+    # Checkout to folder with permission
+    cd ~
+
     # Install DotNet and wget
     sudo yum install -y wget
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
