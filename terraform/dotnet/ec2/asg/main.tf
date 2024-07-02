@@ -87,7 +87,7 @@ data "aws_ami" "ami" {
 resource "aws_launch_configuration" "launch_configuration" {
   image_id                    = data.aws_ami.ami.id
   instance_type               = "t3.micro"
-  key_name                    = local.ssh_key_name
+  key_name                    = "DotnetE2EManual"
   associate_public_ip_address = true
   iam_instance_profile        = "APP_SIGNALS_EC2_TEST_ROLE"
   security_groups             = [aws_default_vpc.default.default_security_group_id]
