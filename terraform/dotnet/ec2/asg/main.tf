@@ -94,6 +94,7 @@ resource "aws_launch_configuration" "launch_configuration" {
 
   user_data = <<-EOF
     #!/bin/bash
+    set -o errexit
 
     # Install DotNet and wget
     sudo yum install -y wget
@@ -101,9 +102,6 @@ resource "aws_launch_configuration" "launch_configuration" {
     sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
     sudo dnf install -y dotnet-sdk-8.0
     sudo yum install unzip -y
-
-    echo "asg config executed"
-    echo "XXXXXXXXXXXXXXXXXXX"
 
     # Copy in CW Agent configuration
     agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -123,7 +121,6 @@ resource "aws_launch_configuration" "launch_configuration" {
 
     # Get Absolute Path
     current_dir=$(pwd)
-    echo $current_dir
 
     # Export environment variables for instrumentation
     cd ./asp_frontend_service
