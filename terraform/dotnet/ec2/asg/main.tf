@@ -96,7 +96,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     #!/bin/bash
     set -o errexit
 
-    cd ~
+    cd /home/ec2-user
 
     # Install DotNet and wget
     sudo yum install -y wget >> /var/log/custom-init.log 2>&1
@@ -123,6 +123,9 @@ resource "aws_launch_configuration" "launch_configuration" {
 
     # Get Absolute Path
     current_dir=$(pwd)
+
+    echo "PWD" >> /var/log/custom-init.log 2>&1
+    echo "$(pwd)" >> /var/log/custom-init.log 2>&1
 
     # Export environment variables for instrumentation
     cd ./asp_frontend_service
