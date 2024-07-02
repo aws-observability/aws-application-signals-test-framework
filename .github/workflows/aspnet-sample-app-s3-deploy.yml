@@ -4,9 +4,6 @@
 name: App Signals Enablement - S3 AspNet Sample App Deployment
 on:
   workflow_dispatch: # be able to run the workflow on demand
-  push:
-    branches:
-      - "dotnetE2ETests"
 
 permissions:
   id-token: write
