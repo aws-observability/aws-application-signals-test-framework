@@ -144,7 +144,8 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4316/v1/traces
     export OTEL_LOG_LEVEL=debug
     export OTEL_DOTNET_AUTO_LOG_DIRECTORY=/tmp
-    sudo -E nohup dotnet run &
+    sudo -E dotnet build
+    sudo -E nohup dotnet bin/Debug/netcoreapp8.0/asp_frontend_service.dll &
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
