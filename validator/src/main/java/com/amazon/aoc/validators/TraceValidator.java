@@ -69,7 +69,7 @@ public class TraceValidator implements IValidator {
     // where first request might be a cold start and have an additional unexpected subsegment
     boolean isMatched =
         RetryHelper.retry(
-            2,
+            20,
             Integer.parseInt(GenericConstants.SLEEP_IN_MILLISECONDS.getVal()),
             false,
             () -> {
