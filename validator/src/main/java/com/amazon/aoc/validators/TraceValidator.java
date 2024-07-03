@@ -92,6 +92,8 @@ public class TraceValidator implements IValidator {
               if (XRayService.DEFAULT_TRACE_ID.equals(traceId)) {
                 storedTrace.remove("[0].trace_id");
               }
+              log.info("trace id here");
+              log.info(traceId);
               List<String> traceIdList = Collections.singletonList(traceId);
 
               // Retry 5 times to since segments might not be immediately available in X-Ray service
