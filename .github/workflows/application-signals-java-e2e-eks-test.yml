@@ -296,6 +296,7 @@ jobs:
           curl -S -s "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
           curl -S -s "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
           curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/mysql"
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
