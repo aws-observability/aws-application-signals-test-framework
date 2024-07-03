@@ -140,6 +140,8 @@ public class TraceValidator implements IValidator {
     // Special Case for the /client-call. The API call doesn't return the trace ID of the local root
     // client span, so find the trace by filtering traces generated within the last 60 second
     // with the serviceName and the local_root_client_call keyword.
+
+    // DELETE IT
     log.info("Tracer ID to fetch: {}", traceIdList);
     if (XRayService.DEFAULT_TRACE_ID.equals(traceIdList.get(0))) {
       List<TraceSummary> retrieveTraceLists =
@@ -201,6 +203,8 @@ public class TraceValidator implements IValidator {
       // flattened JSON object to a map
       flattenedJsonMapForStoredTraces = JsonFlattener.flattenAsMap(jsonExpectedTrace);
       flattenedJsonMapForStoredTraces.put("[0].trace_id", sampleAppResponse.getTraceId());
+
+      // DELETE IT
       log.info("try to grab trace id");
       log.info("response {}", sampleAppResponse);
       log.info("trace id {}", flattenedJsonMapForStoredTraces);
