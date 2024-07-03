@@ -69,16 +69,13 @@ public class TraceValidator implements IValidator {
     // where first request might be a cold start and have an additional unexpected subsegment
     boolean isMatched =
         RetryHelper.retry(
-            20,
+            2,
             Integer.parseInt(GenericConstants.SLEEP_IN_MILLISECONDS.getVal()),
             false,
             () -> {
               // Call sample app and get locally stored trace
               Map<String, Object> storedTrace = this.getStoredTrace();
               log.info("value of stored trace map: {}", storedTrace);
-
-              List<Trace> allTraces  = xrayService.listAllTraces();
-              log.info("All Traces: {}", allTraces);
 
               // prepare list of trace IDs to retrieve from X-Ray service
               String traceId = (String) storedTrace.get("[0].trace_id");
@@ -89,9 +86,6 @@ public class TraceValidator implements IValidator {
                 storedTrace.remove("[0].trace_id");
               }
               List<String> traceIdList = Collections.singletonList(traceId);
-              log.info("traceIdList: {}", traceIdList);
-              Map<String, Object> re = this.getRetrievedTrace(traceIdList);
-              log.info("value of re trace map: {}", re);
 
               // Retry 5 times to since segments might not be immediately available in X-Ray service
               RetryHelper.retry(
@@ -141,8 +135,6 @@ public class TraceValidator implements IValidator {
     // client span, so find the trace by filtering traces generated within the last 60 second
     // with the serviceName and the local_root_client_call keyword.
 
-    // DELETE IT
-    log.info("Tracer ID to fetch: {}", traceIdList);
     if (XRayService.DEFAULT_TRACE_ID.equals(traceIdList.get(0))) {
       List<TraceSummary> retrieveTraceLists =
           xrayService.searchClientCallTraces(context.getServiceName());
@@ -204,10 +196,6 @@ public class TraceValidator implements IValidator {
       flattenedJsonMapForStoredTraces = JsonFlattener.flattenAsMap(jsonExpectedTrace);
       flattenedJsonMapForStoredTraces.put("[0].trace_id", sampleAppResponse.getTraceId());
 
-      // DELETE IT
-      log.info("try to grab trace id");
-      log.info("response {}", sampleAppResponse);
-      log.info("trace id {}", flattenedJsonMapForStoredTraces);
     } catch (Exception e) {
       e.printStackTrace();
     }
