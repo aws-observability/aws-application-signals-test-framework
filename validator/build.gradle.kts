@@ -36,7 +36,9 @@ repositories {
 
 dependencies {
   // junit
-  testImplementation("org.junit.jupiter:junit-jupiter-api")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+  testImplementation("org.mockito:mockito-junit-jupiter:5.12.0")
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
   // log
   implementation(group = "org.apache.logging.log4j", name = "log4j-api", version = "2.20.0")
@@ -89,4 +91,8 @@ dependencies {
 application {
   // Define the main class for the application.
   mainClass.set("com.amazon.aoc.App")
+}
+
+tasks.named<Test>("test") {
+  useJUnitPlatform()
 }

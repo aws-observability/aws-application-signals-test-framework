@@ -52,12 +52,19 @@ public class TraceValidator implements IValidator {
   private FileConfig expectedTrace;
   private static final ObjectMapper MAPPER =
       new ObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+  private final int sampleAppRetryCount;
+  private final int xRayRetryCount;
+
+  public TraceValidator(XRayService xrayService, int sampleAppRetryCount, int xRayRetryCount) {
+    this.xrayService = xrayService;
+    this.sampleAppRetryCount = sampleAppRetryCount;
+    this.xRayRetryCount = xRayRetryCount;
+  }
 
   @Override
   public void init(
       Context context, ValidationConfig validationConfig, ICaller caller, FileConfig expectedTrace)
       throws Exception {
-    this.xrayService = new XRayService(context.getRegion());
     this.caller = caller;
     this.context = context;
     this.expectedTrace = expectedTrace;
@@ -69,7 +76,7 @@ public class TraceValidator implements IValidator {
     // where first request might be a cold start and have an additional unexpected subsegment
     boolean isMatched =
         RetryHelper.retry(
-            2,
+            sampleAppRetryCount,
             Integer.parseInt(GenericConstants.SLEEP_IN_MILLISECONDS.getVal()),
             false,
             () -> {
@@ -89,7 +96,7 @@ public class TraceValidator implements IValidator {
 
               // Retry 5 times to since segments might not be immediately available in X-Ray service
               RetryHelper.retry(
-                  5,
+                  xRayRetryCount,
                   () -> {
                     // get retrieved trace from x-ray service
                     Map<String, Object> retrievedTrace = this.getRetrievedTrace(traceIdList);

@@ -31,7 +31,6 @@ import com.amazon.aoc.models.ValidationConfig;
 import com.amazon.aoc.services.CloudWatchService;
 import com.amazonaws.services.cloudwatch.model.Metric;
 import java.util.List;
-import org.assertj.core.util.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
@@ -42,7 +41,7 @@ import org.junit.jupiter.api.condition.DisabledIf;
  */
 @DisabledIf("isWindows")
 public class CWMetricValidatorTest {
-  private CWMetricHelper cwMetricHelper = new CWMetricHelper();
+  private final CWMetricHelper cwMetricHelper = new CWMetricHelper();
   private static final String SERVICE_DIMENSION = "Service";
   private static final String REMOTE_SERVICE_DIMENSION = "RemoteService";
   private static final String REMOTE_TARGET_DIMENSION = "RemoteTarget";
@@ -85,7 +84,7 @@ public class CWMetricValidatorTest {
    */
   @Test
   public void testValidationSucceed() throws Exception {
-    ValidationConfig validationConfig = initValidationConfig("EKS_OUTGOING_HTTP_CALL_METRIC");
+    ValidationConfig validationConfig = initValidationConfig("JAVA_EKS_OUTGOING_HTTP_CALL_METRIC");
     runBasicValidation(validationConfig);
   }
 
@@ -121,7 +120,7 @@ public class CWMetricValidatorTest {
     List<Metric> localServiceMetrics = getTestMetrics("endToEnd_localMetricsWithService");
     List<Metric> remoteServiceMetrics = getTestMetrics("endToEnd_remoteMetricsWithService");
     // Skip remoteMetricsWithRemoteApp, which contains the [RemoteService] rollup.
-    List<Metric> remoteMetricsWithRemoteApp = Lists.newArrayList();
+    List<Metric> remoteMetricsWithRemoteApp = List.of();
     List<Metric> remoteMetricsWithAmazon = getTestMetrics("endToEnd_remoteMetricsWithAmazon");
     List<Metric> remoteMetricsWithAwsSdk = getTestMetrics("endToEnd_remoteMetricsWithAwsSdk");
     List<Metric> remoteMetricsWithAwsSdkWithTarget =

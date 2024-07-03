@@ -24,6 +24,10 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
+  cancel-in-progress: false
+
 permissions:
   id-token: write
   contents: read
@@ -50,7 +54,7 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:
-          command: "./gradlew"
+          command: "./gradlew :validator:build"
           cleanup: "./gradlew clean"
           max_retry: 3
           sleep_time: 60
@@ -290,7 +294,7 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:
-          command: "./gradlew"
+          command: "./gradlew :validator:build"
           cleanup: "./gradlew clean"
           max_retry: 3
           sleep_time: 60
