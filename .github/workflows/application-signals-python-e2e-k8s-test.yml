@@ -15,9 +15,9 @@ on:
         required: true
         type: string
 
-concurrency:
-  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
-  cancel-in-progress: false
+#concurrency:
+#  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
+#  cancel-in-progress: false
 
 permissions:
   id-token: write
@@ -30,16 +30,45 @@ env:
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  MASTER_NODE_SSH_KEY: ${{ secrets.APP_SIGNALS_E2E_K8S_SSH_KEY_IAD }}
-  MAIN_SERVICE_ENDPOINT: ${{ secrets.APP_SIGNALS_E2E_PYTHON_K8S_GA_MASTER_NODE_ENDPOINT }}
+  MASTER_NODE_SSH_KEY: ${{ secrets.TEMP_IAD_SSH_KEY_K8S }}
+  MAIN_SERVICE_ENDPOINT: ${{ secrets.TEMP_IAD_ENDPOINT_K8S }}
   SAMPLE_APP_NAMESPACE: python-sample-app-namespace
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 jobs:
+  get-public-ecr-url:
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.get-public-ecr-url.outputs.public_ecr_url }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Output Public ECR Url
+        id: get-public-ecr-url
+        run: |
+          echo "public_ecr_url=$(aws ecr-public describe-repositories --repository-names ${{ secrets.APPLICATION_SIGNALS_E2E_RUNNER_IMAGE_ECR_NAME }} --query "repositories[0].repositoryUri" --output text)" >> $GITHUB_OUTPUT 
+
   e2e-k8s-test:
     runs-on: ubuntu-latest
+    needs: [ get-public-ecr-url ]
     container:
-      image: public.ecr.aws/v6t6x3y1/python-k8s:latest
+      image: ${{ needs.get-public-ecr-url.outputs.url }}:python-k8s
     steps:
       - uses: actions/checkout@v4
         with:

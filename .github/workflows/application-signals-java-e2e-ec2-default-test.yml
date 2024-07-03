@@ -32,10 +32,39 @@ env:
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
 
 jobs:
+  get-public-ecr-url:
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.get-public-ecr-url.outputs.public_ecr_url }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Output Public ECR Url
+        id: get-public-ecr-url
+        run: |
+          echo "public_ecr_url=$(aws ecr-public describe-repositories --repository-names ${{ secrets.APPLICATION_SIGNALS_E2E_RUNNER_IMAGE_ECR_NAME }} --query "repositories[0].repositoryUri" --output text)" >> $GITHUB_OUTPUT       
+
   e2e-ec2-default-test:
     runs-on: ubuntu-latest
+    needs: [ get-public-ecr-url ]
     container:
-      image: public.ecr.aws/v6t6x3y1/java-ec2-default:latest
+      image: ${{ needs.get-public-ecr-url.outputs.url }}:java-ec2-default
     steps:
       - uses: actions/checkout@v4
         with:

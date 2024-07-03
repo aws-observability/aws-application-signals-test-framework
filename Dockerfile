@@ -5,6 +5,7 @@ FROM openjdk:11-jdk
 ENV JAVA_HOME=/usr/local/openjdk-11
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
+# The directory of the Terraform folder that will be built
 ARG TERRAFORM_DIR
 
 # Install the neccessary commands
@@ -66,3 +67,5 @@ RUN if echo "$TERRAFORM_DIR" | grep -q "k8s"; then \
     else \
       terraform -chdir=/terraform init && terraform -chdir=/terraform validate ; \
     fi
+
+
