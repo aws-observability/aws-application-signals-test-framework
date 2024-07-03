@@ -28,7 +28,7 @@
   },
   "subsegments": [
     {
-      "name": "^S3$",
+      "name": "^AWS::S3$",
       "http": {
         "response": {
           "status": "^404$"
@@ -56,8 +56,8 @@
   ]
 },
 {
-  "name": "^S3$",
-  "aws": {
-    "operation": "^ListBuckets$"
+  "name": "^AWS::S3$",
+  "annotations": {
+    "aws.local.operation": "^ListBuckets$",
   }
 }]
