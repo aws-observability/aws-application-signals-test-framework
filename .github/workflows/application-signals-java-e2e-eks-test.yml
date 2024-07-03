@@ -125,6 +125,23 @@ jobs:
           --region ${{ inputs.aws-region }}"
           sleep_time: 60
 
+      - name: Get RDS database cluster metadata
+        continue-on-error: true
+        run: |
+          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint | [0]" --output text)
+          echo RDS_MYSQL_CLUSTER_ENDPOINT="$RDS_MYSQL_CLUSTER_ENDPOINT" >> $GITHUB_ENV
+          RDS_MYSQL_CLUSTER_IDENTIFIER=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].DBClusterIdentifier | [0]" --output text)
+          RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME=$(aws secretsmanager list-secrets --region ${{inputs.aws-region}} --query "SecretList[?Tags[?Value=='arn:aws:rds:${{inputs.aws-region}}:${{env.ACCOUNT_ID}}:cluster:$RDS_MYSQL_CLUSTER_IDENTIFIER']].Name | [0]" --output text)
+          echo RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME="$RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME" >> $GITHUB_ENV
+
+      - name: Get RDS database credentials from SecretsManager
+        continue-on-error: true
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            RDS_MYSQL_CLUSTER_SECRETS, ${{env.RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME}}
+          parse-json-secrets: true
+
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
@@ -156,6 +173,9 @@ jobs:
               -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
               -var="sample_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}" \
               -var="sample_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}" \
+              -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
+              -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
+              -var="rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}" \
             || deployment_failed=$?
                     
             if [ $deployment_failed -ne 0 ]; then
@@ -276,6 +296,7 @@ jobs:
           curl -S -s "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
           curl -S -s "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
           curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"
+          curl -S -s "http://${{ env.APP_ENDPOINT }}/mysql"
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
