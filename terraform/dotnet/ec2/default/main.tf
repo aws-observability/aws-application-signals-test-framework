@@ -245,7 +245,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_TRACES_SAMPLER=always_on
       export ASPNETCORE_URLS=http://0.0.0.0:8080
       dotnet build
-      nohup dotnet bin/Debug/netcoreapp8.0/asp_frontend_service.dll &
+      nohup dotnet bin/Debug/netcoreapp8.0/asp_remote_service.dll &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
