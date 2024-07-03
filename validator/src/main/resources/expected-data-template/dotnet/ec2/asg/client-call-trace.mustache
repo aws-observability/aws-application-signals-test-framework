@@ -2,7 +2,7 @@
   "name": "^{{serviceName}}$",
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^InternalOperation$",
+    "aws.local.operation": "^GET /$",
     "aws.local.environment": "^ec2:{{platformInfo}}$"
   },
   "metadata": {
@@ -16,13 +16,13 @@
       "name": "^local-root-client-call$",
       "http": {
         "request": {
-          "url": "^http://local-root-client-call/$",
+          "url": "^http://local-root-client-call:80/$",
           "method": "^GET$"
         }
       },
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
-        "aws.local.operation": "^InternalOperation$",
+        "aws.local.operation": "GET /",
         "aws.remote.service": "^local-root-client-call$",
         "aws.remote.operation": "GET /",
         "aws.local.environment": "^ec2:{{platformInfo}}$"
@@ -43,7 +43,7 @@
   "name": "^local-root-client-call$",
   "http": {
     "request": {
-      "url": "^http://local-root-client-call/$",
+      "url": "^http://local-root-client-call:80/$",
       "method": "^GET$"
     },
     "response": {

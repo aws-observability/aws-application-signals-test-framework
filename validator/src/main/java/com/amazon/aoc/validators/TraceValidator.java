@@ -143,7 +143,6 @@ public class TraceValidator implements IValidator {
     } else {
       retrieveTraceList = xrayService.listTraceByIds(traceIdList);
     }
-    log.info("Output trace: {}", retrieveTraceList);
 
     if (retrieveTraceList == null || retrieveTraceList.isEmpty()) {
       throw new BaseException(ExceptionCode.EMPTY_LIST);
