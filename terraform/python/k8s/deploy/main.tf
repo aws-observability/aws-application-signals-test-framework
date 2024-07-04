@@ -85,6 +85,7 @@ resource "null_resource" "deploy" {
       kubectl patch service python-sample-app-deployment-${var.test_id} -n python-sample-app-namespace --type='json' --patch='[{"op": "replace", "path": "/spec/ports/0/nodePort", "value":30100}]'
 
       echo "Wait for sample app to be reach ready state"
+      sleep 10
       kubectl wait --for=condition=Ready --request-timeout '10m' pod --all -n python-sample-app-namespace
 
       # Emit remote service pod IP
