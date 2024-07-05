@@ -141,7 +141,7 @@ jobs:
         with:
           secret-ids:
             RDS_MYSQL_CLUSTER_SECRETS, ${{env.RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME}}
-        parse-json-secrets: true
+          parse-json-secrets: true
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
