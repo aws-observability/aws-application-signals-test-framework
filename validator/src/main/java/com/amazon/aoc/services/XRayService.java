@@ -29,7 +29,7 @@ import org.joda.time.DateTime;
 
 public class XRayService {
   private AWSXRay awsxRay;
-  private final int SEARCH_PERIOD = 60;
+  private final int SEARCH_PERIOD = 180;
   public static String DEFAULT_TRACE_ID = "1-00000000-000000000000000000000000";
 
   public XRayService(String region) {
