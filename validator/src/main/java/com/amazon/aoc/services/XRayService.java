@@ -61,7 +61,8 @@ public class XRayService {
                 .withFilterExpression(
                     "annotation.aws_local_service = \""
                         + serviceName
-                        + "\" AND annotation.aws_local_service = \"local-root-client-call\""));
+                        + "\" AND ( annotation.aws_local_service = \"local-root-client-call\" "
+                            + "OR annotation.aws_local_service = \"local-root-client-call:80\")"));
     return traceSummaryResult.getTraceSummaries();
   }
 }
