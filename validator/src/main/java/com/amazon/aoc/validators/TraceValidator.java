@@ -92,8 +92,6 @@ public class TraceValidator implements IValidator {
               if (XRayService.DEFAULT_TRACE_ID.equals(traceId)) {
                 storedTrace.remove("[0].trace_id");
               }
-              log.info("trace id here");
-              log.info(traceId);
               List<String> traceIdList = Collections.singletonList(traceId);
 
               // Retry 5 times to since segments might not be immediately available in X-Ray service
@@ -145,9 +143,16 @@ public class TraceValidator implements IValidator {
     // with the serviceName and the local_root_client_call keyword.
 
     if (XRayService.DEFAULT_TRACE_ID.equals(traceIdList.get(0))) {
+      log.info("corect branch");
+      log.info("annotation.aws_local_service = \""
+              + context.getServiceName()
+              + "\" AND ( annotation.aws_local_service = \"local-root-client-call\" "
+              + "OR annotation.aws_local_service = \"local-root-client-call:80\")");
       List<TraceSummary> retrieveTraceLists =
           xrayService.searchClientCallTraces(context.getServiceName());
       List<String> traceIdLists = Collections.singletonList(retrieveTraceLists.get(0).getId());
+      log.info("id");
+      log.info(traceIdLists);
       retrieveTraceList = xrayService.listTraceByIds(traceIdLists);
     } else {
       retrieveTraceList = xrayService.listTraceByIds(traceIdList);
