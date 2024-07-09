@@ -112,12 +112,12 @@ jobs:
           attempt_counter=0
           max_attempts=30
           until $(curl --output /dev/null --silent --head --fail http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100/); do
+            echo "Attempt $attempt_counter failed to connect to endpoint (http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100/)"
             if [ ${attempt_counter} -eq ${max_attempts} ];then
-              echo "Max attempts reached"
+              echo "Max retries ($max_attempts) reached. Failing run (no retry)"
               exit 1
             fi
-          
-            printf '.'
+
             attempt_counter=$(($attempt_counter+1))
             sleep 10
           done

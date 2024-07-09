@@ -122,17 +122,17 @@ jobs:
 
               main_service_sample_app_endpoint=http://$main_service_public_ip:8080
               echo "The main service endpoint is $main_service_sample_app_endpoint"
-          
+
               attempt_counter=0
               max_attempts=30
-              until $(curl --output /dev/null --silent --head --fail $(echo "$main_service_sample_app_endpoint" | tr -d '"')); do
+              until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "$main_service_sample_app_endpoint" | tr -d '"')); do
+                echo "Attempt $attempt_counter failed to connect to endpoint ($main_service_sample_app_endpoint)"
                 if [ ${attempt_counter} -eq ${max_attempts} ];then
-                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
+                  echo "Max retries ($max_attempts) reached -> Will attempt to redeploy sample app"
                   deployment_failed=1
                   break
                 fi
 
-                printf '.'
                 attempt_counter=$(($attempt_counter+1))
                 sleep 10
               done
@@ -141,14 +141,14 @@ jobs:
               remote_sample_app_endpoint=http://$(terraform output sample_app_remote_service_public_ip):8080/healthcheck
               attempt_counter=0
               max_attempts=30
-              until $(curl --output /dev/null --silent --head --fail $(echo "$remote_sample_app_endpoint" | tr -d '"')); do
+              until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "$remote_sample_app_endpoint" | tr -d '"')); do
+                echo "Attempt $attempt_counter failed to connect to endpoint ($remote_sample_app_endpoint)"
                 if [ ${attempt_counter} -eq ${max_attempts} ];then
-                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
+                  echo "Max retries ($max_attempts) reached -> Will attempt to redeploy sample app"
                   deployment_failed=1
                   break
                 fi
 
-                printf '.'
                 attempt_counter=$(($attempt_counter+1))
                 sleep 10
               done
