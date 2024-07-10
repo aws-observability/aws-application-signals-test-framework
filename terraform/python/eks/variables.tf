@@ -49,18 +49,6 @@ variable "python_remote_app_image" {
   default = "<ECR_IMAGE_LINK>:<TAG>"
 }
 
-variable "rds_mysql_cluster_endpoint" {
-  default = "example.cluster-example.eu-west-1.rds.amazonaws.com"
-}
-
-variable "rds_mysql_cluster_database" {
-  default = "example_database"
-}
-
-variable "rds_mysql_cluster_username" {
-  default = "username"
-}
-
-variable "rds_mysql_cluster_password" {
-  default = "password"
+variable "test_variable" {
+  default = "test_value"
 }
