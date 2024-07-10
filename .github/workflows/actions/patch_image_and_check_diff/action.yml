@@ -67,6 +67,8 @@ runs:
         
         echo "DEFAULT_CW_AGENT_OPERATOR_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
         jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_OUTPUT
+        
+        sleep 10
 
     - name: Patch the Python ADOT image and restart CloudWatch pods
       if: ${{ inputs.repository == 'aws-otel-python-instrumentation' }}
@@ -113,7 +115,7 @@ runs:
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-        
+
         kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}

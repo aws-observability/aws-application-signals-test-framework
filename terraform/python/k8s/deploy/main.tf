@@ -60,10 +60,21 @@ resource "null_resource" "deploy" {
 
         kubectl patch serviceaccount cloudwatch-agent -n amazon-cloudwatch -p='{"imagePullSecrets": [{"name": "release-testing-ecr-secret"}]}'
         kubectl delete pods --all -n amazon-cloudwatch
+      elif [ "${var.repository}" = "amazon-cloudwatch-agent-operator" ]; then
+        RELEASE_TESTING_SECRET_NAME=release-testing-ecr-secret
+        RELEASE_TESTING_TOKEN=`aws ecr --region=us-west-2 get-authorization-token --output text --query authorizationData[].authorizationToken | base64 -d | cut -d: -f2`
+        kubectl delete secret -n amazon-cloudwatch --ignore-not-found $RELEASE_TESTING_SECRET_NAME
+        kubectl create secret -n amazon-cloudwatch docker-registry $RELEASE_TESTING_SECRET_NAME \
+          --docker-server=https://${var.release_testing_ecr_account}.dkr.ecr.us-west-2.amazonaws.com \
+          --docker-username=AWS \
+          --docker-password="$${RELEASE_TESTING_TOKEN}"
+
+        kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "release-testing-ecr-secret"}]}]'
+        kubectl delete pods --all -n amazon-cloudwatch
       fi
 
       if [ "${var.repository}" = "amazon-cloudwatch-agent-operator" ]; then
-        kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": ${var.patch_image_arn}}]'
+        kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${var.patch_image_arn}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch

@@ -20,6 +20,9 @@ on:
       adot-image-name:
         required: false
         type: string
+      cw-agent-operator-tag:
+        required: false
+        type: string
 
 concurrency:
   group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
@@ -36,6 +39,7 @@ env:
   CLUSTER_NAME: ${{ inputs.test-cluster-name }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
+  CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
@@ -56,7 +60,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'consolidate-release' || github.ref }}
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'consolidate-release-cw-operator' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon
@@ -282,7 +286,7 @@ jobs:
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
             echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
           elif [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent-operator" ]; then
-            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:staging" >> $GITHUB_ENV
+            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> $GITHUB_ENV
           elif [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
             echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
           fi
