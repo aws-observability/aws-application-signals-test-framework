@@ -19,6 +19,9 @@ permissions:
   id-token: write
   contents: read
 
+outputs:
+  ${{ inputs.aws-region }}-test
+
 env:
   # The presence of this env var is required for use by terraform and AWS CLI commands
   # It is not redundant
