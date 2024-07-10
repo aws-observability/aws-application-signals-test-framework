@@ -55,8 +55,6 @@ result=$(aws eks describe-addon --addon-name amazon-cloudwatch-observability --c
 echo "${result}"
 
 if [[ "${result}" == *"No addon: "* ]];  then
-    aws eks delete-addon --cluster-name ${CLUSTER_NAME} --addon-name amazon-cloudwatch-observability --region ${REGION}
-
     # Install CloudWatch operator
     echo "Installing CloudWatch operator"
     kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-agent-kubernetes-monitoring/main/kubernetes-manifests/cloudwatch-agent-operator.yaml
@@ -69,40 +67,18 @@ if [[ "${result}" == *"No addon: "* ]];  then
 
     echo "CloudWatch operator installation complete"
 else
-  addon_version=$(echo "${result}" | grep "addonVersion" | awk -F '"' '{print $4}')
-  if [[ "$addon_version" < "v1.4.0" ]]; then
-     read -p "Do you want to update the add-on version to v1.2.0, current version $addon_version? (yes/no): " choice
+  aws eks delete-addon --cluster-name ${CLUSTER_NAME} --addon-name amazon-cloudwatch-observability --region ${REGION}
+  # Install CloudWatch operator
+    echo "Installing CloudWatch operator"
+    kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-agent-kubernetes-monitoring/main/kubernetes-manifests/cloudwatch-agent-operator.yaml
+    check_if_step_failed_and_exit "There was an error installing CloudWatch operator, exiting"
 
-      if [ "$choice" == "yes" ]; then
-        aws eks update-addon \
-           --cluster-name ${CLUSTER_NAME} \
-           --addon-name amazon-cloudwatch-observability \
-           --addon-version v1.4.0-eksbuild.1 \
-           --region ${REGION}
-        # wait until the amazon-cloudwatch-observability add-on is active
-        echo "Waiting for addon to become ACTIVE..."
-        sleep 5
-        status=$(aws eks describe-addon --cluster-name ${CLUSTER_NAME} --addon-name amazon-cloudwatch-observability --region ${REGION} | grep '"status":' | awk -F '"' '{print $4}')
+      # Update the operator image
+    kubectl set image deployment/cloudwatch-agent-operator \
+    cloudwatch-agent-operator=public.ecr.aws/m2t4f1b8/lisaguo-test-cwa-operator:latest -n amazon-cloudwatch
+    check_if_step_failed_and_exit "There was an error updating the CloudWatch operator image, exiting"
 
-        # Loop until status becomes "ACTIVE"
-        while [[ "$status" != "ACTIVE" ]]; do
-          echo "Current status: $status"
-          if [[ "$status" == "UPDATE_FAILED" ]]; then
-            echo "Update amazon-cloudwatch-observability add-on failed!"
-            exit 1
-          fi
-          echo "Waiting for addon to become ACTIVE..."
-          sleep 20  # wait for 20 seconds before checking again
-          status=$(aws eks describe-addon --cluster-name ${CLUSTER_NAME} --addon-name amazon-cloudwatch-observability --region ${REGION} | grep '"status":' | awk -F '"' '{print $4}')
-        done
-
-        echo "EKS amazon-cloudwatch-observability add-on is now ACTIVE"
-      else
-       echo "Aborted upgrading EKS amazon-cloudwatch-observability add-on."
-      fi
-  else
-    echo "EKS amazon-cloudwatch-observability add-on has been installed"
-  fi
+    echo "CloudWatch operator installation complete"
 fi
 
 if [ -z "${REGION}" ]
