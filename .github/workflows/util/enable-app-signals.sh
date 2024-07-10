@@ -55,29 +55,9 @@ result=$(aws eks describe-addon --addon-name amazon-cloudwatch-observability --c
 echo "${result}"
 
 if [[ "${result}" == *"No addon: "* ]];  then
-    # Install CloudWatch operator
-    echo "Installing CloudWatch operator"
-    kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-agent-kubernetes-monitoring/main/kubernetes-manifests/cloudwatch-agent-operator.yaml
-    check_if_step_failed_and_exit "There was an error installing CloudWatch operator, exiting"
-
-    # Update the operator image
-    kubectl set image deployment/cloudwatch-agent-operator \
-      cloudwatch-agent-operator=public.ecr.aws/m2t4f1b8/lisaguo-test-cwa-operator:latest -n amazon-cloudwatch
-    check_if_step_failed_and_exit "There was an error updating the CloudWatch operator image, exiting"
-
-    echo "CloudWatch operator installation complete"
+    curl https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetE2ETests/.github/workflows/util/cwagent-operator-rendered.yaml | sed 's/{{cluster_name}}/'${CLUSTER_NAME}'/g;s/{{region_name}}/'${REGION}'/g' | kubectl apply -f -
 else
-    # Install CloudWatch operator
-    echo "Installing CloudWatch operator"
-    kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-agent-kubernetes-monitoring/main/kubernetes-manifests/cloudwatch-agent-operator.yaml
-    check_if_step_failed_and_exit "There was an error installing CloudWatch operator, exiting"
-
-      # Update the operator image
-    kubectl set image deployment/cloudwatch-agent-operator \
-    cloudwatch-agent-operator=public.ecr.aws/m2t4f1b8/lisaguo-test-cwa-operator:latest -n amazon-cloudwatch
-    check_if_step_failed_and_exit "There was an error updating the CloudWatch operator image, exiting"
-
-    echo "CloudWatch operator installation complete"
+    curl https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetE2ETests/.github/workflows/util/cwagent-operator-rendered.yaml | sed 's/{{cluster_name}}/'${CLUSTER_NAME}'/g;s/{{region_name}}/'${REGION}'/g' | kubectl apply -f -
 fi
 
 if [ -z "${REGION}" ]
