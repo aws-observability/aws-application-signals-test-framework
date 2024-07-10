@@ -48,7 +48,3 @@ variable "python_app_image" {
 variable "python_remote_app_image" {
   default = "<ECR_IMAGE_LINK>:<TAG>"
 }
-
-variable "test_variable" {
-  default = "test_value"
-}
