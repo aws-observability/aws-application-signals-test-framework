@@ -13,10 +13,6 @@
 # permissions and limitations under the License.
 # -------------------------------------------------------------------------
 
-variable "test_variable" {
-  default = "test_value"
-}
-
 terraform {
   required_providers {
     aws = {
@@ -125,7 +121,7 @@ resource "kubernetes_deployment" "python_app_deployment" {
             }
           env {
             name = "TEST_VARIABLE"
-            value = var.test_variable
+            value = var.python_remote_app_image
           }
           port {
             container_port = 8000
