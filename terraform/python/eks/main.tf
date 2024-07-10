@@ -13,6 +13,10 @@
 # permissions and limitations under the License.
 # -------------------------------------------------------------------------
 
+variable "test_variable" {
+  default = "test_value"
+}
+
 terraform {
   required_providers {
     aws = {
@@ -299,8 +303,4 @@ output "python_app_endpoint" {
 
 output "python_r_app_endpoint" {
   value = kubernetes_ingress_v1.python-r-app-ingress.status.0.load_balancer.0.ingress.0.hostname
-}
-
-variable "test_variable" {
-  default = "test_value"
 }
