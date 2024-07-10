@@ -100,7 +100,7 @@ resource "kubernetes_deployment" "dotnet_app_deployment" {
         }
         annotations = {
           # these annotations allow for OTel Dotnet instrumentation
-          instrumentation.opentelemetry.io/inject-dotnet: "true"
+          "instrumentation.opentelemetry.io/inject-dotnet": "true"
         }
       }
       spec {
