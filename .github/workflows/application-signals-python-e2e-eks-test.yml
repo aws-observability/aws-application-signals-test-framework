@@ -174,7 +174,6 @@ jobs:
               -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
               -var="python_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}" \
               -var="python_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}" \
-              -var="test_variable=assigned_value" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
