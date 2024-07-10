@@ -90,7 +90,7 @@ resource "kubernetes_deployment" "dotnet_app_deployment" {
     replicas = 1
     selector {
       match_labels = {
-        app = "python-app"
+        app = "dotnet-app"
       }
     }
     template {
@@ -112,7 +112,7 @@ resource "kubernetes_deployment" "dotnet_app_deployment" {
           env {
               #inject the test id to service name for unique App Signals metrics
               name = "OTEL_SERVICE_NAME"
-              value = "python-application-${var.test_id}"
+              value = "dotnet-application-${var.test_id}"
             }
           
           port {
@@ -149,7 +149,7 @@ resource "kubernetes_ingress_v1" "dotnet-app-ingress" {
   depends_on = [kubernetes_service.dotnet_app_service]
   wait_for_load_balancer = true
   metadata {
-    name = "python-app-ingress-${var.test_id}"
+    name = "dotnet-app-ingress-${var.test_id}"
     namespace = var.test_namespace
     annotations = {
       "kubernetes.io/ingress.class" = "alb"
@@ -205,7 +205,7 @@ resource "kubernetes_deployment" "dotnet_r_app_deployment" {
           app = "remote-app"
         }
         annotations = {
-          # these annotations allow for OTel Python instrumentation
+          # these annotations allow for OTel Dotnet instrumentation
           "instrumentation.opentelemetry.io/inject-dotnet" = "true"
         }
       }
@@ -249,7 +249,7 @@ resource "kubernetes_ingress_v1" "dotnet-r-app-ingress" {
   depends_on = [kubernetes_service.dotnet_r_app_service]
   wait_for_load_balancer = true
   metadata {
-    name = "python-r-app-ingress-${var.test_id}"
+    name = "dotnet-r-app-ingress-${var.test_id}"
     namespace = var.test_namespace
     annotations = {
       "kubernetes.io/ingress.class" = "alb"
@@ -280,10 +280,10 @@ resource "kubernetes_ingress_v1" "dotnet-r-app-ingress" {
   }
 }
 
-output "python_app_endpoint" {
+output "dotnet_app_endpoint" {
   value = kubernetes_ingress_v1.dotnet-app-ingress.status.0.load_balancer.0.ingress.0.hostname
 }
 
-output "python_r_app_endpoint" {
+output "dotnet_r_app_endpoint" {
   value = kubernetes_ingress_v1.dotnet-r-app-ingress.status.0.load_balancer.0.ingress.0.hostname
 }
