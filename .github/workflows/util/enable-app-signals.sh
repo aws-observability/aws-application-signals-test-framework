@@ -67,8 +67,7 @@ if [[ "${result}" == *"No addon: "* ]];  then
 
     echo "CloudWatch operator installation complete"
 else
-  aws eks delete-addon --cluster-name ${CLUSTER_NAME} --addon-name amazon-cloudwatch-observability --region ${REGION}
-  # Install CloudWatch operator
+    # Install CloudWatch operator
     echo "Installing CloudWatch operator"
     kubectl apply -f https://raw.githubusercontent.com/aws-samples/amazon-cloudwatch-agent-kubernetes-monitoring/main/kubernetes-manifests/cloudwatch-agent-operator.yaml
     check_if_step_failed_and_exit "There was an error installing CloudWatch operator, exiting"
