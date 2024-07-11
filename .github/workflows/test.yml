@@ -64,29 +64,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        aws-region: [ 'us-east-1', 'eu-central-2' ]
+        aws-region: [ 'us-west-1' ]
     uses: ./.github/workflows/application-signals-java-e2e-eks-test.yml
     secrets: inherit
     with:
       aws-region: ${{ matrix.aws-region }}
-      test-cluster-name: 'e2e-playground'
+      test-cluster-name: 'e2e-canary-test'
       caller-workflow-name: 'test'
 
   metric-limiter:
-    needs: [java-eks]
     strategy:
       fail-fast: false
       matrix:
-        aws-region: [ 'us-east-1', 'eu-central-2' ]
+        aws-region: [ 'us-west-1' ]
     uses: ./.github/workflows/application-signals-java-e2e-metric-limiter-test.yml
     secrets: inherit
     with:
       aws-region: ${{ matrix.aws-region }}
-      test-cluster-name: 'e2e-playground'
+      test-cluster-name: 'e2e-metric-limiter-test'
       caller-workflow-name: 'test'
 
   python-eks:
-    needs: [metric-limiter]
     strategy:
       fail-fast: false
       matrix:
@@ -95,5 +93,5 @@ jobs:
     secrets: inherit
     with:
       aws-region: ${{ matrix.aws-region }}
-      test-cluster-name: 'e2e-playground'
+      test-cluster-name: 'e2e-python-canary-test'
       caller-workflow-name: 'test'
