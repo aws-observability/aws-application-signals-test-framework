@@ -9,6 +9,9 @@ on:
   #  - cron: '0 */3 * * *'
   # and on demand
   workflow_dispatch:
+  push:
+    branches:
+      - ec2_cleanup
 
 jobs:
   cleanup-ec2-instances:
