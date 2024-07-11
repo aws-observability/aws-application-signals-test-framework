@@ -44,16 +44,16 @@ jobs:
       - name: Configure AWS credentials for the regional account access
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.RESOURCE_CLEANER_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.RESOURCE_CLEANER_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
       - name: Cleanup EC2 instances
-        working-directory: tool/clean
+        working-directory: tool/clean/ec2_instance_cleanup
         env:
           AWS_DEFAULT_REGION: ${{ matrix.aws-region }}
         run: |
           python -m pip install -r requirements.txt
-          python cleanup-ec2-instances.py
+          python cleaner.py
 
 
 
