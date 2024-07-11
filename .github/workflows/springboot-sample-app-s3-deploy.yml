@@ -48,7 +48,7 @@ jobs:
 
       - name: Upload to S3
         working-directory: sample-apps/springboot
-        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/libs/springboot-*-SNAPSHOT.jar --key main-service.jar
+        run: aws s3api put-object --bucket ${{ inputs.aws-region == 'us-west-1' && secrets.APP_SIGNALS_E2E_EC2_JAR_US_WEST_1 || secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/libs/springboot-*-SNAPSHOT.jar --key main-service.jar
 
   upload-remote-service-jar:
     strategy:
@@ -88,5 +88,5 @@ jobs:
 
       - name: Upload to S3
         working-directory: sample-apps/springboot-remote-service
-        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key remote-service.jar
+        run: aws s3api put-object --bucket ${{ inputs.aws-region == 'us-west-1' && secrets.APP_SIGNALS_E2E_EC2_JAR_US_WEST_1 || secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key remote-service.jar
 

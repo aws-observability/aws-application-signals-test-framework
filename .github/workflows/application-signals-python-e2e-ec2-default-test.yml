@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 env:
-  SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
+  SAMPLE_APP_ZIP: s3://${{ inputs.aws-region == 'us-west-1' && secrets.APP_SIGNALS_E2E_EC2_JAR_US_WEST_1 || secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/python-sample-app.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_WHEEL_NAME: ${{ inputs.staging_wheel_name }}
