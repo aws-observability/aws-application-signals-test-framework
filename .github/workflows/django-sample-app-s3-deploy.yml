@@ -50,5 +50,5 @@ jobs:
 
       - name: Upload to S3
         working-directory: sample-apps/python
-        run: aws s3api put-object --bucket ${{ inputs.aws-region == 'us-west-1' && secrets.APP_SIGNALS_E2E_EC2_JAR_US_WEST_1 || secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
 
