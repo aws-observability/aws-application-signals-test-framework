@@ -7,7 +7,7 @@
 ## including logs, metrics, and traces.
 name: Test
 on:
-  push:
+#  push:
   workflow_dispatch:
 
 
