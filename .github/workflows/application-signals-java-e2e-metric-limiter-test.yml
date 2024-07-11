@@ -84,7 +84,12 @@ jobs:
           role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
           aws-region: us-east-1
 
+      - name: Test
+        if: ${{ inputs.aws-region == 'us-west-1'}}
+        run: echo ACCOUNT_ID="${{ secrets.TEMP_US_WEST_1_ACCOUNT }}" >> $GITHUB_ENV
+
       - name: Retrieve account
+        if: ${{ inputs.aws-region != 'us-west-1'}}
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids:
