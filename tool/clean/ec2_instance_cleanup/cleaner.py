@@ -101,10 +101,12 @@ def _prepare_report_and_upload(instances_to_terminate):
     with open(filename, "w") as f:
         f.write(json_data)
 
-    # upload to s3 bucket
-    s3 = boto3.client('s3')
     try:
+        # upload to s3 bucket
+        s3 = boto3.client('s3')
         s3.upload_file(filename, os.environ.get("S3_REPORTS_BUCKET", ""), filename)
+        # delete the local file
+        os.remove(filename)
     except Exception as e:
         logging.error(f"Error uploading file to S3: {e}")
 
