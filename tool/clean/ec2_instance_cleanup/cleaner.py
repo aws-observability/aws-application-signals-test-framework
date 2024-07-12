@@ -93,7 +93,7 @@ def _is_tagged_do_not_delete(instance):
     return False
 
 
-def _prepare_report_and_upload(instances_to_terminate):
+def _prepare_report_and_upload(instances_to_terminate) -> bool:
     json_data = json.dumps(instances_to_terminate, default=str)
     # save as a json file with timestamp
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -109,6 +109,8 @@ def _prepare_report_and_upload(instances_to_terminate):
         os.remove(filename)
     except Exception as e:
         logging.error(f"Error uploading file to S3: {e}")
+        return False
+    return True
 
 
 def _terminate_instances(instances_to_terminate):
@@ -129,5 +131,9 @@ if __name__ == '__main__':
         logging.info("No instances to terminate")
         exit(0)
 
-    _prepare_report_and_upload(instances)
+    report_successful = _prepare_report_and_upload(instances)
+    if not report_successful:
+        logging.error("Failed to prepare report and upload. Aborting termination of instances.")
+        exit(1)
+
     # _terminate_instances(instances) # TODO: uncomment in the final PR
