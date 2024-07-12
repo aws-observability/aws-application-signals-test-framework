@@ -174,6 +174,10 @@ jobs:
               -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
               -var="python_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}" \
               -var="python_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}" \
+              -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
+              -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
+              -var="rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}" \
+              -var="rds_mysql_cluster_database=information_schema" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
