@@ -38,6 +38,7 @@ env:
 jobs:
   e2e-k8s-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     container:
       image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     steps:
@@ -199,19 +200,19 @@ jobs:
       - name: Publish metric on test result
         if: always()
         run: |
+          mkdir e2e-test-result
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 0.0 \
-            --region ${{ env.AWS_DEFAULT_REGION }}
+            echo "SUCCESS" > ./e2e-test-result/result-${{ inputs.aws-region }}.txt
           else
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 1.0 \
-            --region ${{ env.AWS_DEFAULT_REGION }}
+            echo "FAIL" > ./e2e-test-result/result-${{ inputs.aws-region }}.txt
           fi
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: e2e-test-result
+          path: e2e-test-result/result-${{ inputs.aws-region }}.txt
 
       # Clean up Procedures
       - name: Initiate Terraform for Cleanup

@@ -43,3 +43,58 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-e2e-ec2-asg-canary-test'
+
+  publish-result:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1', 'af-south-1','ap-east-1','ap-northeast-1' ]
+    env:
+      caller-workflow-name: test222
+    steps:
+      - name: Wait for 20 minutes
+        run: sleep 600
+
+      - name: Download test results
+        uses: actions/download-artifact@v2
+        with:
+          name: e2e-test-result
+          path: ./e2e-test-result/result-${{ matrix.aws-region }}.txt
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ matrix.aws-region }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          aws-region: ${{ matrix.aws-region }}
+
+      - name: Publish metric on test result
+        run: |
+          result=$(cat ./e2e-test-result/result-${{ matrix.aws-region }}.txt) || true
+          echo "Result was $result"
+
+          if [ "$result" = "SUCCESS" ]; then
+            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
+            --metric-name Failure \
+            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=$caller-workflow-name \
+            --value 0.0 \
+            --region ${{ matrix.aws-region }}
+          else
+            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
+            --metric-name Failure \
+            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=$caller-workflow-name \
+            --value 1.0 \
+            --region ${{ matrix.aws-region }}
+          fi
