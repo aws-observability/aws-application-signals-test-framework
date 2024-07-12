@@ -1,15 +1,13 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-name: Test
+name: Test # TODO: change this for final PR
 
 on:
-  # run every 3 hours
-  #schedule:
-  #  - cron: '0 */3 * * *'
-  # and on demand
-  workflow_dispatch:
-  push:
+  #schedule: # TODO: Uncomment this for final PR
+  #  - cron: '0 18 * * *' # scheduled to run at 18:00 UTC every day
+  workflow_dispatch: # be able to run on demand
+  push: # TODO: Delete this
     branches:
       - ec2_cleanup
 
@@ -54,9 +52,7 @@ jobs:
         working-directory: tool/clean/ec2_instance_cleanup
         env:
           AWS_DEFAULT_REGION: ${{ matrix.aws-region }}
+          S3_REPORTS_BUCKET: ${{ secrets.S3_CLEAUP_REPORTS_BUCKET }}-prod-${{ matrix.aws-region }}
         run: |
           python -m pip install -r requirements.txt
           python cleaner.py
-
-
-
