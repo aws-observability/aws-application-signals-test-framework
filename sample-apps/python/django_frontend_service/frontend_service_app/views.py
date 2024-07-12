@@ -110,6 +110,8 @@ def get_xray_trace_id():
 
 def mysql(request):
     logger.info("mysql received")
+    cur = None
+    conn = None
     try:
         conn = pymysql.connect(
             host=os.environ["RDS_MYSQL_CLUSTER_ENDPOINT"],
@@ -126,4 +128,5 @@ def mysql(request):
     finally:
         if cur:
             cur.close()
-        conn.close()
+        if conn:
+            conn.close()
