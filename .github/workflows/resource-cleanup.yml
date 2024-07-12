@@ -1,15 +1,12 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-name: Test # TODO: change this for final PR
+name: AWS Resource Cleaner
 
 on:
-  #schedule: # TODO: Uncomment this for final PR
-  #  - cron: '0 18 * * *' # scheduled to run at 18:00 UTC every day
+  schedule:
+    - cron: '0 18 * * *' # scheduled to run at 18:00 UTC every day
   workflow_dispatch: # be able to run on demand
-  push: # TODO: Delete this
-    branches:
-      - ec2_cleanup
 
 jobs:
   cleanup-ec2-instances:
