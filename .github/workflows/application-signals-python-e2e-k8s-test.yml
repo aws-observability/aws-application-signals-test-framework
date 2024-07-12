@@ -30,7 +30,7 @@ env:
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  MASTER_NODE_SSH_KEY: ${{ secrets.APP_SIGNALS_E2E_K8S_SSH_KEY_IAD }}
+  MASTER_NODE_SSH_KEY: ${{ secrets.APP_SIGNALS_E2E_K8S_PYTHON_SSH_KEY_IAD }}
   MAIN_SERVICE_ENDPOINT: ${{ secrets.APP_SIGNALS_E2E_PYTHON_K8S_GA_MASTER_NODE_ENDPOINT }}
   SAMPLE_APP_NAMESPACE: python-sample-app-namespace
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
