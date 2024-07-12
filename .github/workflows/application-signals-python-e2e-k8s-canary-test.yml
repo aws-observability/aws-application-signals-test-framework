@@ -22,3 +22,12 @@ jobs:
       # To run in more regions, a cluster must be provisioned manually on EC2 instances in that region
       aws-region: 'us-east-1'
       caller-workflow-name: 'appsignals-e2e-python-k8s-canary-test'
+      result-folder: 'e2e-test-result'
+
+  publish-result:
+    uses: ./.github/workflows/e2e-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      caller-workflow-name: 'appsignals-e2e-python-k8s-canary-test'
+      result-folder: 'e2e-test-result'

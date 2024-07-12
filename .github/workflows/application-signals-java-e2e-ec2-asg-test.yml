@@ -14,6 +14,9 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      result-folder:
+        required: true
+        type: string
 
 permissions:
   id-token: write
@@ -35,6 +38,7 @@ env:
 jobs:
   e2e-ec2-asg-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     container:
       image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     steps:
@@ -84,8 +88,8 @@ jobs:
       - name: Deploy sample app via terraform and wait for endpoint to come online
         working-directory: terraform/java/ec2/asg
         run: |
-          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
-          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
+          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online.
+          # There may be occasional failures due to transitivity issues, so try up to 2 times.
           # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
           # that it failed at some point
           retry_counter=0
@@ -122,7 +126,7 @@ jobs:
 
               main_service_sample_app_endpoint=http://$main_service_public_ip:8080
               echo "The main service endpoint is $main_service_sample_app_endpoint"
-          
+
               attempt_counter=0
               max_attempts=30
               until $(curl --output /dev/null --silent --head --fail $(echo "$main_service_sample_app_endpoint" | tr -d '"')); do
@@ -160,7 +164,7 @@ jobs:
               echo "Destroying terraform"
               terraform destroy -auto-approve \
                 -var="test_id=${{ env.TESTING_ID }}"
-          
+
               retry_counter=$(($retry_counter+1))
             else
               # If deployment succeeded, then exit the loop
@@ -176,7 +180,7 @@ jobs:
       # This steps increases the speed of the validation by creating the telemetry data in advance
       - name: Call all test APIs
         continue-on-error: true
-        run: |        
+        run: |
           curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/outgoing-http-call"
           curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"
           curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"
@@ -255,19 +259,19 @@ jobs:
       - name: Publish metric on test result
         if: always()
         run: |
+          mkdir ${{ inputs.result-folder }}
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 0.0 \
-            --region ${{ inputs.aws-region }}
+            echo "SUCCESS" > ./${{ inputs.result-folder }}/${{ inputs.aws-region }}.txt
           else
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 1.0 \
-            --region ${{ inputs.aws-region }}
+            echo "FAIL" > ./${{ inputs.result-folder }}/${{ inputs.aws-region }}.txt
           fi
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ inputs.result-folder }}
+          path: ${{ inputs.result-folder }}/${{ inputs.aws-region }}.txt
 
       # Clean up Procedures
       - name: Terraform destroy

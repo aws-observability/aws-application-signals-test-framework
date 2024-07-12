@@ -14,6 +14,9 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      result-folder:
+        required: false
+        type: string
 
 concurrency:
   group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
@@ -30,7 +33,7 @@ env:
   TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  MASTER_NODE_SSH_KEY: ${{ secrets.APP_SIGNALS_E2E_K8S_PYTHON_SSH_KEY_IAD }}
+  MASTER_NODE_SSH_KEY: ${{ secrets.APP_SIGNALS_E2E_K8S_SSH_KEY_IAD }}
   MAIN_SERVICE_ENDPOINT: ${{ secrets.APP_SIGNALS_E2E_PYTHON_K8S_GA_MASTER_NODE_ENDPOINT }}
   SAMPLE_APP_NAMESPACE: python-sample-app-namespace
   TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
@@ -38,6 +41,7 @@ env:
 jobs:
   e2e-k8s-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     container:
       image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     steps:
@@ -199,19 +203,19 @@ jobs:
       - name: Publish metric on test result
         if: always()
         run: |
+          mkdir ${{ inputs.result-folder }}
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 0.0 \
-            --region ${{ env.AWS_DEFAULT_REGION }}
+            echo "SUCCESS" > ./${{ inputs.result-folder }}/${{ inputs.aws-region }}.txt
           else
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 1.0 \
-            --region ${{ env.AWS_DEFAULT_REGION }}
+            echo "FAIL" > ./${{ inputs.result-folder }}/${{ inputs.aws-region }}.txt
           fi
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ inputs.result-folder }}
+          path: ${{ inputs.result-folder }}/${{ inputs.aws-region }}.txt
 
       # Clean up Procedures
       - name: Initiate Terraform for Cleanup
