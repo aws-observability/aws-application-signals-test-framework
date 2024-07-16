@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  e2e-test:
+  metric-limiter:
     strategy:
       fail-fast: false
       matrix:

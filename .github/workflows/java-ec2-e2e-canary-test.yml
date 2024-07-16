@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  e2e-test-1:
+  default:
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +30,7 @@ jobs:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-e2e-ec2-canary-test'
 
-  e2e-test-2:
+  asg:
     strategy:
       fail-fast: false
       matrix:

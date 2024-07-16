@@ -17,7 +17,7 @@ permissions:
 
 
 jobs:
-  e2e-test-1:
+  eks:
     strategy:
       fail-fast: false
       matrix:
