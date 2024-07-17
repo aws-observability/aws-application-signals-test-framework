@@ -22,21 +22,19 @@ public class AppController : ControllerBase
     private readonly AmazonS3Client s3Client = new AmazonS3Client();
     private readonly HttpClient httpClient = new HttpClient();
 
-    public AppController()
-    {
-        if (!threadStarted)
-        {
-            threadStarted = true;
-            Thread thread = new Thread(() =>
+    private static readonly Thread thread = new Thread(() =>
             {
                 while (true)
                 {
                     if (shouldSendLocalRootClientCall)
                     {
-                        shouldSendLocalRootClientCall = false;
                         try
                         {
-                            _ = this.httpClient.GetAsync("http://local-root-client-call").Result;
+                            shouldSendLocalRootClientCall = false;
+                            // forcing the new activity to not have a parent and thus become a local root span
+                            Activity.Current = null;
+                            var localHttpClient = new HttpClient();
+                            _ = localHttpClient.GetAsync("http://local-root-client-call").Result;
                         }
                         catch (Exception)
                         {
@@ -47,6 +45,12 @@ public class AppController : ControllerBase
                 }
             });
 
+    public AppController()
+    {
+        if (!threadStarted)
+        {
+            Console.WriteLine("Starting thread");
+            threadStarted = true;
             thread.Start();
         }
     }
