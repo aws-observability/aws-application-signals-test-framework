@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  e2e-test:
+  k8s:
     uses: ./.github/workflows/python-k8s-e2e-test.yml
     secrets: inherit
     with:

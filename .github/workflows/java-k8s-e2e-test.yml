@@ -21,9 +21,9 @@ on:
         required: false
         type: string
 
-#concurrency:
-#  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
-#  cancel-in-progress: false
+concurrency:
+  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
+  cancel-in-progress: false
 
 permissions:
   id-token: write
@@ -63,7 +63,7 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:
-          command: "./gradlew"
+          command: "./gradlew :validator:build"
           cleanup: "./gradlew clean"
           max_retry: 3
           sleep_time: 60
@@ -84,14 +84,6 @@ jobs:
             RELEASE_TESTING_ECR_ACCOUNT, e2e-test/${{ github.event.repository.name }}/java-k8s-release-testing-account
             MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/java-k8s-master-node-endpoint
             MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/java-k8s-ssh-key
-
-      # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
-      - name: Configure AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/java/k8s/deploy/resources
@@ -167,7 +159,7 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:
-          command: "./gradlew"
+          command: "./gradlew :validator:build"
           cleanup: "./gradlew clean"
           max_retry: 3
           sleep_time: 60
