@@ -3,6 +3,17 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:{{platformInfo}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
       name: Operation
       value: GET /aws-sdk-call
     -
@@ -68,6 +79,17 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:{{platformInfo}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
       name: Operation
       value: GET /aws-sdk-call
     -
@@ -127,6 +149,17 @@
     -
       name: RemoteService
       value: AWS::S3
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:{{platformInfo}}
 
 -
   metricName: Fault
