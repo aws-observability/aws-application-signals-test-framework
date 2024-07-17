@@ -110,23 +110,15 @@ def get_xray_trace_id():
 
 def mysql(request):
     logger.info("mysql received")
-    cur = None
-    conn = None
     try:
-        conn = pymysql.connect(
-            host=os.environ["RDS_MYSQL_CLUSTER_ENDPOINT"],
-            user=os.environ["RDS_MYSQL_CLUSTER_USERNAME"],
-            password=os.environ["RDS_MYSQL_CLUSTER_PASSWORD"],
-            database=os.environ["RDS_MYSQL_CLUSTER_DATABASE"]
-        )
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM tables LIMIT 1;")
-        return get_xray_trace_id()
+        connection = pymysql.connect(host=os.environ["RDS_MYSQL_CLUSTER_ENDPOINT"],
+                                     user=os.environ["RDS_MYSQL_CLUSTER_USERNAME"],
+                                     password=os.environ["RDS_MYSQL_CLUSTER_PASSWORD"],
+                                     database=os.environ["RDS_MYSQL_CLUSTER_DATABASE"])
+        with connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM tables LIMIT 1;")
+                return get_xray_trace_id()
     except Exception as exception:  # pylint: disable=broad-except
         logger.exception("Exception Occurred")
         raise exception
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
