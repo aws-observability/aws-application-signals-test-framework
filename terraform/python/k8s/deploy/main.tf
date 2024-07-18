@@ -72,8 +72,8 @@ resource "null_resource" "deploy" {
       echo "LOG: Pulling sample app deployment files"
       # cd to ensure everything is downloaded into root directory so cleanup is each
       cd ~
-      aws s3api get-object --bucket testing-bucket-end-to-end --key python-frontend-service-depl.yaml python-frontend-service-depl.yaml
-      aws s3api get-object --bucket testing-bucket-end-to-end --key python-remote-service-depl.yaml python-remote-service-depl.yaml
+      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key python-frontend-service-depl.yaml python-frontend-service-depl.yaml
+      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key python-remote-service-depl.yaml python-remote-service-depl.yaml
 
       echo "LOG: Applying sample app deployment files"
       kubectl apply -f python-frontend-service-depl.yaml
