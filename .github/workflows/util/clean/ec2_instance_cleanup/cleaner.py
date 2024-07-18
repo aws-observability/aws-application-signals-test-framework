@@ -136,4 +136,4 @@ if __name__ == '__main__':
         logging.error("Failed to prepare report and upload. Aborting termination of instances.")
         exit(1)
 
-    # _terminate_instances(instances) # TODO: uncomment in the final PR
+    _terminate_instances(instances)
