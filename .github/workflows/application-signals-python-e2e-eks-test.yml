@@ -45,8 +45,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          #repository: 'aws-observability/aws-application-signals-test-framework'
-          #ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon
