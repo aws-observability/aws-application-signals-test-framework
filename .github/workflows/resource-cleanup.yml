@@ -46,7 +46,7 @@ jobs:
           aws-region: ${{ matrix.aws-region }}
 
       - name: Cleanup EC2 instances
-        working-directory: tool/clean/ec2_instance_cleanup
+        working-directory: .github/workflows/util/clean/ec2_instance_cleanup
         env:
           AWS_DEFAULT_REGION: ${{ matrix.aws-region }}
           S3_REPORTS_BUCKET: ${{ secrets.S3_CLEAUP_REPORTS_BUCKET }}-prod-${{ matrix.aws-region }}

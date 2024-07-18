@@ -9,7 +9,7 @@ from typing import List
 INSTANCE_STATE_RUNNING = 'running'
 EKS_CLUSTER_SECURITY_GROUP_PREFIX = 'eks-cluster-sg-'
 K8S_INSTANCE_NAME_PREFIX = 'k8s-'
-K8S_KEYNAME_PREFIX = 'k8s'
+K8S_KEYNAME_PREFIX = 'k8s-'
 TAG_DO_NOT_DELETE = 'do-not-delete'
 
 # Create an EC2 client
