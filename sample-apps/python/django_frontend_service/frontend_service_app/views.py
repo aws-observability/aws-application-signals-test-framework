@@ -118,8 +118,7 @@ def mysql(request):
         with connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT * FROM tables LIMIT 1;")
-    except Exception as exception:  # pylint: disable=broad-except
-        logger.exception("Exception Occurred")
-        raise exception
+    except Exception as e:  # pylint: disable=broad-except
+        logger.error("Could not complete http request to RDS database:" + str(e))
     finally:
         return get_xray_trace_id()
