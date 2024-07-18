@@ -118,7 +118,8 @@ def mysql(request):
         with connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT * FROM tables LIMIT 1;")
-                return get_xray_trace_id()
     except Exception as exception:  # pylint: disable=broad-except
         logger.exception("Exception Occurred")
         raise exception
+    finally:
+        return get_xray_trace_id()
