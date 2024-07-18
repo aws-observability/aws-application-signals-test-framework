@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the E2E test for Application Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Application Signals Enablement E2E Testing - Python EKS
+name: Python EKS Use Case
 on:
   workflow_call:
     inputs:
@@ -14,14 +14,14 @@ on:
       test-cluster-name:
         required: true
         type: string
-      application-signals-adot-image:
-        required: false
-        type: string
-      application-signals-adot-image-tag:
-        required: false
-        type: string
       caller-workflow-name:
         required: true
+        type: string
+      adot-image-name:
+        required: false
+        type: string
+      cw-agent-operator-tag:
+        required: false
         type: string
 
 concurrency:
@@ -33,22 +33,36 @@ permissions:
   contents: read
 
 env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CLUSTER_NAME: ${{ inputs.test-cluster-name }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
+  CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  python-e2e-eks-test:
+  python-eks:
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     steps:
+      - name: Generate testing id and python sample app namespace
+        run: |
+          echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+          echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+          
       - uses: actions/checkout@v4
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
+        # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
+        # fails due to transient issues. If it fails here, then we will try again later before the validators
       - name: Initiate Gradlew Daemon
         id: initiate-gradlew
         uses: ./.github/workflows/actions/execute_and_retry
@@ -68,6 +82,7 @@ jobs:
           cleanup: "rm -f enable-app-signals.sh && rm -f clean-app-signals.sh"
           post-command: "chmod +x enable-app-signals.sh && chmod +x clean-app-signals.sh"
 
+      # We do not want to delete the log group as it contains logs from other sources as well as information that could help us diagnose if the workflow run fails
       - name: Remove log group deletion command
         if: always()
         working-directory: enablement-script
@@ -75,33 +90,30 @@ jobs:
           delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP_NAME }}' --region \$REGION"
           sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
-      - name: Generate testing id and python sample app namespace
-        run: |
-          echo TESTING_ID="${{ inputs.aws-region }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
-          echo PYTHON_SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
       - name: Retrieve account
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
-          secret-ids:
-            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+          secret-ids: |
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+            PYTHON_MAIN_SAMPLE_APP_IMAGE, e2e-test/python-main-sample-app-image
+            PYTHON_REMOTE_SAMPLE_APP_IMAGE, e2e-test/python-remote-sample-app-image
 
-      # ADOT_E2E_TEST_ROLE_ARN is used to access main build e2e test cluster
-      # E2E_TEST_ROLE_ARN is used to access canary e2e test cluster
+      # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
       - name: Configure AWS Credentials
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ inputs['caller-workflow-name'] == 'main-build' && secrets.ADOT_E2E_TEST_ROLE_ARN || secrets.E2E_TEST_ROLE_ARN }}
-          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}
+        run: aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Add eksctl to Github Path
         run: |
@@ -113,17 +125,17 @@ jobs:
         with:
           command: "eksctl create iamserviceaccount \
           --name service-account-${{ env.TESTING_ID }} \
-          --namespace ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} \
+          --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-cluster-name }} \
           --role-name eks-s3-access-${{ env.TESTING_ID }} \
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
-          --region ${{ inputs.aws-region }} \
+          --region ${{ env.E2E_TEST_AWS_REGION }} \
           --approve"
           cleanup: "eksctl delete iamserviceaccount \
           --name service-account-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-cluster-name }} \
-          --region ${{ inputs.aws-region }}"
+          --region ${{ env.E2E_TEST_AWS_REGION }}"
           sleep_time: 60
 
       - name: Get RDS database cluster metadata
@@ -151,6 +163,11 @@ jobs:
           max_retry: 6
           sleep_time: 60
 
+      - name: Set Sample App Image
+        run: |
+            echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
+            echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
+
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-python-app
         working-directory: terraform/python/eks
@@ -166,14 +183,14 @@ jobs:
             deployment_failed=0
             terraform apply -auto-approve \
               -var="test_id=${{ env.TESTING_ID }}" \
-              -var="aws_region=${{ inputs.aws-region }}" \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="kube_directory_path=${{ github.workspace }}/.kube" \
-              -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
+              -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
               -var="eks_cluster_context_name=$(kubectl config current-context)" \
-              -var="test_namespace=${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" \
+              -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
               -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
-              -var="python_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}" \
-              -var="python_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}" \
+              -var="python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+              -var="python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
               -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
               -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
               -var="rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}" \
@@ -192,25 +209,17 @@ jobs:
               execute_and_retry 3 \
               "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
-              ${{ inputs.aws-region }} \
-              ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }}" \
               "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
-              ${{ inputs.aws-region }} \
-              ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} && \
-              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }} && \
+              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
               60
-          
-              if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
-                echo "Patching staging adot image for main build:"
-                execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-                -p='[{"op": \"replace\", \"path\": \"/spec/template/spec/containers/0/args/2\", \"value\": \"--auto-instrumentation-python-image=${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}\"}]'"
-                execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
-                execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
-              fi
-          
-              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 60
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" "" 10
+                  
+              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
+              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
 
               echo "Attempting to connect to the main sample app endpoint"
               python_app_endpoint=http://$(terraform output python_app_endpoint)
@@ -251,24 +260,24 @@ jobs:
             if [ $deployment_failed -eq 1 ]; then
               echo "Cleaning up Application Signal"
               ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
-              ${{ inputs.test-cluster-name }} \
-              ${{ inputs.aws-region }} \
-              ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}
+              ${{ env.CLUSTER_NAME }} \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }}
 
               # Running clean-app-signal.sh removes the current cluster from the config. Update the cluster again for subsequent runs.
-              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}
+              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}
 
               echo "Destroying terraform"
               terraform destroy -auto-approve \
                 -var="test_id=${{ env.TESTING_ID }}" \
-                -var="aws_region=${{ inputs.aws-region }}" \
+                -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
                 -var="kube_directory_path=${{ github.workspace }}/.kube" \
-                -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
+                -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
                 -var="eks_cluster_context_name=$(kubectl config current-context)" \
-                -var="test_namespace=${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" \
+                -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
                 -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
-                -var="python_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}" \
-                -var="python_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}"
+                -var="python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+                -var="python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
           
               retry_counter=$(($retry_counter+1))
             else
@@ -282,20 +291,35 @@ jobs:
             fi
           done
 
+      - name: Get ECR to Patch
+        run: |
+          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+            echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent-operator" ]; then
+            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.repository.name }}" = "aws-otel-python-instrumentation" ]; then
+            echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
+          fi
+
+      - name: Patch Image and Check Diff
+        id: patch-image
+        uses: ./.github/workflows/actions/patch_image_and_check_diff
+        with:
+          repository: ${{ github.event.repository.name }}
+          patch-image-arn: ${{ env.PATCH_IMAGE_ARN }}
+          sample-app-namespace: ${{ env.SAMPLE_APP_NAMESPACE }}
+
+      - name: Log Artifact Versions
+        run: |
+          echo "ADOT Image: Previous Version is: ${{ steps.patch-image.outputs.default-adot-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-adot-image }}";
+          echo "CW Agent Image: Previous Version is: ${{ steps.patch-image.outputs.default-cw-agent-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-cw-agent-image }}";
+          echo "CW Agent Operator Image: Previous Version is: ${{ steps.patch-image.outputs.default-cw-agent-operator-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-cw-agent-operator-image }}";
+          echo "Fluent Bit Image: Version is: ${{ steps.patch-image.outputs.fluent-bit-image }}";
+
       - name: Get remote service pod name and IP
         run: |
-          echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
-
-      - name: Verify pod Adot image
-        run: |
-          kubectl get pods -n ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} --output json | \
-          jq '.items[0].status.initContainerStatuses[0].imageID'
-
-      - name: Verify pod CWAgent image
-        run: |
-          kubectl get pods -n amazon-cloudwatch --output json | \
-          jq '.items[0].status.containerStatuses[0].imageID'
+          echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
 
       - name: Get the sample app endpoint
         run: echo "APP_ENDPOINT=$(terraform output python_app_endpoint)" >> $GITHUB_ENV
@@ -328,12 +352,12 @@ jobs:
         run: ./gradlew validator:run --args='-c python/eks/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --app-namespace ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ inputs.test-cluster-name }}
+          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
+          --platform-info ${{ env.CLUSTER_NAME }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
@@ -345,12 +369,12 @@ jobs:
         run: ./gradlew validator:run --args='-c python/eks/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --app-namespace ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ inputs.test-cluster-name }}
+          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
+          --platform-info ${{ env.CLUSTER_NAME }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-name python-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
@@ -363,11 +387,11 @@ jobs:
         run: ./gradlew validator:run --args='-c python/eks/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --app-namespace ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ inputs.test-cluster-name }}
+          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
+          --platform-info ${{ env.CLUSTER_NAME }}
           --service-name python-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
@@ -379,15 +403,15 @@ jobs:
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
             aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
             --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
+            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
             --value 0.0 \
-            --region ${{ inputs.aws-region }}
+            --region ${{ env.E2E_TEST_AWS_REGION }}
           else
             aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
             --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
+            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
             --value 1.0 \
-            --region ${{ inputs.aws-region }}
+            --region ${{ env.E2E_TEST_AWS_REGION }}
           fi
 
       # Clean up Procedures
@@ -399,15 +423,15 @@ jobs:
         run: |
           ./clean-app-signals.sh \
           ${{ inputs.test-cluster-name }} \
-          ${{ inputs.aws-region }} \
-          ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}
+          ${{ env.E2E_TEST_AWS_REGION }} \
+          ${{ env.SAMPLE_APP_NAMESPACE }}
 
       # This step also deletes lingering resources from previous test runs
       - name: Delete all sample app resources
         if: always()
         continue-on-error: true
         timeout-minutes: 10
-        run: kubectl delete namespace ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}
+        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }}
 
       - name: Terraform destroy
         if: always()
@@ -417,13 +441,13 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}" \
-            -var="aws_region=${{ inputs.aws-region }}" \
+            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
-            -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
-            -var="test_namespace=${{ env.PYTHON_SAMPLE_APP_NAMESPACE }}" \
+            -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+            -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
-            -var="python_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}" \
-            -var="python_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}"
+            -var="python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+            -var="python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
 
       - name: Remove aws access service account
         if: always()
@@ -431,6 +455,6 @@ jobs:
         run: |
           eksctl delete iamserviceaccount \
           --name service-account-${{ env.TESTING_ID }} \
-          --namespace ${{ env.PYTHON_SAMPLE_APP_NAMESPACE }} \
-          --cluster ${{ inputs.test-cluster-name }} \
-          --region ${{ inputs.aws-region }}
+          --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
+          --cluster ${{ env.CLUSTER_NAME }} \
+          --region ${{ env.E2E_TEST_AWS_REGION }}
