@@ -17,7 +17,7 @@ permissions:
 env:
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  E2E_RUNNER_ECR_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_RUNNER_IMAGE_ECR_NAME }}
+  E2E_RUNNER_ECR_NAME: github-runner-image-ecr
   RUN_ID: ${{ github.event.workflow_run.id }}
 
 jobs:

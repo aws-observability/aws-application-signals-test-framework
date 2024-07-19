@@ -61,7 +61,7 @@ jobs:
       - name: Output Public ECR Url
         id: get-public-ecr-url
         run: |
-          echo "public_ecr_url=$(aws ecr-public describe-repositories --repository-names ${{ secrets.APPLICATION_SIGNALS_E2E_RUNNER_IMAGE_ECR_NAME }} --query "repositories[0].repositoryUri" --output text)" >> $GITHUB_OUTPUT 
+          echo "public_ecr_url=$(aws ecr-public describe-repositories --repository-names github-runner-image-ecr --query "repositories[0].repositoryUri" --output text)" >> $GITHUB_OUTPUT 
 
   python-ec2-asg:
     runs-on: ubuntu-latest
@@ -90,6 +90,45 @@ jobs:
           max_retry: 3
           sleep_time: 60
 
+      - name: Check if Terraform File is Outdated on Docker Image
+        run: |
+          # Files to monitor for changes
+          docker_main_file="/terraform/main.tf"
+          docker_variable_file="/terraform/variables.tf"
+          docker_output_file="/terraform/output.tf"
+          repo_main_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/asg/main.tf"
+          repo_variable_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/asg/variables.tf"
+          repo_output_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/asg/output.tf"
+          
+          is_diff=0
+          # If there is a difference, output the env variable TERRAFORM_IS_DIFF and exit
+          diff "$docker_main_file" "$repo_main_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+          
+          diff "$docker_variable_file" "$repo_variable_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+          
+          diff "$docker_output_file" "$repo_output_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+          
+          echo "TERRAFORM_IS_DIFF=false" >> $GITHUB_ENV
+
+      - name: Initiate Terraform
+        if: env.TERRAFORM_IS_DIFF == 'true'
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/asg && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      # Delete the original Terraform folder on the image and repalce it with the new folder
+      - name: Move Terraform folder
+        if: env.TERRAFORM_IS_DIFF == 'true'
+        run: |
+          rm -rf /terraform/*
+          mv ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/asg/* /terraform/
+          
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
