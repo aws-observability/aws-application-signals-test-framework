@@ -215,6 +215,11 @@ resource "kubernetes_deployment" "dotnet_r_app_deployment" {
           name = "back-end"
           image = var.dotnet_remote_app_image
           image_pull_policy = "Always"
+          env {
+              #inject the test id to service name for unique App Signals metrics
+              name = "OTEL_SERVICE_NAME"
+              value = "dotnet-remote-application-${var.test_id}"
+            }
           port {
             container_port = 8081
           }
