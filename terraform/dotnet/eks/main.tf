@@ -114,6 +114,11 @@ resource "kubernetes_deployment" "dotnet_app_deployment" {
               name = "OTEL_SERVICE_NAME"
               value = "dotnet-application-${var.test_id}"
             }
+          env {
+              #Updated plugin name since it's incorrect in the addon
+              name = "OTEL_DOTNET_AUTO_PLUGINS"
+              value = "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
+            }
           
           port {
             container_port = 8080
@@ -220,6 +225,12 @@ resource "kubernetes_deployment" "dotnet_r_app_deployment" {
               name = "OTEL_SERVICE_NAME"
               value = "dotnet-remote-application-${var.test_id}"
             }
+          env {
+              #Updated plugin name since it's incorrect in the addon
+              name = "OTEL_DOTNET_AUTO_PLUGINS"
+              value = "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
+            }
+          
           port {
             container_port = 8081
           }
