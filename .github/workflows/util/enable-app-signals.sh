@@ -59,6 +59,7 @@ if [[ "${result}" == *"No addon: "* ]];  then
     aws eks create-addon \
         --cluster-name ${CLUSTER_NAME} \
         --addon-name amazon-cloudwatch-observability \
+        --resolve-conflicts OVERWRITE \
         --region ${REGION}
     # wait until the amazon-cloudwatch-observability add-on is active    
     # Fetch the initial status
