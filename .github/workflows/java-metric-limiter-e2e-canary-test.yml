@@ -6,7 +6,7 @@
 ## Operator and our sample app and remote service onto a native K8s cluster, call the
 ## APIs, and validate the generated telemetry, including logs, metrics, and traces.
 ## It will then clean up the cluster and EC2 instance it runs on for the next test run.
-name: Application Signals Enablement - Java E2E Metric Limiter Canary Testing
+name: Java Metric Limiter E2E Canary Testing
 on:
   schedule:
     - cron: '*/15 * * * *' # run the workflow every 15 minutes
@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  e2e-metric-limiter-test-1:
+  metric-limiter:
     strategy:
       fail-fast: false
       matrix:
@@ -25,7 +25,7 @@ jobs:
                       'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
                       'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
                       'us-east-1','us-east-2','us-west-1','us-west-2' ]
-    uses: ./.github/workflows/application-signals-java-e2e-metric-limiter-test.yml
+    uses: ./.github/workflows/java-metric-limiter-e2e-test.yml
     secrets: inherit
     with:
       aws-region: ${{ matrix.aws-region }}

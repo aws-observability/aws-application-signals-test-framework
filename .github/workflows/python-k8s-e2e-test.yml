@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Application Signals Enablement E2E Testing - Java E2E K8s on EC2 Use Case
+name: Python K8s on EC2 Use Case
 on:
   workflow_call:
     inputs:
@@ -13,6 +13,12 @@ on:
         type: string
       caller-workflow-name:
         required: true
+        type: string
+      adot-image-name:
+        required: false
+        type: string
+      cw-agent-operator-tag:
+        required: false
         type: string
       result-folder:
         required: false
@@ -27,27 +33,35 @@ permissions:
   contents: read
 
 env:
-  # The presence of this env var is required for use by terraform and AWS CLI commands
-  # It is not redundant
-  TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
+  CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  SAMPLE_APP_NAMESPACE: python-sample-app-namespace
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  MASTER_NODE_SSH_KEY: ${{ secrets.APP_SIGNALS_E2E_K8S_SSH_KEY_IAD }}
-  MAIN_SERVICE_ENDPOINT: ${{ secrets.APP_SIGNALS_E2E_K8S_MASTER_NODE_ENDPOINT }}
-  SAMPLE_APP_NAMESPACE: sample-app-namespace
-  TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  e2e-k8s-test:
+  python-k8s:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
       image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     steps:
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ env.E2E_TEST_AWS_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+
       - uses: actions/checkout@v4
         with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
+        # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
+        # fails due to transient issues. If it fails here, then we will try again later before the validators
       - name: Initiate Gradlew Daemon
         id: initiate-gradlew
         uses: ./.github/workflows/actions/execute_and_retry
@@ -58,57 +72,66 @@ jobs:
           max_retry: 3
           sleep_time: 60
 
-      - name: Generate testing id
-        run: echo TESTING_ID="${{ inputs.aws-region }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
       - name: Retrieve account
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
-          secret-ids:
-            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
-          aws-region: ${{ inputs.aws-region }}
+          secret-ids: |
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+            PYTHON_MAIN_SAMPLE_APP_IMAGE, e2e-test/python-main-sample-app-image
+            PYTHON_REMOTE_SAMPLE_APP_IMAGE, e2e-test/python-remote-sample-app-image
+            RELEASE_TESTING_ECR_ACCOUNT, e2e-test/${{ github.event.repository.name }}/python-k8s-release-testing-account
+            MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/python-k8s-master-node-endpoint
+            MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/python-k8s-ssh-key
 
       - name: Prepare and upload sample app deployment files
-        working-directory: terraform/java/k8s/deploy/resources
+        working-directory: terraform/python/k8s/deploy/resources
         run: |
-          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' frontend-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}#' frontend-service-depl.yaml
-          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' remote-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}#' remote-service-depl.yaml
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }} --key frontend-service-depl.yaml --body frontend-service-depl.yaml
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }} --key remote-service-depl.yaml --body remote-service-depl.yaml
+          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' python-frontend-service-depl.yaml
+          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}#' python-frontend-service-depl.yaml
+          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' python-remote-service-depl.yaml
+          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}#' python-remote-service-depl.yaml
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key python-frontend-service-depl-${{ github.event.repository.name }}.yaml --body python-frontend-service-depl.yaml
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key python-remote-service-depl-${{ github.event.repository.name }}.yaml --body python-remote-service-depl.yaml
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/k8s/deploy && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/deploy && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
 
+      - name: Get ECR to Patch
+        run: |
+          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+            echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent-operator" ]; then
+            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> $GITHUB_ENV
+          elif [ "${{ github.event.repository.name }}" = "aws-otel-python-instrumentation" ]; then
+            echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
+          fi
+
       - name: Deploy Operator and Sample App using Terraform
-        working-directory: terraform/java/k8s/deploy
+        working-directory: terraform/python/k8s/deploy
         run: |
           terraform apply -auto-approve \
-            -var="aws_region=${{ inputs.aws-region }}" \
+            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="ssh_key=${{ env.MASTER_NODE_SSH_KEY }}" \
-            -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}"
+            -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}" \
+            -var="repository=${{ github.event.repository.name }}" \
+            -var="patch_image_arn=${{ env.PATCH_IMAGE_ARN }}" \
+            -var="release_testing_ecr_account=${{ env.RELEASE_TESTING_ECR_ACCOUNT }}"
 
       - name: Get Remote Service IP
         run: |
-          echo REMOTE_SERVICE_IP="$(aws ssm get-parameter --region ${{ inputs.aws-region }} --name remote-service-ip | jq -r '.Parameter.Value')" >> $GITHUB_ENV
+          echo REMOTE_SERVICE_IP="$(aws ssm get-parameter --region us-east-1 --name python-remote-service-ip-${{ env.TESTING_ID }} | jq -r '.Parameter.Value')" >> $GITHUB_ENV
 
       - name: Wait for app endpoint to come online
         id: endpoint-check
@@ -125,6 +148,7 @@ jobs:
             attempt_counter=$(($attempt_counter+1))
             sleep 10
           done
+
       # This steps increases the speed of the validation by creating the telemetry data in advance
       # It is run after the gradle build to give the app time to initialize after the pods become ready
       - name: Call all test APIs
@@ -148,53 +172,53 @@ jobs:
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
         id: log-validation
-        run: ./gradlew validator:run --args='-c java/k8s/log-validation.yml
+        run: ./gradlew validator:run --args='-c python/k8s/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --platform-info k8s-cluster-${{ env.TESTING_ID }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-r-app-deployment-${{ env.TESTING_ID }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name python-sample-r-app-deployment-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Validate generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c java/k8s/metric-validation.yml
+        run: ./gradlew validator:run --args='-c python/k8s/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --platform-info k8s-cluster-${{ env.TESTING_ID }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-r-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-deployment-name sample-r-app-deployment-${{ env.TESTING_ID }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name python-sample-r-app-deployment-${{ env.TESTING_ID }}
+          --remote-service-deployment-name python-sample-r-app-deployment-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Validate generated traces
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c java/k8s/trace-validation.yml
+        run: ./gradlew validator:run --args='-c python/k8s/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --platform-info k8s-cluster-${{ env.TESTING_ID }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-r-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-deployment-name sample-r-app-deployment-${{ env.TESTING_ID }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name python-sample-r-app-deployment-${{ env.TESTING_ID }}
+          --remote-service-deployment-name python-sample-r-app-deployment-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -220,15 +244,15 @@ jobs:
         if: always()
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/k8s/cleanup && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/cleanup && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
       - name: Clean Up Operator and Sample App using Terraform
         if: always()
-        working-directory: terraform/java/k8s/cleanup
+        working-directory: terraform/python/k8s/cleanup
         run: |
           terraform apply -auto-approve \
-            -var="aws_region=${{ inputs.aws-region }}" \
+            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="ssh_key=${{ env.MASTER_NODE_SSH_KEY }}" \
             -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}"
@@ -236,7 +260,7 @@ jobs:
       - name: Terraform destroy - deployment
         if: always()
         continue-on-error: true
-        working-directory: terraform/java/k8s/deploy
+        working-directory: terraform/python/k8s/deploy
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
@@ -244,7 +268,7 @@ jobs:
       - name: Terraform destroy - cleanup
         if: always()
         continue-on-error: true
-        working-directory: terraform/java/k8s/cleanup
+        working-directory: terraform/python/k8s/cleanup
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
