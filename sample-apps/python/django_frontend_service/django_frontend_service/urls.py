@@ -9,5 +9,4 @@ urlpatterns = [
     path('outgoing-http-call', views.http_call),
     path('remote-service', views.downstream_service),
     path('client-call', views.async_service),
-    path('mysql', views.mysql),
 ]
