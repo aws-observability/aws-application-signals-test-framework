@@ -37,7 +37,7 @@ dependencies {
   implementation("io.opentelemetry:opentelemetry-api:1.34.1")
   implementation("software.amazon.awssdk:s3")
   implementation("software.amazon.awssdk:sts")
-  implementation("com.mysql:mysql-connector-j:8.4.0")
+  implementation("com.mysql:mysql-connector-j:8.0.33")
 }
 
 jib {

@@ -121,8 +121,8 @@ resource "aws_launch_configuration" "launch_configuration" {
     cd ./django_frontend_service
     # Delete the requests requirement as it is installed already using rpm. Only applicable for ec2 instances
     # created by Auto Scaling Groups
-    sudo sed -i '/requests/d' ./requirements.txt
-    python3.9 -m pip install -r requirements.txt
+    sudo sed -i '/requests/d' ./ec2-requirements.txt
+    python3.9 -m pip install -r ec2-requirements.txt
     export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
     export OTEL_PYTHON_DISTRO="aws_distro"
     export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
