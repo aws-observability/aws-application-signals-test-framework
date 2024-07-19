@@ -119,22 +119,7 @@ resource "kubernetes_deployment" "python_app_deployment" {
               name = "DJANGO_SETTINGS_MODULE"
               value = "django_frontend_service.settings"
             }
-          env {
-            name = "RDS_MYSQL_CLUSTER_ENDPOINT"
-            value = var.rds_mysql_cluster_endpoint
-          }
-          env {
-            name = "RDS_MYSQL_CLUSTER_DATABASE"
-            value = var.rds_mysql_cluster_database
-          }
-          env {
-            name = "RDS_MYSQL_CLUSTER_USERNAME"
-            value = var.rds_mysql_cluster_username
-          }
-          env {
-            name = "RDS_MYSQL_CLUSTER_PASSWORD"
-            value = var.rds_mysql_cluster_password
-          }
+          
           port {
             container_port = 8000
           }
