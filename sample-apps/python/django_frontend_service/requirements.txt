@@ -1,6 +1,7 @@
 Django~=4.2.9
-requests~=2.31.0
 boto3~=1.34.3
-schedule~=1.2.1
-python-dotenv~=1.0.1
 opentelemetry-api~=1.22.0
+pymysql==1.1.1
+python-dotenv~=1.0.1
+requests~=2.31.0
+schedule~=1.2.1
