@@ -14,7 +14,7 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^GET aws-sdk-call$",
+    "aws.local.operation": "^GET /aws-sdk-call$",
     "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
   },
   "metadata": {
@@ -40,15 +40,13 @@
       },
       "aws": {
         "region": "{{region}}",
-        "operation": "^GetBucketLocation$"
+        "operation": "^ListBuckets$"
       },
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
-        "aws.local.operation": "^GET aws-sdk-call$",
+        "aws.local.operation": "^GET /aws-sdk-call$",
         "aws.remote.service": "^AWS::S3$",
-        "aws.remote.operation": "^GetBucketLocation$",
-        "aws.remote.resource.type": "^AWS::S3::Bucket$",
-        "aws.remote.resource.identifier": "^e2e-test-bucket-name-{{testingId}}$",
+        "aws.remote.operation": "^ListBuckets$",
         "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
       },
       "metadata": {
@@ -67,6 +65,6 @@
 {
   "name": "^S3$",
   "aws": {
-    "operation": "^GetBucketLocation$"
+    "operation": "^ListBuckets$"
   }
 }]

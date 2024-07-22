@@ -9,7 +9,7 @@
   "K8s.Workload": "^dotnet-app-deployment-{{testingId}}$",
   "PlatformType": "^AWS::EKS$",
   "Service": "^{{serviceName}}$",
-  "Operation": "GET aws-sdk-call",
+  "Operation": "GET /aws-sdk-call",
   "Version": "^1$",
   "Telemetry.Source": "^LocalRootSpan$",
   "Host": "^ip(-[0-9]{1,3}){4}.*$"
@@ -25,12 +25,10 @@
   "K8s.Workload": "^dotnet-app-deployment-{{testingId}}$",
   "PlatformType": "^AWS::EKS$",
   "Service": "^{{serviceName}}$",
-  "Operation": "GET aws-sdk-call",
+  "Operation": "GET /aws-sdk-call",
   "Version": "^1$",
   "RemoteService": "AWS::S3",
-  "RemoteOperation": "GetBucketLocation",
-  "RemoteResourceIdentifier": "^e2e-test-bucket-name-{{testingId}}$",
-  "RemoteResourceType": "^AWS::S3::Bucket$",
+  "RemoteOperation": "ListBuckets",
   "Telemetry.Source": "^ClientSpan$",
   "Host": "^ip(-[0-9]{1,3}){4}.*$"
 }]

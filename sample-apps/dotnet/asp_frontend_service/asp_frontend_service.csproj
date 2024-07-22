@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="3.5.7.8" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.310.7" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.300.120" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
