@@ -192,7 +192,7 @@ jobs:
               -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
               -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
               -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
-              -var="rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}" \
+              -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' \
             || deployment_failed=$?
                     
             if [ $deployment_failed -ne 0 ]; then
@@ -374,6 +374,7 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
+          --remote-resource-identifier "information_schema|${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}|3306"
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 

@@ -1,0 +1,434 @@
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /mysql
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /mysql
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteService
+      value: mysql
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteService
+      value: mysql
+    -
+      name: RemoteResourceType
+      value: DB::Connection
+    -
+      name: RemoteResourceIdentifier
+      value: {{remoteResourceIdentifier}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /mysql
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+    -
+      name: RemoteResourceType
+      value: DB::Connection
+    -
+      name: RemoteResourceIdentifier
+      value: {{remoteResourceIdentifier}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+    -
+      name: RemoteResourceType
+      value: DB::Connection
+    -
+      name: RemoteResourceIdentifier
+      value: {{remoteResourceIdentifier}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /mysql
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /mysql
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteService
+      value: mysql
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteService
+      value: mysql
+    -
+      name: RemoteResourceType
+      value: DB::Connection
+    -
+      name: RemoteResourceIdentifier
+      value: {{remoteResourceIdentifier}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /mysql
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+    -
+      name: RemoteResourceType
+      value: DB::Connection
+    -
+      name: RemoteResourceIdentifier
+      value: {{remoteResourceIdentifier}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+    -
+      name: RemoteResourceType
+      value: DB::Connection
+    -
+      name: RemoteResourceIdentifier
+      value: {{remoteResourceIdentifier}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /mysql
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /mysql
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteService
+      value: mysql
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteService
+      value: mysql
+    -
+      name: RemoteResourceType
+      value: DB::Connection
+    -
+      name: RemoteResourceIdentifier
+      value: {{remoteResourceIdentifier}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /mysql
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+    -
+      name: RemoteResourceType
+      value: DB::Connection
+    -
+      name: RemoteResourceIdentifier
+      value: {{remoteResourceIdentifier}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:{{platformInfo}}/{{appNamespace}}
+    -
+      name: RemoteOperation
+      value: SELECT
+    -
+      name: RemoteService
+      value: mysql
+    -
+      name: RemoteResourceType
+      value: DB::Connection
+    -
+      name: RemoteResourceIdentifier
+      value: {{remoteResourceIdentifier}}
