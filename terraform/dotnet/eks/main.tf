@@ -226,11 +226,6 @@ resource "kubernetes_deployment" "dotnet_r_app_deployment" {
           image = var.dotnet_remote_app_image
           image_pull_policy = "Always"
           env {
-              #inject the test id to service name for unique App Signals metrics
-              name = "OTEL_SERVICE_NAME"
-              value = "dotnet-remote-application-${var.test_id}"
-            }
-          env {
               #Updated plugin name since it's incorrect in the addon
               name = "OTEL_DOTNET_AUTO_PLUGINS"
               value = "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
