@@ -40,6 +40,7 @@ resource "null_resource" "deploy" {
       git clone https://github.com/aws-observability/helm-charts -q
 
       cd helm-charts/charts/amazon-cloudwatch-observability/
+      git reset --hard e0e99c77f69ef388b0ffce769371f7c735a776e4
 
       echo "LOG: Installing CloudWatch Agent Operator using Helm"
       helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${var.aws_region} --set clusterName=k8s-cluster-${var.test_id}
@@ -48,6 +49,48 @@ resource "null_resource" "deploy" {
       sleep 60
       kubectl wait --for=condition=Ready pods --all --selector=app.kubernetes.io/name=amazon-cloudwatch-observability -n amazon-cloudwatch --timeout=60s
       kubectl wait --for=condition=Ready pods --all --selector=app.kubernetes.io/name=cloudwatch-agent -n amazon-cloudwatch --timeout=60s
+
+      if [ "${var.repository}" = "amazon-cloudwatch-agent" ]; then
+        RELEASE_TESTING_SECRET_NAME=release-testing-ecr-secret
+        RELEASE_TESTING_TOKEN=`aws ecr --region=us-west-2 get-authorization-token --output text --query authorizationData[].authorizationToken | base64 -d | cut -d: -f2`
+        kubectl delete secret -n amazon-cloudwatch --ignore-not-found $RELEASE_TESTING_SECRET_NAME
+        kubectl create secret -n amazon-cloudwatch docker-registry $RELEASE_TESTING_SECRET_NAME \
+          --docker-server=https://${var.release_testing_ecr_account}.dkr.ecr.us-west-2.amazonaws.com \
+          --docker-username=AWS \
+          --docker-password="$${RELEASE_TESTING_TOKEN}"
+
+        kubectl patch serviceaccount cloudwatch-agent -n amazon-cloudwatch -p='{"imagePullSecrets": [{"name": "release-testing-ecr-secret"}]}'
+        kubectl delete pods --all -n amazon-cloudwatch
+      elif [ "${var.repository}" = "amazon-cloudwatch-agent-operator" ]; then
+        RELEASE_TESTING_SECRET_NAME=release-testing-ecr-secret
+        RELEASE_TESTING_TOKEN=`aws ecr --region=us-west-2 get-authorization-token --output text --query authorizationData[].authorizationToken | base64 -d | cut -d: -f2`
+        kubectl delete secret -n amazon-cloudwatch --ignore-not-found $RELEASE_TESTING_SECRET_NAME
+        kubectl create secret -n amazon-cloudwatch docker-registry $RELEASE_TESTING_SECRET_NAME \
+          --docker-server=https://${var.release_testing_ecr_account}.dkr.ecr.us-west-2.amazonaws.com \
+          --docker-username=AWS \
+          --docker-password="$${RELEASE_TESTING_TOKEN}"
+
+        kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "release-testing-ecr-secret"}]}]'
+        kubectl delete pods --all -n amazon-cloudwatch
+      fi
+
+      if [ "${var.repository}" = "amazon-cloudwatch-agent-operator" ]; then
+        kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${var.patch_image_arn}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
+        kubectl delete pods --all -n amazon-cloudwatch
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+      elif [ "${var.repository}" = "amazon-cloudwatch-agent" ]; then
+        kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": ${var.patch_image_arn}}]'
+        kubectl delete pods --all -n amazon-cloudwatch
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+      elif [ "${var.repository}" = "aws-otel-java-instrumentation" ]; then
+        kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/0", "value": "--auto-instrumentation-java-image=${var.patch_image_arn}"}]'
+        kubectl delete pods --all -n amazon-cloudwatch
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+      fi
 
       # Create sample app namespace
       echo "LOG: Creating sample app namespace"
@@ -72,8 +115,22 @@ resource "null_resource" "deploy" {
 
       # cd to ensure everything is downloaded into root directory so cleanup is each
       cd ~
-      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key frontend-service-depl.yaml frontend-service-depl.yaml
-      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key remote-service-depl.yaml remote-service-depl.yaml
+      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key frontend-service-depl-${var.repository}.yaml frontend-service-depl.yaml
+      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key remote-service-depl-${var.repository}.yaml remote-service-depl.yaml
+
+      # Patch the staging image if this is running as part of release testing
+      if [ "${var.repository}" = "aws-otel-java-instrumentation" ]; then
+        RELEASE_TESTING_SECRET_NAME=release-testing-ecr-secret
+        kubectl delete secret -n sample-app-namespace --ignore-not-found $RELEASE_TESTING_SECRET_NAME
+        kubectl create secret -n sample-app-namespace docker-registry $RELEASE_TESTING_SECRET_NAME \
+          --docker-server=https://${var.release_testing_ecr_account}.dkr.ecr.us-east-1.amazonaws.com \
+          --docker-username=AWS \
+          --docker-password="$${TOKEN}"
+
+        yq eval '.spec.template.spec.imagePullSecrets += [{"name": "release-testing-ecr-secret"}]' -i frontend-service-depl.yaml
+        yq eval '.spec.template.spec.imagePullSecrets += [{"name": "release-testing-ecr-secret"}]' -i remote-service-depl.yaml
+      fi
+
       echo "LOG: Applying sample app deployment files"
       kubectl apply -f frontend-service-depl.yaml
       kubectl apply -f remote-service-depl.yaml
@@ -84,11 +141,12 @@ resource "null_resource" "deploy" {
       kubectl patch service sample-app-deployment-${var.test_id} -n sample-app-namespace --type='json' --patch='[{"op": "replace", "path": "/spec/ports/0/nodePort", "value":30100}]'
 
       # Wait for sample app to be reach ready state
+      sleep 10
       kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n sample-app-namespace
 
       # Emit remote service pod IP
       echo "LOG: Outputting remote service pod IP to SSM using put-parameter API"
-      aws ssm put-parameter --region ${var.aws_region} --name remote-service-ip --type String --overwrite --value $(kubectl get pod --selector=app=remote-app -n sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
+      aws ssm put-parameter --region ${var.aws_region} --name remote-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pod --selector=app=remote-app -n sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
 
       EOF
     ]
