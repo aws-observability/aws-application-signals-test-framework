@@ -37,8 +37,33 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
       name: Service
       value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
     -
       name: Environment
       value: ec2:default
@@ -121,8 +146,33 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
       name: Service
       value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
     -
       name: Environment
       value: ec2:default
@@ -205,8 +255,33 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
       name: Service
       value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
     -
       name: Environment
       value: ec2:default
