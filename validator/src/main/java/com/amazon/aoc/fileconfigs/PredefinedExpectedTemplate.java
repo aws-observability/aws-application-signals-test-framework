@@ -110,6 +110,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EKS_CLIENT_CALL_METRIC("/expected-data-template/python/eks/client-call-metric.mustache"),
   PYTHON_EKS_CLIENT_CALL_TRACE("/expected-data-template/python/eks/client-call-trace.mustache"),
 
+  PYTHON_EKS_RDS_MYSQL_METRIC("/expected-data-template/python/eks/rds-mysql-metric.mustache"),
   PYTHON_EKS_RDS_MYSQL_TRACE("/expected-data-template/python/eks/rds-mysql-trace.mustache"),
 
   /** Python EC2 Default Test Case Validations */
