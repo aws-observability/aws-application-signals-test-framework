@@ -32,7 +32,7 @@
   },
   "subsegments": [
     {
-      "name": "^www.amazon.com$",
+      "name": "^aws.amazon.com:443$",
       "http": {
         "request": {
           "url": "^https://www.amazon.com/$",
@@ -42,7 +42,7 @@
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
         "aws.local.operation": "^GET /outgoing-http-call$",
-        "aws.remote.service": "^www.amazon.com$",
+        "aws.remote.service": "^aws.amazon.com:443$",
         "aws.remote.operation": "^GET /$",
         "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
       },
@@ -60,5 +60,5 @@
   ]
 },
 {
-  "name": "^www.amazon.com$"
+  "name": "^aws.amazon.com:443$"
 }]
