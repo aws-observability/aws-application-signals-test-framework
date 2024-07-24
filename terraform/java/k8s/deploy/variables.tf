@@ -21,6 +21,10 @@ variable "aws_region" {
   default = "<aws-region>"
 }
 
+variable "e2e_resource_account_id" {
+  default = "<aws-account-id>"
+}
+
 variable "user" {
   default = "ec2-user"
 }

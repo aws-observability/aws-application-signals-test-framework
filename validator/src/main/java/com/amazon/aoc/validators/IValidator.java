@@ -15,7 +15,6 @@
 
 package com.amazon.aoc.validators;
 
-import com.amazon.aoc.callers.ICaller;
 import com.amazon.aoc.fileconfigs.FileConfig;
 import com.amazon.aoc.models.Context;
 import com.amazon.aoc.models.ValidationConfig;
@@ -24,7 +23,6 @@ public interface IValidator {
   void init(
       Context context,
       ValidationConfig validationConfig,
-      ICaller caller,
       FileConfig expectedDataTemplate)
       throws Exception;
 

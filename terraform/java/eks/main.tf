@@ -153,41 +153,6 @@ resource "kubernetes_service" "sample_app_service" {
   }
 }
 
-resource "kubernetes_ingress_v1" "sample-app-ingress" {
-  depends_on = [kubernetes_service.sample_app_service]
-  wait_for_load_balancer = true
-  metadata {
-    name = "sample-app-ingress-${var.test_id}"
-    namespace = var.test_namespace
-    annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-    }
-    labels = {
-        app = "sample-app-ingress"
-    }
-  }
-  spec {
-    rule {
-      http {
-        path {
-          path = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.sample_app_service.metadata[0].name
-              port {
-                number = 8080
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 # Set up the remote service
 
 resource "kubernetes_deployment" "sample_remote_app_deployment" {
@@ -251,47 +216,4 @@ resource "kubernetes_service" "sample_remote_app_service" {
       node_port = 30101
     }
   }
-}
-
-resource "kubernetes_ingress_v1" "sample-remote-app-ingress" {
-  depends_on = [kubernetes_service.sample_remote_app_service]
-  wait_for_load_balancer = true
-  metadata {
-    name = "sample-remote-app-ingress-${var.test_id}"
-    namespace = var.test_namespace
-    annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-    }
-    labels = {
-        app = "sample-remote-app-ingress"
-    }
-  }
-  spec {
-    rule {
-      http {
-        path {
-          path = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.sample_remote_app_service.metadata[0].name
-              port {
-                number = 8080
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-output "sample_app_endpoint" {
-  value = kubernetes_ingress_v1.sample-app-ingress.status.0.load_balancer.0.ingress.0.hostname
-}
-
-output "sample_remote_app_endpoint" {
-  value = kubernetes_ingress_v1.sample-remote-app-ingress.status.0.load_balancer.0.ingress.0.hostname
 }

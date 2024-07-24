@@ -21,7 +21,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.amazon.aoc.callers.HttpCaller;
 import com.amazon.aoc.exception.BaseException;
 import com.amazon.aoc.fileconfigs.LocalPathExpectedTemplate;
 import com.amazon.aoc.helpers.CWMetricHelper;
@@ -53,7 +52,6 @@ public class CWMetricValidatorTest {
   private static final String TESTING_ID = "testIdentifier";
 
   private Context context;
-  private HttpCaller httpCaller;
 
   static boolean isWindows() {
     return System.getProperty("os.name").toLowerCase().startsWith("win");
@@ -62,7 +60,6 @@ public class CWMetricValidatorTest {
   @BeforeEach
   public void setUp() throws Exception {
     context = initContext();
-    httpCaller = mockHttpCaller("traceId");
   }
 
   /**
@@ -163,18 +160,10 @@ public class CWMetricValidatorTest {
     return context;
   }
 
-  private HttpCaller mockHttpCaller(String traceId) throws Exception {
-    HttpCaller httpCaller = mock(HttpCaller.class);
-    SampleAppResponse sampleAppResponse = new SampleAppResponse();
-    sampleAppResponse.setTraceId(traceId);
-    when(httpCaller.callSampleApp()).thenReturn(sampleAppResponse);
-    return httpCaller;
-  }
-
   private List<Metric> getTestMetrics(String fileName) throws Exception {
     String localServiceTemplate = TEMPLATE_ROOT + fileName + ".mustache";
     return cwMetricHelper.listExpectedMetrics(
-        context, new LocalPathExpectedTemplate(localServiceTemplate), httpCaller);
+        context, new LocalPathExpectedTemplate(localServiceTemplate));
   }
 
   private CloudWatchService mockCloudWatchService(
@@ -219,7 +208,7 @@ public class CWMetricValidatorTest {
     // fake and mock a cloudwatch service
     List<Metric> metrics =
         cwMetricHelper.listExpectedMetrics(
-            context, validationConfig.getExpectedMetricTemplate(), httpCaller);
+            context, validationConfig.getExpectedMetricTemplate());
     CloudWatchService cloudWatchService = mock(CloudWatchService.class);
 
     // mock listMetrics
@@ -233,7 +222,7 @@ public class CWMetricValidatorTest {
       throws Exception {
     CWMetricValidator validator = new CWMetricValidator();
     validator.init(
-        context, validationConfig, httpCaller, validationConfig.getExpectedMetricTemplate());
+        context, validationConfig, validationConfig.getExpectedMetricTemplate());
     validator.setCloudWatchService(cloudWatchService);
     validator.setMaxRetryCount(1);
     validator.validate();

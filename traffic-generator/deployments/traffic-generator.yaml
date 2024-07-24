@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic-generator
+  labels:
+    app: traffic-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traffic-generator
+  template:
+    metadata:
+      labels:
+        app: traffic-generator
+    spec:
+      containers:
+        - name: traffic-generator
+          image: ${IMAGE}.dkr.ecr.us-west-2.amazonaws.com/traffic-generator:latest
+          imagePullPolicy: Always
+          env:
+            - name: MAIN_ENDPOINT
+              value: "${MAIN_ENDPOINT}"
+            - name: REMOTE_ENDPOINT
+              value: "${REMOTE_ENDPOINT}"
+            - name: ID
+              value: "${ID}"
+            - name: CANARY_TYPE
+              value: "${CANARY_TYPE}"
+      imagePullSecrets:
+        - name: ecr-secret

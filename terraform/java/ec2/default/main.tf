@@ -94,6 +94,8 @@ resource "aws_instance" "main_service_instance" {
   }
 }
 
+
+
 resource "null_resource" "main_service_setup" {
   connection {
     type = "ssh"
@@ -211,4 +213,43 @@ resource "null_resource" "remote_service_setup" {
   }
 
   depends_on = [aws_instance.remote_service_instance]
+}
+
+resource "null_resource" "traffic_generator_setup" {
+  connection {
+    type = "ssh"
+    user = var.user
+    private_key = local.private_key_content
+    host = aws_instance.main_service_instance.public_ip
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      <<-EOF
+        sudo yum install tmux nodejs -y
+
+        # Bring in the traffic generator files to EC2 Instance
+        traffic_generator_index='${file("../../../../traffic-generator/index.js")}'
+        traffic_generator_package='${file("../../../../traffic-generator/package.json")}'
+
+        echo $traffic_generator_index > index.js
+        echo $traffic_generator_package > package.json
+
+        # Install the traffic generator dependencies
+        npm install
+
+        # Export the environment variables
+        export MAIN_ENDPOINT="${aws_instance.main_service_instance.public_dns}"
+        export REMOTE_ENDPOINT="${aws_instance.remote_service_instance.public_ip}"
+        export ID="${var.test_id}"
+        export CANARY_TYPE="${var.canary_type}"
+
+        # Start the application
+        npm start
+
+      EOF
+    ]
+  }
+
+  depends_on = [null_resource.main_service_setup, null_resource.remote_service_setup]
 }
