@@ -48,22 +48,30 @@ jobs:
   get-public-ecr-url:
     runs-on: ubuntu-latest
     outputs:
-      url: ${{ steps.public-ecr-url.outputs.public-ecr-url }}
+      url: ${{ steps.get-public-ecr-url.outputs.public_ecr_url }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
-          fetch-depth: 0
+          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          aws-region: us-east-1
 
-      - name: Get Public ECR URL
-        id: public-ecr-url
-        uses: ./.github/workflows/actions/get_public_ecr_url
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
-          e2e-test-account-id: ${{ env.E2E_TEST_ACCOUNT_ID }}
-          e2e-test-role-name: ${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
-          repository-name: github-runner-image-ecr
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Output Public ECR Url
+        id: get-public-ecr-url
+        run: |
+          echo "public_ecr_url=$(aws ecr-public describe-repositories --repository-names github-runner-image-ecr --query "repositories[0].repositoryUri" --output text)" >> $GITHUB_OUTPUT   
 
   java-eks:
     runs-on: ubuntu-latest
