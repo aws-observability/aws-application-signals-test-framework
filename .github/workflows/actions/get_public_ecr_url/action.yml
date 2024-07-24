@@ -1,0 +1,51 @@
+# Composite action for retrieving the public ecr url
+name: Get Public ECR URL
+
+inputs:
+  e2e-test-account-id:
+    description: "Arn of account to retrieve account id where public ecr is located"
+    required: true
+  e2e-test-role-name:
+    description: "Arn of account where public ecr is located"
+    required: true
+  aws-region:
+    description: "Region where the test is running"
+    required: true
+  repository-name:
+    description: "Name of the public ecr to retrieve url of"
+    required: true
+
+outputs:
+  public-ecr-url:
+    description: "Url of the public ecr"
+    value: ${{ steps.get-public-ecr-url.outputs.public_ecr_url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      shell: bash
+      with:
+        role-to-assume: arn:aws:iam::${{ inputs.e2e-test-account-id }}:role/${{ inputs.e2e-test-role-name }}
+        aws-region: us-east-1
+
+    - name: Retrieve account
+      uses: aws-actions/aws-secretsmanager-get-secrets@v1
+      shell: bash
+      with:
+        secret-ids:
+          ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      shell: bash
+      with:
+        role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ inputs.e2e-test-role-name }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Output Public ECR Url
+      id: get-public-ecr-url
+      shell: bash
+      run: |
+        echo "public_ecr_url=$(aws ecr-public describe-repositories --repository-names ${{ inputs.repository-name }} --query "repositories[0].repositoryUri" --output text)" >> $GITHUB_OUTPUT

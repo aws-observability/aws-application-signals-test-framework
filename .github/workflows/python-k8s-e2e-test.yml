@@ -42,10 +42,39 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
+  get-public-ecr-url:
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.get-public-ecr-url.outputs.public_ecr_url }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Output Public ECR Url
+        id: get-public-ecr-url
+        run: |
+          echo "public_ecr_url=$(aws ecr-public describe-repositories --repository-names github-runner-image-ecr --query "repositories[0].repositoryUri" --output text)" >> $GITHUB_OUTPUT 
+
   python-k8s:
     runs-on: ubuntu-latest
+    needs: [ get-public-ecr-url ]
     container:
-      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
+      image: ${{ needs.get-public-ecr-url.outputs.url }}:python-k8s
     steps:
       - name: Generate testing id
         run: echo TESTING_ID="${{ env.E2E_TEST_AWS_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
@@ -67,6 +96,39 @@ jobs:
           cleanup: "./gradlew clean"
           max_retry: 3
           sleep_time: 60
+          
+      - name: Check if Terraform File is Outdated on Docker Image
+        run: |
+          # Files to monitor for changes
+          docker_main_file="/terraform/deploy/main.tf"
+          docker_variable_file="/terraform/deploy/variables.tf"
+          repo_main_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/deploy/main.tf"
+          repo_variable_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/deploy/variables.tf"
+
+          # If there is a difference, output the env variable TERRAFORM_IS_DIFF and exit
+          diff "$docker_main_file" "$repo_main_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_DEPLOY_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+
+          diff "$docker_variable_file" "$repo_variable_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_DEPLOY_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+
+          echo "TERRAFORM_DEPLOY_IS_DIFF=false" >> $GITHUB_ENV
+
+      - name: Initiate Terraform
+        if: env.TERRAFORM_DEPLOY_IS_DIFF == 'true'
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/deploy && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      # Delete the original Terraform folder on the image and repalce it with the new folder
+      - name: Move Terraform folder
+        if: env.TERRAFORM_DEPLOY_IS_DIFF == 'true'
+        run: |
+          rm -rf /terraform/deploy/*
+          mv ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/deploy/* /terraform/deploy/
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -86,7 +148,7 @@ jobs:
             MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/python-k8s-ssh-key
 
       - name: Prepare and upload sample app deployment files
-        working-directory: terraform/python/k8s/deploy/resources
+        working-directory: /terraform/deploy/resources
         run: |
           sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' python-frontend-service-depl.yaml
           sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}#' python-frontend-service-depl.yaml
@@ -94,14 +156,6 @@ jobs:
           sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}#' python-remote-service-depl.yaml
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key python-frontend-service-depl-${{ github.event.repository.name }}.yaml --body python-frontend-service-depl.yaml
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key python-remote-service-depl-${{ github.event.repository.name }}.yaml --body python-remote-service-depl.yaml
-
-      - name: Initiate Terraform
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/deploy && terraform init && terraform validate"
-          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
-          max_retry: 6
-          sleep_time: 60
 
       - name: Get ECR to Patch
         run: |
@@ -114,7 +168,7 @@ jobs:
           fi
 
       - name: Deploy Operator and Sample App using Terraform
-        working-directory: terraform/python/k8s/deploy
+        working-directory: /terraform/deploy
         run: |
           terraform apply -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
@@ -236,16 +290,43 @@ jobs:
           fi
 
       # Clean up Procedures
+      - name: Check if Terraform File is Outdated on Docker Image
+        run: |
+          # Files to monitor for changes
+          docker_main_file="/terraform/cleanup/main.tf"
+          docker_variable_file="/terraform/cleanup/variables.tf"
+          repo_main_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/cleanup/main.tf"
+          repo_variable_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/cleanup/variables.tf"
+
+          is_diff=0
+          # If there is a difference, output the env variable TERRAFORM_CLEANUP_IS_DIFF and exit
+          diff "$docker_main_file" "$repo_main_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_CLEANUP_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+
+          diff "$docker_variable_file" "$repo_variable_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_CLEANUP_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+
+          echo "TERRAFORM_CLEANUP_IS_DIFF=false" >> $GITHUB_ENV
+
       - name: Initiate Terraform for Cleanup
-        if: always()
+        if: env.TERRAFORM_CLEANUP_IS_DIFF == 'true'
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/cleanup && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      # Delete the original Terraform folder on the image and repalce it with the new folder
+      - name: Move Cleanup Terraform folder
+        if: env.TERRAFORM_CLEANUP_IS_DIFF == 'true'
+        run: |
+          rm -rf /terraform/cleanup/*
+          mv ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/k8s/cleanup/* /terraform/cleanup/
 
       - name: Clean Up Operator and Sample App using Terraform
         if: always()
-        working-directory: terraform/python/k8s/cleanup
+        working-directory: /terraform/cleanup
         run: |
           terraform apply -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
@@ -256,7 +337,7 @@ jobs:
       - name: Terraform destroy - deployment
         if: always()
         continue-on-error: true
-        working-directory: terraform/python/k8s/deploy
+        working-directory: /terraform/deploy
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
@@ -264,7 +345,7 @@ jobs:
       - name: Terraform destroy - cleanup
         if: always()
         continue-on-error: true
-        working-directory: terraform/python/k8s/cleanup
+        working-directory: /terraform/cleanup
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"

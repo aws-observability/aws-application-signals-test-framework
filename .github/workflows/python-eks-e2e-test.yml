@@ -45,10 +45,39 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
+  get-public-ecr-url:
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.get-public-ecr-url.outputs.public_ecr_url }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Output Public ECR Url
+        id: get-public-ecr-url
+        run: |
+          echo "public_ecr_url=$(aws ecr-public describe-repositories --repository-names github-runner-image-ecr --query "repositories[0].repositoryUri" --output text)" >> $GITHUB_OUTPUT 
+
   python-eks:
     runs-on: ubuntu-latest
+    needs: [ get-public-ecr-url ]
     container:
-      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
+      image: ${{ needs.get-public-ecr-url.outputs.url }}:python-eks
     steps:
       - name: Generate testing id and python sample app namespace
         run: |
@@ -72,6 +101,40 @@ jobs:
           cleanup: "./gradlew clean"
           max_retry: 3
           sleep_time: 60
+          
+      - name: Check if Terraform File is Outdated on Docker Image
+        run: |
+          # Files to monitor for changes
+          docker_main_file="/terraform/main.tf"
+          docker_variable_file="/terraform/variables.tf"
+          repo_main_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks/main.tf"
+          repo_variable_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks/variables.tf"
+
+          is_diff=0
+          # If there is a difference, output the env variable TERRAFORM_IS_DIFF and exit
+          diff "$docker_main_file" "$repo_main_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+
+          diff "$docker_variable_file" "$repo_variable_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+
+          echo "TERRAFORM_IS_DIFF=false" >> $GITHUB_ENV
+
+      - name: Initiate Terraform
+        if: env.TERRAFORM_IS_DIFF == 'true'
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      # Delete the original Terraform folder on the image and repalce it with the new folder
+      - name: Move Terraform folder
+        if: env.TERRAFORM_IS_DIFF == 'true'
+        run: |
+          rm -rf /terraform/*
+          mv ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks/* /terraform/
 
       - name: Download enablement script
         uses: ./.github/workflows/actions/execute_and_retry
@@ -155,14 +218,6 @@ jobs:
             RDS_MYSQL_CLUSTER_SECRETS, ${{env.RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME}}
           parse-json-secrets: true
 
-      - name: Initiate Terraform
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks && terraform init && terraform validate"
-          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
-          max_retry: 6
-          sleep_time: 60
-
       - name: Set Sample App Image
         run: |
             echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
@@ -170,7 +225,7 @@ jobs:
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-python-app
-        working-directory: terraform/python/eks
+        working-directory: /terraform
         run: |
           # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online. 
           # There may be occasional failures due to transitivity issues, so try up to 2 times. 
@@ -182,19 +237,19 @@ jobs:
             echo "Attempt $retry_counter"
             deployment_failed=0
             terraform apply -auto-approve \
-              -var='test_id=${{ env.TESTING_ID }}' \
-              -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
-              -var='kube_directory_path=${{ github.workspace }}/.kube' \
-              -var='eks_cluster_name=${{ env.CLUSTER_NAME }}' \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="kube_directory_path=${{ github.workspace }}/.kube" \
+              -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
               -var="eks_cluster_context_name=$(kubectl config current-context)" \
-              -var='test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}' \
-              -var='service_account_aws_access=service-account-${{ env.TESTING_ID }}' \
-              -var='python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}' \
-              -var='python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}' \
-              -var='rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}' \
-              -var='rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}' \
-              -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' \
-              -var='rds_mysql_cluster_database=information_schema' \
+              -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
+              -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+              -var="python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+              -var="python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
+              -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
+              -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
+              -var="rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}" \
+              -var="rds_mysql_cluster_database=information_schema" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
@@ -269,15 +324,15 @@ jobs:
 
               echo "Destroying terraform"
               terraform destroy -auto-approve \
-                -var='test_id=${{ env.TESTING_ID }}' \
-                -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
-                -var='kube_directory_path=${{ github.workspace }}/.kube' \
-                -var='eks_cluster_name=${{ env.CLUSTER_NAME }}' \
+                -var="test_id=${{ env.TESTING_ID }}" \
+                -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+                -var="kube_directory_path=${{ github.workspace }}/.kube" \
+                -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
                 -var="eks_cluster_context_name=$(kubectl config current-context)" \
-                -var='test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}' \
-                -var='service_account_aws_access=service-account-${{ env.TESTING_ID }}' \
-                -var='python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}' \
-                -var='python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}'
+                -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
+                -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+                -var="python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+                -var="python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
           
               retry_counter=$(($retry_counter+1))
             else
@@ -323,7 +378,7 @@ jobs:
 
       - name: Get the sample app endpoint
         run: echo "APP_ENDPOINT=$(terraform output python_app_endpoint)" >> $GITHUB_ENV
-        working-directory: terraform/python/eks
+        working-directory: /terraform
 
       # This steps increases the speed of the validation by creating the telemetry data in advance
       - name: Call all test APIs
@@ -437,17 +492,17 @@ jobs:
         if: always()
         continue-on-error: true
         timeout-minutes: 5
-        working-directory: terraform/python/eks
+        working-directory: /terraform
         run: |
           terraform destroy -auto-approve \
-            -var='test_id=${{ env.TESTING_ID }}' \
-            -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
-            -var='kube_directory_path=${{ github.workspace }}/.kube' \
-            -var='eks_cluster_name=${{ env.CLUSTER_NAME }}' \
-            -var='test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}' \
-            -var='service_account_aws_access=service-account-${{ env.TESTING_ID }}' \
-            -var='python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}' \
-            -var='python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}'
+            -var="test_id=${{ env.TESTING_ID }}" \
+            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+            -var="kube_directory_path=${{ github.workspace }}/.kube" \
+            -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+            -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
+            -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+            -var="python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+            -var="python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
 
       - name: Remove aws access service account
         if: always()

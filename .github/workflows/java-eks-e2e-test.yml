@@ -45,10 +45,31 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
+  get-public-ecr-url:
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.public-ecr-url.outputs.public-ecr-url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      - name: Get Public ECR URL
+        id: public-ecr-url
+        uses: ./.github/workflows/actions/get_public_ecr_url
+        with:
+          e2e-test-account-id: ${{ env.E2E_TEST_ACCOUNT_ID }}
+          e2e-test-role-name: ${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+          repository-name: github-runner-image-ecr
+
   java-eks:
     runs-on: ubuntu-latest
+    needs: [ get-public-ecr-url ]
     container:
-      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
+      image: ${{ needs.get-public-ecr-url.outputs.url }}:java-eks
     steps:
       - name: Generate testing id and sample app namespace
         run: |
@@ -72,6 +93,40 @@ jobs:
           cleanup: "./gradlew clean"
           max_retry: 3
           sleep_time: 60
+          
+      - name: Check if Terraform File is Outdated on Docker Image
+        run: |
+          # Files to monitor for changes
+          docker_main_file="/terraform/main.tf"
+          docker_variable_file="/terraform/variables.tf"
+          repo_main_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks/main.tf"
+          repo_variable_file="${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks/variables.tf"
+          
+          is_diff=0
+          # If there is a difference, output the env variable TERRAFORM_IS_DIFF and exit
+          diff "$docker_main_file" "$repo_main_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+
+          diff "$docker_variable_file" "$repo_variable_file" > /dev/null || is_diff=$?
+          [ $is_diff -ne 0 ] && echo "TERRAFORM_IS_DIFF=true" >> $GITHUB_ENV && exit 0
+
+          echo "TERRAFORM_IS_DIFF=false" >> $GITHUB_ENV
+
+      - name: Initiate Terraform
+        if: env.TERRAFORM_IS_DIFF == 'true'
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      # Delete the original Terraform folder on the image and repalce it with the new folder
+      - name: Move Terraform folder
+        if: env.TERRAFORM_IS_DIFF == 'true'
+        run: |
+          rm -rf /terraform/*
+          mv ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks/* /terraform/
 
       - name: Download enablement script
         uses: ./.github/workflows/actions/execute_and_retry
@@ -136,14 +191,14 @@ jobs:
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}"
           sleep_time: 60
-
+          
       - name: Get RDS database cluster metadata
         continue-on-error: true
         run: |
-          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint" --output text)
+          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint | [0]" --output text)
           echo RDS_MYSQL_CLUSTER_ENDPOINT="$RDS_MYSQL_CLUSTER_ENDPOINT" >> $GITHUB_ENV
-          RDS_MYSQL_CLUSTER_IDENTIFIER=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].DBClusterIdentifier" --output text)
-          RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME=$(aws secretsmanager list-secrets --region ${{inputs.aws-region}} --query "SecretList[?Tags[?Value=='arn:aws:rds:${{inputs.aws-region}}:${{env.ACCOUNT_ID}}:cluster:$RDS_MYSQL_CLUSTER_IDENTIFIER']].Name" --output text)
+          RDS_MYSQL_CLUSTER_IDENTIFIER=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].DBClusterIdentifier | [0]" --output text)
+          RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME=$(aws secretsmanager list-secrets --region ${{inputs.aws-region}} --query "SecretList[?Tags[?Value=='arn:aws:rds:${{inputs.aws-region}}:${{env.ACCOUNT_ID}}:cluster:$RDS_MYSQL_CLUSTER_IDENTIFIER']].Name | [0]" --output text)
           echo RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME="$RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME" >> $GITHUB_ENV
 
       - name: Get RDS database credentials from SecretsManager
@@ -154,14 +209,6 @@ jobs:
             RDS_MYSQL_CLUSTER_SECRETS, ${{env.RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME}}
           parse-json-secrets: true
 
-      - name: Initiate Terraform
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks && terraform init && terraform validate"
-          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
-          max_retry: 6
-          sleep_time: 60
-
       - name: Set Sample App Image
         run: |
           echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
@@ -169,7 +216,7 @@ jobs:
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-sample-app
-        working-directory: terraform/java/eks
+        working-directory: /terraform
         run: |  
           # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online. 
           # There may be occasional failures due to transitivity issues, so try up to 2 times. 
@@ -192,7 +239,7 @@ jobs:
               -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
               -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
               -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
-              -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' \
+              -var="rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}" \
             || deployment_failed=$?
                     
             if [ $deployment_failed -ne 0 ]; then
@@ -318,7 +365,7 @@ jobs:
           echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
 
       - name: Get the sample app endpoint
-        working-directory: terraform/java/eks
+        working-directory: /terraform
         run: echo "APP_ENDPOINT=$(terraform output sample_app_endpoint)" >> $GITHUB_ENV
 
       # This steps increases the speed of the validation by creating the telemetry data in advance
@@ -374,7 +421,6 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --remote-resource-identifier "information_schema|${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}|3306"
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -435,7 +481,7 @@ jobs:
         if: always()
         continue-on-error: true
         timeout-minutes: 5
-        working-directory: terraform/java/eks
+        working-directory: /terraform
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}" \
@@ -456,3 +502,4 @@ jobs:
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}
+
