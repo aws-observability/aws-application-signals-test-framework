@@ -44,7 +44,7 @@ public class ValidatorFactory {
     FileConfig expectedData = null;
     switch (validationConfig.getValidationType()) {
       case "trace":
-        validator = new TraceValidator(new XRayService(context.getRegion()), 2, 10);
+        validator = new TraceValidator(new XRayService(context.getRegion()), 2, 5);
         expectedData = validationConfig.getExpectedTraceTemplate();
         break;
       case "cw-metric":
