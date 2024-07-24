@@ -78,7 +78,7 @@ if [[ "${result}" == *"No addon: "* ]];  then
     done
 
     # patch cw agent to instrument dotnet
-    curl https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetE2ETests/.github/workflows/util/cwagent-operator-rendered.yaml | sed 's/{{cluster_name}}/'${CLUSTER_NAME}'/g;s/{{region_name}}/'${REGION}'/g' | kubectl apply -f -
+    curl https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/main/.github/workflows/util/cwagent-operator-rendered.yaml | sed 's/{{cluster_name}}/'${CLUSTER_NAME}'/g;s/{{region_name}}/'${REGION}'/g' | kubectl apply -f -
 
     echo "EKS amazon-cloudwatch-observability add-on is now ACTIVE"
 else
@@ -110,7 +110,7 @@ else
         done
 
         # patch cw agent to instrument dotnet
-        curl https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetE2ETests/.github/workflows/util/cwagent-operator-rendered.yaml | sed 's/{{cluster_name}}/'${CLUSTER_NAME}'/g;s/{{region_name}}/'${REGION}'/g' | kubectl apply -f -
+        curl https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/main/.github/workflows/util/cwagent-operator-rendered.yaml | sed 's/{{cluster_name}}/'${CLUSTER_NAME}'/g;s/{{region_name}}/'${REGION}'/g' | kubectl apply -f -
 
         echo "EKS amazon-cloudwatch-observability add-on is now ACTIVE"
       else
