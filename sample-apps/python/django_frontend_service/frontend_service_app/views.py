@@ -1,10 +1,12 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 import logging
+import os
 import threading
 import time
 
 import boto3
+import pymysql
 import requests
 import schedule
 from django.http import HttpResponse, JsonResponse
@@ -105,3 +107,18 @@ def get_xray_trace_id():
     xray_trace_id = f"1-{trace_id[:8]}-{trace_id[8:]}"
 
     return JsonResponse({"traceId": xray_trace_id})
+
+def mysql(request):
+    logger.info("mysql received")
+    try:
+        connection = pymysql.connect(host=os.environ["RDS_MYSQL_CLUSTER_ENDPOINT"],
+                                     user=os.environ["RDS_MYSQL_CLUSTER_USERNAME"],
+                                     password=os.environ["RDS_MYSQL_CLUSTER_PASSWORD"],
+                                     database=os.environ["RDS_MYSQL_CLUSTER_DATABASE"])
+        with connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM tables LIMIT 1;")
+    except Exception as e:  # pylint: disable=broad-except
+        logger.error("Could not complete http request to RDS database:" + str(e))
+    finally:
+        return get_xray_trace_id()

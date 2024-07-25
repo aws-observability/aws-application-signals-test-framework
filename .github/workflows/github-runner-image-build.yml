@@ -1,0 +1,46 @@
+# This workflow will trigger whenever there is a new change in Terraform or Dockerfile and build new images
+# to be used by the E2E runners. This image contains pre-built dependencies so that they don't need to be built
+# everytime during E2E runs
+name: Build Github Runner Image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+      - 'terraform/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        terraform-dir: [ { name: 'java-eks', dir: '/terraform/java/eks' },
+                         { name: 'java-ec2-default', dir: '/terraform/java/ec2/default' },
+                         { name: 'java-ec2-asg', dir: '/terraform/java/ec2/asg' },
+                         { name: 'java-k8s', dir: '/terraform/java/k8s' },
+                         { name: 'python-eks', dir: '/terraform/python/eks' },
+                         { name: 'python-ec2-default', dir: '/terraform/python/ec2/default' },
+                         { name: 'python-ec2-asg', dir: '/terraform/python/ec2/asg' },
+                         { name: 'python-k8s', dir: '/terraform/python/k8s' } ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build docker image
+        run: docker build -t ${{ matrix.terraform-dir.name }}:latest --build-arg TERRAFORM_DIR=${{ matrix.terraform-dir.dir }} .
+
+      - name: Save docker image as .tar
+        run: docker save ${{ matrix.terraform-dir.name }}:latest > ${{ matrix.terraform-dir.name }}.tar
+
+      - name: Upload docker image
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.terraform-dir.name }}.tar
+          path: ${{ matrix.terraform-dir.name }}.tar
