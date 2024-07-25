@@ -141,9 +141,9 @@ jobs:
         continue-on-error: true
         run: |
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
-          RDS_MYSQL_CLUSTER_IDENTIFIER="RdsAuroraCWAgentOperatorE2EClusterForMySQL"
+          RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroracwagentoperatore2eclusterformysql"
           elif [ "${{ github.event.repository.name }}" = "aws-application-signals-test-framework" ]; then
-          RDS_MYSQL_CLUSTER_IDENTIFIER="RdsAuroraJavaClusterForMySQL"
+          RDS_MYSQL_CLUSTER_IDENTIFIER="rdsaurorajavaclusterformysql"
           fi
           RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier $RDS_MYSQL_CLUSTER_IDENTIFIER --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint" --output text)
           echo RDS_MYSQL_CLUSTER_ENDPOINT="$RDS_MYSQL_CLUSTER_ENDPOINT" >> $GITHUB_ENV
