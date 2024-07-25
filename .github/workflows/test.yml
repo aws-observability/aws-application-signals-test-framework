@@ -1,0 +1,27 @@
+# testing
+name: Test
+on:
+  push:
+    branches:
+      - rds-release-testing
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  java-eks:
+    uses: ./.github/workflows/java-eks-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
+  python-eks:
+    needs: [ java-eks ]
+    uses: ./.github/workflows/python-eks-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
