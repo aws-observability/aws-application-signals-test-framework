@@ -39,6 +39,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EKS_CLIENT_CALL_METRIC("/expected-data-template/java/eks/client-call-metric.mustache"),
   JAVA_EKS_CLIENT_CALL_TRACE("/expected-data-template/java/eks/client-call-trace.mustache"),
 
+  JAVA_EKS_RDS_MYSQL_METRIC("/expected-data-template/java/eks/rds-mysql-metric.mustache"),
+
   /** Java EC2 Default Test Case Validations */
   JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/default/outgoing-http-call-log.mustache"),
   JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/ec2/default/outgoing-http-call-metric.mustache"),
