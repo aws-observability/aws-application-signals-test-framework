@@ -152,6 +152,9 @@ jobs:
             RDS_MYSQL_CLUSTER_IDENTIFIER="rdsaurorajavaclusterformysql"
           elif [ "${{ env.CLUSTER_NAME }}" = "e2e-playground" ]; then
             RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraplaygroundclusterformysql"
+          else
+            echo "${{ env.CLUSTER_NAME }} is not a known cluster name"
+            exit 1
           fi
           RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier $RDS_MYSQL_CLUSTER_IDENTIFIER --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint" --output text)
           echo RDS_MYSQL_CLUSTER_ENDPOINT="$RDS_MYSQL_CLUSTER_ENDPOINT" >> $GITHUB_ENV
