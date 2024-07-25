@@ -15,9 +15,50 @@ TAG_DO_NOT_DELETE = 'do-not-delete'
 # Create an EC2 client
 session = boto3.Session()
 ec2 = session.client('ec2')
+autoscaling = session.client('autoscaling')
 
 # configure logging
 logging.basicConfig(level=logging.INFO)
+
+def delete_old_autoscaling_groups():
+    current_time = datetime.now(timezone.utc)
+
+    time_threshold = current_time - timedelta(hours=3)
+
+     # Initialize the paginator
+    paginator = autoscaling.get_paginator('describe_auto_scaling_groups')
+
+    # Iterate through each page of results
+    for page in paginator.paginate():
+        auto_scaling_groups = page['AutoScalingGroups']
+        for asg in auto_scaling_groups:
+            asg_name = asg['AutoScalingGroupName']
+            tags = asg['Tags']
+
+            eks_tag_present = any(tag['Key'] == 'eks:cluster-name' for tag in tags)
+            if eks_tag_present:
+                logging.info(f"Skipping autoscaling group with 'eks:cluster-name' tag: {asg_name}.")
+                continue
+
+            if not _is_active(asg):
+                logging.info(f"Skipping autoscaling group {asg_name} with terminating instances.")
+                continue
+
+            logging.info(f"autoscaling group {asg_name} is active.")
+
+            creation_time = asg['CreatedTime']
+            if creation_time < time_threshold:
+                print(f"Deleting autoscaling group: {asg_name}.")
+                autoscaling.delete_auto_scaling_group(AutoScalingGroupName=asg_name, ForceDelete=True)
+
+
+def _is_active(asg):
+    for instance in asg['Instances']:
+        if instance['LifecycleState'] in [
+            'Terminating', 'Terminating:Wait', 'Terminating:Proceed'
+        ]:
+            return False
+    return True
 
 
 def _get_instances_to_terminate():
@@ -126,6 +167,11 @@ def _terminate_instances(instances_to_terminate):
 
 
 if __name__ == '__main__':
+    logging.info("Start scanning autoscaling group...")
+    delete_old_autoscaling_groups()
+    logging.info("Scanning autoscaling group done...")
+
+    logging.info("Start scanning ec2 instances...")
     instances = _get_instances_to_terminate()
     if len(instances) == 0:
         logging.info("No instances to terminate")
