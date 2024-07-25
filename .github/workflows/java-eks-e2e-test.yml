@@ -137,12 +137,28 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}"
           sleep_time: 60
 
+      - name: Get RDS DB Cluster Identifier
+        run: |
+          if [ "${{ env.CLUSTER_NAME }}" = "e2e-enablement-script-test" ]; then
+            echo DB_CLUSTER_IDENTIFIER="rdsauroraenablementscriptpythone2eclusterformysql" >> $GITHUB_ENV
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-test" ]; then
+            echo DB_CLUSTER_IDENTIFIER="rdsauroracwagente2eclusterformysql" >> $GITHUB_ENV
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-adot-test" ]; then
+            echo DB_CLUSTER_IDENTIFIER="rdsauroraadote2eclusterformysql" >> $GITHUB_ENV
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-operator-test" ]; then
+            echo DB_CLUSTER_IDENTIFIER="rdsauroracwagentoperatore2eclusterformysql" >> $GITHUB_ENV
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-canary-test" ]; then
+            echo DB_CLUSTER_IDENTIFIER="rdsaurorajavaclusterformysql" >> $GITHUB_ENV
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-playground" ]; then
+            echo DB_CLUSTER_IDENTIFIER="rdsauroraplaygroundclusterformysql" >> $GITHUB_ENV
+          fi
+
       - name: Get RDS database cluster metadata
         continue-on-error: true
         run: |
-          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint" --output text)
+          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier $DB_CLUSTER_IDENTIFIER --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint" --output text)
           echo RDS_MYSQL_CLUSTER_ENDPOINT="$RDS_MYSQL_CLUSTER_ENDPOINT" >> $GITHUB_ENV
-          RDS_MYSQL_CLUSTER_IDENTIFIER=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].DBClusterIdentifier" --output text)
+          RDS_MYSQL_CLUSTER_IDENTIFIER=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier $DB_CLUSTER_IDENTIFIER --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].DBClusterIdentifier" --output text)
           RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME=$(aws secretsmanager list-secrets --region ${{inputs.aws-region}} --query "SecretList[?Tags[?Value=='arn:aws:rds:${{inputs.aws-region}}:${{env.ACCOUNT_ID}}:cluster:$RDS_MYSQL_CLUSTER_IDENTIFIER']].Name" --output text)
           echo RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME="$RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME" >> $GITHUB_ENV
 
