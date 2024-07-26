@@ -239,7 +239,7 @@ resource "null_resource" "traffic_generator_setup" {
         npm install
 
         # Export the environment variables
-        export MAIN_ENDPOINT="${aws_instance.main_service_instance.public_dns}"
+        export MAIN_ENDPOINT="localhost:8080"
         export REMOTE_ENDPOINT="${aws_instance.remote_service_instance.public_ip}"
         export ID="${var.test_id}"
         export CANARY_TYPE="${var.canary_type}"

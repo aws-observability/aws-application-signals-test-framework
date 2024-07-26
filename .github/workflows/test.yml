@@ -15,16 +15,16 @@ permissions:
   contents: read
 
 jobs:
-#  default:
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        aws-region: ['us-east-1']
-#    uses: ./.github/workflows/java-ec2-default-e2e-test.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ matrix.aws-region }}
-#      caller-workflow-name: 'test'
+  default:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: ['us-east-1']
+    uses: ./.github/workflows/java-ec2-default-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      caller-workflow-name: 'test'
 
 #  java-eks:
 #    strategy:
@@ -38,17 +38,17 @@ jobs:
 #      test-cluster-name: 'e2e-playground'
 #      caller-workflow-name: 'test'
 #
-  python-eks:
-    strategy:
-      fail-fast: false
-      matrix:
-        aws-region: [ 'us-east-1' ]
-    uses: ./.github/workflows/python-eks-e2e-test.yml
-    secrets: inherit
-    with:
-      aws-region: ${{ matrix.aws-region }}
-      test-cluster-name: 'e2e-playground'
-      caller-workflow-name: 'test'
+#  python-eks:
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        aws-region: [ 'us-east-1' ]
+#    uses: ./.github/workflows/python-eks-e2e-test.yml
+#    secrets: inherit
+#    with:
+#      aws-region: ${{ matrix.aws-region }}
+#      test-cluster-name: 'e2e-playground'
+#      caller-workflow-name: 'test'
 
 #  metric-limiter:
 #    strategy:
