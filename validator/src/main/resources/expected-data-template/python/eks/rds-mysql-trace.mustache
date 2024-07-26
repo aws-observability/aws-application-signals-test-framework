@@ -22,9 +22,9 @@
         "metadata": {
           "default": {
             "aws.span.kind": "^CLIENT$",
-            "EKS.Cluster": "^e2e-python-canary-test$",
+            "EKS.Cluster": "^{{platformInfo}}$",
             "PlatformType": "^AWS::EKS$"
-          }
+	  }
         },
         "annotations": {
           "aws.local.service": "^{{serviceName}}$",
@@ -54,14 +54,12 @@
     },
     "metadata": {
       "default": {
-        "otel.resource.aws.log.group.names": "^/aws/containerinsights/e2e-python-canary-test/application$",
+        "otel.resource.aws.log.group.names": "^/aws/containerinsights/{{platformInfo}}/application$",
         "otel.resource.service.name": "^{{serviceName}}$",
         "aws.span.kind": "^LOCAL_ROOT$",
         "otel.resource.cloud.platform": "^aws_eks$",
-        "EKS.Cluster": "^e2e-python-canary-test$",
+        "EKS.Cluster": "^{{platformInfo}}$",
         "otel.resource.telemetry.sdk.name": "^opentelemetry$",
-        "otel.resource.ec2.tag.kubernetes.io/cluster/e2e-python-canary-test": "^owned$",
-        "otel.resource.k8s.container.name": "^back-end$",
         "otel.resource.cloud.account.id": "^{{accountId}}$",
         "http.route": "^mysql$",
         "PlatformType": "^AWS::EKS$",
