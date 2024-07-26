@@ -90,7 +90,7 @@ resource "aws_launch_configuration" "launch_configuration" {
   key_name = local.ssh_key_name
   associate_public_ip_address = true
   iam_instance_profile = "APP_SIGNALS_EC2_TEST_ROLE"
-  security_groups = [aws_default_vpc.default.default_security_group_id]
+  security_groups = ["sg-0d058958ce7848ddc"]
 
   user_data = <<-EOF
     #!/bin/bash
@@ -140,6 +140,24 @@ resource "aws_launch_configuration" "launch_configuration" {
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
+
+    # Deploy Traffic Generator
+    sudo yum install nodejs aws-cli unzip tmux -y
+
+    # Bring in the traffic generator files to EC2 Instance
+    aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
+    unzip ./traffic-generator.zip -d ./
+
+    # Install the traffic generator dependencies
+    npm install
+
+    tmux new -s traffic-generator -d
+    tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8000\"" C-m
+    tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"${aws_instance.remote_service_instance.private_ip}\"" C-m
+    tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
+    tmux send-keys -t traffic-generator "export CANARY_TYPE=\"${var.canary_type}\"" C-m
+    tmux send-keys -t traffic-generator "npm start" C-m
+
     EOF
 }
 
@@ -156,7 +174,7 @@ resource "aws_instance" "remote_service_instance" {
   instance_type                         = "t3.micro"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
+  vpc_security_group_ids                = ["sg-0d058958ce7848ddc"]
   associate_public_ip_address           = true
   instance_initiated_shutdown_behavior  = "terminate"
   metadata_options {

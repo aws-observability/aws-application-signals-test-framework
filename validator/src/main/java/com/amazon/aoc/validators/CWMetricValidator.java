@@ -62,7 +62,7 @@ public class CWMetricValidator implements IValidator {
 
   @Override
   public void validate() throws Exception {
-      log.info("Start Metric Validation for path {}", validationConfig.getHttpPath());
+    log.info("Start Metric Validation for path {}", validationConfig.getHttpPath());
     // get expected metrics and remove the to be skipped dimensions
     final List<Metric> expectedMetricList =
         cwMetricHelper.listExpectedMetrics(context, expectedMetric);
@@ -134,8 +134,8 @@ public class CWMetricValidator implements IValidator {
           log.info("expected metricList is {}", expectedMetricList);
           compareMetricLists(expectedMetricList, actualMetricList);
         });
-
-      log.info("validation is passed for path {}", validationConfig.getHttpPath());
+    
+    log.info("validation is passed for path {}", validationConfig.getHttpPath());
   }
 
   private void addMetrics(

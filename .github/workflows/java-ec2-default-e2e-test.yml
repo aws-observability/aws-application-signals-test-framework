@@ -125,7 +125,8 @@ jobs:
               -var="canary_type=${{ github.job }}" \
             || deployment_failed=$?
           
-            echo $(terraform output private_key_content)
+            echo $(terraform state show aws_key_pair.aws_ssh_key)
+            echo $(terraform output -json private_key_content)
           
 
             if [ $deployment_failed -eq 1 ]; then
@@ -160,10 +161,8 @@ jobs:
         working-directory: terraform/java/ec2/default
         run: |
           echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_public_ip)" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
-          
-          sleep 10000
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'

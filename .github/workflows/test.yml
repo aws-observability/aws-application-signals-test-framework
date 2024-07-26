@@ -15,12 +15,44 @@ permissions:
   contents: read
 
 jobs:
-  default:
+  java-default:
     strategy:
       fail-fast: false
       matrix:
         aws-region: ['us-east-1']
     uses: ./.github/workflows/java-ec2-default-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      caller-workflow-name: 'test'
+  java-asg:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1' ]
+    uses: ./.github/workflows/java-ec2-asg-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      caller-workflow-name: 'test'
+
+  python-default:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1' ]
+    uses: ./.github/workflows/python-ec2-default-e2e-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      caller-workflow-name: 'test'
+
+  python-asg:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1' ]
+    uses: ./.github/workflows/python-ec2-asg-e2e-test.yml
     secrets: inherit
     with:
       aws-region: ${{ matrix.aws-region }}

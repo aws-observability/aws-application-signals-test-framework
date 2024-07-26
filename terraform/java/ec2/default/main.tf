@@ -44,7 +44,7 @@ locals {
 output "private_key_content" {
   description = "The SSH private key content"
   value       = local.private_key_content
-  sensitive   = false  # Mark as sensitive to prevent it from being exposed in logs or outputs
+  sensitive   = true  # Mark as sensitive to prevent it from being exposed in logs or outputs
 }
 
 data "aws_ami" "ami" {
@@ -88,7 +88,7 @@ resource "aws_instance" "main_service_instance" {
   instance_type                         = "t3.micro"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
+  vpc_security_group_ids                = ["sg-0d058958ce7848ddc"]
   associate_public_ip_address           = true
   instance_initiated_shutdown_behavior  = "terminate"
   metadata_options {
@@ -158,7 +158,7 @@ resource "aws_instance" "remote_service_instance" {
   instance_type                         = "t3.micro"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
+  vpc_security_group_ids                = ["sg-0d058958ce7848ddc"]
   associate_public_ip_address           = true
   instance_initiated_shutdown_behavior  = "terminate"
   metadata_options {
@@ -232,26 +232,21 @@ resource "null_resource" "traffic_generator_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-        sudo yum install tmux nodejs -y
+        sudo yum install nodejs aws-cli unzip tmux -y
 
         # Bring in the traffic generator files to EC2 Instance
-        traffic_generator_index='${file("../../../../traffic-generator/index.js")}'
-        traffic_generator_package='${file("../../../../traffic-generator/package.json")}'
-
-        echo $traffic_generator_index > index.js
-        echo $traffic_generator_package > package.json
+        aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
+        unzip ./traffic-generator.zip -d ./
 
         # Install the traffic generator dependencies
         npm install
 
-        # Export the environment variables
-        export MAIN_ENDPOINT="localhost:8080"
-        export REMOTE_ENDPOINT="${aws_instance.remote_service_instance.public_ip}"
-        export ID="${var.test_id}"
-        export CANARY_TYPE="${var.canary_type}"
-
-        # Start the application
-        npm start
+        tmux new -s traffic-generator -d
+        tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8080\"" C-m
+        tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"${aws_instance.remote_service_instance.private_ip}\"" C-m
+        tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
+        tmux send-keys -t traffic-generator "export CANARY_TYPE=\"${var.canary_type}\"" C-m
+        tmux send-keys -t traffic-generator "npm start" C-m
 
       EOF
     ]

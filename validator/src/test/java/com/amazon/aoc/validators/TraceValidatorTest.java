@@ -47,12 +47,13 @@ public class TraceValidatorTest extends ValidatorBaseTest {
         DOCUMENT = IOUtils.toString(new URL(TEMPLATE_ROOT + "trace/actual/example-trace-document.json"), Charset.defaultCharset());
     }
 
+    // TODO: Due to changing the logic of the trace validator, we do not search for traces by traceId anymore but
+    //  rather search for traces with specific attributes. Need to update the test with that new logic
 //    @Test
 //    public void testValidate() {
 //        when(xRayService.listTraceByIds(List.of(TRACE_ID))).thenReturn(List.of(trace));
 //        when(trace.getSegments()).thenReturn(List.of(segment));
 //        when(segment.getDocument()).thenReturn(DOCUMENT);
-//
 //        assertDoesNotThrow(() -> traceValidator.validate());
 //    }
 }
