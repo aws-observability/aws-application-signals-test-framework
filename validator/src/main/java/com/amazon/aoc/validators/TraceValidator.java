@@ -15,7 +15,6 @@
 
 package com.amazon.aoc.validators;
 
-import com.amazon.aoc.callers.ICaller;
 import com.amazon.aoc.enums.GenericConstants;
 import com.amazon.aoc.exception.BaseException;
 import com.amazon.aoc.exception.ExceptionCode;
@@ -41,14 +40,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.github.wnameless.json.flattener.JsonifyArrayList;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class TraceValidator implements IValidator {
   private MustacheHelper mustacheHelper = new MustacheHelper();
   private XRayService xrayService;
-  private ICaller caller;
   private Context context;
+  private ValidationConfig validationConfig;
   private FileConfig expectedTrace;
   private static final ObjectMapper MAPPER =
       new ObjectMapper().setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
@@ -63,15 +64,20 @@ public class TraceValidator implements IValidator {
 
   @Override
   public void init(
-      Context context, ValidationConfig validationConfig, ICaller caller, FileConfig expectedTrace)
+      Context context, ValidationConfig validationConfig, FileConfig expectedTrace)
       throws Exception {
-    this.caller = caller;
     this.context = context;
+    this.validationConfig = validationConfig;
     this.expectedTrace = expectedTrace;
   }
 
   @Override
   public void validate() throws Exception {
+    log.info("Start Trace Validation for path {}", validationConfig.getHttpPath());
+
+    Map<String, Object> storedTrace = this.getStoredTrace();
+    log.info("value of stored trace map: {}", storedTrace);
+
     // 2 retries for calling the sample app to handle the Lambda case,
     // where first request might be a cold start and have an additional unexpected subsegment
     boolean isMatched =
@@ -80,26 +86,12 @@ public class TraceValidator implements IValidator {
             Integer.parseInt(GenericConstants.SLEEP_IN_MILLISECONDS.getVal()),
             false,
             () -> {
-              // Call sample app and get locally stored trace
-              Map<String, Object> storedTrace = this.getStoredTrace();
-              log.info("value of stored trace map: {}", storedTrace);
-
-              // prepare list of trace IDs to retrieve from X-Ray service
-              String traceId = (String) storedTrace.get("[0].trace_id");
-              // If the traceId is invalid, then we don't want to try validating the retrieved trace
-              // with the invalid id. Therefore,
-              // remove it from the expected trace.
-              if (XRayService.DEFAULT_TRACE_ID.equals(traceId)) {
-                storedTrace.remove("[0].trace_id");
-              }
-              List<String> traceIdList = Collections.singletonList(traceId);
-
-              // Retry 5 times to since segments might not be immediately available in X-Ray service
+             // Retry 5 times to since segments might not be immediately available in X-Ray service
               RetryHelper.retry(
                   xRayRetryCount,
                   () -> {
                     // get retrieved trace from x-ray service
-                    Map<String, Object> retrievedTrace = this.getRetrievedTrace(traceIdList);
+                    Map<String, Object> retrievedTrace = this.getTrace();
                     log.info("value of retrieved trace map: {}", retrievedTrace);
 
                     // data model validation of other fields of segment document
@@ -132,28 +124,33 @@ public class TraceValidator implements IValidator {
       throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
     }
 
-    log.info("validation is passed for path {}", caller.getCallingPath());
+    log.info("validation is passed for path {}", validationConfig.getHttpPath());
   }
 
   // this method will hit get trace from x-ray service and get retrieved trace
-  private Map<String, Object> getRetrievedTrace(List<String> traceIdList) throws Exception {
-    List<Trace> retrieveTraceList = null;
-    // Special Case for the /client-call. The API call doesn't return the trace ID of the local root
-    // client span, so find the trace by filtering traces generated within the last 60 second
-    // with the serviceName and the local_root_client_call keyword.
-    if (XRayService.DEFAULT_TRACE_ID.equals(traceIdList.get(0))) {
-      List<TraceSummary> retrieveTraceLists =
-          xrayService.searchClientCallTraces(context.getServiceName());
-      List<String> traceIdLists = Collections.singletonList(retrieveTraceLists.get(0).getId());
-      retrieveTraceList = xrayService.listTraceByIds(traceIdLists);
-    } else {
-      retrieveTraceList = xrayService.listTraceByIds(traceIdList);
-    }
+  private Map<String, Object> getTrace() throws Exception {
+    // Filter used to find the expected trace.
+    // ServiceName will help identify trace specific to current e2e test as it contains the testing-id
+    String traceFilter = String.format("annotation.aws_local_service = \"%s\"", context.getServiceName());
 
-    if (retrieveTraceList == null || retrieveTraceList.isEmpty()) {
+    // Looking for trace generated by /client-call is different from the others because the API call is made by the sample app internally,
+    // and not through external callers
+    if (validationConfig.getHttpPath().contains("client-call")) {
+      traceFilter += " AND annotation.aws_local_service = \"local-root-client-call\"";
+    } else {
+      traceFilter += (String.format(" AND annotation.aws_local_operation = \"%s %s\"",
+              validationConfig.getHttpMethod().toUpperCase(),
+              validationConfig.getHttpPath()));
+    }
+    log.info("Trace Filter: {}", traceFilter);
+    List<TraceSummary> retrieveTraceLists = xrayService.searchTraces(traceFilter);
+    List<String> traceIdLists = Collections.singletonList(retrieveTraceLists.get(0).getId());
+    List<Trace> retrievedTraceList = xrayService.listTraceByIds(traceIdLists);
+
+    if (retrievedTraceList == null || retrievedTraceList.isEmpty()) {
       throw new BaseException(ExceptionCode.EMPTY_LIST);
     }
-    return this.flattenDocument(retrieveTraceList.get(0).getSegments());
+    return this.flattenDocument(retrievedTraceList.get(0).getSegments());
   }
 
   private Map<String, Object> flattenDocument(List<Segment> segmentList) {
@@ -188,18 +185,15 @@ public class TraceValidator implements IValidator {
     return JsonFlattener.flattenAsMap(segmentsJson.toString());
   }
 
-  // this method will hit a http endpoints of sample web apps and get stored trace
+  // This method will get the stored traces
   private Map<String, Object> getStoredTrace() throws Exception {
     Map<String, Object> flattenedJsonMapForStoredTraces = null;
-
-    SampleAppResponse sampleAppResponse = this.caller.callSampleApp();
 
     String jsonExpectedTrace = mustacheHelper.render(this.expectedTrace, context);
 
     try {
       // flattened JSON object to a map
       flattenedJsonMapForStoredTraces = JsonFlattener.flattenAsMap(jsonExpectedTrace);
-      flattenedJsonMapForStoredTraces.put("[0].trace_id", sampleAppResponse.getTraceId());
     } catch (Exception e) {
       e.printStackTrace();
     }
