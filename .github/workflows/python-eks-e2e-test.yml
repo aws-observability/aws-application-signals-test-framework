@@ -141,9 +141,24 @@ jobs:
       - name: Get RDS database cluster metadata
         continue-on-error: true
         run: |
-          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorapythonclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint | [0]" --output text)
+          if [ "${{ env.CLUSTER_NAME }}" = "e2e-enablement-script-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraenablementscriptpythone2eclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroracwagente2eclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-python-adot-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraadotpythone2eclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-operator-python-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroracwagentoperatorpythone2eclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-python-canary-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsaurorapythonclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-playground" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraplaygroundclusterformysql"
+          else
+            echo "${{ env.CLUSTER_NAME }} is not a known cluster name"
+            exit 1
+          fi
+          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier $RDS_MYSQL_CLUSTER_IDENTIFIER --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint | [0]" --output text)
           echo RDS_MYSQL_CLUSTER_ENDPOINT="$RDS_MYSQL_CLUSTER_ENDPOINT" >> $GITHUB_ENV
-          RDS_MYSQL_CLUSTER_IDENTIFIER=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorapythonclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].DBClusterIdentifier | [0]" --output text)
           RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME=$(aws secretsmanager list-secrets --region ${{inputs.aws-region}} --query "SecretList[?Tags[?Value=='arn:aws:rds:${{inputs.aws-region}}:${{env.ACCOUNT_ID}}:cluster:$RDS_MYSQL_CLUSTER_IDENTIFIER']].Name | [0]" --output text)
           echo RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME="$RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME" >> $GITHUB_ENV
 
