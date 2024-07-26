@@ -41,6 +41,12 @@ locals {
   private_key_content = tls_private_key.ssh_key.private_key_pem
 }
 
+output "private_key_content" {
+  description = "The SSH private key content"
+  value       = local.private_key_content
+  sensitive   = false  # Mark as sensitive to prevent it from being exposed in logs or outputs
+}
+
 data "aws_ami" "ami" {
   owners = ["amazon"]
   most_recent      = true

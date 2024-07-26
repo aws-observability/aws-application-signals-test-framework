@@ -124,6 +124,9 @@ jobs:
               -var="get_adot_jar_command=${{ env.GET_ADOT_JAR_COMMAND }}" \
               -var="canary_type=${{ github.job }}" \
             || deployment_failed=$?
+          
+            echo $(terraform output private_key_content)
+          
 
             if [ $deployment_failed -eq 1 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
@@ -159,6 +162,8 @@ jobs:
           echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_public_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
+          
+          sleep 10000
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
