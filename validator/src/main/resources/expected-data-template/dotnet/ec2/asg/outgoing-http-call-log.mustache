@@ -2,7 +2,7 @@
   "EC2.InstanceId": "^{{instanceId}}$",
   "Environment": "^ec2:{{platformInfo}}$",
   "PlatformType": "^AWS::EC2$",
-  "Operation": "GET /outgoing-http-call",
+  "Operation": "GET outgoing-http-call",
   "Version": "^1$",
   "Telemetry.Source": "^LocalRootSpan$",
   "Host": "^{{privateDnsName}}$"
@@ -11,7 +11,7 @@
   "EC2.InstanceId": "^{{instanceId}}$",
   "Environment": "^ec2:{{platformInfo}}$",
   "PlatformType": "^AWS::EC2$",
-  "Operation": "GET /outgoing-http-call",
+  "Operation": "GET outgoing-http-call",
   "Version": "^1$",
   "RemoteService": "aws.amazon.com:443",
   "RemoteOperation": "GET /",
