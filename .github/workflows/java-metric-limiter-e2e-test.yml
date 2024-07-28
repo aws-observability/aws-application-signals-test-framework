@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: Generate testing id and sample app namespace
         run: |
-          echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+          echo TESTING_ID="metric-limiter-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
           echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
           
       - uses: actions/checkout@v4
