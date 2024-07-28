@@ -28,4 +28,3 @@
   httpMethod: "get"
   callingType: "http"
   expectedMetricTemplate: "JAVA_EKS_RDS_MYSQL_METRIC"
-
