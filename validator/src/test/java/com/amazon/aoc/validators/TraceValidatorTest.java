@@ -12,6 +12,7 @@ import com.amazon.aoc.services.XRayService;
 
 import com.amazonaws.services.xray.model.Segment;
 import com.amazonaws.services.xray.model.Trace;
+import com.amazonaws.services.xray.model.TraceSummary;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,10 +31,13 @@ public class TraceValidatorTest extends ValidatorBaseTest {
     @Mock
     private Trace trace;
     @Mock
+    private TraceSummary traceSummary;
+    @Mock
     private Segment segment;
 
     private TraceValidator traceValidator;
     private String DOCUMENT;
+    private String traceFilter;
 
     @BeforeEach
     public void beforeEach() throws Exception {
@@ -45,15 +49,16 @@ public class TraceValidatorTest extends ValidatorBaseTest {
                 validationConfig.getExpectedTraceTemplate()
         );
         DOCUMENT = IOUtils.toString(new URL(TEMPLATE_ROOT + "trace/actual/example-trace-document.json"), Charset.defaultCharset());
+        traceFilter = "annotation.aws_local_service = \"serviceName\" AND annotation.aws_local_operation = \"GET /aws-sdk-call\"";
     }
 
-    // TODO: Due to changing the logic of the trace validator, we do not search for traces by traceId anymore but
-    //  rather search for traces with specific attributes. Need to update the test with that new logic
-//    @Test
-//    public void testValidate() {
-//        when(xRayService.listTraceByIds(List.of(TRACE_ID))).thenReturn(List.of(trace));
-//        when(trace.getSegments()).thenReturn(List.of(segment));
-//        when(segment.getDocument()).thenReturn(DOCUMENT);
-//        assertDoesNotThrow(() -> traceValidator.validate());
-//    }
+    @Test
+    public void testValidate() {
+        when(xRayService.searchTraces(traceFilter)).thenReturn(List.of(traceSummary));
+        when(traceSummary.getId()).thenReturn(TRACE_ID);
+        when(xRayService.listTraceByIds(List.of(TRACE_ID))).thenReturn(List.of(trace));
+        when(trace.getSegments()).thenReturn(List.of(segment));
+        when(segment.getDocument()).thenReturn(DOCUMENT);
+        assertDoesNotThrow(() -> traceValidator.validate());
+    }
 }

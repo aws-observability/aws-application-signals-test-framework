@@ -34,6 +34,8 @@ public class ValidatorBaseTest {
     protected ValidationConfig initValidationConfig(String traceTemplate) {
         ValidationConfig validationConfig = new ValidationConfig();
         validationConfig.setCallingType("http");
+        validationConfig.setHttpMethod("get");
+        validationConfig.setHttpPath("/aws-sdk-call");
         validationConfig.setExpectedTraceTemplate(traceTemplate);
         return validationConfig;
     }
