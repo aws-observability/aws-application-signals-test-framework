@@ -8,7 +8,7 @@ on:
     branches:
       - main
     paths:
-      - 'traffic-generator/**'
+      - 'sample-apps/traffic-generator/**'
 
 permissions:
   id-token: write
@@ -54,7 +54,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image to Amazon ECR
-        working-directory: traffic-generator
+        working-directory: sample-apps/traffic-generator
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: e2e-test-resource
@@ -94,7 +94,7 @@ jobs:
           aws-region: ${{ matrix.aws-region }}
 
       - name: Upload traffic generator files
-        working-directory: traffic-generator
+        working-directory: sample-apps/traffic-generator
         run: |
           zip traffic-generator.zip ./index.js ./package.json
           aws s3 cp traffic-generator.zip s3://aws-appsignals-sample-app-prod-${{ matrix.aws-region }}/traffic-generator.zip
