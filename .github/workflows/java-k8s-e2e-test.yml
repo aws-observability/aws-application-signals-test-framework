@@ -21,9 +21,9 @@ on:
         required: false
         type: string
 
-concurrency:
-  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
-  cancel-in-progress: false
+#concurrency:
+#  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
+#  cancel-in-progress: false
 
 permissions:
   id-token: write
@@ -39,13 +39,18 @@ env:
   SAMPLE_APP_NAMESPACE: sample-app-namespace
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
+  RESULT_FOLDER: e2e-test-result
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  MAIN_SERVICE_ENDPOINT: ${{ secrets.TEMP_IAD_ENDPOINT_K8S }}
+  MASTER_NODE_SSH_KEY: ${{ secrets.TEMP_IAD_SSH_KEY_K8S }}
 
 jobs:
   java-k8s:
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
+    outputs:
+      result-folder: ${{ steps.result-folder.outputs.result-folder }}
     steps:
       - name: Generate testing id
         run: echo TESTING_ID="${{ env.E2E_TEST_AWS_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
@@ -82,8 +87,8 @@ jobs:
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
             JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
             RELEASE_TESTING_ECR_ACCOUNT, e2e-test/${{ github.event.repository.name }}/java-k8s-release-testing-account
-            MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/java-k8s-master-node-endpoint
-            MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/java-k8s-ssh-key
+#            MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/java-k8s-master-node-endpoint
+#            MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/java-k8s-ssh-key
 
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/java/k8s/deploy/resources
@@ -217,22 +222,27 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
-      - name: Publish metric on test result
+      - name: Save test results
         if: always()
         run: |
+          mkdir ${{ env.RESULT_FOLDER }}
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
-            --value 0.0 \
-            --region ${{ env.E2E_TEST_AWS_REGION }}
+            echo "SUCCESS" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
           else
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
-            --value 1.0 \
-            --region ${{ env.E2E_TEST_AWS_REGION }}
-          fi
+            echo "FAIL" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
+          fi      
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.RESULT_FOLDER }}
+          path: ${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
+
+      - name: Output the result folder for the emit metric job
+        id: result-folder
+        if: always()
+        run: echo "::set-output name=result-folder::${{ env.RESULT_FOLDER }}"
 
       # Clean up Procedures
       - name: Initiate Terraform for Cleanup
@@ -267,3 +277,13 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
+
+  emit-metric:
+    needs: java-k8s
+    if: always()
+    uses: ./.github/workflows/e2e-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ inputs.aws-region }}
+      caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      result-folder: ${{ needs.java-k8s.outputs.result-folder }}

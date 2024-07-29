@@ -32,6 +32,7 @@ env:
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
+  RESULT_FOLDER: asg-e2e-test-result
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   
 jobs:
@@ -39,6 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
+    outputs:
+      result-folder: ${{ steps.result-folder.outputs.result-folder }}
     steps:
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
@@ -275,22 +278,27 @@ jobs:
           --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
-      - name: Publish metric on test result
+      - name: Save test results
         if: always()
         run: |
+          mkdir ${{ env.RESULT_FOLDER }}
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
-            --value 0.0 \
-            --region ${{ env.E2E_TEST_AWS_REGION }}
+            echo "SUCCESS" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
           else
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
-            --value 1.0 \
-            --region ${{ env.E2E_TEST_AWS_REGION }}
-          fi
+            echo "FAIL" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
+          fi      
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.RESULT_FOLDER }}
+          path: ${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
+
+      - name: Output the result folder for the emit metric job
+        id: result-folder
+        if: always()
+        run: echo "::set-output name=result-folder::${{ env.RESULT_FOLDER }}"
 
       # Clean up Procedures
       - name: Terraform destroy
@@ -300,3 +308,13 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
+
+  emit-metric:
+    needs: python-ec2-asg
+    if: always()
+    uses: ./.github/workflows/e2e-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ inputs.aws-region }}
+      caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      result-folder: ${{ needs.python-ec2-asg.outputs.result-folder }}
