@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: Generate testing id and sample app namespace
         run: |
-          echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+          echo TESTING_ID="metric-limiter-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
           echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
           
       - uses: actions/checkout@v4
@@ -125,7 +125,7 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "eksctl create iamserviceaccount \
-          --name service-account-${{ env.TESTING_ID }} \
+          --name sa-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --role-name eks-s3-access-${{ env.TESTING_ID }} \
@@ -133,7 +133,7 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }} \
           --approve"
           cleanup: "eksctl delete iamserviceaccount \
-          --name service-account-${{ env.TESTING_ID }} \
+          --name sa-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}"
@@ -172,7 +172,7 @@ jobs:
               -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
               -var="eks_cluster_context_name=$(kubectl config current-context)" \
               -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-              -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+              -var="service_account_aws_access=sa-${{ env.TESTING_ID }}" \
               -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
               -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
             || deployment_failed=$?
@@ -267,7 +267,7 @@ jobs:
                 -var="kube_directory_path=${{ github.workspace }}/.kube" \
                 -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
                 -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-                -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+                -var="service_account_aws_access=sa-${{ env.TESTING_ID }}" \
                 -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
                 -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
           
@@ -412,7 +412,7 @@ jobs:
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
             -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-            -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+            -var="service_account_aws_access=sa-${{ env.TESTING_ID }}" \
             -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
             -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
 
@@ -421,7 +421,7 @@ jobs:
         continue-on-error: true
         run: |
           eksctl delete iamserviceaccount \
-          --name service-account-${{ env.TESTING_ID }} \
+          --name sa-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}
