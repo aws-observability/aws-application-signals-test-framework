@@ -165,41 +165,6 @@ resource "kubernetes_service" "python_app_service" {
   }
 }
 
-resource "kubernetes_ingress_v1" "python-app-ingress" {
-  depends_on = [kubernetes_service.python_app_service]
-  wait_for_load_balancer = true
-  metadata {
-    name = "python-app-ingress-${var.test_id}"
-    namespace = var.test_namespace
-    annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-    }
-    labels = {
-        app = "python-app-ingress"
-    }
-  }
-  spec {
-    rule {
-      http {
-        path {
-          path = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.python_app_service.metadata[0].name
-              port {
-                number = 8080
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 # Set up the remote service
 
 resource "kubernetes_deployment" "python_r_app_deployment" {
@@ -268,47 +233,4 @@ resource "kubernetes_service" "python_r_app_service" {
       node_port = 30101
     }
   }
-}
-
-resource "kubernetes_ingress_v1" "python-r-app-ingress" {
-  depends_on = [kubernetes_service.python_r_app_service]
-  wait_for_load_balancer = true
-  metadata {
-    name = "python-r-app-ingress-${var.test_id}"
-    namespace = var.test_namespace
-    annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-    }
-    labels = {
-      app = "python-r-app-ingress"
-    }
-  }
-  spec {
-    rule {
-      http {
-        path {
-          path = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.python_r_app_service.metadata[0].name
-              port {
-                number = 8001
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-output "python_app_endpoint" {
-  value = kubernetes_ingress_v1.python-app-ingress.status.0.load_balancer.0.ingress.0.hostname
-}
-
-output "python_r_app_endpoint" {
-  value = kubernetes_ingress_v1.python-r-app-ingress.status.0.load_balancer.0.ingress.0.hostname
 }
