@@ -125,7 +125,6 @@ jobs:
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
-              -var="canary_type=${{ github.job }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then

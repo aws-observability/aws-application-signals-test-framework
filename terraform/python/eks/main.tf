@@ -234,3 +234,39 @@ resource "kubernetes_service" "python_r_app_service" {
     }
   }
 }
+
+resource "kubernetes_deployment" "traffic_generator" {
+  metadata {
+    name = "traffic-generator"
+    namespace = var.test_namespace
+    labels = {
+      app = "traffic-generator"
+    }
+  }
+  spec {
+    replicas = 1
+    selector {
+      match_labels = {
+        app = "traffic-generator"
+      }
+    }
+    template {
+      metadata {
+        labels = {
+          app = "traffic-generator"
+        }
+      }
+      spec {
+        container {
+          name  = "traffic-generator"
+          image = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
+          image_pull_policy = "Always"
+          env {
+            name  = "ID"
+            value = var.test_id
+          }
+        }
+      }
+    }
+  }
+}

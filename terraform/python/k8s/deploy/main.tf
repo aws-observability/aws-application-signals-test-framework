@@ -144,6 +144,9 @@ resource "null_resource" "deploy" {
       aws ssm put-parameter --region ${var.aws_region} --name python-main-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pod --selector=app=python-sample-app -n python-sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
       aws ssm put-parameter --region ${var.aws_region} --name python-remote-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pod --selector=app=python-remote-app -n python-sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
 
+      # Wait a bit more in case the sample apps aren't ready yet
+      sleep 30
+
       # Deploy the traffic generator
       kubectl create deployment -n python-sample-app-namespace traffic-generator \
         --image=$ACCOUNT.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator \
@@ -157,10 +160,6 @@ resource "null_resource" "deploy" {
       kubectl set env -n python-sample-app-namespace deployment/traffic-generator MAIN_ENDPOINT=$(kubectl get pods -n python-sample-app-namespace --selector=app=python-sample-app -o jsonpath='{.items[0].status.podIP}'):8000
       kubectl set env -n python-sample-app-namespace deployment/traffic-generator REMOTE_ENDPOINT=$(kubectl get pod -n python-sample-app-namespace --selector=app=python-remote-app -o jsonpath='{.items[0].status.podIP}')
       kubectl set env -n python-sample-app-namespace deployment/traffic-generator ID=${var.test_id}
-      kubectl set env -n python-sample-app-namespace deployment/traffic-generator CANARY_TYPE=python-k8s
-
-      # Restart the traffic generator with the new configuration
-      kubectl get pods -n python-sample-app-namespace --no-headers | grep '^traffic-generator' | awk '{print $1}' | xargs kubectl delete pod -n python-sample-app-namespace
 
       sleep 10
       EOF

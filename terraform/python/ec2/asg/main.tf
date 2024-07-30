@@ -155,7 +155,6 @@ resource "aws_launch_configuration" "launch_configuration" {
     tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8000\"" C-m
     tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"${aws_instance.remote_service_instance.private_ip}\"" C-m
     tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
-    tmux send-keys -t traffic-generator "export CANARY_TYPE=\"${var.canary_type}\"" C-m
     tmux send-keys -t traffic-generator "npm start" C-m
 
     EOF

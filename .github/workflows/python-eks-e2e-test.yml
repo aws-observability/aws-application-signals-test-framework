@@ -210,6 +210,7 @@ jobs:
               -var='rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}' \
               -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' \
               -var='rds_mysql_cluster_database=information_schema' \
+              -var='account_id=${{ env.ACCOUNT_ID }}' \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
@@ -305,27 +306,12 @@ jobs:
 
       - name: Get the sample app endpoint
         run: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=python-app -o jsonpath='{.items[0].status.podIP}'):8000" >> $GITHUB_ENV
+      - name: Set endpoints for the traffic generator
 
-      - name: Deploy the traffic generator
         run: |
-          # Deploy the traffic generator
-          kubectl create deployment -n ${{ env.SAMPLE_APP_NAMESPACE }} traffic-generator \
-            --image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/e2e-test-resource:traffic-generator \
-            --replicas=1
-          
-          # Patch it with ImagePull always policy so that it pulls the latest image from the ECR
-          kubectl patch deployment -n ${{ env.SAMPLE_APP_NAMESPACE }} traffic-generator --patch '{"spec": {"template": {"spec": {"containers": [{"name": "e2e-test-resource", "imagePullPolicy": "Always"}]}}}}'
-          
           # Add the appropriate environment variables to the traffic generator
           kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }}
           kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator REMOTE_ENDPOINT=${{ env.REMOTE_SERVICE_POD_IP }}
-          kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator ID=${{ env.TESTING_ID }}
-          kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator CANARY_TYPE=${{ github.job }}
-          
-          # Restart the traffic generator with the new configuration          
-          kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --no-headers | grep '^traffic-generator' | awk '{print $1}' | xargs kubectl delete pod -n ${{ env.SAMPLE_APP_NAMESPACE }} || true
-          
-          sleep 10
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'

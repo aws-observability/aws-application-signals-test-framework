@@ -144,6 +144,9 @@ resource "null_resource" "deploy" {
       aws ssm put-parameter --region ${var.aws_region} --name main-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pods -n sample-app-namespace --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}')
       aws ssm put-parameter --region ${var.aws_region} --name remote-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pod --selector=app=remote-app -n sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
 
+      # Wait a bit more in case the sample apps aren't ready yet
+      sleep 30
+
       # Deploy the traffic generator
       kubectl create deployment -n sample-app-namespace traffic-generator \
         --image=$ACCOUNT.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator \
@@ -157,10 +160,6 @@ resource "null_resource" "deploy" {
       kubectl set env -n sample-app-namespace deployment/traffic-generator MAIN_ENDPOINT=$(kubectl get pods -n sample-app-namespace --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8080
       kubectl set env -n sample-app-namespace deployment/traffic-generator REMOTE_ENDPOINT=$(kubectl get pod --selector=app=remote-app -n sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
       kubectl set env -n sample-app-namespace deployment/traffic-generator ID=${var.test_id}
-      kubectl set env -n sample-app-namespace deployment/traffic-generator CANARY_TYPE=java-k8s
-       
-      # Restart the traffic generator with the new configuration          
-      kubectl get pods -n sample-app-namespace --no-headers | grep '^traffic-generator' | awk '{print $1}' | xargs kubectl delete pod -n sample-app-namespace
       
       sleep 10
 
