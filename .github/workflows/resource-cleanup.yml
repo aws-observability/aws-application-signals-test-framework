@@ -45,7 +45,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.RESOURCE_CLEANER_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
-      - name: Cleanup EC2 instances
+      - name: Cleanup EC2 instances and ASGs
         working-directory: .github/workflows/util/clean/ec2_instance_cleanup
         env:
           AWS_DEFAULT_REGION: ${{ matrix.aws-region }}
