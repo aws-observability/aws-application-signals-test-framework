@@ -32,7 +32,8 @@ resource "null_resource" "cleanup" {
       echo "LOG: Printing cluster state after cleanup"
       kubectl get pods -A
 
-      # Delete ssm parameter for remote service ip
+      # Delete ssm parameter for main and remote service ip
+      aws ssm delete-parameter --name main-service-ip-${var.test_id}
       aws ssm delete-parameter --name remote-service-ip-${var.test_id}
       EOF
     ]
