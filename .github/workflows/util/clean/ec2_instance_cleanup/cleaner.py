@@ -15,17 +15,74 @@ TAG_DO_NOT_DELETE = 'do-not-delete'
 # Create an EC2 client
 session = boto3.Session()
 ec2 = session.client('ec2')
+autoscaling = session.client('autoscaling')
 
 # configure logging
 logging.basicConfig(level=logging.INFO)
 
+def _get_autoscaling_groups_to_delete():
+    logging.info("Start scanning autoscaling group...")
+
+    current_time = datetime.now(timezone.utc)
+    time_threshold = current_time - timedelta(hours=3)
+    groups_to_delete = []
+
+     # Initialize the paginator
+    paginator = autoscaling.get_paginator('describe_auto_scaling_groups')
+
+    # Iterate through each page of results
+    for page in paginator.paginate():
+        auto_scaling_groups = page['AutoScalingGroups']
+        for asg in auto_scaling_groups:
+            asg_name = asg['AutoScalingGroupName']
+            tags = asg['Tags']
+
+            eks_tag_present = any(tag['Key'] == 'eks:cluster-name' for tag in tags)
+            if eks_tag_present:
+                logging.info(f"Skipping autoscaling group with 'eks:cluster-name' tag: {asg_name}.")
+                continue
+
+            if not _is_active(asg):
+                logging.info(f"Skipping autoscaling group {asg_name} with terminating instances.")
+                continue
+
+            logging.info(f"autoscaling group {asg_name} is active.")
+
+            creation_time = asg['CreatedTime']
+            if creation_time < time_threshold:
+                print(f"Autoscaling group: {asg_name} will be deleted.")
+                groups_to_delete.append(asg)
+    
+    logging.info(f"{len(groups_to_delete)} autoscaling groups are active for more than 3 hours.")
+
+    return groups_to_delete
+
+
+def _delete_autoscaling_groups(auto_scaling_groups):
+    for asg in auto_scaling_groups:
+        try:
+            asg_name = asg['AutoScalingGroupName']
+            response = autoscaling.delete_auto_scaling_group(AutoScalingGroupName=asg_name, ForceDelete=True)
+            logging.info("===== Response for delete autoscaling group request =====")
+            logging.info(response)
+        except Exception as e:
+            logging.info(f"Error terminating instances: {e}")
+
+def _is_active(asg):
+    for instance in asg['Instances']:
+        if instance['LifecycleState'] in [
+            'Terminating', 'Terminating:Wait', 'Terminating:Proceed'
+        ]:
+            return False
+    return True
+
 
 def _get_instances_to_terminate():
     # Get all the running instances
-    logging.info("Getting all running instances")
+    logging.info("Start scanning instances")
     running_filter = [{'Name': 'instance-state-name', 'Values': [INSTANCE_STATE_RUNNING]}]
     running_instances = _get_all_instances_by_filter(filters=running_filter)
-    logging.info(f"Currently {len(running_instances)} are running.")
+    logging.info(f"{len(running_instances)} instances are running.")
 
     # Filter instances that have been running for more than 3 hours
     logging.info("Filtering instances that have been running for more than 3 hours")
@@ -42,10 +99,13 @@ def _get_instances_to_terminate():
     logging.info("Filtering instances that should not be terminated based on conditions")
     instances_to_terminate = []
     for instance in instances_running_more_than_3hrs:
-        if (not _is_eks_cluster_instance(instance)
-                and not _is_k8s_cluster_instance(instance)
-                and not _is_tagged_do_not_delete(instance)):
-            instances_to_terminate.append(instance)
+        if (not _is_k8s_cluster_instance(instance) and not _is_tagged_do_not_delete(instance)):
+            group_name = _get_associated_autoscaling_group_name(instance)
+            if group_name != None:
+                logging.info(f"Instance {instance['InstanceId']} is associated with autoscaling group {group_name}, skip the termination.")
+            else:
+                instances_to_terminate.append(instance)
+
     logging.info(f"{len(instances_to_terminate)} instances will be terminated.")
 
     return instances_to_terminate
@@ -70,13 +130,6 @@ def _get_all_instances_by_filter(filters: List[dict]):
     return filtered_instances
 
 
-def _is_eks_cluster_instance(instance):
-    security_groups = instance.get('SecurityGroups', [])
-    if any(group['GroupName'].startswith(EKS_CLUSTER_SECURITY_GROUP_PREFIX) for group in security_groups):
-        return True
-    return False
-
-
 def _is_k8s_cluster_instance(instance):
     tags = instance.get('Tags', [])
     if 'Name' in tags and tags['Name'].startswith(K8S_INSTANCE_NAME_PREFIX):
@@ -92,12 +145,21 @@ def _is_tagged_do_not_delete(instance):
         return True
     return False
 
+def _get_associated_autoscaling_group_name(instance):
+    tags = instance.get('Tags', [])
+    asg_tag = next((tag for tag in tags if tag['Key'] == 'aws:autoscaling:groupName'), None)
+    if asg_tag is None:
+        return None
+    return asg_tag['Value']
 
-def _prepare_report_and_upload(instances_to_terminate) -> bool:
-    json_data = json.dumps(instances_to_terminate, default=str)
+def _prepare_report_and_upload(groups_to_delete, instances_to_terminate) -> bool:
+    json_data = json.dumps({
+        "autoscalingGroups": groups_to_delete,
+        "standaloneInstances": instances_to_terminate
+    }, default=str)
     # save as a json file with timestamp
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    filename = f"report-instances-to-terminate-{timestamp}.json"
+    filename = f"report-resources-to-clean-{timestamp}.json"
     with open(filename, "w") as f:
         f.write(json_data)
 
@@ -116,24 +178,26 @@ def _prepare_report_and_upload(instances_to_terminate) -> bool:
 def _terminate_instances(instances_to_terminate):
     # Terminate the instances
     instance_ids = [instance['InstanceId'] for instance in instances]
-    logging.info("Number of instances terminating: " + str(len(instance_ids)))
     try:
         response = ec2.terminate_instances(InstanceIds=instance_ids)
-        logging.info("===== Response for terminate request =====")
+        logging.info("===== Response for terminate instances request =====")
         logging.info(response)
     except Exception as e:
         logging.info(f"Error terminating instances: {e}")
 
 
 if __name__ == '__main__':
+    groups = _get_autoscaling_groups_to_delete()
     instances = _get_instances_to_terminate()
-    if len(instances) == 0:
-        logging.info("No instances to terminate")
+    
+    if len(groups) == 0 and len(instances) == 0:
+        logging.info("No resource to terminate")
         exit(0)
 
-    report_successful = _prepare_report_and_upload(instances)
+    report_successful = _prepare_report_and_upload(groups, instances)
     if not report_successful:
         logging.error("Failed to prepare report and upload. Aborting termination of instances.")
         exit(1)
 
+    _delete_autoscaling_groups(groups)
     _terminate_instances(instances)
