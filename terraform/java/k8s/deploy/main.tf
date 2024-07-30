@@ -135,18 +135,33 @@ resource "null_resource" "deploy" {
       kubectl apply -f frontend-service-depl.yaml
       kubectl apply -f remote-service-depl.yaml
 
-      # Expose sample app on port 30100
-      echo "LOG: Exposing main sample app on port 30100"
-      kubectl expose deployment sample-app-deployment-${var.test_id} -n sample-app-namespace --type="NodePort" --port 8080
-      kubectl patch service sample-app-deployment-${var.test_id} -n sample-app-namespace --type='json' --patch='[{"op": "replace", "path": "/spec/ports/0/nodePort", "value":30100}]'
-
       # Wait for sample app to be reach ready state
       sleep 10
       kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n sample-app-namespace
 
-      # Emit remote service pod IP
+      # Emit main and remote service pod IP
       echo "LOG: Outputting remote service pod IP to SSM using put-parameter API"
+      aws ssm put-parameter --region ${var.aws_region} --name main-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pods -n sample-app-namespace --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}')
       aws ssm put-parameter --region ${var.aws_region} --name remote-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pod --selector=app=remote-app -n sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
+
+      # Wait a bit more in case the sample apps aren't ready yet
+      sleep 30
+
+      # Deploy the traffic generator
+      kubectl create deployment -n sample-app-namespace traffic-generator \
+        --image=$ACCOUNT.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator \
+        --replicas=1
+
+      # Patch it with ImagePull always policy so that it pulls the latest image from the ECR
+      kubectl patch deployment -n sample-app-namespace traffic-generator --patch '{"spec": {"template": {"spec": {"containers": [{"name": "e2e-test-resource", "imagePullPolicy": "Always"}]}}}}'
+      kubectl patch deployment traffic-generator -n sample-app-namespace --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "ecr-secret"}]}]'
+                
+      # Add the appropriate environment variables to the traffic generator
+      kubectl set env -n sample-app-namespace deployment/traffic-generator MAIN_ENDPOINT=$(kubectl get pods -n sample-app-namespace --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8080
+      kubectl set env -n sample-app-namespace deployment/traffic-generator REMOTE_ENDPOINT=$(kubectl get pod --selector=app=remote-app -n sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
+      kubectl set env -n sample-app-namespace deployment/traffic-generator ID=${var.test_id}
+      
+      sleep 10
 
       EOF
     ]

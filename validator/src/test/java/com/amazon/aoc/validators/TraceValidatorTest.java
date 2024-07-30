@@ -7,12 +7,12 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import com.amazon.aoc.callers.HttpCaller;
 import com.amazon.aoc.models.ValidationConfig;
 import com.amazon.aoc.services.XRayService;
 
 import com.amazonaws.services.xray.model.Segment;
 import com.amazonaws.services.xray.model.Trace;
+import com.amazonaws.services.xray.model.TraceSummary;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,30 +31,34 @@ public class TraceValidatorTest extends ValidatorBaseTest {
     @Mock
     private Trace trace;
     @Mock
+    private TraceSummary traceSummary;
+    @Mock
     private Segment segment;
 
     private TraceValidator traceValidator;
     private String DOCUMENT;
+    private String traceFilter;
 
     @BeforeEach
     public void beforeEach() throws Exception {
-        HttpCaller httpCaller = mockHttpCaller(TRACE_ID);
         ValidationConfig validationConfig = initValidationConfig(TEMPLATE_ROOT + "trace/expected/example-trace.mustache");
         traceValidator = new TraceValidator(xRayService, 1, 1);
         traceValidator.init(
                 initContext(),
-                validationConfig, httpCaller,
+                validationConfig,
                 validationConfig.getExpectedTraceTemplate()
         );
         DOCUMENT = IOUtils.toString(new URL(TEMPLATE_ROOT + "trace/actual/example-trace-document.json"), Charset.defaultCharset());
+        traceFilter = "annotation.aws_local_service = \"serviceName\" AND annotation.aws_local_operation = \"GET /aws-sdk-call\"";
     }
 
     @Test
     public void testValidate() {
+        when(xRayService.searchTraces(traceFilter)).thenReturn(List.of(traceSummary));
+        when(traceSummary.getId()).thenReturn(TRACE_ID);
         when(xRayService.listTraceByIds(List.of(TRACE_ID))).thenReturn(List.of(trace));
         when(trace.getSegments()).thenReturn(List.of(segment));
         when(segment.getDocument()).thenReturn(DOCUMENT);
-
         assertDoesNotThrow(() -> traceValidator.validate());
     }
 }
