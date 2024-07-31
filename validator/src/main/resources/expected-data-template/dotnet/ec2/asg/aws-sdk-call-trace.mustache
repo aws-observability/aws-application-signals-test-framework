@@ -14,7 +14,7 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^GET /aws-sdk-call$",
+    "aws.local.operation": "^GET aws-sdk-call$",
     "aws.local.environment": "^ec2:{{platformInfo}}$"
   },
   "metadata": {
@@ -32,7 +32,7 @@
   },
   "subsegments": [
     {
-      "name": "^AWS::S3$",
+      "name": "^S3$",
       "http": {
         "response": {
           "status": "^200$"
@@ -56,10 +56,13 @@
           "aws.span.kind": "^CLIENT$"
         }
       },
-      "namespace": "^remote$"
+      "namespace": "^aws$"
     }
   ]
 },
 {
-  "name": "^AWS::S3$"
+  "name": "^S3$",
+  "aws": {
+    "operation": "^ListBuckets$"
+  }
 }]
