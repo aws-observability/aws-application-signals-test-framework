@@ -125,35 +125,10 @@ jobs:
             -var="patch_image_arn=${{ env.PATCH_IMAGE_ARN }}" \
             -var="release_testing_ecr_account=${{ env.RELEASE_TESTING_ECR_ACCOUNT }}"
 
-      - name: Get Remote Service IP
+      - name: Get Main and Remote Service IP
         run: |
+          echo MAIN_SERVICE_IP="$(aws ssm get-parameter --region ${{ env.E2E_TEST_AWS_REGION }} --name python-main-service-ip-${{ env.TESTING_ID }} | jq -r '.Parameter.Value')" >> $GITHUB_ENV
           echo REMOTE_SERVICE_IP="$(aws ssm get-parameter --region us-east-1 --name python-remote-service-ip-${{ env.TESTING_ID }} | jq -r '.Parameter.Value')" >> $GITHUB_ENV
-
-      - name: Wait for app endpoint to come online
-        id: endpoint-check
-        run: |
-          attempt_counter=0
-          max_attempts=30
-          until $(curl --output /dev/null --silent --head --fail http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100/); do
-            if [ ${attempt_counter} -eq ${max_attempts} ];then
-              echo "Max attempts reached"
-              exit 1
-            fi
-          
-            printf '.'
-            attempt_counter=$(($attempt_counter+1))
-            sleep 10
-          done
-
-      # This steps increases the speed of the validation by creating the telemetry data in advance
-      # It is run after the gradle build to give the app time to initialize after the pods become ready
-      - name: Call all test APIs
-        continue-on-error: true
-        run: |
-          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100/outgoing-http-call"; echo
-          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"; echo
-          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"; echo
-          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100/client-call"; echo
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
@@ -170,7 +145,7 @@ jobs:
         id: log-validation
         run: ./gradlew validator:run --args='-c python/k8s/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
+          --endpoint http://${{ env.MAIN_SERVICE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
@@ -187,7 +162,7 @@ jobs:
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c python/k8s/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
+          --endpoint http://${{ env.MAIN_SERVICE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
@@ -205,7 +180,7 @@ jobs:
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c python/k8s/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}:30100
+          --endpoint http://${{ env.MAIN_SERVICE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}

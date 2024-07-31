@@ -15,7 +15,6 @@
 
 package com.amazon.aoc.validators;
 
-import com.amazon.aoc.callers.ICaller;
 import com.amazon.aoc.exception.BaseException;
 import com.amazon.aoc.exception.ExceptionCode;
 import com.amazon.aoc.fileconfigs.FileConfig;
@@ -43,8 +42,8 @@ public class CWMetricValidator implements IValidator {
   private static int DEFAULT_MAX_RETRY_COUNT = 80;
 
   private MustacheHelper mustacheHelper = new MustacheHelper();
-  private ICaller caller;
   private Context context;
+  private ValidationConfig validationConfig;
   private FileConfig expectedMetric;
 
   private CloudWatchService cloudWatchService;
@@ -63,10 +62,10 @@ public class CWMetricValidator implements IValidator {
 
   @Override
   public void validate() throws Exception {
-    log.info("Start metric validating");
+    log.info("Start Metric Validation for path {}", validationConfig.getHttpPath());
     // get expected metrics and remove the to be skipped dimensions
     final List<Metric> expectedMetricList =
-        cwMetricHelper.listExpectedMetrics(context, expectedMetric, caller);
+        cwMetricHelper.listExpectedMetrics(context, expectedMetric);
     Set<String> skippedDimensionNameList = new HashSet<>();
     for (Metric metric : expectedMetricList) {
       for (Dimension dimension : metric.getDimensions()) {
@@ -135,8 +134,8 @@ public class CWMetricValidator implements IValidator {
           log.info("expected metricList is {}", expectedMetricList);
           compareMetricLists(expectedMetricList, actualMetricList);
         });
-
-    log.info("finish metric validation");
+    
+    log.info("validation is passed for path {}", validationConfig.getHttpPath());
   }
 
   private void addMetrics(
@@ -225,11 +224,10 @@ public class CWMetricValidator implements IValidator {
   public void init(
       Context context,
       ValidationConfig validationConfig,
-      ICaller caller,
       FileConfig expectedMetricTemplate)
       throws Exception {
     this.context = context;
-    this.caller = caller;
+    this.validationConfig = validationConfig;
     this.expectedMetric = expectedMetricTemplate;
     this.cloudWatchService = new CloudWatchService(context.getRegion());
     this.cwMetricHelper = new CWMetricHelper();
