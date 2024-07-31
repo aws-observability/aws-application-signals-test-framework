@@ -2,7 +2,12 @@
 
 *Description of changes:*
 
+*Rollback procedure:*
+
+<Can we safely revert this commit if needed? If not, detail what must be done to safely revert and why it is needed.>
+
 *Ensure you've run the following tests on your changes and include the link below:*
+
 To do so, create a `test.yml` file with `name: Test` and workflow description to test your changes, then remove the file for your PR. Link your test run in your PR description. This process is a short term solution while we work on creating a staging environment for testing.
 
 NOTE: TESTS RUNNING ON A SINGLE EKS CLUSTER CANNOT BE RUN IN PARALLEL. See the [needs](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idneeds) keyword to run tests in succession.
