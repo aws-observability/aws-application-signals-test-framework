@@ -175,17 +175,6 @@ jobs:
               ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}" \
               60
-          
-              if [ "${{ inputs.caller-workflow-name }}" = "main-build" ]; then
-                echo "Patching staging adot image for main build:"
-                execute_and_retry 2 "kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-                -p='[{"op": \"replace\", \"path\": \"/spec/template/spec/containers/0/args/2\", \"value\": \"--auto-instrumentation-dotnet-image=${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}\"}]'"
-                execute_and_retry 2 "kubectl delete pods --all -n amazon-cloudwatch"
-                execute_and_retry 2 "kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch"
-              fi
-          
-              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" "" 60
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" "" 10
 
               echo "Attempting to connect to the main sample app endpoint"
               dotnet_app_endpoint=http://$(terraform output dotnet_app_endpoint)
@@ -257,20 +246,25 @@ jobs:
             fi
           done
 
+      - name: Patch Image and Check Diff
+        id: patch-image
+        uses: ./.github/workflows/actions/patch_image_and_check_diff
+        with:
+          repository: ${{ github.event.repository.name }}
+          patch-image-arn: ${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}
+          sample-app-namespace: ${{ env.SAMPLE_APP_NAMESPACE }}
+
+      - name: Log Artifact Versions
+        run: |
+          echo "ADOT Image: Previous Version is: ${{ steps.patch-image.outputs.default-adot-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-adot-image }}";
+          echo "CW Agent Image: Previous Version is: ${{ steps.patch-image.outputs.default-cw-agent-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-cw-agent-image }}";
+          echo "CW Agent Operator Image: Previous Version is: ${{ steps.patch-image.outputs.default-cw-agent-operator-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-cw-agent-operator-image }}";
+          echo "Fluent Bit Image: Version is: ${{ steps.patch-image.outputs.fluent-bit-image }}";
+
       - name: Get remote service pod name and IP
         run: |
           echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
-
-      - name: Verify pod Adot image
-        run: |
-          kubectl get pods -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} --output json | \
-          jq '.items[0].status.initContainerStatuses[0].imageID'
-
-      - name: Verify pod CWAgent image
-        run: |
-          kubectl get pods -n amazon-cloudwatch --output json | \
-          jq '.items[0].status.containerStatuses[0].imageID'
 
       - name: Get the sample app endpoint
         run: echo "APP_ENDPOINT=$(terraform output dotnet_app_endpoint)" >> $GITHUB_ENV
