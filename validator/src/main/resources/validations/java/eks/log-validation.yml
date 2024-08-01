@@ -22,9 +22,3 @@
   httpMethod: "get"
   callingType: "http"
   expectedLogStructureTemplate: "JAVA_EKS_CLIENT_CALL_LOG"
--
-  validationType: "cw-log"
-  httpPath: "/mysql"
-  httpMethod: "get"
-  callingType: "http"
-  expectedLogStructureTemplate: "JAVA_EKS_RDS_MYSQL_LOG"

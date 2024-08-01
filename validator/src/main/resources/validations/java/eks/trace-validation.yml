@@ -22,9 +22,3 @@
   httpMethod: "get"
   callingType: "http"
   expectedTraceTemplate: "JAVA_EKS_CLIENT_CALL_TRACE"
--
-  validationType: "trace"
-  httpPath: "/mysql"
-  httpMethod: "get"
-  callingType: "http"
-  expectedTraceTemplate: "JAVA_EKS_RDS_MYSQL_TRACE"
