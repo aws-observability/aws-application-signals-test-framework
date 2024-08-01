@@ -46,8 +46,19 @@
             "sdk": "^opentelemetry for"
           }
         },
+        "sql": {
+          "url": "^SELECT$",
+          "sanitized_query": "SELECT \\* FROM tables LIMIT \\?;",
+          "database_type": "^mysql$"
+        },
         "annotations": {
-          "aws.local.operation": "^GET mysql$"
+          "aws.remote.operation": "^SELECT$",
+          "aws.local.operation": "^GET mysql$",
+          "aws.remote.resource.type": "^DB::Connection$",
+          "aws.remote.resource.identifier": "^{{remoteResourceIdentifier}}$",
+          "aws.remote.service": "^mysql$",
+          "aws.local.service": "^{{serviceName}}$",
+          "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
         },
         "metadata": {
           "default": {
