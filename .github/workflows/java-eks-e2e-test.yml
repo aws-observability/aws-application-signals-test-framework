@@ -47,8 +47,6 @@ env:
 jobs:
   java-eks:
     runs-on: ubuntu-latest
-    container:
-      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
     steps:
       - name: Generate testing id and sample app namespace
         run: |
@@ -111,8 +109,23 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
+      # local directory to store the kubernetes config
+      - name: Create kubeconfig directory
+        run: mkdir -p ${{ github.workspace }}/.kube
+
+      - name: Set KUBECONFIG environment variable
+        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+
       - name: Set up kubeconfig
         run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Download and install eksctl
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          pre-command: 'mkdir ${{ github.workspace }}/eksctl'
+          command: 'curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" 
+            && tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz'
+          cleanup: 'rm -f eksctl_Linux_amd64.tar.gz'
 
       - name: Add eksctl to Github Path
         run: |
@@ -137,12 +150,35 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}"
           sleep_time: 60
 
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
       - name: Get RDS database cluster metadata
         continue-on-error: true
         run: |
-          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint" --output text)
+          if [ "${{ env.CLUSTER_NAME }}" = "e2e-enablement-script-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraenablementscriptpythone2eclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroracwagente2eclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-adot-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraadote2eclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-operator-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroracwagentoperatore2eclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-canary-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsaurorajavaclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-playground" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraplaygroundclusterformysql"
+          else
+            echo "${{ env.CLUSTER_NAME }} is not a known cluster name"
+            exit 1
+          fi
+          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier $RDS_MYSQL_CLUSTER_IDENTIFIER --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint" --output text)
           echo RDS_MYSQL_CLUSTER_ENDPOINT="$RDS_MYSQL_CLUSTER_ENDPOINT" >> $GITHUB_ENV
-          RDS_MYSQL_CLUSTER_IDENTIFIER=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier "rdsaurorajavaclusterformysql" --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].DBClusterIdentifier" --output text)
           RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME=$(aws secretsmanager list-secrets --region ${{inputs.aws-region}} --query "SecretList[?Tags[?Value=='arn:aws:rds:${{inputs.aws-region}}:${{env.ACCOUNT_ID}}:cluster:$RDS_MYSQL_CLUSTER_IDENTIFIER']].Name" --output text)
           echo RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME="$RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME" >> $GITHUB_ENV
 
@@ -193,8 +229,9 @@ jobs:
               -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
               -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
               -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' \
-            || deployment_failed=$?
-                    
+              -var='account_id=${{ env.ACCOUNT_ID }}' \
+            || deployment_failed=$?          
+
             if [ $deployment_failed -ne 0 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
             fi
@@ -217,39 +254,6 @@ jobs:
           
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
-          
-              echo "Attempting to connect to the main sample app endpoint"
-              main_sample_app_endpoint=http://$(terraform output sample_app_endpoint)
-              attempt_counter=0
-              max_attempts=60
-              until $(curl --output /dev/null --silent --head --fail $(echo "$main_sample_app_endpoint" | tr -d '"')); do
-                if [ ${attempt_counter} -eq ${max_attempts} ];then
-                  echo "Failed to connect to endpoint ($main_sample_app_endpoint). Will attempt to redeploy sample app."
-                  deployment_failed=1
-                  break
-                fi
-          
-                printf '.'
-                attempt_counter=$(($attempt_counter+1))
-                sleep 10
-              done
-          
-              echo "Attempting to connect to the remote sample app endpoint"
-              remote_sample_app_endpoint=http://$(terraform output sample_remote_app_endpoint)/healthcheck
-              echo $remote_sample_app_endpoint
-              attempt_counter=0
-              max_attempts=30
-              until $(curl --output /dev/null --silent --head --fail $(echo "$remote_sample_app_endpoint" | tr -d '"')); do
-                if [ ${attempt_counter} -eq ${max_attempts} ];then
-                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-                  deployment_failed=1
-                  break
-                fi
-          
-                printf '.'
-                attempt_counter=$(($attempt_counter+1))
-                sleep 10
-              done
             fi
           
             # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
@@ -318,18 +322,13 @@ jobs:
           echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
 
       - name: Get the sample app endpoint
-        working-directory: terraform/java/eks
-        run: echo "APP_ENDPOINT=$(terraform output sample_app_endpoint)" >> $GITHUB_ENV
+        run: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8080" >> $GITHUB_ENV
 
-      # This steps increases the speed of the validation by creating the telemetry data in advance
-      - name: Call all test APIs
-        continue-on-error: true
+      - name: Set endpoints for the traffic generator
         run: |
-          curl -S -s "http://${{ env.APP_ENDPOINT }}/outgoing-http-call"
-          curl -S -s "http://${{ env.APP_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
-          curl -S -s "http://${{ env.APP_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}"
-          curl -S -s "http://${{ env.APP_ENDPOINT }}/client-call"
-          curl -S -s "http://${{ env.APP_ENDPOINT }}/mysql"
+          # Add the appropriate environment variables to the traffic generator
+          kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }}
+          kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator REMOTE_ENDPOINT=${{ env.REMOTE_SERVICE_POD_IP }}
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
@@ -356,6 +355,7 @@ jobs:
           --platform-info ${{ env.CLUSTER_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
+          --remote-resource-identifier "information_schema|${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}|3306"
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -374,6 +374,7 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
+          --remote-resource-identifier "information_schema|${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}|3306"
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -391,8 +392,16 @@ jobs:
           --platform-info ${{ env.CLUSTER_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
+          --remote-resource-identifier "information_schema|${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}|3306"
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
+
+      - name: Refresh AWS Credentials
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Publish metric on test result
         if: always()

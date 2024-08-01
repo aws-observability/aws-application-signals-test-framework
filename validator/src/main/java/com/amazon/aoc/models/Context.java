@@ -49,6 +49,8 @@ public class Context {
 
   private String remoteServiceDeploymentName;
 
+  private String remoteResourceIdentifier;
+
   private String endpoint;
 
   private String queryString;
