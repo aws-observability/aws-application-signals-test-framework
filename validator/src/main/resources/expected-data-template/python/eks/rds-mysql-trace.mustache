@@ -1,41 +1,6 @@
 [
   {
     "name": "^{{serviceName}}$",
-    "origin": "^AWS::EKS::Container$",
-    "subsegments": [
-      {
-        "name": "^mysql$",
-        "namespace": "^remote$",
-        "aws": {
-          "account_id": "^{{accountId}}$",
-          "xray": {
-            "auto_instrumentation": true,
-            "sdk": "^opentelemetry for python$"
-          }
-        },
-        "sql": {
-          "connection_string": "^localhost/information_schema$",
-          "url": "^SELECT$",
-          "sanitized_query": "^SELECT \\* FROM tables LIMIT 1;$",
-          "database_type": "^mysql$"
-        },
-        "metadata": {
-          "default": {
-            "aws.span.kind": "^CLIENT$",
-            "EKS.Cluster": "^{{platformInfo}}$",
-            "PlatformType": "^AWS::EKS$"
-	  }
-        },
-        "annotations": {
-          "aws.local.service": "^{{serviceName}}$",
-          "aws.local.operation": "^GET mysql$",
-          "aws.remote.resource.type": "^DB::Connection$",
-          "aws.remote.resource.identifier": "^{{remoteResourceIdentifier}}$",
-          "aws.remote.service": "^mysql$",
-          "aws.remote.operation": "^SELECT$"
-        }
-      }
-    ],
     "http": {
       "request": {
         "url": "^{{endpoint}}/mysql$",
@@ -49,44 +14,52 @@
       "account_id": "^{{accountId}}$",
       "xray": {
         "auto_instrumentation": true,
-        "sdk": "^opentelemetry for python$"
-      }
-    },
-    "metadata": {
-      "default": {
-        "otel.resource.aws.log.group.names": "^/aws/containerinsights/{{platformInfo}}/application$",
-        "otel.resource.service.name": "^{{serviceName}}$",
-        "aws.span.kind": "^LOCAL_ROOT$",
-        "otel.resource.cloud.platform": "^aws_eks$",
-        "EKS.Cluster": "^{{platformInfo}}$",
-        "otel.resource.telemetry.sdk.name": "^opentelemetry$",
-        "otel.resource.cloud.account.id": "^{{accountId}}$",
-        "http.route": "^mysql$",
-        "PlatformType": "^AWS::EKS$",
-        "otel.resource.telemetry.sdk.language": "^python$",
-        "otel.resource.cloud.provider": "^aws$"
+        "sdk": "^opentelemetry for"
       }
     },
     "annotations": {
       "aws.local.service": "^{{serviceName}}$",
       "aws.local.operation": "^GET mysql$"
-    }
-  },
-  {
-    "name": "^mysql$",
-    "origin": "^Database::SQL$",
-    "inferred": true,
-    "sql": {
-      "connection_string": "^localhost/information_schema$",
-      "url": "^SELECT$",
-      "sanitized_query": "^SELECT \\* FROM tables LIMIT 1;$",
-      "database_type": "^mysql$"
+      "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
     },
-    "annotations": {
-      "aws.local.service": "^mysql$",
-      "aws.local.operation": "^SELECT$",
-      "aws.local.resource.identifier": "^{{remoteResourceIdentifier}}$",
-      "aws.local.resource.type": "^DB::Connection$"
-    }
+    "metadata": {
+      "default": {
+        "EC2.AutoScalingGroup": "^eks-.+",
+        "EKS.Cluster": "^{{platformInfo}}$",
+        "K8s.Namespace": "^{{appNamespace}}",
+        "otel.resource.K8s.Workload": "^python-app-deployment-{{testingId}}",
+        "otel.resource.K8s.Node": "^i-[A-Za-z0-9]{17}$",
+        "otel.resource.K8s.Pod": "^python-app-deployment-{{testingId}}(-[A-Za-z0-9]*)*$",
+        "otel.resource.host.name": "^ip(-[0-9]{1,3}){4}.*$",
+        "PlatformType": "^AWS::EKS$",
+        "aws.span.kind": "^LOCAL_ROOT$",
+        "http.route": "^mysql$"
+      }
+    },
+    "subsegments": [
+      {
+        "name": "^mysql$",
+        "aws": {
+          "account_id": "^{{accountId}}$",
+          "xray": {
+            "auto_instrumentation": true,
+            "sdk": "^opentelemetry for"
+          }
+        },
+        "annotations": {
+          "aws.local.operation": "^GET mysql$",
+        },
+        "metadata": {
+          "default": {
+            "EC2.AutoScalingGroup": "^eks-.+",
+            "EKS.Cluster": "^{{platformInfo}}$",
+            "K8s.Namespace": "^{{appNamespace}}$",
+            "PlatformType": "^AWS::EKS$",
+            "aws.span.kind": "^CLIENT$"
+          }
+        },
+        "namespace": "^remote$"
+      }
+    ]
   }
 ]
