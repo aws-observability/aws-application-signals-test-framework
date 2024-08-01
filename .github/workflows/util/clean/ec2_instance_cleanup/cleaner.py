@@ -66,7 +66,7 @@ def _delete_autoscaling_groups(auto_scaling_groups):
             logging.info("===== Response for delete autoscaling group request =====")
             logging.info(response)
         except Exception as e:
-            logging.info(f"Error terminating instances: {e}")
+            logging.info(f"Error deleting groups: {e}")
 
 def _is_active(asg):
     for instance in asg['Instances']:
@@ -191,13 +191,18 @@ if __name__ == '__main__':
     instances = _get_instances_to_terminate()
     
     if len(groups) == 0 and len(instances) == 0:
-        logging.info("No resource to terminate")
+        logging.info("No resource to clean up")
         exit(0)
 
     report_successful = _prepare_report_and_upload(groups, instances)
     if not report_successful:
-        logging.error("Failed to prepare report and upload. Aborting termination of instances.")
+        logging.error("Failed to prepare report and upload. Aborting resource clean up.")
         exit(1)
 
-    _delete_autoscaling_groups(groups)
-    _terminate_instances(instances)
+    if len(groups) > 0:
+        logging.info("Deleting autoscaling groups...")
+        _delete_autoscaling_groups(groups)
+
+    if len(instances) > 0:
+        logging.info("Terminating instances...")
+        _terminate_instances(instances)
