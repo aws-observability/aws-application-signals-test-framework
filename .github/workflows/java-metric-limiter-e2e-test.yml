@@ -348,9 +348,9 @@ jobs:
         id: validation-result
         run: |
           if [ "${{ steps.other-operation-metric-validation.outcome }}" = "success" ]; then
-            echo "::set-output name=validation-result::success"
+            echo "validation-result=success" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=validation-result::failure"
+            echo "validation-result=failure" >> $GITHUB_OUTPUT
           fi
 
       # Clean up Procedures
