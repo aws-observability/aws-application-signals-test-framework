@@ -28,14 +28,13 @@ env:
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  RESULT_FOLDER: asg-e2e-test-result
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
   java-ec2-asg:
     runs-on: ubuntu-latest
     outputs:
-      result-folder: ${{ steps.result-folder.outputs.result-folder }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
@@ -246,25 +245,13 @@ jobs:
 
       - name: Save test results
         if: always()
+        id: validation-result
         run: |
-          mkdir ${{ env.RESULT_FOLDER }}
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "SUCCESS" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
+            echo "::set-output name=validation-result::success"
           else
-            echo "FAIL" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
+            echo "::set-output name=validation-result::failure"
           fi      
-
-      - name: Archive test results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ env.RESULT_FOLDER }}
-          path: ${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
-
-      - name: Output the result folder for the emit metric job
-        id: result-folder
-        if: always()
-        run: echo "::set-output name=result-folder::${{ env.RESULT_FOLDER }}"
 
       # Clean up Procedures
       - name: Terraform destroy
@@ -283,4 +270,4 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      result-folder: ${{ needs.java-ec2-asg.outputs.result-folder }}
+      validation-result: ${{ needs.java-ec2-asg.outputs.validation-result }}

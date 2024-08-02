@@ -44,14 +44,13 @@ env:
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  RESULT_FOLDER: e2e-test-result
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
   java-metric-limiter:
     runs-on: ubuntu-latest
     outputs:
-      result-folder: ${{ steps.result-folder.outputs.result-folder }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
       - name: Generate testing id and sample app namespace
         run: |
@@ -344,27 +343,15 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
-      - name: Save test results
+      - name: Output validation result
         if: always()
+        id: validation-result
         run: |
-          mkdir ${{ env.RESULT_FOLDER }}
           if [ "${{ steps.other-operation-metric-validation.outcome }}" = "success" ]; then
-            echo "SUCCESS" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
+            echo "::set-output name=validation-result::success"
           else
-            echo "FAIL" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
-          fi      
-
-      - name: Archive test results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ env.RESULT_FOLDER }}
-          path: ${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
-
-      - name: Output the result folder for the emit metric job
-        id: result-folder
-        if: always()
-        run: echo "::set-output name=result-folder::${{ env.RESULT_FOLDER }}"
+            echo "::set-output name=validation-result::failure"
+          fi
 
       # Clean up Procedures
 
@@ -419,5 +406,5 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      result-folder: ${{ needs.java-metric-limiter.outputs.result-folder }}
+      validation-result: ${{ needs.java-metric-limiter.outputs.validation-result }}
           

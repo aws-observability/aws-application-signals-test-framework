@@ -21,9 +21,9 @@ on:
         required: false
         type: string
 
-#concurrency:
-#  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
-#  cancel-in-progress: false
+concurrency:
+  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
+  cancel-in-progress: false
 
 permissions:
   id-token: write
@@ -39,16 +39,13 @@ env:
   SAMPLE_APP_NAMESPACE: sample-app-namespace
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  RESULT_FOLDER: e2e-test-result
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
-  MAIN_SERVICE_ENDPOINT: ${{ secrets.TEMP_IAD_ENDPOINT_K8S }}
-  MASTER_NODE_SSH_KEY: ${{ secrets.TEMP_IAD_SSH_KEY_K8S }}
 
 jobs:
   java-k8s:
     runs-on: ubuntu-latest
     outputs:
-      result-folder: ${{ steps.result-folder.outputs.result-folder }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
       - name: Generate testing id
         run: echo TESTING_ID="${{ env.E2E_TEST_AWS_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
@@ -85,8 +82,8 @@ jobs:
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
             JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
             RELEASE_TESTING_ECR_ACCOUNT, e2e-test/${{ github.event.repository.name }}/java-k8s-release-testing-account
-#            MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/java-k8s-master-node-endpoint
-#            MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/java-k8s-ssh-key
+            MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/java-k8s-master-node-endpoint
+            MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/java-k8s-ssh-key
 
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/java/k8s/deploy/resources
@@ -212,25 +209,13 @@ jobs:
 
       - name: Save test results
         if: always()
+        id: validation-result
         run: |
-          mkdir ${{ env.RESULT_FOLDER }}
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "SUCCESS" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
+            echo "::set-output name=validation-result::success"
           else
-            echo "FAIL" > ./${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
-          fi      
-
-      - name: Archive test results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ env.RESULT_FOLDER }}
-          path: ${{ env.RESULT_FOLDER }}/${{ env.E2E_TEST_AWS_REGION }}.txt
-
-      - name: Output the result folder for the emit metric job
-        id: result-folder
-        if: always()
-        run: echo "::set-output name=result-folder::${{ env.RESULT_FOLDER }}"
+            echo "::set-output name=validation-result::failure"
+          fi
 
       # Clean up Procedures
       - name: Initiate Terraform for Cleanup
@@ -274,4 +259,4 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      result-folder: ${{ needs.java-k8s.outputs.result-folder }}
+      validation-result: ${{ needs.java-k8s.outputs.validation-result }}
