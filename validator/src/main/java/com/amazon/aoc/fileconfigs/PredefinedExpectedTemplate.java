@@ -19,8 +19,7 @@ import java.net.URL;
 
 /**
  * PredefinedExpectedTemplate includes all the built-in expected data templates,
- * which are under
- * resources/expected-data-templates.
+ * which are under resources/expected-data-templates.
  */
 public enum PredefinedExpectedTemplate implements FileConfig {
   /** JAVA EKS Test Case Validations */

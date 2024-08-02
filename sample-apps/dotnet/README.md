@@ -6,6 +6,8 @@ The dotnet sample app is used to perform E2E testing on cloudwatch, cloudwatch o
 
 ## EKS Use Case: Uploading to ECR
 
+**This Steps should only be use for personal account/local test purpose, for E2E test, artifacts uses for test purpose are uploaded by workflow**
+
 ### Build the sample app locally:
 run `docker-compose build` to generate two docker images: `dotnetsampleapp/frontend-service` and `dotnetsampleapp/remote-service`
 
