@@ -220,12 +220,6 @@ jobs:
               ${{ env.SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
               60
-              
-              aws eks update-addon \
-                --cluster-name ${{ env.CLUSTER_NAME }} \
-                --addon-name amazon-cloudwatch-observability \
-                --region ${{ env.E2E_TEST_AWS_REGION }} \
-                --configuration-values '{"agent":{"config":{"logs":{"metrics_collected":{"app_signals":{"limiter":{"drop_threshold":2}}}}}}}'
                     
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10          
@@ -305,6 +299,15 @@ jobs:
         run: |
           kubectl get pods -n amazon-cloudwatch --output json | \
           jq '.items[0].status.containerStatuses[0].imageID'
+
+      - name: Update metric limiter threshold
+        run: |
+          aws eks update-addon \
+            --cluster-name ${{ env.CLUSTER_NAME }} \
+            --addon-name amazon-cloudwatch-observability \
+            --region ${{ env.E2E_TEST_AWS_REGION }} \
+            --configuration-values '{"agent":{"config":{"logs":{"metrics_collected":{"app_signals":{"limiter":{"drop_threshold":2}}}}}}}' \
+            --resolve-conflicts OVERWRITE
 
       - name: Get the sample app endpoint
         run: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8080" >> $GITHUB_ENV
