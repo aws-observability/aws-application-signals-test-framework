@@ -49,6 +49,8 @@ env:
 jobs:
   java-metric-limiter:
     runs-on: ubuntu-latest
+    outputs:
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
       - name: Generate testing id and sample app namespace
         run: |
@@ -341,21 +343,14 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
-      - name: Publish metric on test result
+      - name: Output validation result
         if: always()
+        id: validation-result
         run: |
           if [ "${{ steps.other-operation-metric-validation.outcome }}" = "success" ]; then
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
-            --value 0.0 \
-            --region ${{ env.E2E_TEST_AWS_REGION }}
+            echo "validation-result=success" >> $GITHUB_OUTPUT
           else
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
-            --value 1.0 \
-            --region ${{ env.E2E_TEST_AWS_REGION }}
+            echo "validation-result=failure" >> $GITHUB_OUTPUT
           fi
 
       # Clean up Procedures
@@ -402,3 +397,14 @@ jobs:
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}
+
+  emit-metric:
+    needs: java-metric-limiter
+    if: always()
+    uses: ./.github/workflows/e2e-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ inputs.aws-region }}
+      caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      validation-result: ${{ needs.java-metric-limiter.outputs.validation-result }}
+          
