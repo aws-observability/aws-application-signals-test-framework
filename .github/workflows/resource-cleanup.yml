@@ -1,0 +1,55 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+name: AWS Resource Cleaner
+
+on:
+  schedule:
+    - cron: '0 18 * * *' # scheduled to run at 18:00 UTC every day
+  workflow_dispatch: # be able to run on demand
+
+jobs:
+  cleanup-ec2-instances:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: ['af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
+                     'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
+                     'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+                     'us-east-1','us-east-2', 'us-west-1', 'us-west-2']
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Configure AWS credentials for IAD account access
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          aws-region: us-east-1
+
+      - name: Retrieve account id for the region
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ matrix.aws-region }}
+
+      - name: Configure AWS credentials for the regional account access
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.RESOURCE_CLEANER_ROLE_NAME }}
+          aws-region: ${{ matrix.aws-region }}
+
+      - name: Cleanup EC2 instances and ASGs
+        working-directory: .github/workflows/util/clean/ec2_instance_cleanup
+        env:
+          AWS_DEFAULT_REGION: ${{ matrix.aws-region }}
+          S3_REPORTS_BUCKET: ${{ secrets.S3_CLEAUP_REPORTS_BUCKET }}-prod-${{ matrix.aws-region }}
+        run: |
+          python -m pip install -r requirements.txt
+          python cleaner.py

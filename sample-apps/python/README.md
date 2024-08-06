@@ -35,3 +35,4 @@ The following are the APIs supported:
 2. http://${ FRONTEND_SERVICE_IP }:8000/aws-sdk-call/
 3. http://${ FRONTEND_SERVICE_IP }:8000/remote-service?ip=${ REMOTE_SERVICE_IP }/
 4. http://${ FRONTEND_SERVICE_IP }:8000/client-call/
+5. http://${ FRONTEND_SERVICE_IP }:8000/mysql/

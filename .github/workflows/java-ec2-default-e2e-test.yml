@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Application Signals Enablement E2E Testing - Java EC2 Default Use Case
+name: Java EC2 Default Use Case
 on:
   workflow_call:
     inputs:
@@ -20,27 +20,33 @@ permissions:
   contents: read
 
 env:
-  # The presence of this env var is required for use by terraform and AWS CLI commands
-  # It is not redundant
-  TEST_ACCOUNT: ${{ secrets.APP_SIGNALS_E2E_TEST_ACC }}
-  SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/main-service.jar
-  SAMPLE_APP_REMOTE_SERVICE_JAR: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/remote-service.jar
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/main-service.jar
+  SAMPLE_APP_REMOTE_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/remote-service.jar
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  GET_ADOT_JAR_COMMAND: "wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
-  GET_CW_AGENT_RPM_COMMAND: "wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
-  TEST_RESOURCES_FOLDER: /__w/aws-application-signals-test-framework/aws-application-signals-test-framework
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  e2e-ec2-default-test:
+  java-ec2-default:
     runs-on: ubuntu-latest
-    container:
-      image: public.ecr.aws/h6o3z5z9/aws-application-signals-test-framework-workflow-container:latest
+    outputs:
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+
       - uses: actions/checkout@v4
         with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
+        # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
+        # fails due to transient issues. If it fails here, then we will try again later before the validators
       - name: Initiate Gradlew Daemon
         id: initiate-gradlew
         uses: ./.github/workflows/actions/execute_and_retry
@@ -51,26 +57,51 @@ jobs:
           max_retry: 3
           sleep_time: 60
 
-      - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
       - name: Retrieve account
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
-          secret-ids:
-            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+          secret-ids: |
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
 
+      # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
       - name: Configure AWS Credentials
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
-          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Set Get ADOT Wheel command environment variable
+        run: |
+          if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
+            # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
+            echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
+          else
+            echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
+          fi
+
+      - name: Set Get CW Agent command environment variable
+        run: |
+          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+            # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
+            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
+          else
+            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+          fi
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -105,42 +136,6 @@ jobs:
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
             fi
 
-            # If the deployment_failed is still 0, then the terraform deployment succeeded and now try to connect to the endpoint.
-            # Attempts to connect will be made for up to 10 minutes
-            if [ $deployment_failed -eq 0 ]; then
-              echo "Attempting to connect to the endpoint"
-              main_sample_app_endpoint=http://$(terraform output sample_app_main_service_public_dns):8080
-              attempt_counter=0
-              max_attempts=30
-              until $(curl --output /dev/null --silent --head --fail $(echo "$main_sample_app_endpoint" | tr -d '"')); do
-                if [ ${attempt_counter} -eq ${max_attempts} ];then
-                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-                  deployment_failed=1
-                  break
-                fi
-
-                printf '.'
-                attempt_counter=$(($attempt_counter+1))
-                sleep 10
-              done
-
-              echo "Attempting to connect to the remote sample app endpoint"
-              remote_sample_app_endpoint=http://$(terraform output sample_app_remote_service_public_ip):8080/healthcheck
-              attempt_counter=0
-              max_attempts=30
-              until $(curl --output /dev/null --silent --head --fail $(echo "$remote_sample_app_endpoint" | tr -d '"')); do
-                if [ ${attempt_counter} -eq ${max_attempts} ];then
-                  echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-                  deployment_failed=1
-                  break
-                fi
-
-                printf '.'
-                attempt_counter=$(($attempt_counter+1))
-                sleep 10
-              done
-            fi
-
             # If the success is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
             # resources created from terraform and try again.
             if [ $deployment_failed -eq 1 ]; then
@@ -168,18 +163,9 @@ jobs:
       - name: Get the sample app and EC2 instance information
         working-directory: terraform/java/ec2/default
         run: |
-          echo "MAIN_SERVICE_ENDPOINT=$(terraform output sample_app_main_service_public_dns):8080" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_public_ip)" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
-
-      # This steps increases the speed of the validation by creating the telemetry data in advance
-      - name: Call all test APIs
-        continue-on-error: true
-        run: |
-          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/outgoing-http-call"
-          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/aws-sdk-call?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"
-          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/remote-service?ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}"
-          curl -S -s "http://${{ env.MAIN_SERVICE_ENDPOINT }}/client-call"
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
@@ -245,21 +231,21 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
-      - name: Publish metric on test result
+      - name: Refresh AWS Credentials
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Save test results
         if: always()
+        id: validation-result
         run: |
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 0.0 \
-            --region ${{ inputs.aws-region }}
+            echo "validation-result=success" >> $GITHUB_OUTPUT
           else
-            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
-            --metric-name Failure \
-            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ inputs.caller-workflow-name }} \
-            --value 1.0 \
-            --region ${{ inputs.aws-region }}
+            echo "validation-result=failure" >> $GITHUB_OUTPUT
           fi
 
       # Clean up Procedures
@@ -270,3 +256,13 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
+
+  emit-metric:
+    needs: java-ec2-default
+    if: always()
+    uses: ./.github/workflows/e2e-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ inputs.aws-region }}
+      caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      validation-result: ${{ needs.java-ec2-default.outputs.validation-result }}

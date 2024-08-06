@@ -212,3 +212,36 @@ resource "null_resource" "remote_service_setup" {
 
   depends_on = [aws_instance.remote_service_instance]
 }
+
+resource "null_resource" "traffic_generator_setup" {
+  connection {
+    type = "ssh"
+    user = var.user
+    private_key = local.private_key_content
+    host = aws_instance.main_service_instance.public_ip
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      <<-EOF
+        sudo yum install nodejs aws-cli unzip tmux -y
+
+        # Bring in the traffic generator files to EC2 Instance
+        aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
+        unzip ./traffic-generator.zip -d ./
+
+        # Install the traffic generator dependencies
+        npm install
+
+        tmux new -s traffic-generator -d
+        tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8080\"" C-m
+        tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"${aws_instance.remote_service_instance.private_ip}\"" C-m
+        tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
+        tmux send-keys -t traffic-generator "npm start" C-m
+
+      EOF
+    ]
+  }
+
+  depends_on = [null_resource.main_service_setup, null_resource.remote_service_setup]
+}

@@ -121,8 +121,8 @@ resource "aws_launch_configuration" "launch_configuration" {
     cd ./django_frontend_service
     # Delete the requests requirement as it is installed already using rpm. Only applicable for ec2 instances
     # created by Auto Scaling Groups
-    sudo sed -i '/requests/d' ./requirements.txt
-    python3.9 -m pip install -r requirements.txt
+    sudo sed -i '/requests/d' ./ec2-requirements.txt
+    python3.9 -m pip install -r ec2-requirements.txt
     export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
     export OTEL_PYTHON_DISTRO="aws_distro"
     export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
@@ -140,6 +140,23 @@ resource "aws_launch_configuration" "launch_configuration" {
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
+
+    # Deploy Traffic Generator
+    sudo yum install nodejs aws-cli unzip tmux -y
+
+    # Bring in the traffic generator files to EC2 Instance
+    aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
+    unzip ./traffic-generator.zip -d ./
+
+    # Install the traffic generator dependencies
+    npm install
+
+    tmux new -s traffic-generator -d
+    tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8000\"" C-m
+    tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"${aws_instance.remote_service_instance.private_ip}\"" C-m
+    tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
+    tmux send-keys -t traffic-generator "npm start" C-m
+
     EOF
 }
 

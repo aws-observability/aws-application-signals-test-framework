@@ -1,11 +1,11 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-## This workflow aims to run the Application Signals Python end-to-end tests as a canary to
-## test the artifacts for Application Signals enablement. It will deploy a sample app and remote
+## This workflow aims to run the Application Signals end-to-end tests as a canary to
+## test the artifacts for App Signals enablement. It will deploy a sample app and remote
 ## service on two EC2 instances, call the APIs, and validate the generated telemetry,
 ## including logs, metrics, and traces.
-name: Application Signals Enablement - Python E2E EC2 Canary Testing
+name: Java EC2 E2E Canary Testing
 on:
   schedule:
     - cron: '*/15 * * * *' # run the workflow every 15 minutes
@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  python-e2e-ec2-default-test:
+  default:
     strategy:
       fail-fast: false
       matrix:
@@ -24,22 +24,22 @@ jobs:
                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
                      'us-east-1','us-east-2', 'us-west-1', 'us-west-2']
-    uses: ./.github/workflows/application-signals-python-e2e-ec2-default-test.yml
+    uses: ./.github/workflows/java-ec2-default-e2e-test.yml
     secrets: inherit
     with:
       aws-region: ${{ matrix.aws-region }}
-      caller-workflow-name: 'appsignals-python-e2e-ec2-canary-test'
+      caller-workflow-name: 'appsignals-e2e-ec2-canary-test'
 
-  python-e2e-ec2-asg-test:
+  asg:
     strategy:
       fail-fast: false
       matrix:
-        aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
-                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
-                      'us-east-1','us-east-2', 'us-west-1', 'us-west-2' ]
-    uses: ./.github/workflows/application-signals-python-e2e-ec2-asg-test.yml
+        aws-region: ['af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
+                     'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
+                     'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+                     'us-east-1','us-east-2', 'us-west-1', 'us-west-2']
+    uses: ./.github/workflows/java-ec2-asg-e2e-test.yml
     secrets: inherit
     with:
       aws-region: ${{ matrix.aws-region }}
-      caller-workflow-name: 'appsignals-python-e2e-ec2-asg-canary-test'
+      caller-workflow-name: 'appsignals-e2e-ec2-asg-canary-test'

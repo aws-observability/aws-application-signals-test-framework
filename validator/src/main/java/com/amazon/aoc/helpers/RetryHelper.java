@@ -42,6 +42,7 @@ public class RetryHelper {
         return true;
       } catch (Exception ex) {
         exceptionInTheEnd = ex;
+        log.warn(ex);
         if (retryCount != 0) { // don't sleep before leave this loop
           log.info(
               "retrying after {} seconds", TimeUnit.MILLISECONDS.toSeconds(sleepInMilliSeconds));

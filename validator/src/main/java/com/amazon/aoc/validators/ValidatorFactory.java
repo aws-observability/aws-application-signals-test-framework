@@ -15,8 +15,6 @@
 
 package com.amazon.aoc.validators;
 
-import com.amazon.aoc.callers.HttpCaller;
-import com.amazon.aoc.callers.ICaller;
 import com.amazon.aoc.exception.BaseException;
 import com.amazon.aoc.exception.ExceptionCode;
 import com.amazon.aoc.fileconfigs.FileConfig;
@@ -59,27 +57,8 @@ public class ValidatorFactory {
         throw new BaseException(ExceptionCode.VALIDATION_TYPE_NOT_EXISTED);
     }
 
-    // get caller
-    ICaller caller;
-    switch (validationConfig.getCallingType()) {
-      case "http":
-        caller = new HttpCaller(context.getEndpoint(), validationConfig.getHttpPath());
-        break;
-      case "http-with-query":
-        // ONLY ONE OF THESE CAN BE USED PER VALIDATOR CALL
-        caller =
-            new HttpCaller(
-                context.getEndpoint(), validationConfig.getHttpPath(), context.getQueryString());
-        break;
-      case "none":
-        caller = null;
-        break;
-      default:
-        throw new BaseException(ExceptionCode.CALLER_TYPE_NOT_EXISTED);
-    }
-
     // init validator
-    validator.init(this.context, validationConfig, caller, expectedData);
+    validator.init(this.context, validationConfig, expectedData);
     return validator;
   }
 }

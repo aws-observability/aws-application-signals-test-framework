@@ -15,7 +15,6 @@
 
 package com.amazon.aoc.validators;
 
-import com.amazon.aoc.callers.ICaller;
 import com.amazon.aoc.exception.BaseException;
 import com.amazon.aoc.exception.ExceptionCode;
 import com.amazon.aoc.fileconfigs.FileConfig;
@@ -40,15 +39,15 @@ public class CWLogValidator implements IValidator {
   private static int DEFAULT_MAX_RETRY_COUNT = 15;
 
   private MustacheHelper mustacheHelper = new MustacheHelper();
-  private ICaller caller;
   private Context context;
+  private ValidationConfig validationConfig;
   private FileConfig expectedLog;
   private CloudWatchService cloudWatchService;
   private int maxRetryCount;
 
   @Override
   public void validate() throws Exception {
-    log.info("Start CW Log Validation for path {}", caller.getCallingPath());
+    log.info("Start CW Log Validation for path {}", validationConfig.getHttpPath());
 
     // Get expected values for log attributes we want to check
     JsonifyArrayList<Map<String, Object>> expectedAttributesArray = this.getExpectedAttributes();
@@ -57,10 +56,6 @@ public class CWLogValidator implements IValidator {
     RetryHelper.retry(
       this.maxRetryCount,
       () -> {
-
-        // Call sample app to generate logs
-        this.caller.callSampleApp();
-
         // Iterate through each expected template to check if the log is present
         for (Map<String, Object> expectedAttributes : expectedAttributesArray) {
           // All attributes are in REGEX for preciseness except operation, remoteService and
@@ -82,7 +77,7 @@ public class CWLogValidator implements IValidator {
         }
       });
 
-    log.info("Log validation is passed for path {}", caller.getCallingPath());
+    log.info("Log validation is passed for path {}", validationConfig.getHttpPath());
   }
 
   private void validateLogs(Map<String, Object> expectedAttributes, Map<String, Object> actualLog)
@@ -165,11 +160,10 @@ public class CWLogValidator implements IValidator {
   public void init(
       Context context,
       ValidationConfig validationConfig,
-      ICaller caller,
       FileConfig expectedLogTemplate)
       throws Exception {
     this.context = context;
-    this.caller = caller;
+    this.validationConfig = validationConfig;
     this.expectedLog = expectedLogTemplate;
     this.cloudWatchService = new CloudWatchService(context.getRegion());
     this.maxRetryCount = DEFAULT_MAX_RETRY_COUNT;

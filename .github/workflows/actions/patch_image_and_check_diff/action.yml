@@ -1,0 +1,200 @@
+# Composite action for patching image with release version and checking if they were patched properly
+# Outputs the value of the patched version afterwords, run this so that the e2e workflows do not get clogged up
+# by multiple logging steps.
+name: Patch Image and Check Difference
+
+inputs:
+  repository:
+    description: "Repository where the workflow is running"
+    required: true
+  patch-image-arn:
+    description: "ARN of the release image that needs to be patched"
+    required: true
+  sample-app-namespace:
+    description: "Namespace where the sample app pods are located"
+    required: true
+
+outputs:
+  default-adot-image:
+    description: "adot image installed by latest version of eks-addon"
+    value: ${{ steps.default-adot-image.outputs.DEFAULT_ADOT_IMAGE }}
+  default-cw-agent-image:
+    description: "cw agent image installed by latest version of eks-addon"
+    value: ${{ steps.default-cw-agent-image.outputs.DEFAULT_CW_AGENT_IMAGE }}
+  default-cw-agent-operator-image:
+    description: "cw agent operator image installed by latest version of eks-addon"
+    value: ${{ steps.default-cw-agent-operator-image.outputs.DEFAULT_CW_AGENT_OPERATOR_IMAGE }}
+  latest-adot-image:
+    description: "adot image after patch"
+    value: ${{ steps.latest-adot-image.outputs.LATEST_ADOT_IMAGE }}
+  latest-cw-agent-image:
+    description: "cw-agent image after patch"
+    value: ${{ steps.latest-cw-agent-image.outputs.LATEST_CW_AGENT_IMAGE }}
+  latest-cw-agent-operator-image:
+    description: "cw-agent-operator image after patch"
+    value: ${{ steps.latest-cw-agent-operator-image.outputs.LATEST_CW_AGENT_OPERATOR_IMAGE }}
+  fluent-bit-image:
+    description: "fluent bit image installed by latest version of eks-addon"
+    value: ${{ steps.fluent-bit-image.outputs.FLUENT_BIT_IMAGE }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Save ADOT image ID to environment before patching
+      id: default-adot-image
+      shell: bash
+      run: |
+        kubectl get pods -n ${{ inputs.sample-app-namespace }} --output json | \
+        jq '.items[0].status.initContainerStatuses[0].imageID'
+        
+        echo "DEFAULT_ADOT_IMAGE"=$(kubectl get pods -n ${{ inputs.sample-app-namespace }} --output json | \
+        jq '.items[0].status.initContainerStatuses[0].imageID') >> $GITHUB_OUTPUT
+
+    - name: Save CW Agent image ID to environment before patching
+      id: default-cw-agent-image
+      shell: bash
+      run: |
+        kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=cloudwatch-agent -o json | \
+        jq '.items[0].status.containerStatuses[0].image'
+        
+        echo "DEFAULT_CW_AGENT_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=cloudwatch-agent -o json | \
+        jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_OUTPUT
+
+    - name: Save CW Agent Operator image ID to environment before patching
+      id: default-cw-agent-operator-image
+      shell: bash
+      run: |
+        kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
+        jq '.items[0].status.containerStatuses[0].image'
+        
+        echo "DEFAULT_CW_AGENT_OPERATOR_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
+        jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_OUTPUT
+        
+        sleep 10
+
+    - name: Patch the Python ADOT image and restart CloudWatch pods
+      if: ${{ inputs.repository == 'aws-otel-python-instrumentation' }}
+      shell: bash
+      run: |
+        kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/2", "value": "--auto-instrumentation-python-image=${{ inputs.patch-image-arn }}"}]'
+        kubectl delete pods --all -n amazon-cloudwatch
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+
+        kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
+
+    - name: Patch the Java ADOT image and restart CloudWatch pods
+      if: ${{ inputs.repository == 'aws-otel-java-instrumentation' }}
+      shell: bash
+      run: |
+        kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/1", "value": "--auto-instrumentation-java-image=${{ inputs.patch-image-arn }}"}]'
+        kubectl delete pods --all -n amazon-cloudwatch
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+
+        kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
+
+    - name: Patch the CloudWatch Agent image and restart CloudWatch pods
+      if: ${{ inputs.repository == 'amazon-cloudwatch-agent' }}
+      shell: bash
+      run: |
+        kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": ${{ inputs.patch-image-arn }}}]'
+        kubectl delete pods --all -n amazon-cloudwatch
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+
+    - name: Patch the CloudWatch Agent Operator image and restart CloudWatch pods
+      if: ${{ inputs.repository == 'amazon-cloudwatch-agent-operator' }}
+      shell: bash
+      run: |
+        kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ inputs.patch-image-arn }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
+        kubectl delete pods --all -n amazon-cloudwatch
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+
+        kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
+
+    # Log artifacts being used to verify whether the correct versions are being used
+    - name: Log pod Adot image ID and save image to the environment
+      id: latest-adot-image
+      shell: bash
+      run: |
+        kubectl get pods -n ${{ inputs.sample-app-namespace }} --output json | \
+        jq '.items[0].status.initContainerStatuses[0].imageID'
+        
+        echo "LATEST_ADOT_IMAGE"=$(kubectl get pods -n ${{ inputs.sample-app-namespace }} --output json | \
+        jq '.items[0].status.initContainerStatuses[0].imageID') >> $GITHUB_OUTPUT
+
+    - name: Log pod CW Agent image ID and save image to the environment
+      id: latest-cw-agent-image
+      shell: bash
+      run: |
+        kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=cloudwatch-agent -o json | \
+        jq '.items[0].status.containerStatuses[0].image'
+        
+        echo "LATEST_CW_AGENT_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=cloudwatch-agent -o json | \
+        jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_OUTPUT
+
+    - name: Log pod CW Agent Operator image ID and save image to the environment
+      id: latest-cw-agent-operator-image
+      shell: bash
+      run: |
+        kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
+        jq '.items[0].status.containerStatuses[0].image'
+        
+        echo "LATEST_CW_AGENT_OPERATOR_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
+        jq '.items[0].status.containerStatuses[0].image') >> $GITHUB_OUTPUT
+
+    - name: Log pod Fluent Bit image ID
+      id: fluent-bit-image
+      shell: bash
+      run: |
+        kubectl get pods -n amazon-cloudwatch -l k8s-app=fluent-bit -o json | \
+        jq '.items[0].status.containerStatuses[0].imageID'
+        
+        echo "FLUENT_BIT_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l k8s-app=fluent-bit -o json | \
+        jq '.items[0].status.containerStatuses[0].imageID') >> $GITHUB_OUTPUT
+
+    - name: Check if Python Adot image has changed
+      if: ${{ inputs.repository == 'aws-otel-python-instrumentation' }}
+      shell: bash
+      run: |
+        if [ ${{ steps.default-adot-image.outputs.DEFAULT_ADOT_IMAGE }} = ${{ steps.latest-adot-image.outputs.LATEST_ADOT_IMAGE }} ]; then
+          echo "Adot image did not change"
+          exit 1
+        fi
+
+    - name: Check if Java Adot image has changed
+      if: ${{ inputs.repository == 'aws-otel-java-instrumentation' }}
+      shell: bash
+      run: |
+        if [ ${{ steps.default-adot-image.outputs.DEFAULT_ADOT_IMAGE }} = ${{ steps.latest-adot-image.outputs.LATEST_ADOT_IMAGE }} ]; then
+          echo "Adot image did not change"
+          exit 1
+        fi
+
+    - name: Check if CW Agent image has changed
+      if: ${{ inputs.repository == 'amazon-cloudwatch-agent' }}
+      shell: bash
+      run: |
+        if [ ${{ steps.default-cw-agent-image.outputs.DEFAULT_CW_AGENT_IMAGE }} = ${{ steps.latest-cw-agent-image.outputs.LATEST_CW_AGENT_IMAGE }} ]; then
+          echo "CW Agent image did not change"
+          exit 1
+        fi
+
+    - name: Check if CW Agent Operator image has changed
+      if: ${{ inputs.repository == 'amazon-cloudwatch-agent-operator' }}
+      shell: bash
+      run: |
+        if [ ${{ steps.default-cw-agent-operator-image.outputs.DEFAULT_CW_AGENT_OPERATOR_IMAGE }} = ${{ steps.latest-cw-agent-operator-image.outputs.LATEST_CW_AGENT_OPERATOR_IMAGE }} ]; then
+          echo "Operator image did not change"
+          exit 1
+        fi

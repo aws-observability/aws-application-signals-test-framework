@@ -15,7 +15,6 @@
 
 package com.amazon.aoc.helpers;
 
-import com.amazon.aoc.callers.ICaller;
 import com.amazon.aoc.fileconfigs.FileConfig;
 import com.amazon.aoc.models.Context;
 import com.amazonaws.services.cloudwatch.model.Dimension;
@@ -38,17 +37,11 @@ public class CWMetricHelper {
    *
    * @param context testing context
    * @param expectedMetric expected template
-   * @param caller http caller, none caller, could be null
    * @return list of metrics
    * @throws Exception when caller throws exception or template can not be found
    */
   public List<Metric> listExpectedMetrics(
-      Context context, FileConfig expectedMetric, ICaller caller) throws Exception {
-    // call endpoint
-    if (caller != null) {
-      caller.callSampleApp();
-    }
-
+      Context context, FileConfig expectedMetric) throws Exception {
     // get expected metrics as yaml from config
     String yamlExpectedMetrics = mustacheHelper.render(expectedMetric, context);
 

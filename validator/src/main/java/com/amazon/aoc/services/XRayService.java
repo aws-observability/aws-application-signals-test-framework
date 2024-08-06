@@ -29,7 +29,7 @@ import org.joda.time.DateTime;
 
 public class XRayService {
   private AWSXRay awsxRay;
-  private final int SEARCH_PERIOD = 180;
+  private final int SEARCH_PERIOD = 60;
   public static String DEFAULT_TRACE_ID = "1-00000000-000000000000000000000000";
 
   public XRayService(String region) {
@@ -49,20 +49,16 @@ public class XRayService {
     return batchGetTracesResult.getTraces();
   }
 
-  // Search for traces generated within the last 60 second.
-  public List<TraceSummary> searchClientCallTraces(String serviceName) {
+  // Search for traces generated within the past minute.
+  public List<TraceSummary> searchTraces(String traceFilter) {
     Date currentDate = new Date();
     Date pastDate = new DateTime(currentDate).minusSeconds(SEARCH_PERIOD).toDate();
     GetTraceSummariesResult traceSummaryResult =
-        awsxRay.getTraceSummaries(
-            new GetTraceSummariesRequest()
-                .withStartTime(pastDate)
-                .withEndTime(currentDate)
-                .withFilterExpression(
-                    "annotation.aws_local_service = \""
-                        + serviceName
-                        + "\" AND ( annotation.aws_local_service = \"local-root-client-call\" "
-                            + "OR annotation.aws_local_service = \"local-root-client-call:80\")"));
+            awsxRay.getTraceSummaries(
+                    new GetTraceSummariesRequest()
+                            .withStartTime(pastDate)
+                            .withEndTime(currentDate)
+                            .withFilterExpression(traceFilter));
     return traceSummaryResult.getTraceSummaries();
   }
 }

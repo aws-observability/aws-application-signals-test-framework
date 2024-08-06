@@ -126,6 +126,23 @@ resource "aws_launch_configuration" "launch_configuration" {
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
+
+    # Deploy Traffic Generator
+    sudo yum install nodejs aws-cli unzip tmux -y
+
+    # Bring in the traffic generator files to EC2 Instance
+    aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
+    unzip ./traffic-generator.zip -d ./
+
+    # Install the traffic generator dependencies
+    npm install
+
+    tmux new -s traffic-generator -d
+    tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8080\"" C-m
+    tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"${aws_instance.remote_service_instance.private_ip}\"" C-m
+    tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
+    tmux send-keys -t traffic-generator "npm start" C-m
+
     EOF
 }
 

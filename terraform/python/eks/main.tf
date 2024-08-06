@@ -119,7 +119,22 @@ resource "kubernetes_deployment" "python_app_deployment" {
               name = "DJANGO_SETTINGS_MODULE"
               value = "django_frontend_service.settings"
             }
-          
+          env {
+            name = "RDS_MYSQL_CLUSTER_ENDPOINT"
+            value = var.rds_mysql_cluster_endpoint
+          }
+          env {
+            name = "RDS_MYSQL_CLUSTER_DATABASE"
+            value = var.rds_mysql_cluster_database
+          }
+          env {
+            name = "RDS_MYSQL_CLUSTER_USERNAME"
+            value = var.rds_mysql_cluster_username
+          }
+          env {
+            name = "RDS_MYSQL_CLUSTER_PASSWORD"
+            value = var.rds_mysql_cluster_password
+          }
           port {
             container_port = 8000
           }
@@ -146,41 +161,6 @@ resource "kubernetes_service" "python_app_service" {
       port = 8080
       target_port = 8000
       node_port = 30100
-    }
-  }
-}
-
-resource "kubernetes_ingress_v1" "python-app-ingress" {
-  depends_on = [kubernetes_service.python_app_service]
-  wait_for_load_balancer = true
-  metadata {
-    name = "python-app-ingress-${var.test_id}"
-    namespace = var.test_namespace
-    annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-    }
-    labels = {
-        app = "python-app-ingress"
-    }
-  }
-  spec {
-    rule {
-      http {
-        path {
-          path = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.python_app_service.metadata[0].name
-              port {
-                number = 8080
-              }
-            }
-          }
-        }
-      }
     }
   }
 }
@@ -255,45 +235,38 @@ resource "kubernetes_service" "python_r_app_service" {
   }
 }
 
-resource "kubernetes_ingress_v1" "python-r-app-ingress" {
-  depends_on = [kubernetes_service.python_r_app_service]
-  wait_for_load_balancer = true
+resource "kubernetes_deployment" "traffic_generator" {
   metadata {
-    name = "python-r-app-ingress-${var.test_id}"
+    name = "traffic-generator"
     namespace = var.test_namespace
-    annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-    }
     labels = {
-      app = "python-r-app-ingress"
+      app = "traffic-generator"
     }
   }
   spec {
-    rule {
-      http {
-        path {
-          path = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.python_r_app_service.metadata[0].name
-              port {
-                number = 8001
-              }
-            }
+    replicas = 1
+    selector {
+      match_labels = {
+        app = "traffic-generator"
+      }
+    }
+    template {
+      metadata {
+        labels = {
+          app = "traffic-generator"
+        }
+      }
+      spec {
+        container {
+          name  = "traffic-generator"
+          image = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
+          image_pull_policy = "Always"
+          env {
+            name  = "ID"
+            value = var.test_id
           }
         }
       }
     }
   }
-}
-
-output "python_app_endpoint" {
-  value = kubernetes_ingress_v1.python-app-ingress.status.0.load_balancer.0.ingress.0.hostname
-}
-
-output "python_r_app_endpoint" {
-  value = kubernetes_ingress_v1.python-r-app-ingress.status.0.load_balancer.0.ingress.0.hostname
 }

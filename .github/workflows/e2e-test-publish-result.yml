@@ -1,0 +1,62 @@
+name: Application Signals Enablement E2E Testing - Publish Result
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        required: true
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+      validation-result:
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  VALIDATION_RESULT: ${{ inputs.validation-result }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+
+jobs:
+  publish-result:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Publish metric on test result
+        run: |          
+          if [ "${{ env.VALIDATION_RESULT }}" = "success" ]; then
+            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
+            --metric-name Failure \
+            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
+            --value 0.0 \
+            --region ${{ env.E2E_TEST_AWS_REGION }}
+          else
+            aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
+            --metric-name Failure \
+            --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
+            --value 1.0 \
+            --region ${{ env.E2E_TEST_AWS_REGION }}
+          fi

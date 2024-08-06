@@ -1,24 +1,24 @@
 -
   validationType: "cw-metric"
-  httpPath: "/outgoing-http-call"
+  httpPath: "outgoing-http-call"
   httpMethod: "get"
   callingType: "http"
   expectedMetricTemplate: "PYTHON_EC2_ASG_OUTGOING_HTTP_CALL_METRIC"
 -
   validationType: "cw-metric"
-  httpPath: "/aws-sdk-call"
+  httpPath: "aws-sdk-call"
   httpMethod: "get"
   callingType: "http-with-query"
   expectedMetricTemplate: "PYTHON_EC2_ASG_AWS_SDK_CALL_METRIC"
 -
   validationType: "cw-metric"
-  httpPath: "/remote-service"
+  httpPath: "remote-service"
   httpMethod: "get"
   callingType: "http-with-query"
   expectedMetricTemplate: "PYTHON_EC2_ASG_REMOTE_SERVICE_METRIC"
 -
   validationType: "cw-metric"
-  httpPath: "/client-call"
+  httpPath: "client-call"
   httpMethod: "get"
   callingType: "http"
   expectedMetricTemplate: "PYTHON_EC2_ASG_CLIENT_CALL_METRIC"
