@@ -50,6 +50,6 @@ const trafficGenerator = async (interval) => {
     setInterval(() => sendRequests(urls), interval);
 }
 
-const interval = 60 * 1000;
-// Start sending GET requests every minute (60,000 milliseconds)
+const interval = 15 * 1000;
+// Start sending GET requests every 15 seconds (60,000 milliseconds)
 trafficGenerator(interval);
