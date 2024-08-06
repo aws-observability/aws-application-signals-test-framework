@@ -14,7 +14,7 @@
 # -------------------------------------------------------------------------
 
 output "sample_app_remote_service_public_ip" {
-  value = aws_instance.remote_service_instance.public_ip
+  value = aws_instance.remote_service_instance.private_ip
 }
 
 output "ec2_instance_ami" {
