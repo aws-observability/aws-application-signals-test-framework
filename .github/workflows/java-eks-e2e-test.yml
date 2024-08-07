@@ -358,6 +358,7 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
           --remote-resource-identifier "information_schema|${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}|3306"
+          --remote-db-user ${{ env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME }}
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
