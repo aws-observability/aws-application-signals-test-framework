@@ -155,41 +155,6 @@ resource "kubernetes_service" "dotnet_app_service" {
   }
 }
 
-resource "kubernetes_ingress_v1" "dotnet-app-ingress" {
-  depends_on = [kubernetes_service.dotnet_app_service]
-  wait_for_load_balancer = true
-  metadata {
-    name = "dotnet-app-ingress-${var.test_id}"
-    namespace = var.test_namespace
-    annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-    }
-    labels = {
-        app = "dotnet-app-ingress"
-    }
-  }
-  spec {
-    rule {
-      http {
-        path {
-          path = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.dotnet_app_service.metadata[0].name
-              port {
-                number = 8080
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 # Set up the remote service
 
 resource "kubernetes_deployment" "dotnet_r_app_deployment" {
@@ -266,45 +231,40 @@ resource "kubernetes_service" "dotnet_r_app_service" {
   }
 }
 
-resource "kubernetes_ingress_v1" "dotnet-r-app-ingress" {
+resource "kubernetes_ingress_v1" "traffic_generator" {
   depends_on = [kubernetes_service.dotnet_r_app_service]
   wait_for_load_balancer = true
   metadata {
-    name = "dotnet-r-app-ingress-${var.test_id}"
+    name = "traffic_generator"
     namespace = var.test_namespace
-    annotations = {
-      "kubernetes.io/ingress.class" = "alb"
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/target-type" = "ip"
-    }
     labels = {
-      app = "dotnet-r-app-ingress"
+      app = "traffic_generator"
     }
   }
   spec {
-    rule {
-      http {
-        path {
-          path = "/"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service.dotnet_r_app_service.metadata[0].name
-              port {
-                number = 8081
-              }
-            }
+    replicas = 1
+    selector {
+      match_labels = {
+        app = "traffic-generator"
+      }
+    }
+    template {
+      metadata {
+        labels = {
+          app = "traffic-generator"
+        }
+      }
+      spec {
+        container {
+          name  = "traffic-generator"
+          image = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
+          image_pull_policy = "Always"
+          env {
+            name  = "ID"
+            value = var.test_id
           }
         }
       }
     }
   }
-}
-
-output "dotnet_app_endpoint" {
-  value = kubernetes_ingress_v1.dotnet-app-ingress.status.0.load_balancer.0.ingress.0.hostname
-}
-
-output "dotnet_r_app_endpoint" {
-  value = kubernetes_ingress_v1.dotnet-r-app-ingress.status.0.load_balancer.0.ingress.0.hostname
 }
