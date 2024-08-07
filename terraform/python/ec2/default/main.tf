@@ -158,7 +158,7 @@ resource "null_resource" "main_service_setup" {
           echo "Failed to connect to endpoint. "
           exit 1
         fi
-        printf '.'
+        printf 'Attempting to connect to the endpoint. Tried $attempt_counter out of $max_attempts'
         attempt_counter=$(($attempt_counter+1))
         sleep 10
       done
@@ -251,7 +251,7 @@ resource "null_resource" "remote_service_setup" {
           echo "Failed to connect to endpoint. "
           exit 1
         fi
-        printf '.'
+        printf 'Attempting to connect to the endpoint. Tried $attempt_counter out of $max_attempts'
         attempt_counter=$(($attempt_counter+1))
         sleep 10
       done
