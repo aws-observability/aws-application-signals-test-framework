@@ -29,6 +29,8 @@ permissions:
   contents: read
 
 env:
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CLUSTER_NAME: ${{ inputs.test-cluster-name }}
   METRIC_NAMESPACE: ApplicationSignals
@@ -73,31 +75,31 @@ jobs:
 
       - name: Generate testing id and dotnet sample app namespace
         run: |
-          echo TESTING_ID="${{ inputs.aws-region }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+          echo TESTING_ID="${{ env.E2E_TEST_AWS_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
           echo DOTNET_SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          role-to-assume: ${{ env.E2E_TEST_ACCOUNT_ID }}
           aws-region: us-east-1
 
       - name: Retrieve account
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids:
-            ACCOUNT_ID, region-account/${{ inputs.aws-region }}
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
 
       # ADOT_E2E_TEST_ROLE_ARN is used to access main build e2e test cluster
       # E2E_TEST_ROLE_ARN is used to access canary e2e test cluster
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ inputs['caller-workflow-name'] == 'main-build' && secrets.ADOT_E2E_TEST_ROLE_ARN || secrets.E2E_TEST_ROLE_ARN }}
-          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ inputs.aws-region }}
+        run: aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Add eksctl to Github Path
         run: |
@@ -113,13 +115,13 @@ jobs:
           --cluster ${{ inputs.test-cluster-name }} \
           --role-name eks-s3-access-${{ env.TESTING_ID }} \
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
-          --region ${{ inputs.aws-region }} \
+          --region ${{ env.E2E_TEST_AWS_REGION }} \
           --approve"
           cleanup: "eksctl delete iamserviceaccount \
           --name service-account-${{ env.TESTING_ID }} \
           --namespace ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-cluster-name }} \
-          --region ${{ inputs.aws-region }}"
+          --region ${{ env.E2E_TEST_AWS_REGION }}"
           sleep_time: 60
 
       - name: Initiate Terraform
@@ -137,25 +139,25 @@ jobs:
         with:
           command: 'terraform apply -auto-approve
               -var="test_id=${{ env.TESTING_ID }}"
-              -var="aws_region=${{ inputs.aws-region }}"
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}"
               -var="kube_directory_path=${{ github.workspace }}/.kube"
               -var="eks_cluster_name=${{ inputs.test-cluster-name }}"
               -var="eks_cluster_context_name=$(kubectl config current-context)"
               -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}"
               -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}"
-              -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}"
-              -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"
+              -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}"
+              -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"
               -var="account_id=${{ env.ACCOUNT_ID }}"'
           cleanup: 'terraform destroy -auto-approve
                 -var="test_id=${{ env.TESTING_ID }}" 
-                -var="aws_region=${{ inputs.aws-region }}" 
+                -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" 
                 -var="kube_directory_path=${{ github.workspace }}/.kube" 
                 -var="eks_cluster_name=${{ inputs.test-cluster-name }}" 
                 -var="eks_cluster_context_name=$(kubectl config current-context)" 
                 -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" 
                 -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" 
-                -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}" 
-                -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"'
+                -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}" 
+                -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"'
           max_retry: 2
           working-directory: ./terraform/dotnet/eks
 
@@ -222,7 +224,7 @@ jobs:
         run: ./gradlew validator:run --args='-c dotnet/eks/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -239,7 +241,7 @@ jobs:
         run: ./gradlew validator:run --args='-c dotnet/eks/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -257,7 +259,7 @@ jobs:
         run: ./gradlew validator:run --args='-c dotnet/eks/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --app-namespace ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}
@@ -286,7 +288,7 @@ jobs:
         run: |
           ./clean-app-signals.sh \
           ${{ inputs.test-cluster-name }} \
-          ${{ inputs.aws-region }} \
+          ${{ env.E2E_TEST_AWS_REGION }} \
           ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}
 
       # This step also deletes lingering resources from previous test runs
@@ -304,13 +306,13 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}" \
-            -var="aws_region=${{ inputs.aws-region }}" \
+            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
             -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
             -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
-            -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}" \
-            -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"
+            -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}" \
+            -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"
 
       - name: Remove aws access service account
         if: always()
@@ -320,7 +322,7 @@ jobs:
           --name service-account-${{ env.TESTING_ID }} \
           --namespace ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ inputs.test-cluster-name }} \
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
 
   emit-metric:
     needs: dotnet-e2e-eks-test
@@ -328,6 +330,6 @@ jobs:
     uses: ./.github/workflows/e2e-test-publish-result.yml
     secrets: inherit
     with:
-      aws-region: ${{ inputs.aws-region }}
+      aws-region: ${{ env.E2E_TEST_AWS_REGION }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       validation-result: ${{ needs.dotnet-e2e-eks-test.outputs.validation-result }}
