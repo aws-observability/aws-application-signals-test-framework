@@ -227,7 +227,6 @@ resource "null_resource" "remote_service_setup" {
       aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
       unzip -o dotnet-sample-app.zip
 
-
       # Get Absolute Path
       current_dir=$(pwd)
       echo $current_dir
