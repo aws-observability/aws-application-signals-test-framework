@@ -28,6 +28,10 @@ inputs:
   post-command:
     required: false
     type: string
+  # (Optional) Directory to run on
+  working-directory:
+    required: false
+    type: string
 
 runs:
   using: "composite"
@@ -41,7 +45,12 @@ runs:
         CLEANUP: ${{ inputs.cleanup }}
         POST_COMMAND: ${{ inputs.post-command }}
         SLEEP_TIME: ${{ inputs.sleep_time }}
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
       run: |
+        if [ -n "$WORKING_DIRECTORY" ]; then
+          echo "Moving directory to $WORKING_DIRECTORY"
+          cd $WORKING_DIRECTORY
+        fi
         echo "Starting the execute_and_retry action for command $COMMAND"
         echo "Executing pre-command for the execute_and_retry action"
         eval "$PRE_COMMAND"
