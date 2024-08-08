@@ -143,10 +143,10 @@ resource "null_resource" "main_service_setup" {
       max_attempts=30
       until $(curl --output /dev/null --silent --head --fail $(echo "http://localhost:8080" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
-          echo "Failed to connect to endpoint. "
+          echo "Failed to connect to endpoint."
           exit 1
         fi
-        printf 'Attempting to connect to the endpoint. Tried $attempt_counter out of $max_attempts'
+        echo "Attempting to connect to the main endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
         sleep 10
       done
@@ -224,10 +224,10 @@ resource "null_resource" "remote_service_setup" {
       max_attempts=30
       until $(curl --output /dev/null --silent --head --fail $(echo "http://localhost:8080/healthcheck" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
-          echo "Failed to connect to endpoint. "
+          echo "Failed to connect to endpoint."
           exit 1
         fi
-        printf 'Attempting to connect to the endpoint. Tried $attempt_counter out of $max_attempts'
+        echo "Attempting to connect to the remote endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
         sleep 10
       done
