@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Amazon.S3;
 using Microsoft.AspNetCore.Mvc;
+using Amazon.S3.Model;
 
 namespace asp_frontend_service.Controllers;
 
@@ -68,7 +69,11 @@ public class AppController : ControllerBase
     [Route("/aws-sdk-call")]
     public string AWSSDKCall([FromQuery] string testingId)
     {
-        _ = this.s3Client.GetBucketLocationAsync(testingId).Result;
+       var request = new GetBucketLocationRequest()
+            {
+               BucketName = testingId
+            };
+        _ = this.s3Client.GetBucketLocationAsync(request).Result;
 
         return this.GetTraceId();
     }
