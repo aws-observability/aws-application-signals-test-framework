@@ -35,13 +35,13 @@
         }
       },
       "aws": {
-        "operation": "^ListBuckets$"
+        "operation": "^GetBucketLocation$"
       },
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
         "aws.local.operation": "^GET /aws-sdk-call$",
         "aws.remote.service": "^AWS::S3$",
-        "aws.remote.operation": "^ListBuckets$",
+        "aws.remote.operation": "^GetBucketLocation$",
         "aws.local.environment": "^ec2:default$"
       },
       "metadata": {
@@ -58,6 +58,6 @@
 {
   "name": "^S3$",
   "aws": {
-    "operation": "^ListBuckets$"
+    "operation": "^GetBucketLocation$"
   }
 }]
