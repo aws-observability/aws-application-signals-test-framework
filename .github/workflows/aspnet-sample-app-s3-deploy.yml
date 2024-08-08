@@ -4,9 +4,6 @@
 name: Sample App Deployment - S3 DotNet AspNet
 on:
   workflow_dispatch: # be able to run the workflow on demand
-  push:
-    branches:
-      - "dotnetMergeBranch-sample-app"
 
 permissions:
   id-token: write
