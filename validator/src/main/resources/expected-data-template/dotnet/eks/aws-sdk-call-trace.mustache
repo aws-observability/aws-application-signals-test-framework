@@ -6,7 +6,7 @@
       "method": "^GET$"
     },
     "response": {
-      "status": "^200$"
+      "status": "^500$"
     }
   },
   "aws": {
@@ -35,19 +35,20 @@
       "name": "^AWS::S3$",
       "http": {
         "response": {
-          "status": "^200$"
+          "status": "^404$"
         }
       },
       "aws": {
         "region": "{{region}}",
-        "operation": "^ListBuckets$"
+        "operation": "^GetBucketLocation$"
       },
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
         "aws.local.operation": "^GET /aws-sdk-call$",
         "aws.remote.service": "^AWS::S3$",
-        "aws.remote.operation": "^ListBuckets$",
-        "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
+        "aws.remote.operation": "^GetBucketLocation$",
+        "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$",
+        "aws.remote.resource.type": "AWS::S3::Bucket"
       },
       "metadata": {
         "default": {
