@@ -245,7 +245,7 @@ resource "null_resource" "remote_service_setup" {
       # Check if the application is up. If it is not up, then exit 1.
       attempt_counter=0
       max_attempts=30
-      until $(curl --output /dev/null --silent --head --fail $(echo "http://localhost:8001/healthcheck" | tr -d '"')); do
+      until $(curl --output /dev/null --silent --head --fail --max-time 300 $(echo "http://localhost:8001/healthcheck" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint."
           exit 1
