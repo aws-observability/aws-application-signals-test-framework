@@ -66,9 +66,9 @@ public class AppController : ControllerBase
 
     [HttpGet]
     [Route("/aws-sdk-call")]
-    public string AWSSDKCall()
+    public string AWSSDKCall([FromQuery] string testingId)
     {
-        _ = this.s3Client.ListBucketsAsync().Result;
+        _ = this.s3Client.GetBucketLocationAsync(testingId).Result;
 
         return this.GetTraceId();
     }
