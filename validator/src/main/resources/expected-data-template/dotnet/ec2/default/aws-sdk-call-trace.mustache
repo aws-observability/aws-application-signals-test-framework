@@ -6,7 +6,7 @@
       "method": "^GET$"
     },
     "response": {
-      "status": "^200$"
+      "status": "^500$"
     }
   },
   "aws": {
@@ -31,7 +31,7 @@
       "name": "^S3$",
       "http": {
         "response": {
-          "status": "^200$"
+          "status": "^404$"
         }
       },
       "aws": {
@@ -42,7 +42,8 @@
         "aws.local.operation": "^GET /aws-sdk-call$",
         "aws.remote.service": "^AWS::S3$",
         "aws.remote.operation": "^GetBucketLocation$",
-        "aws.local.environment": "^ec2:default$"
+        "aws.local.environment": "^ec2:default$",
+        "aws.remote.resource.type": "AWS::S3::Bucket"
       },
       "metadata": {
         "default": {
