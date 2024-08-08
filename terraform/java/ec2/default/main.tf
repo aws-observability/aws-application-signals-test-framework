@@ -151,6 +151,8 @@ resource "null_resource" "main_service_setup" {
         sleep 10
       done
 
+      echo "Successfully connected to main endpoint"
+
       EOF
     ]
   }
@@ -231,6 +233,8 @@ resource "null_resource" "remote_service_setup" {
         attempt_counter=$(($attempt_counter+1))
         sleep 10
       done
+
+      echo "Successfully connected to remote endpoint"
 
       EOF
     ]

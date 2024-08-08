@@ -255,6 +255,8 @@ resource "null_resource" "remote_service_setup" {
         sleep 10
       done
 
+      echo "Successfully connected to remote endpoint"
+
       EOF
     ]
   }
