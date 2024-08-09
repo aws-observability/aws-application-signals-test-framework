@@ -1,0 +1,23 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+version: '3'
+services:
+  asp_frontend_service:
+    image: dotnetsampleapp/frontend-service
+    build:
+      context: .
+      dockerfile: asp_frontend_service/Dockerfile
+    container_name: asp_frontend_service
+    restart: always
+    ports:
+      - "8080:8080"
+
+  asp_remote_service:
+    image: dotnetsampleapp/remote-service
+    build:
+      context: .
+      dockerfile: asp_remote_service/Dockerfile
+    container_name: asp_remote_service
+    restart: always
+    ports:
+      - "8081:8081"
