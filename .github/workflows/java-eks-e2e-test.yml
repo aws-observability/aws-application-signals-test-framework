@@ -428,11 +428,11 @@ jobs:
           ${{ env.SAMPLE_APP_NAMESPACE }}
 
       # This step also deletes lingering resources from previous test runs
-      - name: Delete all sample app resources
+      - name: Delete all sample app namespaces
         if: always()
         continue-on-error: true
         timeout-minutes: 5
-        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }}
+        run: kubectl get namespace | awk '/^ns-[0-9-]+$/{print $1}' | kubectl delete namespace
 
       - name: Terraform destroy
         if: always()
