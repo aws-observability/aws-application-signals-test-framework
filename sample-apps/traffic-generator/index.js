@@ -43,7 +43,6 @@ const trafficGenerator = async (interval) => {
         `http://${mainEndpoint}/aws-sdk-call?ip=${remoteEndpoint}&testingId=${id}`,
         `http://${mainEndpoint}/remote-service?ip=${remoteEndpoint}&testingId=${id}`,
         `http://${mainEndpoint}/client-call`,
-        `http://${mainEndpoint}/mysql`,
     ];
 
     await sendRequests(urls);
