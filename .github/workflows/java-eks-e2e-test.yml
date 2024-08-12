@@ -96,7 +96,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Retrieve account
-        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        uses: aws-actions/aws-secretsmanager-get-secrets@v2
         with:
           secret-ids: |
             ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
@@ -186,7 +186,9 @@ jobs:
 
       - name: Get RDS database credentials from SecretsManager
         continue-on-error: true
-        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        uses: aws-actions/aws-secretsmanager-get-secrets@v2
+        env:
+          NODE_OPTIONS: "--network-family-autoselection-attempt-timeout=1000"
         with:
           secret-ids:
             RDS_MYSQL_CLUSTER_SECRETS, ${{env.RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME}}
