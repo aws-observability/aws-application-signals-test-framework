@@ -111,7 +111,7 @@ jobs:
             -var="test_id=${{ env.TESTING_ID }}"
             -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}"
             -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}"
-            -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}"'
+            -var="get_adot_wheel_command=${{ env.GET_ADOT_DISTRO_COMMAND }}"'
           cleanup: 'terraform destroy -auto-approve -var="test_id=${{ env.TESTING_ID }}'
           max_retry: 2
           working-directory: ./terraform/dotnet/ec2/asg
