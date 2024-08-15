@@ -1,0 +1,71 @@
+[
+  {
+    "name": "^{{serviceName}}$",
+    "origin": "^AWS::EKS::Container$",
+    "subsegments": [
+      {
+        "name": "^mysql$",
+        "namespace": "^remote$",
+        "aws": {
+          "account_id": "^{{accountId}}$",
+          "xray": {
+            "auto_instrumentation": true,
+            "sdk": "^opentelemetry for python$"
+          }
+        },
+        "sql": {
+          "connection_string": "^localhost/information_schema$",
+          "url": "^SELECT$",
+          "sanitized_query": "^SELECT \\* FROM tables LIMIT 1;$",
+          "database_type": "^mysql$"
+        },
+        "metadata": {
+          "default": {
+            "aws.span.kind": "^CLIENT$"
+          }
+        },
+        "annotations": {
+          "aws.local.service": "^{{serviceName}}$",
+          "aws.local.operation": "^GET mysql$",
+          "aws.remote.resource.type": "^DB::Connection$",
+          "aws.remote.resource.identifier": "^{{remoteResourceIdentifier}}$",
+          "aws.remote.service": "^mysql$",
+          "aws.remote.operation": "^SELECT$"
+        }
+      }
+    ],
+    "aws": {
+      "account_id": "^{{accountId}}$",
+      "xray": {
+        "auto_instrumentation": true,
+        "sdk": "^opentelemetry for python$"
+      }
+    },
+    "metadata": {
+      "default": {
+        "aws.span.kind": "^LOCAL_ROOT$",
+        "http.route": "^mysql$"
+      }
+    },
+    "annotations": {
+      "aws.local.service": "^{{serviceName}}$",
+      "aws.local.operation": "^GET mysql$"
+    }
+  },
+  {
+    "name": "^mysql$",
+    "origin": "^Database::SQL$",
+    "sql": {
+      "connection_string": "^localhost/information_schema$",
+      "url": "^SELECT$",
+      "sanitized_query": "^SELECT \\* FROM tables LIMIT 1;$",
+      "database_type": "^mysql$"
+    },
+    "annotations": {
+      "aws.local.service": "^mysql$",
+      "aws.local.operation": "^SELECT$",
+      "aws.local.resource.identifier": "^{{remoteResourceIdentifier}}$",
+      "aws.local.resource.type": "^DB::Connection$"
+    }
+  }
+]
