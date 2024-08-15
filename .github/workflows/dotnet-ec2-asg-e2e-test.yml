@@ -60,7 +60,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.E2E_TEST_ACCOUNT_ID }}
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
       - name: Retrieve account
@@ -93,6 +93,14 @@ jobs:
 #          else
 #            echo GET_ADOT_WHEEL_COMMAND="python3.9 -m pip install ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
 #          fi
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -220,6 +228,6 @@ jobs:
     uses: ./.github/workflows/e2e-test-publish-result.yml
     secrets: inherit
     with:
-      aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+      aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       validation-result: ${{ needs.dotnet-e2e-ec2-asg-test.outputs.validation-result }}

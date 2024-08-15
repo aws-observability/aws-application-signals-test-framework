@@ -11,7 +11,7 @@ on:
       aws-region:
         required: true
         type: string
-      staging_wheel_name:
+      staging_distro_name:
         required: false
         default: 'aws-opentelemetry-distro'
         type: string
@@ -30,7 +30,7 @@ env:
   SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/dotnet-sample-app.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  ADOT_WHEEL_NAME: ${{ inputs.staging_wheel_name }}
+  ADOT_WHEEL_NAME: ${{ inputs.staging_distro_name }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   GET_CW_AGENT_RPM_COMMAND: "wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
 
@@ -60,7 +60,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ env.E2E_TEST_ACCOUNT_ID }}
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
       - name: Retrieve account
@@ -93,6 +93,14 @@ jobs:
 #          else
 #            echo GET_ADOT_DISTRO_COMMAND="dotnet3.9 -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> $GITHUB_ENV
 #          fi
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -215,6 +223,6 @@ jobs:
     uses: ./.github/workflows/e2e-test-publish-result.yml
     secrets: inherit
     with:
-      aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+      aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       validation-result: ${{ needs.dotnet-e2e-ec2-default-test.outputs.validation-result }}
