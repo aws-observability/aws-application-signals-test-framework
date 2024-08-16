@@ -109,24 +109,53 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/default && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
-          working-directory: ./terraform/python/ec2/default
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: 'terraform apply -auto-approve
-            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}"
-            -var="test_id=${{ env.TESTING_ID }}"
-            -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}"
-            -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}"
-            -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}"'
-          cleanup: 'terraform destroy -auto-approve -var="test_id=${{ env.TESTING_ID }}'
-          max_retry: 2
-          working-directory: ./terraform/python/ec2/default
+        working-directory: terraform/python/ec2/default
+        run: |
+          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
+          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
+          # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
+          # that it failed at some point
+          retry_counter=0
+          max_retry=2
+          while [ $retry_counter -lt $max_retry ]; do
+            echo "Attempt $retry_counter"
+            deployment_failed=0
+            terraform apply -auto-approve \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
+              -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
+              -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
+            || deployment_failed=$?
+          
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
+            fi
+          
+            # If the success is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
+            # resources created from terraform and try again.
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Destroying terraform"
+              terraform destroy -auto-approve \
+                -var="test_id=${{ env.TESTING_ID }}" 
+          
+              retry_counter=$(($retry_counter+1))
+            else
+              # If deployment succeeded, then exit the loop
+              break
+            fi
+          
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
+              exit 1
+            fi
+          done
 
       - name: Get the ec2 instance ami id
         run: |
