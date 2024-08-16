@@ -5,7 +5,7 @@ param (
 )
 
 wget -O nodejs.zip https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip
-Expand-Archive -Path .\nodejs.zip -DestinationPath .\nodejs
+Expand-Archive -Path .\nodejs.zip -DestinationPath .\nodejs -Force
 $currentdir = Get-Location
 Write-Host $currentdir
 $env:Path += ";$currentdir" + "\nodejs\node-v20.16.0-win-x64"
@@ -13,7 +13,7 @@ $env:Path += ";$currentdir" + "\nodejs\node-v20.16.0-win-x64"
 # Bring in the traffic generator files to EC2 Instance
 #aws s3 cp "s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip" "./traffic-generator.zip"
 wget -o traffic-generator.zip https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/traffic-generator.zip
-Expand-Archive -Path "./traffic-generator.zip" -DestinationPath "./"
+Expand-Archive -Path "./traffic-generator.zip" -DestinationPath "./" -Force
 
 # Install the traffic generator dependencies
 npm install
