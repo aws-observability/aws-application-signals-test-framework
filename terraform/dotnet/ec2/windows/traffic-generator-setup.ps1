@@ -24,7 +24,9 @@ $env:REMOTE_ENDPOINT = $RemoteServicePrivateEndpoint
 $env:ID = $TestID
 $env:CANARY_TYPE = $TestCanaryType
 
-Start-Process -FilePath "npm" -ArgumentList "start" -NoNewWindow -PassThru
+Start-Process -FilePath "npm" -ArgumentList "start"
+
+exit
 # Start the script in a background job
 # Start-Job -ScriptBlock $ScriptBlock -ArgumentList $MainEndpoint, $RemoteEndpoint, $Id, $CanaryType,
 # $currentdir -NoNewWindow -PassThru
