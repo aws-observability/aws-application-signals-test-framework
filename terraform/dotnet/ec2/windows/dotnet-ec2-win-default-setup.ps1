@@ -56,7 +56,7 @@ $env:ASPNETCORE_URLS = "http://0.0.0.0:8080"
 dotnet build
 
 
-Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_frontend_service.dll" -NoNewWindow -PassThru
+Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_frontend_service.dll"
 
 Write-Host "Start Sleep"
 Start-Sleep -Seconds 30
