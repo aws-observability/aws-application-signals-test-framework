@@ -198,106 +198,63 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/eks && terraform init && terraform validate"
+          command: "terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
+          working-directory: ./terraform/python/eks
 
       - name: Set Sample App Image
         run: |
             echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
             echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
-
-      - name: Deploy sample app via terraform and wait for the endpoint to come online
-        id: deploy-python-app
-        working-directory: terraform/python/eks
-        run: |
-          # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online. 
-          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
-          # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
-          # that it failed at some point
-          retry_counter=0
-          max_retry=2
-          while [ $retry_counter -lt $max_retry ]; do
-            echo "Attempt $retry_counter"
-            deployment_failed=0
-            terraform apply -auto-approve \
-              -var='test_id=${{ env.TESTING_ID }}' \
-              -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
-              -var='kube_directory_path=${{ github.workspace }}/.kube' \
-              -var='eks_cluster_name=${{ env.CLUSTER_NAME }}' \
-              -var="eks_cluster_context_name=$(kubectl config current-context)" \
-              -var='test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}' \
-              -var='service_account_aws_access=service-account-${{ env.TESTING_ID }}' \
-              -var='python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}' \
-              -var='python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}' \
-              -var='rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}' \
-              -var='rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}' \
-              -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' \
-              -var='rds_mysql_cluster_database=information_schema' \
-              -var='account_id=${{ env.ACCOUNT_ID }}' \
-            || deployment_failed=$?
           
-            if [ $deployment_failed -eq 1 ]; then
-              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
-            fi
+      - name: Deploy sample app via terraform and wait for endpoint to come online
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: 'terraform apply -auto-approve
+            -var="test_id=${{ env.TESTING_ID }}"
+            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}"
+            -var="kube_directory_path=${{ github.workspace }}/.kube"
+            -var="eks_cluster_name=${{ env.CLUSTER_NAME }}"
+            -var="eks_cluster_context_name=$(kubectl config current-context)"
+            -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}"
+            -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}"
+            -var="python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}"
+            -var="python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
+            -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}"
+            -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}"
+            -var="rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}"
+            -var="rds_mysql_cluster_database=information_schema"
+            -var="account_id=${{ env.ACCOUNT_ID }}"'
+          cleanup: 'terraform destroy -auto-approve
+            -var="test_id=${{ env.TESTING_ID }}"
+            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}"
+            -var="kube_directory_path=${{ github.workspace }}/.kube"
+            -var="eks_cluster_name=${{ env.CLUSTER_NAME }}"
+            -var="eks_cluster_context_name=$(kubectl config current-context)"
+            -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}"
+            -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}"
+            -var="python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}"
+            -var="python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"'
+          max_retry: 2
+          working-directory: ./terraform/python/eks
 
-            # If the deployment_failed is still 0, then the terraform deployment succeeded and now try to connect to the endpoint 
-            # after installing Application Signals. Attempts to connect will be made for up to 10 minutes
-            if [ $deployment_failed -eq 0 ]; then          
-              echo "Installing application signals to the sample app"
-              . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
-              execute_and_retry 3 \
-              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
-              ${{ inputs.test-cluster-name }} \
-              ${{ env.E2E_TEST_AWS_REGION }} \
-              ${{ env.SAMPLE_APP_NAMESPACE }}" \
-              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
-              ${{ inputs.test-cluster-name }} \
-              ${{ env.E2E_TEST_AWS_REGION }} \
-              ${{ env.SAMPLE_APP_NAMESPACE }} && \
-              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
-              60
-                  
-              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
-            fi
-          
-            # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
-            # resources created from terraform and try again.
-            if [ $deployment_failed -eq 1 ]; then
-              echo "Cleaning up Application Signal"
-              ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
-              ${{ env.CLUSTER_NAME }} \
-              ${{ env.E2E_TEST_AWS_REGION }} \
-              ${{ env.SAMPLE_APP_NAMESPACE }}
-
-              # Running clean-app-signal.sh removes the current cluster from the config. Update the cluster again for subsequent runs.
-              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}
-
-              echo "Destroying terraform"
-              terraform destroy -auto-approve \
-                -var='test_id=${{ env.TESTING_ID }}' \
-                -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
-                -var='kube_directory_path=${{ github.workspace }}/.kube' \
-                -var='eks_cluster_name=${{ env.CLUSTER_NAME }}' \
-                -var="eks_cluster_context_name=$(kubectl config current-context)" \
-                -var='test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}' \
-                -var='service_account_aws_access=service-account-${{ env.TESTING_ID }}' \
-                -var='python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}' \
-                -var='python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}'
-          
-              retry_counter=$(($retry_counter+1))
-            else
-              # If deployment succeeded, then exit the loop
-              break
-            fi
-          
-            if [ $retry_counter -ge $max_retry ]; then
-              echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
-              exit 1
-            fi
-          done
+      - name: Enable App Signals
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: './enable-app-signals.sh
+            ${{ env.CLUSTER_NAME }}
+            ${{ env.E2E_TEST_AWS_REGION }}
+            ${{ env.SAMPLE_APP_NAMESPACE }}'
+          cleanup: '${{ env.CLUSTER_NAME }}
+            ${{ env.E2E_TEST_AWS_REGION }}
+            ${{ env.SAMPLE_APP_NAMESPACE }} &&
+            aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}"'
+          post_command: 'kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }} && kubectl wait --for=condition=Ready --request-timeout "5m" pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}'
+          max_retry: 3
+          sleep_time: 60
+          working-directory: ./enablement-script
 
       - name: Get ECR to Patch
         run: |
