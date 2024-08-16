@@ -6,7 +6,9 @@ param (
 
 wget -O nodejs.zip https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip
 Expand-Archive -Path .\nodejs.zip -DestinationPath .\nodejs
-$env:Path += ";$nodejsdir" + "\nodejs\node-v20.16.0-win-x64"
+$currentdir = Get-Location
+Write-Host $currentdir
+$env:Path += ";$currentdir" + "\nodejs\node-v20.16.0-win-x64"
 
 # Bring in the traffic generator files to EC2 Instance
 #aws s3 cp "s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip" "./traffic-generator.zip"
