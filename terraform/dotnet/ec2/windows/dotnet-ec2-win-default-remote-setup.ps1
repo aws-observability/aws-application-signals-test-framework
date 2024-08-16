@@ -28,7 +28,7 @@ Invoke-Expression $GetSampleAppCommand
 
 Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force
 
-New-NetFirewallRule -DisplayName "Allow TCP 8081" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow
+New-NetFirewallRule -DisplayName "Allow TCP 8081" -Direction Inbound -Protocol TCP -LocalPort 8081 -Action Allow
 
 $current_dir = Get-Location
 Write-Host $current_dir
@@ -55,7 +55,7 @@ $env:ASPNETCORE_URLS = "http://0.0.0.0:8081"
 dotnet build
 
 
-Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_frontend_service.dll" -NoNewWindow -PassThru
+Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_remote_service.dll" -NoNewWindow -PassThru
 
 
 Start-Sleep -Seconds 30
