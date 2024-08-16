@@ -55,7 +55,7 @@ $env:ASPNETCORE_URLS = "http://0.0.0.0:8081"
 dotnet build
 
 
-Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_remote_service.dll"
+Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_remote_service.dll" -NoNewWindow -PassThru
 
 
 Write-Host "Start Sleep"

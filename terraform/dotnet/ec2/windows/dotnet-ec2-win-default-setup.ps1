@@ -18,6 +18,9 @@ msiexec /i amazon-cloudwatch-agent.msi
 Start-Sleep -Seconds 10
 Write-Host "Install Finished"
 
+# Debug
+New-NetFirewallRule -DisplayName "Allow TCP 8080" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow
+
 & "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
 Invoke-Expression $GetAdotDistroCommand
@@ -53,7 +56,7 @@ $env:ASPNETCORE_URLS = "http://0.0.0.0:8080"
 dotnet build
 
 
-Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_frontend_service.dll"
+Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_frontend_service.dll" -NoNewWindow -PassThru
 
 Write-Host "Start Sleep"
 Start-Sleep -Seconds 30

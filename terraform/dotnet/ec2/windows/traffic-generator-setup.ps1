@@ -25,7 +25,11 @@ $Id = $TestID
 $CanaryType = $TestCanaryType
 
 $ScriptBlock = {
-    param($MainEndpoint, $RemoteEndpoint, $Id, $CanaryType)
+    param($MainEndpoint, $RemoteEndpoint, $Id, $CanaryType, $dir)
+    cd $dir
+
+    # Set Again for the npm env var
+    $env:Path += ";$dir" + "\nodejs\node-v20.16.0-win-x64"
 
     # Set environment variables
     $env:MAIN_ENDPOINT = $MainEndpoint
@@ -38,4 +42,4 @@ $ScriptBlock = {
 }
 
 # Start the script in a background job
-Start-Job -ScriptBlock $ScriptBlock -ArgumentList $MainEndpoint, $RemoteEndpoint, $Id, $CanaryType
+Start-Job -ScriptBlock $ScriptBlock -ArgumentList $MainEndpoint, $RemoteEndpoint, $Id, $CanaryType, $currentdir -NoNewWindow -PassThru
