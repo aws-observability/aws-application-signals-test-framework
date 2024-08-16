@@ -28,10 +28,12 @@ Invoke-Expression $GetSampleAppCommand
 
 Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force
 
+New-NetFirewallRule -DisplayName "Allow TCP 8081" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow
+
 $current_dir = Get-Location
 Write-Host $current_dir
 
-Set-Location -Path "./asp_frontend_service"
+Set-Location -Path "./asp_remote_service"
 $env:CORECLR_ENABLE_PROFILING = "1"
 $env:CORECLR_PROFILER = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
 $env:CORECLR_PROFILER_PATH = "$current_dir\dotnet-distro\win-x64\OpenTelemetry.AutoInstrumentation.Native.dll"
@@ -47,7 +49,7 @@ $env:OTEL_METRICS_EXPORTER = "none"
 $env:OTEL_RESOURCE_ATTRIBUTES = "service.name=dotnet-sample-application-${var.test_id}"
 $env:OTEL_AWS_APPLICATION_SIGNALS_ENABLED = "true"
 $env:OTEL_TRACES_SAMPLER = "always_on"
-$env:ASPNETCORE_URLS = "http://0.0.0.0:8080"
+$env:ASPNETCORE_URLS = "http://0.0.0.0:8081"
 
 
 dotnet build
