@@ -18,28 +18,13 @@ Expand-Archive -Path "./traffic-generator.zip" -DestinationPath "./" -Force
 # Install the traffic generator dependencies
 npm install
 
-# Start a new tmux-like session in PowerShell (Using Start-Job or Runspace for background process)
-$MainEndpoint = "localhost:8080"
-$RemoteEndpoint = $RemoteServicePrivateEndpoint
-$Id = $TestID
-$CanaryType = $TestCanaryType
 
-$ScriptBlock = {
-    param($MainEndpoint, $RemoteEndpoint, $Id, $CanaryType, $dir)
-    cd $dir
+$env:MAIN_ENDPOINT = "localhost:8080"
+$env:REMOTE_ENDPOINT = $RemoteServicePrivateEndpoint
+$env:ID = $TestID
+$env:CANARY_TYPE = $TestCanaryType
 
-    # Set Again for the npm env var
-    $env:Path += ";$dir" + "\nodejs\node-v20.16.0-win-x64"
-
-    # Set environment variables
-    $env:MAIN_ENDPOINT = $MainEndpoint
-    $env:REMOTE_ENDPOINT = $RemoteEndpoint
-    $env:ID = $Id
-    $env:CANARY_TYPE = $CanaryType
-
-    # Start the application
-    npm start
-}
-
+Start-Process -FilePath "npm" -ArgumentList "start" -NoNewWindow -PassThru
 # Start the script in a background job
-Start-Job -ScriptBlock $ScriptBlock -ArgumentList $MainEndpoint, $RemoteEndpoint, $Id, $CanaryType, $currentdir -NoNewWindow -PassThru
+# Start-Job -ScriptBlock $ScriptBlock -ArgumentList $MainEndpoint, $RemoteEndpoint, $Id, $CanaryType,
+# $currentdir -NoNewWindow -PassThru
