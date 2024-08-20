@@ -1,18 +1,3 @@
-# ------------------------------------------------------------------------
-# Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License").
-# You may not use this file except in compliance with the License.
-# A copy of the License is located at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# or in the "license" file accompanying this file. This file is distributed
-# on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-# express or implied. See the License for the specific language governing
-# permissions and limitations under the License.
-# -------------------------------------------------------------------------
-
 terraform {
   required_providers {
     aws = {
@@ -21,7 +6,6 @@ terraform {
   }
 }
 
-# Define the provider for AWS
 provider "aws" {}
 
 resource "aws_default_vpc" "default" {}
@@ -31,14 +15,52 @@ resource "tls_private_key" "ssh_key" {
   rsa_bits  = 4096
 }
 
+# resource "aws_security_group" "modified_default_sg" {
+#   name        = "modified_default_sg"
+#   description = "Security group based on default, with RDP blocked"
+
+#   vpc_id = aws_default_vpc.default.id
+
+#   ingress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     self        = true
+#     description = "Allow inbound traffic from instances assigned to the same security group"
+#   }
+
+#   ingress {
+#     from_port   = 5985
+#     to_port     = 5985
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#     description = "Allow WinRM inbound traffic"
+#   }
+
+#   ingress {
+#     from_port   = 8080
+#     to_port     = 8080
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#     description = "Allow HTTP inbound traffic"
+#   }
+
+#   egress {
+#     from_port   = 0
+#     to_port     = 0
+#     protocol    = "-1"
+#     cidr_blocks = ["0.0.0.0/0"]
+#     description = "Allow all outbound traffic"
+#   }
+
+#   tags = {
+#     Name = "modified-default-sg"
+#   }
+# }
+
 resource "aws_key_pair" "aws_ssh_key" {
   key_name   = "instance_key-${var.test_id}"
   public_key = tls_private_key.ssh_key.public_key_openssh
-}
-
-locals {
-  ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
-  private_key_content = tls_private_key.ssh_key.private_key_pem
 }
 
 data "aws_ami" "ami" {
@@ -46,7 +68,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["Windows_Server-2019-English-Full-Base-*"]
   }
   filter {
     name   = "state"
@@ -63,7 +85,7 @@ data "aws_ami" "ami" {
 
   filter {
     name   = "root-device-name"
-    values = ["/dev/xvda"]
+    values = ["/dev/sda1"]
   }
 
   filter {
@@ -77,9 +99,21 @@ data "aws_ami" "ami" {
   }
 }
 
+locals {
+  ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
+  private_key_content = tls_private_key.ssh_key.private_key_pem
+  private_key_path    = "${path.module}/private_key.pem"
+}
+
+# Save the private key to a file
+resource "local_file" "private_key_pem" {
+  content  = tls_private_key.ssh_key.private_key_pem
+  filename = local.private_key_path
+}
+
 resource "aws_instance" "main_service_instance" {
-  ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                        = "t3.small"
+  ami                                  = data.aws_ami.ami.id
+  instance_type                        = "t3.large"
   key_name                             = local.ssh_key_name
   iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
@@ -88,204 +122,256 @@ resource "aws_instance" "main_service_instance" {
   metadata_options {
     http_tokens = "required"
   }
+  get_password_data = true
 
   tags = {
     Name = "main-service-${var.test_id}"
   }
+
+  user_data = <<-EOF
+  <powershell>
+      $file = $env:SystemRoot + "\Temp\" + (Get-Date).ToString("MM-dd-yy-hh-mm") + ".log"
+      New-Item $file -ItemType file
+      Start-Transcript -Path $file -Append
+      Write-Host "AllowList firewall..."
+      New-NetFirewallRule -Name "Allow WinRM HTTP" -DisplayName "Allow WinRM HTTP" -Enabled True -Direction Inbound -Protocol TCP -LocalPort 5985 -Action Allow -Profile Any
+      Write-Host "AllowList winrm"
+      winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+      Write-Host "Block RDP"
+      Get-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-In)" | Set-NetFirewallRule -Enabled False
+      Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
+      Stop-Service -Name TermService -Force
+      Set-Service -Name TermService -StartupType Disabled
+      Write-Host "Finish execution"
+      Stop-Transcript
+  </powershell>
+  <persist>true</persist>
+  EOF
 }
 
-resource "null_resource" "main_service_setup" {
-  connection {
-    type        = "ssh"
-    user        = var.user
-    private_key = local.private_key_content
-    host        = aws_instance.main_service_instance.public_ip
+resource "aws_instance" "remote_service_instance" {
+  ami                                  = data.aws_ami.ami.id
+  instance_type                        = "t3.large"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
+  metadata_options {
+    http_tokens = "required"
+  }
+  get_password_data = true
+
+  tags = {
+    Name = "remote-service-${var.test_id}"
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      <<-EOF
-      #!/bin/bash
+  user_data = <<-EOF
+  <powershell>
+      $file = $env:SystemRoot + "\Temp\" + (Get-Date).ToString("MM-dd-yy-hh-mm") + ".log"
+      New-Item $file -ItemType file
+      Start-Transcript -Path $file -Append
+      Write-Host "AllowList firewall..."
+      New-NetFirewallRule -Name "Allow WinRM HTTP" -DisplayName "Allow WinRM HTTP" -Enabled True -Direction Inbound -Protocol TCP -LocalPort 5985 -Action Allow -Profile Any
+      Write-Host "AllowList winrm"
+      winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+      Write-Host "Block RDP"
+      Get-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-In)" | Set-NetFirewallRule -Enabled False
+      Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
+      Stop-Service -Name TermService -Force
+      Set-Service -Name TermService -StartupType Disabled
+      Write-Host "Finish execution"
+      Stop-Transcript
+  </powershell>
+  <persist>true</persist>
+  EOF
+}
 
-      # Install DotNet and wget
-      sudo yum install -y wget
-      sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-      sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-8.0
-      sudo yum install unzip -y
+# resource "null_resource" "main_service_setup" {
+#   provisioner "remote-exec" {
+#     connection {
+#       type     = "winrm"
+#       user     = "Administrator"
+#       password = rsadecrypt(aws_instance.main_service_instance.password_data, file("${path.module}/private_key.pem"))
+#       host     = aws_instance.main_service_instance.public_ip
+#       timeout  = "5m"
+#       use_ntlm = true
+#     }
 
-      # Copy in CW Agent configuration
-      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
-      echo $agent_config > amazon-cloudwatch-agent.json
+#     inline = [
+#       <<-EOF
+#       curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json
+#       powershell -Command "(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'"
 
-      # Get and run CW agent rpm
-      ${var.get_cw_agent_rpm_command}
-      sudo rpm -U ./cw-agent.rpm
-      sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
+#       curl -o dotnet-ec2-win-default-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/dotnet-ec2-win-default-setup.ps1
+#       powershell.exe -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand "${var.get_cw_agent_rpm_command}" -GetAdotDistroCommand "${var.get_adot_distro_command}" -GetSampleAppCommand "${var.sample_app_zip}"
+#       EOF
 
-      # Get ADOT distro and unzip it
-      ${var.get_adot_distro_command}
+#     ]
+#   }
 
-      # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
-      unzip -o dotnet-sample-app.zip
+#   depends_on = [aws_instance.main_service_instance]
+# }
 
-      # Get Absolute Path
-      current_dir=$(pwd)
-      echo $current_dir
+# Create SSM Document for main service setup
+resource "aws_ssm_document" "main_service_setup" {
+  name          = "main_service_setup_${var.test_id}"
+  document_type = "Command"
 
-      # Export environment variables for instrumentation
-      cd ./asp_frontend_service
-      export CORECLR_ENABLE_PROFILING=1
-      export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
-      export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
-      export DOTNET_ADDITIONAL_DEPS=$current_dir/dotnet-distro/AdditionalDeps
-      export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
-      export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
-      export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
-      export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
-      export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
-      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
-      export OTEL_METRICS_EXPORTER=none
-      export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
-      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
-      export OTEL_TRACES_SAMPLER=always_on
-      export ASPNETCORE_URLS=http://0.0.0.0:8080
-      dotnet build
-      nohup dotnet bin/Debug/netcoreapp8.0/asp_frontend_service.dll &
-
-      # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
-      sleep 30
-
-      EOF
+  content = <<-DOC
+  {
+    "schemaVersion": "2.2",
+    "description": "Setup main service instance",
+    "mainSteps": [
+      {
+        "action": "aws:runPowerShellScript",
+        "name": "setupMainService",
+        "inputs": {
+          "runCommand": [
+            "curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json",
+            "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
+            "curl -o dotnet-ec2-win-default-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/dotnet-ec2-win-default-setup.ps1",
+            "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand \"${var.get_cw_agent_rpm_command}\" -GetAdotDistroCommand \"${var.get_adot_distro_command}\" -GetSampleAppCommand \"${var.sample_app_zip}\" -TestId \"${var.test_id}\""
+          ]
+        }
+      }
     ]
+  }
+  DOC
+}
+
+# Create SSM Association for main service instance
+resource "aws_ssm_association" "main_service_association" {
+  name = aws_ssm_document.main_service_setup.name
+  targets {
+    key    = "InstanceIds"
+    values = [aws_instance.main_service_instance.id]
   }
 
   depends_on = [aws_instance.main_service_instance]
 }
 
-resource "aws_instance" "remote_service_instance" {
-  ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                        = "t3.small"
-  key_name                             = local.ssh_key_name
-  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address          = true
-  instance_initiated_shutdown_behavior = "terminate"
-  metadata_options {
-    http_tokens = "required"
-  }
+# Create SSM Document for remote service setup
+resource "aws_ssm_document" "remote_service_setup" {
+  name          = "remote_service_setup_${var.test_id}"
+  document_type = "Command"
 
-  tags = {
-    Name = "remote-service-${var.test_id}"
-  }
-}
-
-resource "null_resource" "remote_service_setup" {
-  connection {
-    type        = "ssh"
-    user        = var.user
-    private_key = local.private_key_content
-    host        = aws_instance.remote_service_instance.public_ip
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      <<-EOF
-      #!/bin/bash
-
-      # Install DotNet and wget
-      sudo yum install -y wget
-      sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
-      sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-8.0
-      sudo yum install unzip -y
-
-      # Copy in CW Agent configuration
-      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
-      echo $agent_config > amazon-cloudwatch-agent.json
-
-      # Get and run CW agent rpm
-      ${var.get_cw_agent_rpm_command}
-      sudo rpm -U ./cw-agent.rpm
-      sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
-
-      # Get ADOT distro and unzip it
-      ${var.get_adot_distro_command}
-
-      # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
-      unzip -o dotnet-sample-app.zip
-
-      # Get Absolute Path
-      current_dir=$(pwd)
-      echo $current_dir
-      echo $(ls)
-      cd dotnet-distro
-      echo $(ls)
-      cd $current_dir
-
-      # Export environment variables for instrumentation
-      cd ./asp_remote_service
-      export CORECLR_ENABLE_PROFILING=1
-      export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
-      export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
-      export DOTNET_ADDITIONAL_DEPS=$current_dir/dotnet-distro/AdditionalDeps
-      export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
-      export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
-      export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
-      export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
-      export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
-      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
-      export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id}
-      export OTEL_METRICS_EXPORTER=none
-      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
-      export OTEL_TRACES_SAMPLER=always_on
-      export ASPNETCORE_URLS=http://0.0.0.0:8081
-      dotnet build
-      nohup dotnet bin/Debug/netcoreapp8.0/asp_remote_service.dll &
-
-      # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
-      sleep 30
-
-      EOF
+  content = <<-DOC
+  {
+    "schemaVersion": "2.2",
+    "description": "Setup remote service instance",
+    "mainSteps": [
+      {
+        "action": "aws:runPowerShellScript",
+        "name": "setupRemoteService",
+        "inputs": {
+          "runCommand": [
+            "curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json",
+            "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
+            "curl -o dotnet-ec2-win-default-remote-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/dotnet-ec2-win-default-setup.ps1",
+            "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-remote-setup.ps1 -GetCloudwatchAgentCommand \"${var.get_cw_agent_rpm_command}\" -GetAdotDistroCommand \"${var.get_adot_distro_command}\" -GetSampleAppCommand \"${var.sample_app_zip}\" -TestId \"${var.test_id}\""
+          ]
+        }
+      }
     ]
   }
+  DOC
+}
 
+# Create SSM Association for remote service instance
+resource "aws_ssm_association" "remote_service_association" {
+  name = aws_ssm_document.remote_service_setup.name
+  targets {
+    key    = "InstanceIds"
+    values = [aws_instance.remote_service_instance.id]
+  }
   depends_on = [aws_instance.remote_service_instance]
 }
 
-resource "null_resource" "traffic_generator_setup" {
-  connection {
-    type = "ssh"
-    user = var.user
-    private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
-  }
+resource "aws_ssm_document" "traffic_generator_setup" {
+  name          = "traffic_generator_setup_${var.test_id}"
+  document_type = "Command"
 
-  provisioner "remote-exec" {
-    inline = [
-      <<-EOF
-        sudo yum install nodejs aws-cli unzip tmux -y
-
-        # Bring in the traffic generator files to EC2 Instance
-        aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
-        unzip ./traffic-generator.zip -d ./
-
-        # Install the traffic generator dependencies
-        npm install
-
-        tmux new -s traffic-generator -d
-        tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8080\"" C-m
-        tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"${aws_instance.remote_service_instance.private_ip}\"" C-m
-        tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
-        tmux send-keys -t traffic-generator "npm start" C-m
-
-      EOF
+  content = <<-DOC
+  {
+    "schemaVersion": "2.2",
+    "description": "Setup traffic generator",
+    "mainSteps": [
+      {
+        "action": "aws:runPowerShellScript",
+        "name": "setupTrafficGenerator",
+        "inputs": {
+          "runCommand": [
+            "curl -o traffic-generator-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/traffic-generator-setup.ps1",
+            "powershell -ExecutionPolicy Bypass -File traffic-generator-setup.ps1 -RemoteServicePrivateEndpoint \"${aws_instance.remote_service_instance.private_ip}\" -TestID \"${var.test_id}\" -TestCanaryType \"${var.canary_type}\""
+          ]
+        }
+      }
     ]
   }
-
-  depends_on = [null_resource.main_service_setup, null_resource.remote_service_setup]
+  DOC
 }
+
+resource "aws_ssm_association" "traffic_generator_association" {
+  name = aws_ssm_document.traffic_generator_setup.name
+
+  targets {
+    key    = "InstanceIds"
+    values = [aws_instance.main_service_instance.id]
+  }
+
+  depends_on = [
+    aws_ssm_association.main_service_association,
+    aws_ssm_association.remote_service_association
+  ]
+}
+
+# resource "null_resource" "remote_service_setup" {
+#   provisioner "remote-exec" {
+#     connection {
+#       type     = "winrm"
+#       user     = "Administrator"
+#       password = rsadecrypt(aws_instance.remote_service_instance.password_data, file("${path.module}/private_key.pem"))
+#       host     = aws_instance.remote_service_instance.public_ip
+#       timeout  = "5m"
+#       use_ntlm = true
+#     }
+
+#     inline = [
+#       <<-EOF
+#       curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json
+#       powershell -Command "(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'"
+
+#       curl -o dotnet-ec2-win-default-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/dotnet-ec2-win-default-remote-setup.ps1
+#       powershell -ExecutionPolicy Bypass -File dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand "${var.get_cw_agent_rpm_command}" -GetAdotDistroCommand "${var.get_adot_distro_command}" -GetSampleAppCommand "${var.sample_app_zip}"
+#       EOF
+
+#     ]
+#   }
+
+#   depends_on = [aws_instance.remote_service_instance]
+# }
+
+
+# resource "null_resource" "traffic_generator_setup" {
+#   provisioner "remote-exec" {
+#     connection {
+#       type     = "winrm"
+#       user     = "Administrator"
+#       password = rsadecrypt(aws_instance.main_service_instance.password_data, file("${path.module}/private_key.pem"))
+#       host     = aws_instance.main_service_instance.public_ip
+#       timeout  = "5m"
+#       use_ntlm = true
+#     }
+
+#     inline = [
+#       <<-EOF
+#       curl -o traffic-generator-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/traffic-generator-setup.ps1
+#       powershell -ExecutionPolicy Bypass -File traffic-generator-setup.ps1 -RemoteServicePrivateEndpoint "${aws_instance.remote_service_instance.private_ip}" -TestID "${var.test_id}" -TestCanaryType "${var.canary_type}"
+#       EOF
+
+#     ]
+#   }
+
+#   depends_on = [null_resource.main_service_setup, null_resource.remote_service_setup]
+# }
