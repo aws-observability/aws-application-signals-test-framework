@@ -1,7 +1,8 @@
 param (
     [string]$GetCloudwatchAgentCommand,
     [string]$GetAdotDistroCommand,
-    [string]$GetSampleAppCommand
+    [string]$GetSampleAppCommand,
+    [string]$TestId
 )
 
 
@@ -46,7 +47,7 @@ $env:OTEL_EXPORTER_OTLP_PROTOCOL = "http/protobuf"
 $env:OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:4316"
 $env:OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT = "http://127.0.0.1:4316/v1/metrics"
 $env:OTEL_METRICS_EXPORTER = "none"
-$env:OTEL_RESOURCE_ATTRIBUTES = "service.name=dotnet-sample-remote-application-${var.test_id}"
+$env:OTEL_RESOURCE_ATTRIBUTES = "service.name=dotnet-sample-remote-application-$TestId"
 $env:OTEL_AWS_APPLICATION_SIGNALS_ENABLED = "true"
 $env:OTEL_TRACES_SAMPLER = "always_on"
 $env:ASPNETCORE_URLS = "http://0.0.0.0:8081"
