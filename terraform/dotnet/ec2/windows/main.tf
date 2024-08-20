@@ -231,7 +231,7 @@ resource "aws_ssm_document" "main_service_setup" {
             "curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json",
             "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
             "curl -o dotnet-ec2-win-default-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/dotnet-ec2-win-default-setup.ps1",
-            "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand \"${var.get_cw_agent_rpm_command}\" -GetAdotDistroCommand \"${var.get_adot_distro_command}\" -GetSampleAppCommand \"${var.sample_app_zip}\" -TestId \"${var.test_id}\""
+            "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand ${var.get_cw_agent_rpm_command} -GetAdotDistroCommand ${var.get_adot_distro_command} -GetSampleAppCommand ${var.sample_app_zip} -TestId ${var.test_id}"
           ]
         }
       }
@@ -268,8 +268,8 @@ resource "aws_ssm_document" "remote_service_setup" {
           "runCommand": [
             "curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json",
             "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
-            "curl -o dotnet-ec2-win-default-remote-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/dotnet-ec2-win-default-setup.ps1",
-            "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-remote-setup.ps1 -GetCloudwatchAgentCommand \"${var.get_cw_agent_rpm_command}\" -GetAdotDistroCommand \"${var.get_adot_distro_command}\" -GetSampleAppCommand \"${var.sample_app_zip}\" -TestId \"${var.test_id}\""
+            "curl -o dotnet-ec2-win-default-remote-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/dotnet-ec2-win-default-remote-setup.ps1",
+            "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-remote-setup.ps1 -GetCloudwatchAgentCommand ${var.get_cw_agent_rpm_command} -GetAdotDistroCommand ${var.get_adot_distro_command} -GetSampleAppCommand ${var.sample_app_zip} -TestId ${var.test_id}"
           ]
         }
       }
