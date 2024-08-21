@@ -14,7 +14,7 @@
 # -------------------------------------------------------------------------
 
 variable "test_id" {
-  default = "dummy-123"
+  default = "windows-e2e-test-0"
 }
 
 variable "aws_region" {
@@ -26,17 +26,17 @@ variable "user" {
 }
 
 variable "sample_app_zip" {
-  default = "s3://<bucket-name>/<zip>"
+  default = "wget -O ./dotnet-sample-app.zip https://github.com/aws-observability/aws-application-signals-test-framework/raw/dotnetE2ETests/sample-apps/dotnet/dotnet-sample-app.zip"
 }
 
 variable "get_adot_distro_command" {
-  default = "aws s3 cp s3://<bucket-name>/<distro> ./<distro> && unzip <distro>"
+  default = "wget -O ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/download/v1.1.0/aws-distro-opentelemetry-dotnet-instrumentation-windows.zip; Expand-Archive -Path ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -DestinationPath ./dotnet-distro -Force"
 }
 
 variable "get_cw_agent_rpm_command" {
-  default = "<command> s3://<bucket-name>/<jar>"
+  default = "wget -O ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi"
 }
 
 variable "canary_type" {
-  default = "dotnet-ec2-default"
+  default = "dotnet-ec2-windows"
 }
