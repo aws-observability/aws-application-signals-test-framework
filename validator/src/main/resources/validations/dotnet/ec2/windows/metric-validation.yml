@@ -9,17 +9,17 @@
   httpPath: "/aws-sdk-call"
   httpMethod: "get"
   callingType: "http-with-query"
-  expectedMetricTemplate: "DOTNET_WINDOWS_EC2_DEFAULT_AWS_SDK_CALL_METRIC"
+  expectedMetricTemplate: "DOTNET_EC2_WINDOWS_DEFAULT_AWS_SDK_CALL_METRIC"
 -
   validationType: "cw-metric"
   httpPath: "/remote-service"
   httpMethod: "get"
   callingType: "http-with-query"
-  expectedMetricTemplate: "DOTNET_WINDOWS_EC2_DEFAULT_REMOTE_SERVICE_METRIC"
+  expectedMetricTemplate: "DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_METRIC"
 -
   validationType: "cw-metric"
   httpPath: "/client-call"
   httpMethod: "get"
   callingType: "http"
-  expectedMetricTemplate: "DOTNET_WINDOWS_EC2_DEFAULT_CLIENT_CALL_METRIC"
+  expectedMetricTemplate: "DOTNET_EC2_WINDOWS_DEFAULT_CLIENT_CALL_METRIC"
 
