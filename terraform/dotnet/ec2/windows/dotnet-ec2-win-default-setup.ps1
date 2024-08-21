@@ -6,7 +6,7 @@ param (
 )
 
 
-msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
 $env:Path += ";C:\Program Files\Amazon\AWSCLI\bin"
 aws --version
 #$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")

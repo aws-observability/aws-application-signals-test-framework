@@ -133,15 +133,13 @@ resource "aws_instance" "main_service_instance" {
       $file = $env:SystemRoot + "\Temp\" + (Get-Date).ToString("MM-dd-yy-hh-mm") + ".log"
       New-Item $file -ItemType file
       Start-Transcript -Path $file -Append
-      Write-Host "AllowList firewall..."
-      New-NetFirewallRule -Name "Allow WinRM HTTP" -DisplayName "Allow WinRM HTTP" -Enabled True -Direction Inbound -Protocol TCP -LocalPort 5985 -Action Allow -Profile Any
-      Write-Host "AllowList winrm"
-      winrm set winrm/config/service '@{AllowUnencrypted="true"}'
       Write-Host "Block RDP"
       Get-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-In)" | Set-NetFirewallRule -Enabled False
       Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
       Stop-Service -Name TermService -Force
       Set-Service -Name TermService -StartupType Disabled
+      Write-Host "Install AWS CLI"
+      msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
       Write-Host "Finish execution"
       Stop-Transcript
   </powershell>
@@ -171,15 +169,13 @@ resource "aws_instance" "remote_service_instance" {
       $file = $env:SystemRoot + "\Temp\" + (Get-Date).ToString("MM-dd-yy-hh-mm") + ".log"
       New-Item $file -ItemType file
       Start-Transcript -Path $file -Append
-      Write-Host "AllowList firewall..."
-      New-NetFirewallRule -Name "Allow WinRM HTTP" -DisplayName "Allow WinRM HTTP" -Enabled True -Direction Inbound -Protocol TCP -LocalPort 5985 -Action Allow -Profile Any
-      Write-Host "AllowList winrm"
-      winrm set winrm/config/service '@{AllowUnencrypted="true"}'
       Write-Host "Block RDP"
       Get-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-In)" | Set-NetFirewallRule -Enabled False
       Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
       Stop-Service -Name TermService -Force
       Set-Service -Name TermService -StartupType Disabled
+      Write-Host "Install AWS-CLI"
+      msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
       Write-Host "Finish execution"
       Stop-Transcript
   </powershell>
