@@ -15,49 +15,6 @@ resource "tls_private_key" "ssh_key" {
   rsa_bits  = 4096
 }
 
-# resource "aws_security_group" "modified_default_sg" {
-#   name        = "modified_default_sg"
-#   description = "Security group based on default, with RDP blocked"
-
-#   vpc_id = aws_default_vpc.default.id
-
-#   ingress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     self        = true
-#     description = "Allow inbound traffic from instances assigned to the same security group"
-#   }
-
-#   ingress {
-#     from_port   = 5985
-#     to_port     = 5985
-#     protocol    = "tcp"
-#     cidr_blocks = ["0.0.0.0/0"]
-#     description = "Allow WinRM inbound traffic"
-#   }
-
-#   ingress {
-#     from_port   = 8080
-#     to_port     = 8080
-#     protocol    = "tcp"
-#     cidr_blocks = ["0.0.0.0/0"]
-#     description = "Allow HTTP inbound traffic"
-#   }
-
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#     description = "Allow all outbound traffic"
-#   }
-
-#   tags = {
-#     Name = "modified-default-sg"
-#   }
-# }
-
 resource "aws_key_pair" "aws_ssh_key" {
   key_name   = "instance_key-${var.test_id}"
   public_key = tls_private_key.ssh_key.public_key_openssh
@@ -183,32 +140,6 @@ resource "aws_instance" "remote_service_instance" {
   EOF
 }
 
-# resource "null_resource" "main_service_setup" {
-#   provisioner "remote-exec" {
-#     connection {
-#       type     = "winrm"
-#       user     = "Administrator"
-#       password = rsadecrypt(aws_instance.main_service_instance.password_data, file("${path.module}/private_key.pem"))
-#       host     = aws_instance.main_service_instance.public_ip
-#       timeout  = "5m"
-#       use_ntlm = true
-#     }
-
-#     inline = [
-#       <<-EOF
-#       curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json
-#       powershell -Command "(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'"
-
-#       curl -o dotnet-ec2-win-default-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/dotnet-ec2-win-default-setup.ps1
-#       powershell.exe -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand "${var.get_cw_agent_rpm_command}" -GetAdotDistroCommand "${var.get_adot_distro_command}" -GetSampleAppCommand "${var.sample_app_zip}"
-#       EOF
-
-#     ]
-#   }
-
-#   depends_on = [aws_instance.main_service_instance]
-# }
-
 # Create SSM Document for main service setup
 resource "aws_ssm_document" "main_service_setup" {
   name          = "main_service_setup_${var.test_id}"
@@ -321,53 +252,3 @@ resource "aws_ssm_association" "traffic_generator_association" {
     aws_ssm_association.remote_service_association
   ]
 }
-
-# resource "null_resource" "remote_service_setup" {
-#   provisioner "remote-exec" {
-#     connection {
-#       type     = "winrm"
-#       user     = "Administrator"
-#       password = rsadecrypt(aws_instance.remote_service_instance.password_data, file("${path.module}/private_key.pem"))
-#       host     = aws_instance.remote_service_instance.public_ip
-#       timeout  = "5m"
-#       use_ntlm = true
-#     }
-
-#     inline = [
-#       <<-EOF
-#       curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json
-#       powershell -Command "(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'"
-
-#       curl -o dotnet-ec2-win-default-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/dotnet-ec2-win-default-remote-setup.ps1
-#       powershell -ExecutionPolicy Bypass -File dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand "${var.get_cw_agent_rpm_command}" -GetAdotDistroCommand "${var.get_adot_distro_command}" -GetSampleAppCommand "${var.sample_app_zip}"
-#       EOF
-
-#     ]
-#   }
-
-#   depends_on = [aws_instance.remote_service_instance]
-# }
-
-
-# resource "null_resource" "traffic_generator_setup" {
-#   provisioner "remote-exec" {
-#     connection {
-#       type     = "winrm"
-#       user     = "Administrator"
-#       password = rsadecrypt(aws_instance.main_service_instance.password_data, file("${path.module}/private_key.pem"))
-#       host     = aws_instance.main_service_instance.public_ip
-#       timeout  = "5m"
-#       use_ntlm = true
-#     }
-
-#     inline = [
-#       <<-EOF
-#       curl -o traffic-generator-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/traffic-generator-setup.ps1
-#       powershell -ExecutionPolicy Bypass -File traffic-generator-setup.ps1 -RemoteServicePrivateEndpoint "${aws_instance.remote_service_instance.private_ip}" -TestID "${var.test_id}" -TestCanaryType "${var.canary_type}"
-#       EOF
-
-#     ]
-#   }
-
-#   depends_on = [null_resource.main_service_setup, null_resource.remote_service_setup]
-# }
