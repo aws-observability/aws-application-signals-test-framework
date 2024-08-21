@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# This is a reusable workflow for running the Python E2E Canary test for Application Signals.
+# This is a reusable workflow for running the Python Enablement Canary test for Application Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Python EC2 Default Use Case
@@ -18,6 +18,11 @@ on:
         required: false
         default: 'aws-opentelemetry-distro'
         type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.python-ec2-default.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.python-ec2-default.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -38,8 +43,13 @@ jobs:
   python-ec2-default:
     runs-on: ubuntu-latest
     outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
       - uses: actions/checkout@v4
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
@@ -256,13 +266,3 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
-
-  emit-metric:
-    needs: python-ec2-default
-    if: always()
-    uses: ./.github/workflows/e2e-test-publish-result.yml
-    secrets: inherit
-    with:
-      aws-region: ${{ inputs.aws-region }}
-      caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      validation-result: ${{ needs.python-ec2-default.outputs.validation-result }}
