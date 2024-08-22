@@ -8,8 +8,7 @@ param (
 
 msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
 Start-Sleep -Seconds 30
-$env:Path += ";C:\Program Files\Amazon\AWSCLI\bin"
-#$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
 .\dotnet-install.ps1 -Version 8.0.302
 
@@ -20,7 +19,6 @@ Write-Host "Installing Cloudwatch Agent"
 msiexec /i amazon-cloudwatch-agent.msi
 Start-Sleep -Seconds 10
 Write-Host "Install Finished"
-Get-ChildItem "C:\Program Files\Amazon\AWSCLI\bin"
 aws --version
 
 # Debug
