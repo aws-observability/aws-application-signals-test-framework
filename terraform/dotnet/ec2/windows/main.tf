@@ -59,13 +59,6 @@ data "aws_ami" "ami" {
 locals {
   ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
   private_key_content = tls_private_key.ssh_key.private_key_pem
-  private_key_path    = "${path.module}/private_key.pem"
-}
-
-# Save the private key to a file
-resource "local_file" "private_key_pem" {
-  content  = tls_private_key.ssh_key.private_key_pem
-  filename = local.private_key_path
 }
 
 resource "aws_instance" "main_service_instance" {
