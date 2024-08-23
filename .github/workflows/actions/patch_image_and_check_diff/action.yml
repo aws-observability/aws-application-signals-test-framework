@@ -84,7 +84,7 @@ runs:
       shell: bash
       run: |
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/2", "value": "--auto-instrumentation-python-image=${{ inputs.patch-image-arn }}"}]'
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/3", "value": "--auto-instrumentation-python-image=${{ inputs.patch-image-arn }}"}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
@@ -98,7 +98,7 @@ runs:
       shell: bash
       run: |
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/1", "value": "--auto-instrumentation-java-image=${{ inputs.patch-image-arn }}"}]'
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/2", "value": "--auto-instrumentation-java-image=${{ inputs.patch-image-arn }}"}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
