@@ -24,9 +24,9 @@ on:
         required: false
         type: string
 
-#concurrency:
-#  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
-#  cancel-in-progress: false
+concurrency:
+  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
+  cancel-in-progress: false
 
 permissions:
   id-token: write
@@ -94,7 +94,6 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
-          role-duration-seconds: 3600
 
       - name: Retrieve account
         uses: aws-actions/aws-secretsmanager-get-secrets@v2
@@ -256,17 +255,8 @@ jobs:
               ${{ env.SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
               60
-          
-              sleep 1200
-          
-              CREDENTIALS=$(aws sts assume-role \
-                --role-arn "arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}" \
-                --role-session-name "github-action-session")
-          
-              # Export the assumed role's temporary credentials
-              export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r .Credentials.AccessKeyId)
-              export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r .Credentials.SecretAccessKey)
-              export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r .Credentials.SessionToken)
+                    
+              aws eks update-kubeconfig --region ${{ env.E2E_TEST_AWS_REGION }} --name ${{ env.CLUSTER_NAME }}
           
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
@@ -346,8 +336,12 @@ jobs:
           max_retry: 3
           sleep_time: 30
 
-      - name: Get the sample app endpoint
-        run: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8080" >> $GITHUB_ENV
+      - name: Get Remote Service IP
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8080" >> $GITHUB_ENV
+          max_retry: 3
+          sleep_time: 30
 
       - name: Set endpoints for the traffic generator
         uses: ./.github/workflows/actions/execute_and_retry
