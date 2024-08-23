@@ -231,14 +231,12 @@ resource "kubernetes_service" "dotnet_r_app_service" {
   }
 }
 
-resource "kubernetes_ingress_v1" "traffic_generator" {
-  depends_on = [kubernetes_service.dotnet_r_app_service]
-  wait_for_load_balancer = true
+resource "kubernetes_deployment" "traffic_generator" {
   metadata {
-    name = "traffic_generator"
+    name = "traffic-generator"
     namespace = var.test_namespace
     labels = {
-      app = "traffic_generator"
+      app = "traffic-generator"
     }
   }
   spec {
