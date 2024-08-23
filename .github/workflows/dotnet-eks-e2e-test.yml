@@ -199,16 +199,16 @@ jobs:
               "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
               ${{ env.CLUSTER_NAME }} \
               ${{ env.E2E_TEST_AWS_REGION }} \
-              ${{ env.SAMPLE_APP_NAMESPACE }}" \
+              ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" \
               "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
               ${{ env.CLUSTER_NAME }} \
               ${{ env.E2E_TEST_AWS_REGION }} \
-              ${{ env.SAMPLE_APP_NAMESPACE }} && \
+              ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
               60
 
-              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
+              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" "" 60
+              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" "" 10
             fi
 
             # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
@@ -218,7 +218,7 @@ jobs:
               ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
               ${{ env.CLUSTER_NAME }} \
               ${{ env.E2E_TEST_AWS_REGION }} \
-              ${{ env.SAMPLE_APP_NAMESPACE }}
+              ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}
 
               # Running clean-app-signal.sh removes the current cluster from the config. Update the cluster again for subsequent runs.
               aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
