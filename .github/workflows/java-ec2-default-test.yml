@@ -249,6 +249,7 @@ jobs:
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Save test results
+        if: always()
         id: validation-result
         run: |
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then

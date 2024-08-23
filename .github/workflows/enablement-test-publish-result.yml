@@ -1,4 +1,4 @@
-name: Application Signals Enablement Testing - Publish Result
+name: Publish Canary Test Result
 on:
   workflow_call:
     inputs:

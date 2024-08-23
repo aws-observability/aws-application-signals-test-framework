@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the Python Enablement Canary test for Application Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Python EC2 Asg Use Case
+name: Python EC2 ASG Use Case
 on:
   workflow_call:
     inputs:

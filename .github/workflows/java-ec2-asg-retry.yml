@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the Enablement test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Java EC2 asg Retry
+name: Java EC2 ASG Retry
 on:
   workflow_call:
     inputs:
