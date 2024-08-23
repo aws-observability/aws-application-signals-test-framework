@@ -1,0 +1,58 @@
+[{
+  "name": "^{{serviceName}}$",
+  "http": {
+    "request": {
+      "url": "^{{endpoint}}/outgoing-http-call$",
+      "method": "^GET$"
+    },
+    "response": {
+      "status": "^200$"
+    }
+  },
+  "aws": {
+    "account_id": "^{{accountId}}$"
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET outgoing-http-call$",
+    "aws.local.environment": "^ec2:default$"
+  },
+  "metadata": {
+    "default": {
+      "EC2.InstanceId": "^{{instanceId}}$",
+      "PlatformType": "^AWS::EC2$",
+      "otel.resource.host.image.id": "^{{instanceAmi}}$",
+      "otel.resource.host.type": "^t3.large$",
+      "aws.span.kind": "^LOCAL_ROOT$"
+    }
+  },
+  "subsegments": [
+    {
+      "name": "^aws.amazon.com:443$",
+      "http": {
+        "request": {
+          "url": "^https://aws.amazon.com/$",
+          "method": "^GET$"
+        }
+      },
+      "annotations": {
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^GET /outgoing-http-call$",
+        "aws.remote.service": "^aws.amazon.com:443$",
+        "aws.remote.operation": "^GET /$",
+        "aws.local.environment": "^ec2:default$"
+      },
+      "metadata": {
+        "default": {
+          "EC2.InstanceId": "^{{instanceId}}$",
+          "PlatformType": "^AWS::EC2$",
+          "aws.span.kind": "^CLIENT$"
+        }
+      },
+      "namespace": "^remote$"
+    }
+  ]
+},
+{
+  "name": "^aws.amazon.com:443$"
+}]
