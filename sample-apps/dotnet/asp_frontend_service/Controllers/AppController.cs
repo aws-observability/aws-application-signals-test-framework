@@ -90,6 +90,7 @@ public class AppController : ControllerBase
     [Route("/remote-service")]
     public string RemoteServiceCall([FromQuery(Name = "ip")] string ip)
     {
+        Task.Delay(50).Wait();
         var endpoint = $"http://{ip}:8081/healthcheck";
         _ = this.httpClient.GetAsync(endpoint).Result;
 
