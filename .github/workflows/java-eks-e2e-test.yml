@@ -24,9 +24,9 @@ on:
         required: false
         type: string
 
-concurrency:
-  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
-  cancel-in-progress: false
+#concurrency:
+#  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
+#  cancel-in-progress: false
 
 permissions:
   id-token: write
@@ -94,6 +94,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
+          role-duration-seconds: 3600
 
       - name: Retrieve account
         uses: aws-actions/aws-secretsmanager-get-secrets@v2
@@ -256,6 +257,17 @@ jobs:
               aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
               60
           
+              sleep 1200
+          
+              CREDENTIALS=$(aws sts assume-role \
+                --role-arn "arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}" \
+                --role-session-name "github-action-session")
+          
+              # Export the assumed role's temporary credentials
+              export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r .Credentials.AccessKeyId)
+              export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r .Credentials.SecretAccessKey)
+              export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r .Credentials.SessionToken)
+          
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
             fi
@@ -320,19 +332,29 @@ jobs:
           echo "CW Agent Operator Image: Previous Version is: ${{ steps.patch-image.outputs.default-cw-agent-operator-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-cw-agent-operator-image }}";
           echo "Fluent Bit Image: Version is: ${{ steps.patch-image.outputs.fluent-bit-image }}";
 
-      - name: Get remote service pod name and IP
-        run: |
-          echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
+      - name: Get Remote Service Deployment Name
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> $GITHUB_ENV
+          max_retry: 3
+          sleep_time: 30
+
+      - name: Get Remote Service IP
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
+          max_retry: 3
+          sleep_time: 30
 
       - name: Get the sample app endpoint
         run: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8080" >> $GITHUB_ENV
 
       - name: Set endpoints for the traffic generator
-        run: |
-          # Add the appropriate environment variables to the traffic generator
-          kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }}
-          kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator REMOTE_ENDPOINT=${{ env.REMOTE_SERVICE_POD_IP }}
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }} REMOTE_ENDPOINT=${{ env.REMOTE_SERVICE_POD_IP }}
+          max_retry: 3
+          sleep_time: 30
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
