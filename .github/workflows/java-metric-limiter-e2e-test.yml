@@ -49,6 +49,7 @@ env:
 jobs:
   java-metric-limiter:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
