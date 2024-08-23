@@ -36,6 +36,7 @@ env:
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  ADOT_IMAGE_NAME: ${{ inputs.application-signals-adot-image }}
 
 jobs:
   dotnet-e2e-eks-test:
@@ -98,8 +99,23 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
+      # local directory to store the kubernetes config
+      - name: Create kubeconfig directory
+        run: mkdir -p ${{ github.workspace }}/.kube
+
+      - name: Set KUBECONFIG environment variable
+        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+
       - name: Set up kubeconfig
-        run: aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}
+        run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Download and install eksctl
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          pre-command: 'mkdir ${{ github.workspace }}/eksctl'
+          command: 'curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz" 
+            && tar -xzf eksctl_Linux_amd64.tar.gz -C ${{ github.workspace }}/eksctl && rm eksctl_Linux_amd64.tar.gz'
+          cleanup: 'rm -f eksctl_Linux_amd64.tar.gz'
 
       - name: Add eksctl to Github Path
         run: |
@@ -135,63 +151,160 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/eks && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
-          working-directory: ./terraform/dotnet/eks
+
+      - name: Set Sample App Image
+        run: |
+          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}" >> $GITHUB_ENV
+          echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}" >> $GITHUB_ENV
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-dotnet-app
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: 'terraform apply -auto-approve
-              -var="test_id=${{ env.TESTING_ID }}"
-              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}"
-              -var="kube_directory_path=${{ github.workspace }}/.kube"
-              -var="eks_cluster_name=${{ inputs.test-cluster-name }}"
-              -var="eks_cluster_context_name=$(kubectl config current-context)"
-              -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}"
-              -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}"
-              -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}"
-              -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"
-              -var="account_id=${{ env.ACCOUNT_ID }}"'
-          cleanup: 'terraform destroy -auto-approve
-                -var="test_id=${{ env.TESTING_ID }}" 
-                -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" 
-                -var="kube_directory_path=${{ github.workspace }}/.kube" 
-                -var="eks_cluster_name=${{ inputs.test-cluster-name }}" 
-                -var="eks_cluster_context_name=$(kubectl config current-context)" 
-                -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" 
-                -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" 
-                -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}" 
-                -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"'
-          max_retry: 2
-          working-directory: ./terraform/dotnet/eks
+        working-directory: ./terraform/dotnet/eks
+        run: |
+          # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online. 
+          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
+          # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
+          # that it failed at some point
+          retry_counter=0
+          max_retry=2
+          while [ $retry_counter -lt $max_retry ]; do
+            echo "Attempt $retry_counter"
+            deployment_failed=0
+            terraform apply -auto-approve \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="kube_directory_path=${{ github.workspace }}/.kube" \
+              -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+              -var="eks_cluster_context_name=$(kubectl config current-context)" \
+              -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" \
+              -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+              -var="dotnet_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+              -var="dotnet_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
+              -var='account_id=${{ env.ACCOUNT_ID }}' \
+            || deployment_failed=$?          
 
-      - name: Enable App Signals
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: './enable-app-signals.sh
-            ${{ env.CLUSTER_NAME }}
-            ${{ env.E2E_TEST_AWS_REGION }}
-            ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}'
-          cleanup: '${{ env.CLUSTER_NAME }}
-            ${{ env.E2E_TEST_AWS_REGION }}
-            ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} &&
-            aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}"'
-          post_command: 'kubectl delete pods --all -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} && kubectl wait --for=condition=Ready --request-timeout "5m" pod --all -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}'
-          max_retry: 3
-          sleep_time: 60
-          working-directory: ./enablement-script
+            if [ $deployment_failed -ne 0 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
+            fi
 
-      - name: Patch Image and Check Diff
-        id: patch-image
-        uses: ./.github/workflows/actions/patch_image_and_check_diff
-        with:
-          repository: ${{ github.event.repository.name }}
-          patch-image-arn: ${{ inputs.application-signals-adot-image }}:${{ inputs.application-signals-adot-image-tag }}
-          sample-app-namespace: ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}
+            # If the deployment_failed is still 0, then the terraform deployment succeeded and now try to connect to the endpoint 
+            # after installing App Signals. Attempts to connect will be made for up to 10 minutes
+            if [ $deployment_failed -eq 0 ]; then
+              . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
+              execute_and_retry 3 \
+              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
+              ${{ env.CLUSTER_NAME }} \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }}" \
+              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
+              ${{ env.CLUSTER_NAME }} \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }} && \
+              aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
+              60
+
+              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
+              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
+            fi
+
+            # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
+            # resources created from terraform and try again.
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Cleaning up App Signal"
+              ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
+              ${{ env.CLUSTER_NAME }} \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }}
+
+              # Running clean-app-signal.sh removes the current cluster from the config. Update the cluster again for subsequent runs.
+              aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+
+              echo "Destroying terraform"
+              terraform destroy -auto-approve \
+                -var="test_id=${{ env.TESTING_ID }}" \
+                -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+                -var="kube_directory_path=${{ github.workspace }}/.kube" \
+                -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+                -var="eks_cluster_context_name=$(kubectl config current-context)" \
+                -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" \
+                -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+                -var="dotnet_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+                -var="dotnet_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
+
+              retry_counter=$(($retry_counter+1))
+            else
+              # If deployment succeeded, then exit the loop
+              break
+            fi
+
+            if [ $retry_counter -ge $max_retry ]; then
+              echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
+              exit 1
+            fi
+          done
+#        uses: ./.github/workflows/actions/execute_and_retry
+#        with:
+#          command: 'terraform apply -auto-approve
+#              -var="test_id=${{ env.TESTING_ID }}"
+#              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}"
+#              -var="kube_directory_path=${{ github.workspace }}/.kube"
+#              -var="eks_cluster_name=${{ inputs.test-cluster-name }}"
+#              -var="eks_cluster_context_name=$(kubectl config current-context)"
+#              -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}"
+#              -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}"
+#              -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}"
+#              -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"
+#              -var="account_id=${{ env.ACCOUNT_ID }}"'
+#          cleanup: 'terraform destroy -auto-approve
+#                -var="test_id=${{ env.TESTING_ID }}"
+#                -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}"
+#                -var="kube_directory_path=${{ github.workspace }}/.kube"
+#                -var="eks_cluster_name=${{ inputs.test-cluster-name }}"
+#                -var="eks_cluster_context_name=$(kubectl config current-context)"
+#                -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}"
+#                -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}"
+#                -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}"
+#                -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"'
+#          max_retry: 2
+#          working-directory: ./terraform/dotnet/eks
+
+#      - name: Enable App Signals
+#        uses: ./.github/workflows/actions/execute_and_retry
+#        with:
+#          command: './enable-app-signals.sh
+#            ${{ env.CLUSTER_NAME }}
+#            ${{ env.E2E_TEST_AWS_REGION }}
+#            ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}'
+#          cleanup: '${{ env.CLUSTER_NAME }}
+#            ${{ env.E2E_TEST_AWS_REGION }}
+#            ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} &&
+#            aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}"'
+#          post_command: 'kubectl delete pods --all -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} && kubectl wait --for=condition=Ready --request-timeout "5m" pod --all -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}'
+#          max_retry: 3
+#          sleep_time: 60
+#          working-directory: ./enablement-script
+
+#      - name: Get ECR to Patch
+#        run: |
+#          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+#            echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
+#          elif [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent-operator" ]; then
+#            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> $GITHUB_ENV
+#          elif [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
+#            echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
+#          fi
+#
+#      - name: Patch Image and Check Diff
+#        id: patch-image
+#        uses: ./.github/workflows/actions/patch_image_and_check_diff
+#        with:
+#          repository: ${{ github.event.repository.name }}
+#          patch-image-arn: ${{ env.PATCH_IMAGE_ARN }}
+#          sample-app-namespace: ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}
 
       - name: Log Artifact Versions
         run: |
