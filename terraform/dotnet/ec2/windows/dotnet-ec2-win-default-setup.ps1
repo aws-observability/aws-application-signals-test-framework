@@ -7,7 +7,7 @@ param (
 
 
 msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
-Start-Sleep -Seconds 30
+Start-Sleep -Seconds 60
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 aws --version
 wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
