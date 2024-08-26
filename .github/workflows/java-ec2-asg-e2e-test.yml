@@ -33,7 +33,7 @@ env:
 jobs:
   java-ec2-asg:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     outputs:
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
@@ -52,7 +52,6 @@ jobs:
         id: initiate-gradlew
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
-        timeout-minutes: 10
         with:
           command: "./gradlew :validator:build"
           cleanup: "./gradlew clean"
@@ -193,7 +192,6 @@ jobs:
         if: steps.initiate-gradlew == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
-        timeout-minutes: 10
         with:
           command: "./gradlew :validator:build"
           cleanup: "./gradlew clean"
