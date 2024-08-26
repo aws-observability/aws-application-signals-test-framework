@@ -48,6 +48,7 @@ env:
 jobs:
   java-eks:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
