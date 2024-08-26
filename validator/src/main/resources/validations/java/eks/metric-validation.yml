@@ -22,3 +22,9 @@
   httpMethod: "get"
   callingType: "http"
   expectedMetricTemplate: "JAVA_EKS_CLIENT_CALL_METRIC"
+-
+  validationType: "cw-metric"
+  httpPath: "/mysql"
+  httpMethod: "get"
+  callingType: "http"
+  expectedMetricTemplate: "JAVA_EKS_RDS_MYSQL_METRIC"
