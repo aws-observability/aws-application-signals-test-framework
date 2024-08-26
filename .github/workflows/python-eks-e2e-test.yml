@@ -47,6 +47,7 @@ env:
 jobs:
   python-eks:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
@@ -459,7 +460,6 @@ jobs:
       - name: Delete all sample app resources
         if: always()
         continue-on-error: true
-        timeout-minutes: 10
         run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }}
 
       - name: Terraform destroy
