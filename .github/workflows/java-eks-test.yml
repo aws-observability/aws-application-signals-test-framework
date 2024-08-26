@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# This is a reusable workflow for running the E2E test for App Signals.
+# This is a reusable workflow for running the Enablement test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Java EKS Use Case
@@ -23,10 +23,11 @@ on:
       cw-agent-operator-tag:
         required: false
         type: string
-
-concurrency:
-  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
-  cancel-in-progress: false
+    outputs:
+      job-started:
+        value: ${{ jobs.java-eks.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.java-eks.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -49,8 +50,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
       - name: Generate testing id and sample app namespace
         run: |
           echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
@@ -485,16 +491,5 @@ jobs:
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}
-
-  emit-metric:
-    needs: java-eks
-    if: always()
-    uses: ./.github/workflows/e2e-test-publish-result.yml
-    secrets: inherit
-    with:
-      aws-region: ${{ inputs.aws-region }}
-      caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      validation-result: ${{ needs.java-eks.outputs.validation-result }}
-
 
 

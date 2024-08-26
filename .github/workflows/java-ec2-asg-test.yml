@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the E2E test for App Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Java EC2 Default Use Case
+name: Java EC2 ASG Use Case
 on:
   workflow_call:
     inputs:
@@ -14,6 +14,11 @@ on:
       caller-workflow-name:
         required: true
         type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.java-ec2-asg.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.java-ec2-asg.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -31,12 +36,17 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  java-ec2-default:
+  java-ec2-asg:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
 
@@ -46,8 +56,8 @@ jobs:
           ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
-        # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
-        # fails due to transient issues. If it fails here, then we will try again later before the validators
+      # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
+      # fails due to transient issues. If it fails here, then we will try again later before the validators
       - name: Initiate Gradlew Daemon
         id: initiate-gradlew
         uses: ./.github/workflows/actions/execute_and_retry
@@ -93,7 +103,7 @@ jobs:
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
             echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
           else
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
           fi
 
       - name: Set up terraform
@@ -107,16 +117,16 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/ec2/default && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/ec2/asg && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
-        working-directory: terraform/java/ec2/default
+        working-directory: terraform/java/ec2/asg
         run: |
-          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online.
-          # There may be occasional failures due to transitivity issues, so try up to 2 times.
+          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
+          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
           # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
           # that it failed at some point
           retry_counter=0
@@ -125,7 +135,7 @@ jobs:
             echo "Attempt $retry_counter"
             deployment_failed=0
             terraform apply -auto-approve \
-              -var="aws_region=${{ inputs.aws-region }}" \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="sample_app_jar=${{ env.SAMPLE_APP_FRONTEND_SERVICE_JAR }}" \
               -var="sample_remote_app_jar=${{ env.SAMPLE_APP_REMOTE_SERVICE_JAR }}" \
@@ -143,7 +153,7 @@ jobs:
               echo "Destroying terraform"
               terraform destroy -auto-approve \
                 -var="test_id=${{ env.TESTING_ID }}"
-
+          
               retry_counter=$(($retry_counter+1))
             else
               # If deployment succeeded, then exit the loop
@@ -156,17 +166,37 @@ jobs:
             fi
           done
 
-      - name: Get the ec2 instance ami id
-        working-directory: terraform/java/ec2/default
+      - name: Wait for ASG instance to be ready
         run: |
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
+          # Wait for up to 15 minutes
+          retry_counter=0
+          max_retry=90
+          while [ $retry_counter -lt $max_retry ]; do
+            instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
+            status_ok=$(aws ec2 describe-instance-status --instance-ids $instance_id | jq '(.InstanceStatuses[] | select(.InstanceStatus.Status == "ok" and .SystemStatus.Status == "ok")) != {}')
+            
+            if [ "$status_ok" == "true" ]; then
+              echo "The instance $instance_id is ready."
+              echo "MAIN_SERVICE_INSTANCE_ID=$instance_id" >> $GITHUB_ENV
+              break
+            fi
+          
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Instance Id $instance_id did not become ready with status $status_ok"
+              exit 1
+            fi
+            
+            sleep 10
+          done
 
       - name: Get the sample app and EC2 instance information
-        working-directory: terraform/java/ec2/default
+        working-directory: terraform/java/ec2/asg
         run: |
+          main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids ${{ env.MAIN_SERVICE_INSTANCE_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
           echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
+          echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> $GITHUB_ENV
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
@@ -181,55 +211,61 @@ jobs:
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
         id: log-validation
-        run: ./gradlew validator:run --args='-c java/ec2/default/log-validation.yml
+        run: ./gradlew validator:run --args='-c java/ec2/asg/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
-          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Validate generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c java/ec2/default/metric-validation.yml
+        run: ./gradlew validator:run --args='-c java/ec2/asg/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
-          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Validate generated traces
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c java/ec2/default/trace-validation.yml
+        run: ./gradlew validator:run --args='-c java/ec2/asg/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
-          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --platform-info ec2-single-asg-${{ env.TESTING_ID }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
       - name: Refresh AWS Credentials
@@ -247,23 +283,13 @@ jobs:
             echo "validation-result=success" >> $GITHUB_OUTPUT
           else
             echo "validation-result=failure" >> $GITHUB_OUTPUT
-          fi
+          fi      
 
       # Clean up Procedures
       - name: Terraform destroy
         if: always()
         continue-on-error: true
-        working-directory: terraform/java/ec2/default
+        working-directory: terraform/java/ec2/asg
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
-
-  emit-metric:
-    needs: java-ec2-default
-    if: always()
-    uses: ./.github/workflows/e2e-test-publish-result.yml
-    secrets: inherit
-    with:
-      aws-region: ${{ inputs.aws-region }}
-      caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      validation-result: ${{ needs.java-ec2-default.outputs.validation-result }}

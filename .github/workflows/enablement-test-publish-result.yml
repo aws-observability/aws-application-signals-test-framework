@@ -1,4 +1,4 @@
-name: Application Signals Enablement E2E Testing - Publish Result
+name: Publish Canary Test Result
 on:
   workflow_call:
     inputs:
@@ -11,6 +11,9 @@ on:
       validation-result:
         required: true
         type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.publish-result.outputs.job-started }}
 
 permissions:
   id-token: write
@@ -26,7 +29,13 @@ env:
 jobs:
   publish-result:
     runs-on: ubuntu-latest
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
     steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
