@@ -265,6 +265,8 @@ jobs:
               ${{ env.SAMPLE_APP_NAMESPACE }} && \
               aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
               60
+          
+              aws eks update-kubeconfig --region ${{ env.E2E_TEST_AWS_REGION }} --name ${{ env.CLUSTER_NAME }}
                   
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
               execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
@@ -331,19 +333,33 @@ jobs:
           echo "CW Agent Operator Image: Previous Version is: ${{ steps.patch-image.outputs.default-cw-agent-operator-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-cw-agent-operator-image }}";
           echo "Fluent Bit Image: Version is: ${{ steps.patch-image.outputs.fluent-bit-image }}";
 
-      - name: Get remote service pod name and IP
-        run: |
-          echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
+      - name: Get Remote Service Deployment Name
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> $GITHUB_ENV
+          max_retry: 3
+          sleep_time: 30
 
-      - name: Get the sample app endpoint
-        run: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=python-app -o jsonpath='{.items[0].status.podIP}'):8000" >> $GITHUB_ENV
+      - name: Get Remote Service IP
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
+          max_retry: 3
+          sleep_time: 30
+
+      - name:  Get the sample app endpoint
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=python-app -o jsonpath='{.items[0].status.podIP}'):8000" >> $GITHUB_ENV
+          max_retry: 3
+          sleep_time: 30
+
       - name: Set endpoints for the traffic generator
-
-        run: |
-          # Add the appropriate environment variables to the traffic generator
-          kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }}
-          kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator REMOTE_ENDPOINT=${{ env.REMOTE_SERVICE_POD_IP }}
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }} REMOTE_ENDPOINT=${{ env.REMOTE_SERVICE_POD_IP }}
+          max_retry: 3
+          sleep_time: 30
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
