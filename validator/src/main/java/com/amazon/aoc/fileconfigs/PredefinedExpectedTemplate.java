@@ -221,7 +221,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
 
   DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/ec2/windows/remote-service-log.mustache"),
   DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/ec2/windows/remote-service-metric.mustache"),
-  DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/ec2/windows/remote-service-trace.mustache"),
+
+//  Temporarily block this part of test because of a time sync issue between caller machine and callee machine
+//  DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/ec2/windows/remote-service-trace.mustache"),
 
   DOTNET_EC2_WINDOWS_DEFAULT_CLIENT_CALL_LOG("/expected-data-template/dotnet/ec2/windows/client-call-log.mustache"),
   DOTNET_EC2_WINDOWS_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/windows/client-call-metric.mustache"),
