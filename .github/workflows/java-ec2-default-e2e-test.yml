@@ -33,7 +33,7 @@ env:
 jobs:
   java-ec2-default:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     outputs:
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
