@@ -72,6 +72,14 @@ runs:
         
         sleep 10
 
+    - name: Log CW Agent Operator spec container args before patching
+      id: log-args-before-patch
+      continue-on-error: true
+      shell: bash
+      run: |
+        kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
+        jq '.items[0].spec.containers[0].args'
+
     - name: Patch the Python ADOT image and restart CloudWatch pods
       if: ${{ inputs.repository == 'aws-otel-python-instrumentation' }}
       shell: bash
@@ -137,6 +145,14 @@ runs:
         kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
 
     # Log artifacts being used to verify whether the correct versions are being used
+    - name: Log CW Agent Operator spec container args after patching
+      id: log-args-after-patch
+      continue-on-error: true
+      shell: bash
+      run: |
+        kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
+        jq '.items[0].spec.containers[0].args'
+    
     - name: Log pod Adot image ID and save image to the environment
       id: latest-adot-image
       shell: bash
