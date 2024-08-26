@@ -141,6 +141,12 @@ jobs:
         run: |
           echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
 
+      # This step deletes lingering resources from previous test runs
+      - name: Delete all sample app namespaces
+        continue-on-error: true
+        timeout-minutes: 5
+        run: kubectl get namespace | awk '/^ns-[0-9]+-[0-9]+/{print $1}' | xargs kubectl delete namespace
+
       - name: Create role for AWS access from the sample app
         id: create_service_account
         uses: ./.github/workflows/actions/execute_and_retry
