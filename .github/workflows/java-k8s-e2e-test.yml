@@ -63,6 +63,7 @@ jobs:
         id: initiate-gradlew
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
+        timeout-minutes: 10
         with:
           command: "./gradlew :validator:build"
           cleanup: "./gradlew clean"
@@ -143,6 +144,7 @@ jobs:
         if: steps.initiate-gradlew == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
+        timeout-minutes: 10
         with:
           command: "./gradlew :validator:build"
           cleanup: "./gradlew clean"
