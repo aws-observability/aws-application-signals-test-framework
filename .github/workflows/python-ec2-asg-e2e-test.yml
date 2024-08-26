@@ -158,12 +158,33 @@ jobs:
             fi
           done
 
+      - name: Wait for ASG instance to be ready
+        run: |
+          # Wait for up to 15 minutes
+          retry_counter=0
+          max_retry=90
+          while [ $retry_counter -lt $max_retry ]; do
+            instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names python-ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
+            status_ok=$(aws ec2 describe-instance-status --instance-ids $instance_id | jq '(.InstanceStatuses[] | select(.InstanceStatus.Status == "ok" and .SystemStatus.Status == "ok")) != {}')
+          
+            if [ "$status_ok" == "true" ]; then
+              echo "The instance is ready."
+              echo "MAIN_SERVICE_INSTANCE_ID=$instance_id" >> $GITHUB_ENV
+              break
+            fi
+          
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Instance Id $instance_id did not become ready with status $status_ok"
+              exit 1
+            fi
+          
+            sleep 10
+          done
+
       - name: Get the sample app and EC2 instance information
         working-directory: terraform/python/ec2/asg
         run: |
-          main_service_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names python-ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
-          main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ env.E2E_TEST_AWS_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
-          echo "INSTANCE_ID=$main_service_instance_id" >> $GITHUB_ENV
+          main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids ${{ env.MAIN_SERVICE_INSTANCE_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
           echo "MAIN_SERVICE_ENDPOINT=localhost:8000" >> $GITHUB_ENV
           echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> $GITHUB_ENV
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
@@ -194,7 +215,7 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --platform-info python-ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
@@ -213,7 +234,7 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --platform-info python-ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
@@ -233,7 +254,7 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --platform-info python-ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
