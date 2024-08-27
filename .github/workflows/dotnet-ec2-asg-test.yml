@@ -40,7 +40,7 @@ env:
   GET_CW_AGENT_RPM_COMMAND: "wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
 
 jobs:
-  dotnet-e2e-ec2-asg:
+  dotnet-ec2-asg:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -171,7 +171,7 @@ jobs:
           retry_counter=0
           max_retry=90
           while [ $retry_counter -lt $max_retry ]; do
-            instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
+            instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names dotnet-ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
             status_ok=$(aws ec2 describe-instance-status --instance-ids $instance_id | jq '(.InstanceStatuses[] | select(.InstanceStatus.Status == "ok" and .SystemStatus.Status == "ok")) != {}')
           
             if [ "$status_ok" == "true" ]; then

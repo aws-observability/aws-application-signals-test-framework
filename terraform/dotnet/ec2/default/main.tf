@@ -162,7 +162,7 @@ resource "null_resource" "main_service_setup" {
       attempt_counter=0
       max_attempts=30
       until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8080" | tr -d '"')); do
-        if [ ${attempt_counter} -eq ${max_attempts} ];then
+        if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
           deployment_failed=1
           break
@@ -268,7 +268,7 @@ resource "null_resource" "remote_service_setup" {
       attempt_counter=0
       max_attempts=30
       until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8081" | tr -d '"')); do
-        if [ ${attempt_counter} -eq ${max_attempts} ];then
+        if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
           deployment_failed=1
           break

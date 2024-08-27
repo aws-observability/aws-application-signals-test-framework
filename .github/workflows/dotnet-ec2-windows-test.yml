@@ -39,7 +39,7 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  dotnet-e2e-ec2-windows:
+  dotnet-e2e-windows:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
