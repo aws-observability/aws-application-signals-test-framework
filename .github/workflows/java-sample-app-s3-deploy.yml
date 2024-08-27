@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-name: App Signals Enablement - ECR Springboot Sample App Deployment
+name: Sample App Deployment - Node S3
 on:
   workflow_dispatch: # be able to run the workflow on demand
 
@@ -10,14 +10,14 @@ permissions:
   contents: read
 
 jobs:
-  upload-main-service-image:
+  upload-main-service-jar:
     strategy:
       fail-fast: false
       matrix:
         aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
                       'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
                       'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
-                      'us-east-1','us-east-2','us-west-1','us-west-2' ]
+                      'us-east-1','us-east-2', 'us-west-1', 'us-west-2' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,23 +42,22 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
           aws-region: ${{ matrix.aws-region }}
 
-      - name: Update ECR URI
+      - name: Build Main Jar
         working-directory: sample-apps/springboot
-        run: |
-          sed -i 's#"<ECR_IMAGE_LINK>:<TAG>"#"${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_FE_SA_IMG }}:latest"#g' build.gradle.kts
+        run: gradle build
 
-      - name: Upload Main Service Image
+      - name: Upload to S3
         working-directory: sample-apps/springboot
-        run: gradle jib
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/libs/springboot-*-SNAPSHOT.jar --key main-service.jar
 
-  upload-remote-service-image:
+  upload-remote-service-jar:
     strategy:
       fail-fast: false
       matrix:
-        aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
-                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
-                      'us-east-1','us-east-2','us-west-1','us-west-2' ]
+          aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
+                        'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
+                        'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+                        'us-east-1','us-east-2','us-west-1', 'us-west-2' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -83,12 +82,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
           aws-region: ${{ matrix.aws-region }}
 
-      - name: Update ECR URI
+      - name: Build Main Jar
         working-directory: sample-apps/springboot-remote-service
-        run: |
-          sed -i 's#"<ECR_IMAGE_LINK>:<TAG>"#"${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_E2E_RE_SA_IMG }}:latest"#g' build.gradle.kts
+        run: gradle build
 
-      - name: Upload Remote Service Image
+      - name: Upload to S3
         working-directory: sample-apps/springboot-remote-service
-        run: gradle jib
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key remote-service.jar
 
