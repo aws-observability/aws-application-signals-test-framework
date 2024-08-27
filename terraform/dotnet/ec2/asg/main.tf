@@ -186,6 +186,8 @@ resource "aws_autoscaling_group" "asg" {
   max_size             = 1
   launch_configuration = aws_launch_configuration.launch_configuration.name
   vpc_zone_identifier  = [data.aws_subnets.default_subnets.ids.0]
+  health_check_type = "EC2"
+  health_check_grace_period = 180
 }
 
 resource "aws_instance" "remote_service_instance" {
