@@ -18,6 +18,11 @@ on:
       caller-workflow-name:
         required: true
         type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.dotnet-ec2-default.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.dotnet-ec2-default.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -34,10 +39,17 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  dotnet-e2e-ec2-default-test:
+  dotnet-e2e-ec2-default:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
       - uses: actions/checkout@v4
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
@@ -251,13 +263,3 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
-
-  emit-metric:
-    needs: dotnet-e2e-ec2-default-test
-    if: always()
-    uses: ./.github/workflows/e2e-test-publish-result.yml
-    secrets: inherit
-    with:
-      aws-region: ${{ inputs.aws-region }}
-      caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      validation-result: ${{ needs.dotnet-e2e-ec2-default-test.outputs.validation-result }}
