@@ -1,10 +1,10 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# This is a reusable workflow for running the Python E2E Canary test for Application Signals.
+# This is a reusable workflow for running the Python Enablement Canary test for Application Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Python EC2 Asg Use Case
+name: Python EC2 ASG Use Case
 on:
   workflow_call:
     inputs:
@@ -18,6 +18,11 @@ on:
         required: false
         default: 'aws-opentelemetry-distro'
         type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.python-ec2-asg.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.python-ec2-asg.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -37,9 +42,15 @@ env:
 jobs:
   python-ec2-asg:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
 
@@ -158,12 +169,33 @@ jobs:
             fi
           done
 
+      - name: Wait for ASG instance to be ready
+        run: |
+          # Wait for up to 15 minutes
+          retry_counter=0
+          max_retry=90
+          while [ $retry_counter -lt $max_retry ]; do
+            instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names python-ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
+            status_ok=$(aws ec2 describe-instance-status --instance-ids $instance_id | jq '(.InstanceStatuses[] | select(.InstanceStatus.Status == "ok" and .SystemStatus.Status == "ok")) != {}')
+          
+            if [ "$status_ok" == "true" ]; then
+              echo "The instance is ready."
+              echo "MAIN_SERVICE_INSTANCE_ID=$instance_id" >> $GITHUB_ENV
+              break
+            fi
+          
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Instance Id $instance_id did not become ready with status $status_ok"
+              exit 1
+            fi
+          
+            sleep 10
+          done
+
       - name: Get the sample app and EC2 instance information
         working-directory: terraform/python/ec2/asg
         run: |
-          main_service_instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names python-ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
-          main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids $main_service_instance_id --region ${{ env.E2E_TEST_AWS_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
-          echo "INSTANCE_ID=$main_service_instance_id" >> $GITHUB_ENV
+          main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids ${{ env.MAIN_SERVICE_INSTANCE_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
           echo "MAIN_SERVICE_ENDPOINT=localhost:8000" >> $GITHUB_ENV
           echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> $GITHUB_ENV
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
@@ -194,7 +226,7 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --platform-info python-ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
@@ -213,7 +245,7 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --platform-info python-ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
@@ -233,7 +265,7 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --platform-info python-ec2-single-asg-${{ env.TESTING_ID }}
-          --instance-id ${{ env.INSTANCE_ID }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
           --rollup'
 
@@ -262,13 +294,3 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
-
-  emit-metric:
-    needs: python-ec2-asg
-    if: always()
-    uses: ./.github/workflows/e2e-test-publish-result.yml
-    secrets: inherit
-    with:
-      aws-region: ${{ inputs.aws-region }}
-      caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      validation-result: ${{ needs.python-ec2-asg.outputs.validation-result }}
