@@ -32,7 +32,6 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-dotnet-e2e-ec2-canary-test'
-      staging_distro_name: 'aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip'
 
   dotnet-e2e-ec2-asg-test:
     strategy:
@@ -48,7 +47,6 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-dotnet-e2e-ec2-asg-canary-test'
-      staging_distro_name: 'aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip'
 
   dotnet-e2e-ec2-windows-default-test:
     strategy:
@@ -64,4 +62,3 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-dotnet-e2e-ec2-asg-canary-test'
-      staging_distro_name: 'aws-distro-opentelemetry-dotnet-instrumentation-windows.zip'
