@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-name: Sample App Deployment - ECR DotNet AspNet
+name: App Signals Enablement - ECR Dotnet Sample App Deployment
 on:
   workflow_dispatch: # be able to run the workflow on demand
 
