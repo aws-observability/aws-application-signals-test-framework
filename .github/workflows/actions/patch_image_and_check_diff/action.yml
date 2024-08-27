@@ -113,7 +113,7 @@ runs:
       shell: bash
       run: |
         kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/1", "value": "--auto-instrumentation-dotnet-image=${{ inputs.patch-image-arn }}"}]'
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/4", "value": "--auto-instrumentation-dotnet-image=${{ inputs.patch-image-arn }}"}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
