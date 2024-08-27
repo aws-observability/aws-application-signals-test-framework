@@ -1,0 +1,22 @@
+[{
+  "EC2.AutoScalingGroup": "^{{platformInfo}}$",
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:{{platformInfo}}$",
+  "PlatformType": "^AWS::EC2$",
+  "Operation": "GET /remote-service",
+  "Version": "^1$",
+  "Telemetry.Source": "^LocalRootSpan$",
+  "Host": "^{{privateDnsName}}$"
+},
+{
+  "EC2.AutoScalingGroup": "^{{platformInfo}}$",
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:{{platformInfo}}$",
+  "PlatformType": "^AWS::EC2$",
+  "Operation": "GET /remote-service",
+  "Version": "^1$",
+  "RemoteService": "{{remoteServiceDeploymentName}}",
+  "RemoteOperation": "GET /healthcheck",
+  "Telemetry.Source": "^ClientSpan$",
+  "Host": "^{{privateDnsName}}$"
+}]
