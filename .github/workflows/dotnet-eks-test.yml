@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# This is a reusable workflow for running the E2E test for Application Signals.
+# This is a reusable workflow for running the Enablement test for Application Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: DotNet EKS Use Case
@@ -23,6 +23,11 @@ on:
       caller-workflow-name:
         required: true
         type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.dotnet-eks.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.dotnet-eks.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -40,10 +45,17 @@ env:
   CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
 
 jobs:
-  dotnet-e2e-eks-test:
+  dotnet-eks:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
       - uses: actions/checkout@v4
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
