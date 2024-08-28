@@ -310,21 +310,6 @@ jobs:
           max_retry: 3
           sleep_time: 30
 
-#      - name: Get remote service pod name and IP
-#        run: |
-#          echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> $GITHUB_ENV
-#          echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
-
-#      - name: Get the sample app endpoint
-#        run: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} --selector=app=dotnet-app -o jsonpath='{.items[0].status.podIP}'):8080" >> $GITHUB_ENV
-#        working-directory: terraform/dotnet/eks
-
-#      - name: Set endpoints for the traffic generator
-#        run: |
-#          # Add the appropriate environment variables to the traffic generator
-#          kubectl set env -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }}
-#          kubectl set env -n ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }} deployment/traffic-generator REMOTE_ENDPOINT=${{ env.REMOTE_SERVICE_POD_IP }}
-
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
