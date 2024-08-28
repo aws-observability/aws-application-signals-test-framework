@@ -14,10 +14,10 @@ on:
       test-cluster-name:
         required: true
         type: string
-      application-signals-adot-image:
+      adot-image-name:
         required: false
         type: string
-      application-signals-adot-image-tag:
+      cw-agent-operator-tag:
         required: false
         type: string
       caller-workflow-name:
@@ -36,7 +36,8 @@ env:
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
-  ADOT_IMAGE_NAME: ${{ inputs.application-signals-adot-image }}
+  ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
+  CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
 
 jobs:
   dotnet-e2e-eks-test:
