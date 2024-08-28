@@ -114,7 +114,7 @@ jobs:
 
   update-secrets:
     needs: [ run-java-k8s-test, run-python-k8s-test ]
-    if: ${{ always() }} && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success')
+    if: ${{ always() && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS Credentials
@@ -161,4 +161,13 @@ jobs:
 #
 #          aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[0]}" --secret-string $endpoint_secret
 #          aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[1]}" --secret-string "$ssh_secret"
-          
+
+  publish-metric:
+    needs: [ update-secrets ]
+    if: always()
+    uses: ./.github/workflows/enablement-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      caller-workflow-name: 'enablement-test-k8s-patch-os'
+      validation-result: ${{ needs.update-secrets.result }}
