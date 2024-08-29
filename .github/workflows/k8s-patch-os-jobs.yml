@@ -89,11 +89,11 @@ jobs:
             --query "Reservations[*].Instances[*].PublicIpAddress" \
             --output text)
 
-          aws secretsmanager update-secret --secret-id "${SECRET_NAMES[0]}" --secret-string $master_public_ip
+          aws secretsmanager update-secret --secret-id "${SECRET_NAMES[0]}" --secret-string "$master_public_ip"
           aws secretsmanager update-secret --secret-id "${SECRET_NAMES[1]}" --secret-string "$private_key_content"
   
   run-java-k8s-test:
-    if: ${{ inputs.LANGUAGE == 'java' || inputs.LANGUAGE == 'all' }}
+    if: ${{ inputs.LANGUAGE == 'java' }}
     needs: create-k8s-on-ec2
     uses: ./.github/workflows/java-k8s-test.yml
     secrets: inherit
@@ -138,29 +138,26 @@ jobs:
           endpoint_secret=$(aws secretsmanager get-secret-value --secret-id "${CURRENT_SECRET_KEYS[0]}" --query SecretString --output text)
           ssh_secret=$(aws secretsmanager get-secret-value --secret-id "${CURRENT_SECRET_KEYS[1]}" --query SecretString --output text)
           
-          aws secretsmanager update-secret --secret-id "${STORAGE_SECRET_KEYS[0]}" --secret-string $endpoint_secret
+          aws secretsmanager update-secret --secret-id "${STORAGE_SECRET_KEYS[0]}" --secret-string "$endpoint_secret"
           aws secretsmanager update-secret --secret-id "${STORAGE_SECRET_KEYS[1]}" --secret-string "$ssh_secret"
 
-#      - name: Replace current endpoint and ssh key with the newly created ones
-#        run: |
-#          PENDING_SECRET_KEYS=(
-#            "e2e-test/${{ env.REPO }}/${{ env.LANGUAGE }}-k8s-master-node-endpoint-pending-value"
-#            "e2e-test/${{ env.REPO }}/${{ env.LANGUAGE }}-k8s-ssh-key-pending-value"
-#          )
-#
-#          CURRENT_SECRET_KEYS=(
-#            "e2e-test/${{ env.REPO }}/${{ env.LANGUAGE }}-k8s-master-node-endpoint"
-#            "e2e-test/${{ env.REPO }}/${{ env.LANGUAGE }}-k8s-ssh-key"
-#          )
-#
-#          endpoint_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[0]}" --query SecretString --output text)
-#          ssh_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[1]}" --query SecretString --output text)
-#
-#          echo $endpoint_secret
-#          echo "$ssh_secret"
-#
-#          aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[0]}" --secret-string $endpoint_secret
-#          aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[1]}" --secret-string "$ssh_secret"
+      - name: Replace current endpoint and ssh key with the newly created ones
+        run: |
+          PENDING_SECRET_KEYS=(
+            "e2e-test/${{ env.REPO }}/${{ env.LANGUAGE }}-k8s-master-node-endpoint-pending-value"
+            "e2e-test/${{ env.REPO }}/${{ env.LANGUAGE }}-k8s-ssh-key-pending-value"
+          )
+
+          CURRENT_SECRET_KEYS=(
+            "e2e-test/${{ env.REPO }}/${{ env.LANGUAGE }}-k8s-master-node-endpoint"
+            "e2e-test/${{ env.REPO }}/${{ env.LANGUAGE }}-k8s-ssh-key"
+          )
+
+          endpoint_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[0]}" --query SecretString --output text)
+          ssh_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[1]}" --query SecretString --output text)
+
+          aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[0]}" --secret-string "$endpoint_secret"
+          aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[1]}" --secret-string "$ssh_secret"
 
   publish-metric:
     needs: [ update-secrets ]
