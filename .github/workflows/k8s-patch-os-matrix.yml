@@ -1,6 +1,6 @@
 # The EC2 AMI for K8s needs to be updated to prevent it from becoming outdated. This workflow will run in the beginning of every month to replace the existing
 # instances with new ones
-name: Update K8s EC2 Instance
+name: K8s Patch OS Matrix
 
 on:
   schedule:
