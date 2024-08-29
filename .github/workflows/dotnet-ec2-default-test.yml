@@ -32,7 +32,7 @@ env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  SAMPLE_APP_ZIP: s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/dotnet-sample-app.zip
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/dotnet-sample-app.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
@@ -87,11 +87,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
-      - name: Set Get ADOT Wheel command environment variable
+      - name: Set Get ADOT Distro command environment variable
         run: |
           if [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
             # Get staging distro file from adot-main-build-staging-jar bucket
-            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
           else
             # After Release will switch to latest tag instead of hard code version for canary purpose
             echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/download/v1.2.0/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV

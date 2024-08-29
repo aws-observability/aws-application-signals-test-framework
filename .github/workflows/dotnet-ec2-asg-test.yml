@@ -37,7 +37,6 @@ env:
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
-  GET_CW_AGENT_RPM_COMMAND: "wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
 
 jobs:
   dotnet-ec2-asg:
