@@ -95,7 +95,7 @@ jobs:
   run-java-k8s-test:
     if: ${{ inputs.LANGUAGE == 'java' || inputs.LANGUAGE == 'all' }}
     needs: create-k8s-on-ec2
-    uses: ./.github/workflows/java-k8s-e2e-test.yml
+    uses: ./.github/workflows/java-k8s-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
@@ -105,7 +105,7 @@ jobs:
   run-python-k8s-test:
     if: ${{ inputs.LANGUAGE == 'python' }}
     needs: create-k8s-on-ec2
-    uses: ./.github/workflows/python-k8s-e2e-test.yml
+    uses: ./.github/workflows/python-k8s-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
