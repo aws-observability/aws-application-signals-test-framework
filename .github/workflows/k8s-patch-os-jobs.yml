@@ -89,7 +89,7 @@ jobs:
             --query "Reservations[*].Instances[*].PublicIpAddress" \
             --output text)
 
-          aws secretsmanager update-secret --secret-id "${SECRET_NAMES[0]}" --secret-string $master_public_ip
+          aws secretsmanager update-secret --secret-id "${SECRET_NAMES[0]}" --secret-string "$master_public_ip"
           aws secretsmanager update-secret --secret-id "${SECRET_NAMES[1]}" --secret-string "$private_key_content"
   
   run-java-k8s-test:
@@ -138,7 +138,7 @@ jobs:
           endpoint_secret=$(aws secretsmanager get-secret-value --secret-id "${CURRENT_SECRET_KEYS[0]}" --query SecretString --output text)
           ssh_secret=$(aws secretsmanager get-secret-value --secret-id "${CURRENT_SECRET_KEYS[1]}" --query SecretString --output text)
           
-          aws secretsmanager update-secret --secret-id "${STORAGE_SECRET_KEYS[0]}" --secret-string $endpoint_secret
+          aws secretsmanager update-secret --secret-id "${STORAGE_SECRET_KEYS[0]}" --secret-string "$endpoint_secret"
           aws secretsmanager update-secret --secret-id "${STORAGE_SECRET_KEYS[1]}" --secret-string "$ssh_secret"
 
       - name: Replace current endpoint and ssh key with the newly created ones
@@ -156,7 +156,7 @@ jobs:
           endpoint_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[0]}" --query SecretString --output text)
           ssh_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[1]}" --query SecretString --output text)
 
-          aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[0]}" --secret-string $endpoint_secret
+          aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[0]}" --secret-string "$endpoint_secret"
           aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[1]}" --secret-string "$ssh_secret"
 
   publish-metric:
