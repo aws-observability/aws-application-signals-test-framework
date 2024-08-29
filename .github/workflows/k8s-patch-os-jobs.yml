@@ -156,9 +156,6 @@ jobs:
           endpoint_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[0]}" --query SecretString --output text)
           ssh_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[1]}" --query SecretString --output text)
 
-          echo $endpoint_secret
-          echo "$ssh_secret"
-
           aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[0]}" --secret-string $endpoint_secret
           aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[1]}" --secret-string "$ssh_secret"
 
