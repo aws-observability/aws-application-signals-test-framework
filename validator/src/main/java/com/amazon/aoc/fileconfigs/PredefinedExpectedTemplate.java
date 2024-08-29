@@ -194,27 +194,6 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/default/client-call-metric.mustache"),
   DOTNET_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/default/client-call-trace.mustache"),
 
-  /** DotNet EC2 Windows Default Test Case Validations */
-  DOTNET_EC2_WINDOWS_DEFAULT_OUTGOING_HTTP_CALL_LOG(
-          "/expected-data-template/dotnet/ec2/windows/outgoing-http-call-log.mustache"),
-  DOTNET_EC2_WINDOWS_DEFAULT_OUTGOING_HTTP_CALL_METRIC(
-          "/expected-data-template/dotnet/ec2/windows/outgoing-http-call-metric.mustache"),
-  DOTNET_EC2_WINDOWS_DEFAULT_OUTGOING_HTTP_CALL_TRACE(
-          "/expected-data-template/dotnet/ec2/windows/outgoing-http-call-trace.mustache"),
-
-  DOTNET_EC2_WINDOWS_DEFAULT_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/ec2/windows/aws-sdk-call-log.mustache"),
-  DOTNET_EC2_WINDOWS_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/ec2/windows/aws-sdk-call-metric.mustache"),
-  DOTNET_EC2_WINDOWS_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/ec2/windows/aws-sdk-call-trace.mustache"),
-
-  DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/ec2/windows/remote-service-log.mustache"),
-  DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/ec2/windows/remote-service-metric.mustache"),
-//  Because of a time sync issue, block the remote service trace check for now
-//  DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/ec2/windows/remote-service-trace.mustache"),
-
-  DOTNET_EC2_WINDOWS_DEFAULT_CLIENT_CALL_LOG("/expected-data-template/dotnet/ec2/windows/client-call-log.mustache"),
-  DOTNET_EC2_WINDOWS_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/windows/client-call-metric.mustache"),
-  DOTNET_EC2_WINDOWS_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/windows/client-call-trace.mustache"),
-
   /** DotNet EC2 Asg Test Case Validations */
   DOTNET_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/dotnet/ec2/asg/outgoing-http-call-log.mustache"),
   DOTNET_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/dotnet/ec2/asg/outgoing-http-call-metric.mustache"),
