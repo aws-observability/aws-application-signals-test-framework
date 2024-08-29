@@ -1,11 +1,11 @@
 # The EC2 AMI for K8s needs to be updated to prevent it from becoming outdated. This workflow will run in the beginning of every month to replace the existing
 # instances with new ones
-name: Update K8s EC2 Instance
+name: K8s Patch OS Job
 
 on:
   workflow_call:
     inputs:
-      repo:
+      repo_name:
         required: true
         type: string
       ec2_name:
@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 env:
-  REPO: ${{ inputs.repo }}
+  REPO: ${{ inputs.repo_name }}
   EC2_NAME: ${{ inputs.ec2_name }}
   LANGUAGE:  ${{ inputs.language }}
   E2E_TEST_AWS_REGION: us-east-1
@@ -65,9 +65,9 @@ jobs:
 
 
             if aws secretsmanager describe-secret --secret-id $SECRET_NAME; then
-              echo "Success: The secret exists."
+              echo "Secret $SECRET_NAME already exists."
             else
-              echo "Secret does not exist. Creating new secret"
+              echo "Secret $SECRET_NAME does not exist. Creating it now"
               aws secretsmanager create-secret --name $SECRET_NAME --secret-string "empty"
             fi
           done
@@ -95,26 +95,26 @@ jobs:
   run-java-k8s-test:
     if: ${{ inputs.LANGUAGE == 'java' || inputs.LANGUAGE == 'all' }}
     needs: create-k8s-on-ec2
-    uses: ./.github/workflows/java-k8s-e2e-test.yml
+    uses: ./.github/workflows/java-k8s-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
       caller-workflow-name: 'k8s-os-patching'
-      caller-repository: ${{ inputs.repo }}
+      caller-repository: ${{ inputs.repo_name }}
 
   run-python-k8s-test:
     if: ${{ inputs.LANGUAGE == 'python' }}
     needs: create-k8s-on-ec2
-    uses: ./.github/workflows/python-k8s-e2e-test.yml
+    uses: ./.github/workflows/python-k8s-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
       caller-workflow-name: 'k8s-os-patching'
-      caller-repository: ${{ inputs.repo }}
+      caller-repository: ${{ inputs.repo_name }}
 
   update-secrets:
     needs: [ run-java-k8s-test, run-python-k8s-test ]
-    if: ${{ always() }} && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success')
+    if: ${{ always() && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS Credentials
@@ -161,4 +161,13 @@ jobs:
 
           aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[0]}" --secret-string $endpoint_secret
           aws secretsmanager update-secret --secret-id "${CURRENT_SECRET_KEYS[1]}" --secret-string "$ssh_secret"
-          
+
+  publish-metric:
+    needs: [ update-secrets ]
+    if: always()
+    uses: ./.github/workflows/enablement-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      caller-workflow-name: 'enablement-test-k8s-patch-os'
+      validation-result: ${{ needs.update-secrets.result }}
