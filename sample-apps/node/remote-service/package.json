@@ -1,0 +1,20 @@
+{
+  "name": "node-remote-service",
+  "version": "0.0.1",
+  "description": "NodeJS remote service sample application used for testing Application Signals functionality",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.621.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.6",
+    "express": "^4.19.2",
+    "mysql2": "^3.11.0",
+    "nodemon": "^3.1.4"
+  }
+}
