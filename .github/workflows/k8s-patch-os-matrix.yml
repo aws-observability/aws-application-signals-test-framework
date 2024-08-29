@@ -24,8 +24,7 @@ jobs:
           { repo_name: 'aws-otel-python-instrumentation', ec2_name: 'adot-python-release', language: 'python' },
           { repo_name: 'aws-otel-java-instrumentation', ec2_name: 'adot-java-release', language: 'java' },
           { repo_name: 'aws-application-signals-test-framework', ec2_name: 'python-canary', language: 'python' },
-          { repo_name: 'aws-application-signals-test-framework', ec2_name: 'java-canary', language: 'java' },
-          { repo_name: 'aws-application-signals-test-framework', ec2_name: 'e2e-playground', language: 'all' } ]
+          { repo_name: 'aws-application-signals-test-framework', ec2_name: 'java-canary', language: 'java' } ]
     uses: ./.github/workflows/k8s-patch-os-jobs.yml
     secrets: inherit
     with:
