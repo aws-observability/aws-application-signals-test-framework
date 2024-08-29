@@ -93,7 +93,7 @@ jobs:
           aws secretsmanager update-secret --secret-id "${SECRET_NAMES[1]}" --secret-string "$private_key_content"
   
   run-java-k8s-test:
-    if: ${{ inputs.LANGUAGE == 'java' || inputs.LANGUAGE == 'all' }}
+    if: ${{ inputs.LANGUAGE == 'java' }}
     needs: create-k8s-on-ec2
     uses: ./.github/workflows/java-k8s-test.yml
     secrets: inherit
