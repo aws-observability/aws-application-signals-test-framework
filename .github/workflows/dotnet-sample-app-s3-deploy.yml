@@ -49,3 +49,12 @@ jobs:
       - name: Upload to S3
         working-directory: sample-apps/dotnet
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./dotnet-sample-app.zip --key dotnet-sample-app.zip
+
+      - name: Upload Windows Script to S3
+        working-directory: sample-apps/dotnet
+        run: |
+          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-default-setup.ps1 --key dotnet-ec2-win-default-setup.ps1
+          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-default-remote-setup.ps1 --key dotnet-ec2-win-default-remote-setup.ps1
+          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./traffic-generator-setup.ps1 --key traffic-generator-setup.ps1
+          
+
