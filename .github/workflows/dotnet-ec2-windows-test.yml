@@ -183,7 +183,39 @@ jobs:
           echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_INSTANCE_ID=$(terraform output remote_service_instance_id)" >> $GITHUB_ENV
         working-directory: terraform/dotnet/ec2/windows
+
+      - name: Monitor EC2 instances readiness in Systems Manager
+        run: |
+          max_attempts=20
+          attempt=0
+          interval=30
+
+          check_instance_ready() {
+            local instance_id=$1
+            while [[ $attempt -lt $max_attempts ]]; do
+              state=$(aws ssm describe-instance-information --filters Key=InstanceIds,Values=$instance_id --query "InstanceInformationList[0].PingStatus" --output text)
+              echo "Attempt $((attempt + 1))/$max_attempts: Current SSM state of instance $instance_id: $state"
+
+              if [[ "$state" == "Online" ]]; then
+                echo "Instance $instance_id is 'Online' in Systems Manager and ready."
+                break
+              else
+                echo "Waiting for instance $instance_id to be 'Online' in Systems Manager..."
+                sleep $interval
+                attempt=$((attempt + 1))
+              fi
+            done
+
+            if [[ $attempt -ge $max_attempts ]]; then
+              echo "Timeout reached: Instance $instance_id did not become 'Online' in Systems Manager within expected time."
+              exit 1
+            fi
+          }
+
+          check_instance_ready ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          check_instance_ready ${{ env.REMOTE_SERVICE_INSTANCE_ID }}
 
       - name: Repeatedly check SSM Association status until success or max attempts
         run: |
