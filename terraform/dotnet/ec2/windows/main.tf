@@ -152,7 +152,7 @@ resource "aws_ssm_document" "main_service_setup" {
             "msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn",
             "Start-Sleep -Seconds 30",
             "$env:Path = [System.Environment]::GetEnvironmentVariable(\"Path\",\"Machine\") + \";\" + [System.Environment]::GetEnvironmentVariable(\"Path\",\"User\")",
-            "curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json",
+            "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/amazon-cloudwatch-agent.json ./amazon-cloudwatch-agent.json",
             "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/dotnet-ec2-win-default-setup.ps1 ./dotnet-ec2-win-default-setup.ps1",
             "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand \"${var.get_cw_agent_rpm_command}\" -GetAdotDistroCommand \"${var.get_adot_distro_command}\" -GetSampleAppCommand \"${var.sample_app_zip}\" -TestId \"${var.test_id}\""
@@ -193,7 +193,7 @@ resource "aws_ssm_document" "remote_service_setup" {
             "msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn",
             "Start-Sleep -Seconds 30",
             "$env:Path = [System.Environment]::GetEnvironmentVariable(\"Path\",\"Machine\") + \";\" + [System.Environment]::GetEnvironmentVariable(\"Path\",\"User\")",
-            "curl -o amazon-cloudwatch-agent.json https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/amazon-cloudwatch-agent.json",
+            "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/amazon-cloudwatch-agent.json ./amazon-cloudwatch-agent.json",
             "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/dotnet-ec2-win-default-remote-setup.ps1 ./dotnet-ec2-win-default-remote-setup.ps1",
             "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-remote-setup.ps1 -GetCloudwatchAgentCommand \"${var.get_cw_agent_rpm_command}\" -GetAdotDistroCommand \"${var.get_adot_distro_command}\" -GetSampleAppCommand \"${var.sample_app_zip}\" -TestId \"${var.test_id}\""
