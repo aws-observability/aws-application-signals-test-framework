@@ -222,6 +222,9 @@ resource "aws_ssm_document" "traffic_generator_setup" {
         "name": "setupTrafficGenerator",
         "inputs": {
           "runCommand": [
+            "msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn",
+            "Start-Sleep -Seconds 30",
+            "$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")",
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator-setup.ps1 ./traffic-generator-setup.ps1",
             "powershell -ExecutionPolicy Bypass -File traffic-generator-setup.ps1 -RemoteServicePrivateEndpoint \"${aws_instance.remote_service_instance.private_ip}\" -TestID \"${var.test_id}\" -TestCanaryType \"${var.canary_type}\" -AWSRegion \"${var.aws_region}\""
           ]
