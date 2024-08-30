@@ -21,6 +21,22 @@ output "main_service_instance_id" {
   value = aws_instance.main_service_instance.id
 }
 
+output "remote_service_instance_id" {
+  value = aws_instance.remote_service_instance.id
+}
+
 output "ec2_instance_ami" {
   value = data.aws_ami.ami.id
+}
+
+output "frontend_script_association_id" {
+  value = aws_ssm_association.main_service_association.id
+}
+
+output "remote_script_association_id" {
+  value = aws_ssm_association.remote_service_association.id
+}
+
+output "traffic_generator_script_document_name" {
+  value = aws_ssm_document.traffic_generator_setup.name
 }

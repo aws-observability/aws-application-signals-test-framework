@@ -32,7 +32,7 @@ env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  SAMPLE_APP_ZIP: "aws s3 cp s3://${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ inputs.aws-region }}/dotnet-sample-app.zip ./dotnet-sample-app.zip"
+  SAMPLE_APP_ZIP: "aws s3 cp s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/dotnet-sample-app.zip ./dotnet-sample-app.zip"
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
@@ -87,11 +87,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
-      - name: Set Get ADOT Wheel command environment variable
+      - name: Set Get ADOT Distro command environment variable
         run: |
           if [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
             # Get staging distro file from adot-main-build-staging-jar bucket
-            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }}; Expand-Archive -Path /${{ env.ADOT_DISTRO_NAME }} -DestinationPath ./dotnet-distro" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }}; Expand-Archive -Path /${{ env.ADOT_DISTRO_NAME }} -DestinationPath ./dotnet-distro" >> $GITHUB_ENV
           else
             # After Release will switch to latest tag instead of hard code version for canary purpose
             echo GET_ADOT_DISTRO_COMMAND="wget -O ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/download/v1.2.0/aws-distro-opentelemetry-dotnet-instrumentation-windows.zip; Expand-Archive -Path ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -DestinationPath ./dotnet-distro -Force" >> $GITHUB_ENV
@@ -157,9 +157,6 @@ jobs:
             else
               # If deployment succeeded, then exit the loop
               # Wait 10 min for SSM document to execute success
-              echo "Deploy success, waiting"
-              sleep 600
-              echo "Wait end"
               break
             fi
           
@@ -174,12 +171,128 @@ jobs:
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
         working-directory: terraform/dotnet/ec2/windows
 
+      - name: Get SSM outputs
+        run: |
+          echo "FRONTEND_SSM_ASSOCIATION_ID=$(terraform output frontend_script_association_id)" >> $GITHUB_ENV
+          echo "REMOTE_SSM_ASSOCIATION__ID=$(terraform output remote_script_association_id)" >> $GITHUB_ENV
+          echo "TRAFFIC_GENERATOR_DOCUMENT_NAME=$(terraform output traffic_generator_script_document_name)" >> $GITHUB_ENV
+        working-directory: terraform/dotnet/ec2/windows
+
       - name: Get the sample app endpoint
         run: |
           echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_INSTANCE_ID=$(terraform output remote_service_instance_id)" >> $GITHUB_ENV
         working-directory: terraform/dotnet/ec2/windows
+
+      - name: Monitor EC2 instances readiness in Systems Manager
+        run: |
+          max_attempts=20
+          attempt=0
+          interval=30
+
+          check_instance_ready() {
+            local instance_id=$1
+            while [[ $attempt -lt $max_attempts ]]; do
+              state=$(aws ssm describe-instance-information --filters Key=InstanceIds,Values=$instance_id --query "InstanceInformationList[0].PingStatus" --output text)
+              echo "Attempt $((attempt + 1))/$max_attempts: Current SSM state of instance $instance_id: $state"
+
+              if [[ "$state" == "Online" ]]; then
+                echo "Instance $instance_id is 'Online' in Systems Manager and ready."
+                break
+              else
+                echo "Waiting for instance $instance_id to be 'Online' in Systems Manager..."
+                sleep $interval
+                attempt=$((attempt + 1))
+              fi
+            done
+
+            if [[ $attempt -ge $max_attempts ]]; then
+              echo "Timeout reached: Instance $instance_id did not become 'Online' in Systems Manager within expected time."
+              exit 1
+            fi
+          }
+
+          check_instance_ready ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          check_instance_ready ${{ env.REMOTE_SERVICE_INSTANCE_ID }}
+
+      - name: Repeatedly check SSM Association status until success or max attempts
+        run: |
+          check_status() {
+            local association_id=$1
+            local max_attempts=30  # Maximum number of attempts
+            local interval=30  # 30 seconds interval
+            local attempt=0
+
+            while [[ $attempt -lt $max_attempts ]]; do
+              aws ssm describe-association --association-id $association_id
+              local status=$(aws ssm describe-association --association-id $association_id --query "AssociationDescription.Overview.AssociationStatusAggregatedCount.Success" --output text)
+              echo "Attempt $((attempt + 1))/$max_attempts: Current status of SSM Association $association_id: $status"
+              if [[ "$status" == "1" ]]; then
+                echo "SSM Association $association_id succeeded."
+                break
+              else
+                echo "Waiting for SSM Association $association_id to succeed..."
+                sleep $interval
+                attempt=$((attempt + 1))
+              fi
+            done
+
+            if [[ $attempt -ge $max_attempts ]]; then
+              echo "Max attempts reached: SSM Association $association_id did not succeed after $max_attempts attempts."
+              exit 1
+            fi
+          }
+          check_status ${{ env.FRONTEND_SSM_ASSOCIATION_ID }}
+          check_status ${{ env.REMOTE_SSM_ASSOCIATION__ID }}
+
+      - name: Trigger Traffic Generator SSM Document and wait for completion with timeout
+        run: |
+          run_command() {
+            local instance_id=$1
+            local document_name=$2
+            local max_attempts=20  # 10 minutes timeout with 30 seconds interval
+            local attempt=0
+            local interval=30
+
+            command_id=$(aws ssm send-command \
+              --instance-ids "$instance_id" \
+              --document-name "$document_name" \
+              --query "Command.CommandId" \
+              --output text)
+
+            echo "Triggered SSM Document $document_name on instance $instance_id with Command ID: $command_id"
+
+            while [[ $attempt -lt $max_attempts ]]; do
+              status=$(aws ssm list-command-invocations \
+                --command-id "$command_id" \
+                --details \
+                --query "CommandInvocations[0].Status" \
+                --output text)
+
+              echo "Attempt $((attempt + 1))/$max_attempts: Current status of command $command_id: $status"
+
+              if [[ "$status" == "Success" || "$status" == "Failed" ]]; then
+                echo "SSM Command $command_id completed with status: $status"
+                if [[ "$status" == "Failed" ]]; then
+                  exit 1
+                fi
+                break
+              else
+                echo "Waiting for SSM Command $command_id to complete..."
+                sleep $interval
+                attempt=$((attempt + 1))
+              fi
+            done
+
+            if [[ $attempt -ge $max_attempts ]]; then
+              echo "Timeout reached: SSM Command $command_id did not complete within 10 minutes."
+              exit 1
+            fi
+          }
+
+          run_command ${{ env.MAIN_SERVICE_INSTANCE_ID }} ${{ env.TRAFFIC_GENERATOR_DOCUMENT_NAME }}
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'

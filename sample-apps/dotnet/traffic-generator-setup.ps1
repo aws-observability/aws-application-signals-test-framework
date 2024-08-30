@@ -1,7 +1,8 @@
 param (
     [string]$RemoteServicePrivateEndpoint,
     [string]$TestID,
-    [string]$TestCanaryType
+    [string]$TestCanaryType,
+    [string]$AWSRegion
 )
 
 wget -O nodejs.zip https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip
@@ -11,8 +12,7 @@ Write-Host $currentdir
 $env:Path += ";$currentdir" + "\nodejs\node-v20.16.0-win-x64"
 
 # Bring in the traffic generator files to EC2 Instance
-#aws s3 cp "s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip" "./traffic-generator.zip"
-wget -o traffic-generator.zip https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/traffic-generator.zip
+aws s3 cp "s3://aws-appsignals-sample-app-prod-$AWSRegion/traffic-generator.zip" "./traffic-generator.zip"
 Expand-Archive -Path "./traffic-generator.zip" -DestinationPath "./" -Force
 
 # Install the traffic generator dependencies
@@ -27,6 +27,3 @@ $env:CANARY_TYPE = $TestCanaryType
 Start-Process -FilePath "npm" -ArgumentList "start"
 
 exit
-# Start the script in a background job
-# Start-Job -ScriptBlock $ScriptBlock -ArgumentList $MainEndpoint, $RemoteEndpoint, $Id, $CanaryType,
-# $currentdir -NoNewWindow -PassThru
