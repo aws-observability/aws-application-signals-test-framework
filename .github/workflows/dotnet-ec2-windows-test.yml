@@ -173,12 +173,10 @@ jobs:
 
       - name: Get SSM outputs
         run: |
-          terraform output frontend_script_association_id
-          terraform output remote_script_association_id
-          terraform output traffic_generator_script_document_name
           echo "FRONTEND_SSM_ASSOCIATION_ID=$(terraform output frontend_script_association_id)" >> $GITHUB_ENV
           echo "REMOTE_SSM_ASSOCIATION__ID=$(terraform output remote_script_association_id)" >> $GITHUB_ENV
           echo "TRAFFIC_GENERATOR_DOCUMENT_NAME=$(terraform output traffic_generator_script_document_name)" >> $GITHUB_ENV
+        working-directory: terraform/dotnet/ec2/windows
 
       - name: Get the sample app endpoint
         run: |
