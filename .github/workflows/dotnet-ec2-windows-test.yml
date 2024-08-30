@@ -173,12 +173,9 @@ jobs:
 
       - name: Get SSM outputs
         run: |
-          frontend_id=$(terraform output frontend_script_association_id)
-          remote_id=$(terraform output remote_script_association_id)
-          traffic_generator_name=$(terraform output traffic_generator_script_document_name)
-          echo "FRONTEND_SSM_ASSOCIATION_ID=$frontend_id" >> $GITHUB_ENV
-          echo "REMOTE_SSM_ASSOCIATION__ID=$remote_id" >> $GITHUB_ENV
-          echo "TRAFFIC_GENERATOR_DOCUMENT_NAME=$traffic_generator_name" >> $GITHUB_ENV
+          echo "FRONTEND_SSM_ASSOCIATION_ID=$(terraform output frontend_script_association_id)" >> $GITHUB_ENV
+          echo "REMOTE_SSM_ASSOCIATION__ID=$(terraform output remote_script_association_id)" >> $GITHUB_ENV
+          echo "TRAFFIC_GENERATOR_DOCUMENT_NAME=$(terraform output traffic_generator_script_document_name)" >> $GITHUB_ENV
 
       - name: Get the sample app endpoint
         run: |
