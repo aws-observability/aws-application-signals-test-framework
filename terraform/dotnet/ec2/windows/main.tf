@@ -222,8 +222,8 @@ resource "aws_ssm_document" "traffic_generator_setup" {
         "name": "setupTrafficGenerator",
         "inputs": {
           "runCommand": [
-            "curl -o traffic-generator-setup.ps1 https://raw.githubusercontent.com/aws-observability/aws-application-signals-test-framework/dotnetMergeBranch-windows/terraform/dotnet/ec2/windows/traffic-generator-setup.ps1",
-            "powershell -ExecutionPolicy Bypass -File traffic-generator-setup.ps1 -RemoteServicePrivateEndpoint \"${aws_instance.remote_service_instance.private_ip}\" -TestID \"${var.test_id}\" -TestCanaryType \"${var.canary_type}\""
+            "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator-setup.ps1 ./traffic-generator-setup.ps1",
+            "powershell -ExecutionPolicy Bypass -File traffic-generator-setup.ps1 -RemoteServicePrivateEndpoint \"${aws_instance.remote_service_instance.private_ip}\" -TestID \"${var.test_id}\" -TestCanaryType \"${var.canary_type}\" -AWSRegion \"${var.aws_region}\""
           ]
         }
       }
