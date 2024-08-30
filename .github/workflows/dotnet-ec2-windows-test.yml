@@ -219,7 +219,7 @@ jobs:
         run: |
           aws ssm send-command \
           --instance-ids ${{ env.MAIN_SERVICE_INSTANCE_ID }} \
-          --document-name $ {{ env.TRAFFIC_GENERATOR_DOCUMENT_NAME }}
+          --document-name ${{ env.TRAFFIC_GENERATOR_DOCUMENT_NAME }}
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
