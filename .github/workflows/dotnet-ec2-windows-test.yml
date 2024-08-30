@@ -169,6 +169,11 @@ jobs:
             fi
           done
 
+      - name: Print SSM Associations
+        run: |
+          echo "Listing SSM Associations:"
+          aws ssm list-associations
+
       - name: Get the ec2 instance ami id
         run: |
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
