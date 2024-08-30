@@ -235,10 +235,6 @@ resource "null_resource" "remote_service_setup" {
       # Get Absolute Path
       current_dir=$(pwd)
       echo $current_dir
-      echo $(ls)
-      cd dotnet-distro
-      echo $(ls)
-      cd $current_dir
 
       # Export environment variables for instrumentation
       cd ./asp_remote_service
