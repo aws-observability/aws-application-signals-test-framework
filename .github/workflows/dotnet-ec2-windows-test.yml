@@ -194,7 +194,7 @@ jobs:
             local attempt=0
 
             while [[ $attempt -lt $max_attempts ]]; do
-              aws ssm describe-association --association-id $association_id --query "AssociationDescription.Overview.Status" --output text
+              aws ssm describe-association --association-id $association_id
               local status=$(aws ssm describe-association --association-id $association_id --query "AssociationDescription.Overview.Status" --output text)
               echo "Attempt $((attempt + 1))/$max_attempts: Current status of SSM Association $association_id: $status"
               if [[ "$status" == "Success" ]]; then
@@ -219,7 +219,7 @@ jobs:
         run: |
           aws ssm send-command \
           --instance-ids ${{ env.MAIN_SERVICE_INSTANCE_ID }} \
-          --document-name "your-ssm-document-name"
+          --document-name $ {{ env.TRAFFIC_GENERATOR_DOCUMENT_NAME }}
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
