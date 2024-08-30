@@ -194,6 +194,7 @@ jobs:
             local attempt=0
 
             while [[ $attempt -lt $max_attempts ]]; do
+              aws ssm describe-association --association-id $association_id 
               local status=$(aws ssm describe-association --association-id $association_id --query "Overview.Status" --output text)
               echo "Attempt $((attempt + 1))/$max_attempts: Current status of SSM Association $association_id: $status"
               if [[ "$status" == "Success" ]]; then
