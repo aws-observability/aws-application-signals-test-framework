@@ -231,17 +231,17 @@ resource "aws_ssm_document" "traffic_generator_setup" {
   }
   DOC
 }
-
-resource "aws_ssm_association" "traffic_generator_association" {
-  name = aws_ssm_document.traffic_generator_setup.name
-
-  targets {
-    key    = "InstanceIds"
-    values = [aws_instance.main_service_instance.id]
-  }
-
-  depends_on = [
-    aws_ssm_association.main_service_association,
-    aws_ssm_association.remote_service_association
-  ]
-}
+#
+#resource "aws_ssm_association" "traffic_generator_association" {
+#  name = aws_ssm_document.traffic_generator_setup.name
+#
+#  targets {
+#    key    = "InstanceIds"
+#    values = [aws_instance.main_service_instance.id]
+#  }
+#
+#  depends_on = [
+#    aws_ssm_association.main_service_association,
+#    aws_ssm_association.remote_service_association
+#  ]
+#}

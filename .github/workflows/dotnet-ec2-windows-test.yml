@@ -157,9 +157,9 @@ jobs:
             else
               # If deployment succeeded, then exit the loop
               # Wait 10 min for SSM document to execute success
-              echo "Deploy success, waiting"
-              sleep 600
-              echo "Wait end"
+#              echo "Deploy success, waiting"
+#              sleep 600
+#              echo "Wait end"
               break
             fi
           
@@ -169,15 +169,19 @@ jobs:
             fi
           done
 
-      - name: Print SSM Associations
-        run: |
-          echo "Listing SSM Associations:"
-          aws ssm list-associations
-
       - name: Get the ec2 instance ami id
         run: |
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
         working-directory: terraform/dotnet/ec2/windows
+
+      - name: Get SSM outputs
+        run: |
+          frontend_id=$(terraform output frontend_script_association_id)
+          remote_id=$(terraform output remote_script_association_id)
+          traffic_generator_name=$(terraform output traffic_generator_script_document_name)
+          echo "FRONTEND_SSM_ASSOCIATION_ID=$frontend_id" >> $GITHUB_ENV
+          echo "REMOTE_SSM_ASSOCIATION__ID=$remote_id" >> $GITHUB_ENV
+          echo "TRAFFIC_GENERATOR_DOCUMENT_NAME=$traffic_generator_name" >> $GITHUB_ENV
 
       - name: Get the sample app endpoint
         run: |
@@ -185,6 +189,41 @@ jobs:
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
         working-directory: terraform/dotnet/ec2/windows
+
+      - name: Repeatedly check SSM Association status until success or max attempts
+        run: |
+          check_status() {
+            local association_id=$1
+            local max_attempts=20  # Maximum number of attempts
+            local interval=30  # 30 seconds interval
+            local attempt=0
+
+            while [[ $attempt -lt $max_attempts ]]; do
+              local status=$(aws ssm describe-association --association-id $association_id --query "Overview.Status" --output text)
+              echo "Attempt $((attempt + 1))/$max_attempts: Current status of SSM Association $association_id: $status"
+              if [[ "$status" == "Success" ]]; then
+                echo "SSM Association $association_id succeeded."
+                break
+              else
+                echo "Waiting for SSM Association $association_id to succeed..."
+                sleep $interval
+                attempt=$((attempt + 1))
+              fi
+            done
+
+            if [[ $attempt -ge $max_attempts ]]; then
+              echo "Max attempts reached: SSM Association $association_id did not succeed after $max_attempts attempts."
+              exit 1
+            fi
+          }
+          check_status ${{ env.FRONTEND_SSM_ASSOCIATION_ID }}
+          check_status ${{ env.REMOTE_SSM_ASSOCIATION__ID }}
+
+      - name: Trigger Traffic Generator Setup Document on Main Service Instance
+        run: |
+          aws ssm send-command \
+          --instance-ids ${{ env.MAIN_SERVICE_INSTANCE_ID }} \
+          --document-name "your-ssm-document-name"
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
