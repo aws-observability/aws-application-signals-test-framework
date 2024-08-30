@@ -48,4 +48,4 @@ jobs:
 
       - name: Upload to S3
         working-directory: sample-apps/dotnet
-        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./dotnet-sample-app.zip --key dotnet-sample-app.zip
+        run: aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-sample-app.zip --key dotnet-sample-app.zip
