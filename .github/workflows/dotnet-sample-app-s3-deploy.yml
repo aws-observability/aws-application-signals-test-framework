@@ -4,6 +4,9 @@
 name: Sample App Deployment - Dotnet S3
 on:
   workflow_dispatch: # be able to run the workflow on demand
+  push:
+    branches:
+      - "dotnetMergeBranch-ec2only-nowindows"
 
 permissions:
   id-token: write
