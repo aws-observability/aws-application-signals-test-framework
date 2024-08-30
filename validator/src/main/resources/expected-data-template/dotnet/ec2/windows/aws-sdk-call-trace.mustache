@@ -1,0 +1,64 @@
+[{
+  "name": "^{{serviceName}}$",
+  "http": {
+    "request": {
+      "url": "^{{endpoint}}/aws-sdk-call$",
+      "method": "^GET$"
+    },
+    "response": {
+      "status": "^500$"
+    }
+  },
+  "aws": {
+    "account_id": "^{{accountId}}$"
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET aws-sdk-call$",
+    "aws.local.environment": "^ec2:default$"
+  },
+  "metadata": {
+    "default": {
+      "EC2.InstanceId": "^{{instanceId}}$",
+      "PlatformType": "^AWS::EC2$",
+      "otel.resource.host.image.id": "^{{instanceAmi}}$",
+      "otel.resource.host.type": "^t3.large$",
+      "aws.span.kind": "^LOCAL_ROOT$"
+    }
+  },
+  "subsegments": [
+    {
+      "name": "^S3$",
+      "http": {
+        "response": {
+          "status": "^404$"
+        }
+      },
+      "aws": {
+        "operation": "^GetBucketLocation$"
+      },
+      "annotations": {
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^GET /aws-sdk-call$",
+        "aws.remote.service": "^AWS::S3$",
+        "aws.remote.operation": "^GetBucketLocation$",
+        "aws.local.environment": "^ec2:default$",
+        "aws.remote.resource.type": "AWS::S3::Bucket"
+      },
+      "metadata": {
+        "default": {
+          "EC2.InstanceId": "^{{instanceId}}$",
+          "PlatformType": "^AWS::EC2$",
+          "aws.span.kind": "^CLIENT$"
+        }
+      },
+      "namespace": "^aws$"
+    }
+  ]
+},
+{
+  "name": "^S3$",
+  "aws": {
+    "operation": "^GetBucketLocation$"
+  }
+}]
