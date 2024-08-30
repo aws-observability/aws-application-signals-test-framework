@@ -14,7 +14,6 @@ wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
 .\dotnet-install.ps1 -Version 8.0.302
 
 Invoke-Expression $GetCloudwatchAgentCommand
-#wget -O .\amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi
 
 Write-Host "Installing Cloudwatch Agent"
 msiexec /i amazon-cloudwatch-agent.msi
