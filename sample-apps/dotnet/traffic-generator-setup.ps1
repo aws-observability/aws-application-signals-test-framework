@@ -4,6 +4,9 @@ param (
     [string]$TestCanaryType,
     [string]$AWSRegion
 )
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
+Start-Sleep -Seconds 30
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
 wget -O nodejs.zip https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip
 Expand-Archive -Path .\nodejs.zip -DestinationPath .\nodejs -Force
@@ -27,6 +30,3 @@ $env:CANARY_TYPE = $TestCanaryType
 Start-Process -FilePath "npm" -ArgumentList "start"
 
 exit
-# Start the script in a background job
-# Start-Job -ScriptBlock $ScriptBlock -ArgumentList $MainEndpoint, $RemoteEndpoint, $Id, $CanaryType,
-# $currentdir -NoNewWindow -PassThru
