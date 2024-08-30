@@ -157,9 +157,6 @@ jobs:
             else
               # If deployment succeeded, then exit the loop
               # Wait 10 min for SSM document to execute success
-#              echo "Deploy success, waiting"
-#              sleep 600
-#              echo "Wait end"
               break
             fi
           
