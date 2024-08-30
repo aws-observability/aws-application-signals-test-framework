@@ -27,6 +27,7 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 java.targetCompatibility = JavaVersion.VERSION_11
 
 repositories {
+  mavenLocal()
   mavenCentral()
 }
 
@@ -34,10 +35,18 @@ dependencies {
   implementation(platform("software.amazon.awssdk:bom:2.20.78"))
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-logging")
-  implementation("io.opentelemetry:opentelemetry-api:1.34.1")
-  implementation("software.amazon.awssdk:s3")
+  // implementation("io.opentelemetry:opentelemetry-api:1.34.1")
+  // implementation("software.amazon.awssdk:s3")
+  implementation("com.amazonaws:aws-java-sdk-s3:1.12.228")
   implementation("software.amazon.awssdk:sts")
   implementation("com.mysql:mysql-connector-j:8.0.33")
+
+  implementation(platform("com.amazonaws:aws-xray-recorder-sdk-bom:2.8.0-dev.116+b30b3b9"))
+  implementation("com.amazonaws:aws-xray-recorder-sdk-core")
+  implementation("com.amazonaws:aws-xray-recorder-sdk-aws-sdk")
+  implementation("com.amazonaws:aws-xray-recorder-sdk-aws-sdk-instrumentor")
+  implementation("com.amazonaws:aws-xray-recorder-sdk-aws-sdk-v2")
+  implementation("com.amazonaws:aws-xray-recorder-sdk-aws-sdk-v2-instrumentor")
 }
 
 jib {

@@ -19,7 +19,11 @@ import java.net.http.HttpClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import software.amazon.awssdk.services.s3.S3Client;
+// import software.amazon.awssdk.services.s3.S3Client;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.xray.handlers.TracingHandler;
 
 @SpringBootApplication
 public class FrontendService {
@@ -30,9 +34,16 @@ public class FrontendService {
   }
 
   @Bean
-  public S3Client s3() {
-    return S3Client.builder().build();
+  public AmazonS3 s3() {
+    // return S3Client.builder().build();
+    return AmazonS3ClientBuilder.standard()
+            .withRegion(Regions.US_WEST_2).withRequestHandlers(new TracingHandler()).build();
   }
+
+  // @Bean
+  // public S3Client s3() {
+  //   // return S3Client.builder().build();
+  // }
 
   public static void main(String[] args) {
     SpringApplication.run(FrontendService.class, args);

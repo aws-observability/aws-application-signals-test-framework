@@ -15,7 +15,7 @@
 
 package com.amazon.sampleapp;
 
-import io.opentelemetry.api.trace.Span;
+// import io.opentelemetry.api.trace.Span;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -37,14 +37,19 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
+// import software.amazon.awssdk.services.s3.S3Client;
+// import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
+import com.amazonaws.services.s3.AmazonS3;
+
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Segment;
+import com.amazonaws.xray.entities.Subsegment;
 
 @Controller
 public class FrontendServiceController {
   private static final Logger logger = LoggerFactory.getLogger(FrontendServiceController.class);
   private final HttpClient httpClient;
-  private final S3Client s3;
+  private final AmazonS3 s3;
   private AtomicBoolean shouldSendLocalRootClientCall = new AtomicBoolean(false);
 
   @Bean
@@ -71,7 +76,7 @@ public class FrontendServiceController {
   }
 
   @Autowired
-  public FrontendServiceController(HttpClient httpClient, S3Client s3) {
+  public FrontendServiceController(HttpClient httpClient, AmazonS3 s3) {
     this.httpClient = httpClient;
     this.s3 = s3;
   }
@@ -86,21 +91,37 @@ public class FrontendServiceController {
   @GetMapping("/aws-sdk-call")
   @ResponseBody
   public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
-    String bucketName = "e2e-test-bucket-name";
-    // Add a unique test ID to bucketname to associate buckets to specific test runs
-    if (testingId != null) {
-      bucketName += "-" + testingId;
-    }
-    GetBucketLocationRequest bucketLocationRequest =
-        GetBucketLocationRequest.builder().bucket(bucketName).build();
-    try {
-      s3.getBucketLocation(bucketLocationRequest);
-    } catch (Exception e) {
-      // bucketName does not exist, so this is expected.
-      logger.error("Error occurred when trying to get bucket location of: " + bucketName);
-      logger.error("Could not retrieve http request:" + e.getLocalizedMessage());
-    }
-    return getXrayTraceId();
+    Segment segment = AWSXRay.beginSegment("JSR");
+    segment.setOrigin("AWS::SNS::Topic");
+    segment.addException(new RuntimeException("TestException"));
+
+    Subsegment subsegment = AWSXRay.beginSubsegment("SubSegment1");
+    subsegment.setNamespace("MyNamespace");
+    subsegment.setThrottle(true);
+    subsegment.putAws("table_name", "scorekeep-user");
+    subsegment.putAws("operation", "UpdateItem");
+    subsegment.putAws("request_id", "abc123");
+    AWSXRay.endSubsegment();
+
+    // String bucketName = "e2e-test-bucket-name";
+    // // Add a unique test ID to bucketname to associate buckets to specific test runs
+    // if (testingId != null) {
+    //   bucketName += "-" + testingId;
+    // }
+    // GetBucketLocationRequest bucketLocationRequest =
+    //     GetBucketLocationRequest.builder().bucket(bucketName).build();
+    // try {
+    //   s3.getBucketLocation(bucketLocationRequest);
+    // } catch (Exception e) {
+    //   // bucketName does not exist, so this is expected.
+    //   logger.error("Error occurred when trying to get bucket location of: " + bucketName);
+    //   logger.error("Could not retrieve http request:" + e.getLocalizedMessage());
+    // }
+
+    s3.listBuckets();
+    AWSXRay.endSegment();
+    return "call /aws-sdk-call";
+    // return getXrayTraceId();
   }
 
   // test http instrumentation (java client)
@@ -120,7 +141,8 @@ public class FrontendServiceController {
       logger.error("Could not complete http request:" + e.getMessage());
     }
 
-    return getXrayTraceId();
+    return "call /outgoing-http-call";
+    // return getXrayTraceId();
   }
 
   // RemoteService must also be deployed to use this API
@@ -141,12 +163,14 @@ public class FrontendServiceController {
       int statusCode = response.statusCode();
 
       logger.info("Remote service call status code: " + statusCode);
-      return getXrayTraceId();
+      // return getXrayTraceId();
+      return "call /remote-service";
     } catch (Exception e) {
       logger.error("Could not complete http request to remote service:" + e.getMessage());
     }
 
-    return getXrayTraceId();
+    return "call /remote-service";
+    // return getXrayTraceId();
   }
 
   // Test Local Root Client Span generation
@@ -182,14 +206,15 @@ public class FrontendServiceController {
       throw new RuntimeException(e);
     }
 
-    return getXrayTraceId();
+    // return getXrayTraceId();
+    return "mysql call";
   }
 
   // get x-ray trace id
-  private String getXrayTraceId() {
-    String traceId = Span.current().getSpanContext().getTraceId();
-    String xrayTraceId = "1-" + traceId.substring(0, 8) + "-" + traceId.substring(8);
+  // private String getXrayTraceId() {
+  //   String traceId = Span.current().getSpanContext().getTraceId();
+  //   String xrayTraceId = "1-" + traceId.substring(0, 8) + "-" + traceId.substring(8);
 
-    return String.format("{\"traceId\": \"%s\"}", xrayTraceId);
-  }
+  //   return String.format("{\"traceId\": \"%s\"}", xrayTraceId);
+  // }
 }
