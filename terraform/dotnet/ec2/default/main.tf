@@ -167,7 +167,7 @@ resource "null_resource" "main_service_setup" {
           deployment_failed=1
           break
         fi
-        echo "Attempting to connect to the remote endpoint. Tried $attempt_counter out of $max_attempts"
+        echo "Attempting to connect to the main endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
         sleep 10
       done
