@@ -87,7 +87,7 @@ data "aws_ami" "ami" {
 resource "aws_launch_configuration" "launch_configuration" {
   image_id                    = data.aws_ami.ami.id
   instance_type               = "t3.micro"
-  key_name                    = "DotnetE2EManual"
+  key_name                    = local.ssh_key_name
   associate_public_ip_address = true
   iam_instance_profile        = "APP_SIGNALS_EC2_TEST_ROLE"
   security_groups             = [aws_default_vpc.default.default_security_group_id]
@@ -172,6 +172,8 @@ resource "aws_autoscaling_group" "asg" {
   max_size             = 1
   launch_configuration = aws_launch_configuration.launch_configuration.name
   vpc_zone_identifier  = [data.aws_subnets.default_subnets.ids.0]
+  health_check_type = "EC2"
+  health_check_grace_period = 180
 }
 
 resource "aws_instance" "remote_service_instance" {
@@ -254,6 +256,20 @@ resource "null_resource" "remote_service_setup" {
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
+
+      # Check if the application is up. If it is not up, then exit 1.
+      attempt_counter=0
+      max_attempts=30
+      until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8081" | tr -d '"')); do
+        if [ $attempt_counter -eq $max_attempts ];then
+          echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
+          deployment_failed=1
+          break
+        fi
+        echo "Attempting to connect to the remote endpoint. Tried $attempt_counter out of $max_attempts"
+        attempt_counter=$(($attempt_counter+1))
+        sleep 10
+      done
 
       EOF
     ]

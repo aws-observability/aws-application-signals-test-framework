@@ -5,3 +5,6 @@
 
 # Ignore Gradle build output directory
 build
+
+# Ignore NodeJS build outputs
+node_modules/

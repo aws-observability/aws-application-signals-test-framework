@@ -1,0 +1,23 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+version: '3'
+services:
+  node_frontend_service:
+    image: nodesampleapp/frontend-service
+    build:
+      context: ./frontend-service
+      dockerfile: Dockerfile
+    container_name: node_frontend_service
+    restart: always
+    ports:
+      - "8000:8000"
+
+  node_remote_service:
+    image: nodesampleapp/remote-service
+    build:
+      context: ./remote-service
+      dockerfile: Dockerfile
+    container_name: node_remote_service
+    restart: always
+    ports:
+      - "8001:8001"

@@ -51,6 +51,8 @@ public class Context {
 
   private String remoteResourceIdentifier;
 
+  private String remoteDbUser;
+
   private String endpoint;
 
   private String queryString;
