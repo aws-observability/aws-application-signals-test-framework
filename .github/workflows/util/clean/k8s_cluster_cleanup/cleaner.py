@@ -173,7 +173,7 @@ def _get_k8s_instances_to_terminate():
 
     return instances_to_terminate
 
-def _terminate_instances(instances_to_terminate):
+def _terminate_instances(instances):
     # Terminate the instances
     instance_ids = [instance['InstanceId'] for instance in instances]
     try:
