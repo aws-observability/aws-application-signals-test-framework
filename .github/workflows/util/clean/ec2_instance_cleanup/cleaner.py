@@ -189,7 +189,7 @@ def _terminate_instances(instances_to_terminate):
 if __name__ == '__main__':
     groups = _get_autoscaling_groups_to_delete()
     instances = _get_instances_to_terminate()
-    
+
     if len(groups) == 0 and len(instances) == 0:
         logging.info("No resource to clean up")
         exit(0)
