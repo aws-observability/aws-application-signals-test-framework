@@ -14,6 +14,9 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      caller-repository:
+        required: false
+        type: string
       adot-image-name:
         required: false
         type: string
@@ -33,6 +36,7 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  CALLER_REPOSITORY: ${{ inputs.caller-repository }}
   ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
   CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
@@ -55,7 +59,7 @@ jobs:
         run: echo "job-started=true" >> $GITHUB_OUTPUT
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ env.E2E_TEST_AWS_REGION }}-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> $GITHUB_ENV
 
       - uses: actions/checkout@v4
         with:
@@ -81,7 +85,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
-      - name: Retrieve account
+      - name: Retrieve Secrets
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids: |
@@ -89,8 +93,22 @@ jobs:
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
             JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
             RELEASE_TESTING_ECR_ACCOUNT, e2e-test/${{ github.event.repository.name }}/java-k8s-release-testing-account
+
+      - name: Retrieve K8s EC2 Secrets
+        if: ${{ env.CALLER_WORKFLOW_NAME != 'k8s-os-patching' }}
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
             MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/java-k8s-master-node-endpoint
             MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/java-k8s-ssh-key
+
+      - name: Retrieve K8s EC2 OS Patching Secrets
+        if: ${{ env.CALLER_WORKFLOW_NAME == 'k8s-os-patching' }}
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            MAIN_SERVICE_ENDPOINT, e2e-test/${{ env.CALLER_REPOSITORY }}/java-k8s-master-node-endpoint-pending-value
+            MASTER_NODE_SSH_KEY, e2e-test/${{ env.CALLER_REPOSITORY }}/java-k8s-ssh-key-pending-value
 
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/java/k8s/deploy/resources
@@ -99,8 +117,8 @@ jobs:
           sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}#' frontend-service-depl.yaml
           sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' remote-service-depl.yaml
           sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}#' remote-service-depl.yaml
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key frontend-service-depl-${{ github.event.repository.name }}.yaml --body frontend-service-depl.yaml
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key remote-service-depl-${{ github.event.repository.name }}.yaml --body remote-service-depl.yaml
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key frontend-service-depl-${{ env.TESTING_ID }}.yaml --body frontend-service-depl.yaml
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key remote-service-depl-${{ env.TESTING_ID }}.yaml --body remote-service-depl.yaml
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry

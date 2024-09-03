@@ -1,0 +1,34 @@
+# The EC2 AMI for K8s needs to be updated to prevent it from becoming outdated. This workflow will run in the beginning of every month to replace the existing
+# instances with new ones
+name: K8s Patch OS Matrix
+
+on:
+  schedule:
+    - cron: '0 0 1 * *' # run the workflow beginning of every month
+  workflow_dispatch: # be able to run the workflow on demand
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  k8s-patch-os:
+    strategy:
+      fail-fast: false
+      matrix:
+        instance: [
+          { repo_name: 'amazon-cloudwatch-agent-operator', ec2_name: 'cw-agent-operator-release', language: 'java' },
+          { repo_name: 'amazon-cloudwatch-agent-operator', ec2_name: 'cw-agent-operator-release', language: 'python' },
+          { repo_name: 'amazon-cloudwatch-agent', ec2_name: 'cw-agent-release', language: 'java' },
+          { repo_name: 'amazon-cloudwatch-agent', ec2_name: 'cw-agent-release', language: 'python' },
+          { repo_name: 'aws-otel-python-instrumentation', ec2_name: 'adot-python-release', language: 'python' },
+          { repo_name: 'aws-otel-java-instrumentation', ec2_name: 'adot-java-release', language: 'java' },
+          { repo_name: 'aws-application-signals-test-framework', ec2_name: 'python-canary', language: 'python' },
+          { repo_name: 'aws-application-signals-test-framework', ec2_name: 'java-canary', language: 'java' } ]
+    uses: ./.github/workflows/k8s-patch-os-jobs.yml
+    secrets: inherit
+    with:
+      repo_name: ${{ matrix.instance.repo_name }}
+      ec2_name: ${{ matrix.instance.ec2_name }}
+      language: ${{ matrix.instance.language }}
+
