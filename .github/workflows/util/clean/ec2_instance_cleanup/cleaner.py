@@ -175,7 +175,7 @@ def _prepare_report_and_upload(groups_to_delete, instances_to_terminate) -> bool
     return True
 
 
-def _terminate_instances(instances_to_terminate):
+def _terminate_instances(instances):
     # Terminate the instances
     instance_ids = [instance['InstanceId'] for instance in instances]
     try:
