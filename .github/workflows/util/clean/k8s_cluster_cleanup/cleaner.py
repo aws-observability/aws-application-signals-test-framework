@@ -59,6 +59,34 @@ def _prepare_report_and_upload(k8s_instances_to_terminate) -> bool:
         return False
     return True
 
+def _get_worker_instance_id_with_master_instance_id(instance_id):
+    response = ec2.describe_instances(InstanceIds=[instance_id])
+
+    master_name = None
+    for reservation in response['Reservations']:
+        for instance in reservation['Instances']:
+            for tag in instance.get('Tags', []):
+                if tag['Key'] == 'Name':
+                    master_name = tag['Value']
+                    break
+
+    if not master_name:
+        logging.error(f"No instance found with ID {instance_id}")
+        return None
+
+    worker_name = master_name.replace('master', 'worker')
+
+    response = ec2.describe_instances(
+        Filters=[{'Name': 'tag:Name', 'Values': [worker_name]}]
+    )
+
+    for reservation in response['Reservations']:
+        for instance in reservation['Instances']:
+            return instance['InstanceId']
+
+    logging.error(f"No instance found with the name {worker_name}")
+    return None
+
 def _get_k8s_cluster_instance_in_use():
     # Get list of all secrets
     secrets = []
@@ -80,9 +108,11 @@ def _get_k8s_cluster_instance_in_use():
                 response = secret_manager.get_secret_value(SecretId=secret_name)
                 secret_value = response.get('SecretString', None)
                 if secret_value:
-                    instance_id = find_instance_id_by_ip(secret_value)
-                    if instance_id:
-                        k8s_cluster_instance_in_use.append(instance_id)
+                    master_instance_id = find_instance_id_by_ip(secret_value)
+                    if master_instance_id:
+                        worker_instance_id = _get_worker_instance_id_with_master_instance_id(master_instance_id)
+                        k8s_cluster_instance_in_use.append(master_instance_id)
+                        k8s_cluster_instance_in_use.append(worker_instance_id)
 
             except Exception as e:
                 logging.info(f"Failed to retrieve secret {e}")
@@ -93,9 +123,11 @@ def _get_k8s_cluster_instance_in_use():
                 response = secret_manager.get_secret_value(SecretId=secret_name)
                 secret_value = response.get('SecretString', None)
                 if secret_value:
-                    instance_id = find_instance_id_by_ip(secret_value)
-                    if instance_id and not is_instance_older_than_40_days(instance_id):
-                        k8s_cluster_instance_in_use.append(instance_id)
+                    master_instance_id = find_instance_id_by_ip(secret_value)
+                    if master_instance_id and not is_instance_older_than_40_days(master_instance_id):
+                        worker_instance_id = _get_worker_instance_id_with_master_instance_id(master_instance_id)
+                        k8s_cluster_instance_in_use.append(master_instance_id)
+                        k8s_cluster_instance_in_use.append(worker_instance_id)
 
             except Exception as e:
                 logging.info(f"Failed to retrieve secret {e}")
@@ -196,6 +228,6 @@ if __name__ == '__main__':
         logging.error("Failed to prepare report and upload. Aborting resource clean up.")
         exit(1)
 
-    if len(k8s_instances) > 0:
-        logging.info("Terminating K8s instances...")
-        _terminate_instances(k8s_instances)
+#     if len(k8s_instances) > 0:
+#         logging.info("Terminating K8s instances...")
+#         _terminate_instances(k8s_instances)
