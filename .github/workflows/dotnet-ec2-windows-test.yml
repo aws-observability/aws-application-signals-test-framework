@@ -90,7 +90,7 @@ jobs:
       - name: Set Get ADOT Distro command environment variable
         run: |
           if [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
-            # Get staging distro file from adot-main-build-staging-jar bucket
+            # Get staging distro file from staging bucket
             echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }}; Expand-Archive -Path /${{ env.ADOT_DISTRO_NAME }} -DestinationPath ./dotnet-distro" >> $GITHUB_ENV
           else
             # After Release will switch to latest tag instead of hard code version for canary purpose

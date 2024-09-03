@@ -53,9 +53,9 @@ jobs:
       - name: Upload Windows Script to S3
         working-directory: sample-apps/dotnet
         run: |
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-default-setup.ps1 --key dotnet-ec2-win-default-setup.ps1
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-default-remote-setup.ps1 --key dotnet-ec2-win-default-remote-setup.ps1
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./traffic-generator-setup.ps1 --key traffic-generator-setup.ps1
-          aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./amazon-cloudwatch-agent.json --key amazon-cloudwatch-agent.json
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-default-setup.ps1 --key dotnet-ec2-win-default-setup.ps1
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-default-remote-setup.ps1 --key dotnet-ec2-win-default-remote-setup.ps1
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./traffic-generator-setup.ps1 --key traffic-generator-setup.ps1
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./amazon-cloudwatch-agent.json --key amazon-cloudwatch-agent.json
           
 
