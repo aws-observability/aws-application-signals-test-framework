@@ -167,7 +167,7 @@ resource "null_resource" "main_service_setup" {
           deployment_failed=1
           break
         fi
-        echo "Attempting to connect to the remote endpoint. Tried $attempt_counter out of $max_attempts"
+        echo "Attempting to connect to the main endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
         sleep 10
       done
@@ -235,10 +235,6 @@ resource "null_resource" "remote_service_setup" {
       # Get Absolute Path
       current_dir=$(pwd)
       echo $current_dir
-      echo $(ls)
-      cd dotnet-distro
-      echo $(ls)
-      cd $current_dir
 
       # Export environment variables for instrumentation
       cd ./asp_remote_service
