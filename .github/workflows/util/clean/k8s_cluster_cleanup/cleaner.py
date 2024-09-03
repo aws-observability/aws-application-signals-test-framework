@@ -198,4 +198,4 @@ if __name__ == '__main__':
 
     if len(k8s_instances) > 0:
         logging.info("Terminating K8s instances...")
-        _terminate_k8s_instances(k8s_instances)
+        _terminate_instances(k8s_instances)
