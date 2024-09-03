@@ -196,6 +196,6 @@ if __name__ == '__main__':
         logging.error("Failed to prepare report and upload. Aborting resource clean up.")
         exit(1)
 
-#     if len(k8s_instances) > 0:
-#         logging.info("Terminating K8s instances...")
-#         _terminate_k8s_instances(k8s_instances)
+    if len(k8s_instances) > 0:
+        logging.info("Terminating K8s instances...")
+        _terminate_k8s_instances(k8s_instances)
