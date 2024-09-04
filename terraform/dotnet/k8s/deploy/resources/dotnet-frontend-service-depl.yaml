@@ -19,18 +19,16 @@ spec:
       containers:
         - name: dotnet-frontend
           image: ${IMAGE}
-          args:
-            - "sh"
-            - "-c"
-            - "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8000 --noreload"
           ports:
-            - containerPort: 8000
+            - containerPort: 8080
           env:
-            - name: "OTEL_SERVICE_NAME"
-              value: "python-sample-application-${TESTING_ID}"
-            - name: "PYTHONPATH"
-              value: "/django_frontend_app"
-            - name: "DJANGO_SETTINGS_MODULE"
-              value: "django_frontend_service.settings"
+            - name: LISTEN_ADDRESS
+              value: "0.0.0.0:8080"
+            - name: ASPNETCORE_URLS
+              value: "http://+:8080"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://cloudwatch-agent.amazon-cloudwatch:4316"
+            - name: OTEL_DOTNET_AUTO_PLUGINS
+              value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
       imagePullSecrets:
         - name: ecr-secret
