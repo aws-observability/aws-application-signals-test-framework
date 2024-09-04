@@ -31,10 +31,10 @@ resource "null_resource" "deploy" {
       # Ensure environment is clean
       echo "LOG: Rerunning cleanup commands in case of cleanup failure in previous run"
       helm uninstall --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator --ignore-not-found
-      kubectl delete namespace python-sample-app-namespace --ignore-not-found=true
+      kubectl delete namespace dotnet-sample-app-namespace --ignore-not-found=true
       [ ! -e helm-charts ] || sudo rm -r helm-charts
-      [ ! -e python-frontend-service-depl.yaml ] || rm python-frontend-service-depl.yaml
-      [ ! -e python-remote-service-depl.yaml ] || rm python-remote-service-depl.yaml
+      [ ! -e dotnet-frontend-service-depl.yaml ] || rm dotnet-frontend-service-depl.yaml
+      [ ! -e dotnet-remote-service-depl.yaml ] || rm dotnet-remote-service-depl.yaml
 
       # Clone and install operator onto cluster
       echo "LOG: Cloning helm charts repo"
@@ -84,9 +84,9 @@ resource "null_resource" "deploy" {
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
-      elif [ "${var.repository}" = "aws-otel-python-instrumentation" ]; then
+      elif [ "${var.repository}" = "aws-otel-dotnet-instrumentation" ]; then
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/2", "value": "--auto-instrumentation-python-image=${var.patch_image_arn}"}]'
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/2", "value": "--auto-instrumentation-dotnet-image=${var.patch_image_arn}"}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
@@ -94,7 +94,7 @@ resource "null_resource" "deploy" {
 
       # Create sample app namespace
       echo "LOG: Creating sample app namespace"
-      kubectl create namespace python-sample-app-namespace
+      kubectl create namespace dotnet-sample-app-namespace
 
       # Set up secret to pull image with
       echo "LOG: Creating secret to access ECR images"
@@ -103,10 +103,10 @@ resource "null_resource" "deploy" {
       TOKEN=`aws ecr --region=${var.aws_region} get-authorization-token --output text --query authorizationData[].authorizationToken | base64 -d | cut -d: -f2`
 
       echo "LOG: Deleting secret if it exists"
-      kubectl delete secret -n python-sample-app-namespace --ignore-not-found $SECRET_NAME
+      kubectl delete secret -n dotnet-sample-app-namespace --ignore-not-found $SECRET_NAME
 
       echo "LOG: Creating secret for pulling sample app ECR"
-      kubectl create secret -n python-sample-app-namespace docker-registry $SECRET_NAME \
+      kubectl create secret -n dotnet-sample-app-namespace docker-registry $SECRET_NAME \
       --docker-server=https://$ACCOUNT.dkr.ecr.${var.aws_region}.amazonaws.com \
       --docker-username=AWS \
       --docker-password="$${TOKEN}"
@@ -115,51 +115,51 @@ resource "null_resource" "deploy" {
       echo "LOG: Pulling sample app deployment files"
       # cd to ensure everything is downloaded into root directory so cleanup is each
       cd ~
-      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key python-frontend-service-depl-${var.test_id}.yaml python-frontend-service-depl.yaml
-      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key python-remote-service-depl-${var.test_id}.yaml python-remote-service-depl.yaml
+      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key dotnet-frontend-service-depl-${var.test_id}.yaml dotnet-frontend-service-depl.yaml
+      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key dotnet-remote-service-depl-${var.test_id}.yaml dotnet-remote-service-depl.yaml
 
       # Patch the staging image if this is running as part of release testing
-      if [ "${var.repository}" = "aws-otel-python-instrumentation" ]; then
+      if [ "${var.repository}" = "aws-otel-dotnet-instrumentation" ]; then
         RELEASE_TESTING_SECRET_NAME=release-testing-ecr-secret
-        kubectl delete secret -n python-sample-app-namespace --ignore-not-found $RELEASE_TESTING_SECRET_NAME
-        kubectl create secret -n python-sample-app-namespace docker-registry $RELEASE_TESTING_SECRET_NAME \
+        kubectl delete secret -n dotnet-sample-app-namespace --ignore-not-found $RELEASE_TESTING_SECRET_NAME
+        kubectl create secret -n dotnet-sample-app-namespace docker-registry $RELEASE_TESTING_SECRET_NAME \
           --docker-server=https://${var.release_testing_ecr_account}.dkr.ecr.us-east-1.amazonaws.com \
           --docker-username=AWS \
           --docker-password="$${TOKEN}"
 
-        yq eval '.spec.template.spec.imagePullSecrets += [{"name": "release-testing-ecr-secret"}]' -i python-frontend-service-depl.yaml
-        yq eval '.spec.template.spec.imagePullSecrets += [{"name": "release-testing-ecr-secret"}]' -i python-remote-service-depl.yaml
+        yq eval '.spec.template.spec.imagePullSecrets += [{"name": "release-testing-ecr-secret"}]' -i dotnet-frontend-service-depl.yaml
+        yq eval '.spec.template.spec.imagePullSecrets += [{"name": "release-testing-ecr-secret"}]' -i dotnet-remote-service-depl.yaml
       fi
 
       echo "LOG: Applying sample app deployment files"
-      kubectl apply -f python-frontend-service-depl.yaml
-      kubectl apply -f python-remote-service-depl.yaml
+      kubectl apply -f dotnet-frontend-service-depl.yaml
+      kubectl apply -f dotnet-remote-service-depl.yaml
 
       echo "Wait for sample app to be reach ready state"
       sleep 10
-      kubectl wait --for=condition=Ready --request-timeout '10m' pod --all -n python-sample-app-namespace
+      kubectl wait --for=condition=Ready --request-timeout '10m' pod --all -n dotnet-sample-app-namespace
 
       # Emit main and remote service pod IP
       echo "LOG: Outputting remote service pod IP to SSM using put-parameter API"
-      aws ssm put-parameter --region ${var.aws_region} --name python-main-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pod --selector=app=python-sample-app -n python-sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
-      aws ssm put-parameter --region ${var.aws_region} --name python-remote-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pod --selector=app=python-remote-app -n python-sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
+      aws ssm put-parameter --region ${var.aws_region} --name dotnet-main-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pod --selector=app=dotnet-sample-app -n dotnet-sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
+      aws ssm put-parameter --region ${var.aws_region} --name dotnet-remote-service-ip-${var.test_id} --type String --overwrite --value $(kubectl get pod --selector=app=dotnet-remote-app -n dotnet-sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
 
       # Wait a bit more in case the sample apps aren't ready yet
       sleep 30
 
       # Deploy the traffic generator
-      kubectl create deployment -n python-sample-app-namespace traffic-generator \
+      kubectl create deployment -n dotnet-sample-app-namespace traffic-generator \
         --image=$ACCOUNT.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator \
         --replicas=1
 
       # Patch it with ImagePull always policy so that it pulls the latest image from the ECR
-      kubectl patch deployment -n python-sample-app-namespace traffic-generator --patch '{"spec": {"template": {"spec": {"containers": [{"name": "e2e-test-resource", "imagePullPolicy": "Always"}]}}}}'
-      kubectl patch deployment traffic-generator -n python-sample-app-namespace --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "ecr-secret"}]}]'
+      kubectl patch deployment -n dotnet-sample-app-namespace traffic-generator --patch '{"spec": {"template": {"spec": {"containers": [{"name": "e2e-test-resource", "imagePullPolicy": "Always"}]}}}}'
+      kubectl patch deployment traffic-generator -n dotnet-sample-app-namespace --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "ecr-secret"}]}]'
 
       # Add the appropriate environment variables to the traffic generator
-      kubectl set env -n python-sample-app-namespace deployment/traffic-generator MAIN_ENDPOINT=$(kubectl get pods -n python-sample-app-namespace --selector=app=python-sample-app -o jsonpath='{.items[0].status.podIP}'):8000
-      kubectl set env -n python-sample-app-namespace deployment/traffic-generator REMOTE_ENDPOINT=$(kubectl get pod -n python-sample-app-namespace --selector=app=python-remote-app -o jsonpath='{.items[0].status.podIP}')
-      kubectl set env -n python-sample-app-namespace deployment/traffic-generator ID=${var.test_id}
+      kubectl set env -n dotnet-sample-app-namespace deployment/traffic-generator MAIN_ENDPOINT=$(kubectl get pods -n dotnet-sample-app-namespace --selector=app=dotnet-sample-app -o jsonpath='{.items[0].status.podIP}'):8000
+      kubectl set env -n dotnet-sample-app-namespace deployment/traffic-generator REMOTE_ENDPOINT=$(kubectl get pod -n dotnet-sample-app-namespace --selector=app=dotnet-remote-app -o jsonpath='{.items[0].status.podIP}')
+      kubectl set env -n dotnet-sample-app-namespace deployment/traffic-generator ID=${var.test_id}
 
       sleep 10
       EOF
