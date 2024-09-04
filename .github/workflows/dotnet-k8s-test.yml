@@ -41,7 +41,7 @@ env:
   CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  SAMPLE_APP_NAMESPACE: sample-app-namespace
+  SAMPLE_APP_NAMESPACE: dotnet-sample-app-namespace
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
@@ -90,7 +90,7 @@ jobs:
         with:
           secret-ids: |
             ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
-            DOTNET_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
+            DOTNET_MAIN_SAMPLE_APP_IMAGE, e2e-test/dotnet-main-sample-app-image
             DOTNET_REMOTE_SAMPLE_APP_IMAGE, e2e-test/dotnet-remote-sample-app-image
             RELEASE_TESTING_ECR_ACCOUNT, e2e-test/${{ github.event.repository.name }}/dotnet-k8s-release-testing-account
 
@@ -113,12 +113,12 @@ jobs:
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/dotnet/k8s/deploy/resources
         run: |
-          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' frontend-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_MAIN_SAMPLE_APP_IMAGE }}#' frontend-service-depl.yaml
-          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' remote-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_REMOTE_SAMPLE_APP_IMAGE }}#' remote-service-depl.yaml
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key frontend-service-depl-${{ env.TESTING_ID }}.yaml --body frontend-service-depl.yaml
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key remote-service-depl-${{ env.TESTING_ID }}.yaml --body remote-service-depl.yaml
+          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' dotnet-frontend-service-depl.yaml
+          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_MAIN_SAMPLE_APP_IMAGE }}#' dotnet-frontend-service-depl.yaml
+          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' dotnet-remote-service-depl.yaml
+          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_REMOTE_SAMPLE_APP_IMAGE }}#' dotnet-remote-service-depl.yaml
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key dotnet-frontend-service-depl-${{ env.TESTING_ID }}.yaml --body dotnet-frontend-service-depl.yaml
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key dotnet-remote-service-depl-${{ env.TESTING_ID }}.yaml --body dotnet-remote-service-depl.yaml
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -131,7 +131,7 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/k8s/deploy && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/k8s/deploy && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
@@ -160,8 +160,8 @@ jobs:
 
       - name: Get Main and Remote Service IP
         run: |
-          echo MAIN_SERVICE_IP="$(aws ssm get-parameter --region ${{ env.E2E_TEST_AWS_REGION }} --name main-service-ip-${{ env.TESTING_ID }} | jq -r '.Parameter.Value')" >> $GITHUB_ENV
-          echo REMOTE_SERVICE_IP="$(aws ssm get-parameter --region ${{ env.E2E_TEST_AWS_REGION }} --name remote-service-ip-${{ env.TESTING_ID }} | jq -r '.Parameter.Value')" >> $GITHUB_ENV
+          echo MAIN_SERVICE_IP="$(aws ssm get-parameter --region ${{ env.E2E_TEST_AWS_REGION }} --name dotnet-main-service-ip-${{ env.TESTING_ID }} | jq -r '.Parameter.Value')" >> $GITHUB_ENV
+          echo REMOTE_SERVICE_IP="$(aws ssm get-parameter --region us-east-1 --name dotnet-remote-service-ip-${{ env.TESTING_ID }} | jq -r '.Parameter.Value')" >> $GITHUB_ENV
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
@@ -178,15 +178,15 @@ jobs:
         id: log-validation
         run: ./gradlew validator:run --args='-c dotnet/k8s/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_IP }}:8080
+          --endpoint http://${{ env.MAIN_SERVICE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --platform-info k8s-cluster-${{ env.TESTING_ID }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-r-app-deployment-${{ env.TESTING_ID }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -195,16 +195,16 @@ jobs:
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c dotnet/k8s/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_IP }}:8080
+          --endpoint http://${{ env.MAIN_SERVICE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --platform-info k8s-cluster-${{ env.TESTING_ID }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-r-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-deployment-name sample-r-app-deployment-${{ env.TESTING_ID }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
+          --remote-service-deployment-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -213,16 +213,16 @@ jobs:
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c dotnet/k8s/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_IP }}:8080
+          --endpoint http://${{ env.MAIN_SERVICE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --platform-info k8s-cluster-${{ env.TESTING_ID }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-r-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-deployment-name sample-r-app-deployment-${{ env.TESTING_ID }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
+          --remote-service-deployment-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -275,3 +275,10 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
+
+      - name: Delete deployment files
+        if: always()
+        continue-on-error: true
+        run: |
+          aws s3api delete-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key dotnet-frontend-service-depl-${{ env.TESTING_ID }}.yaml
+          aws s3api delete-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key dotnet-remote-service-depl-${{ env.TESTING_ID }}.yaml
