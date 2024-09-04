@@ -112,9 +112,19 @@ jobs:
       caller-workflow-name: 'k8s-os-patching'
       caller-repository: ${{ inputs.repo_name }}
 
+  run-dotnet-k8s-test:
+    if: ${{ inputs.LANGUAGE == 'dotnet' }}
+    needs: create-k8s-on-ec2
+    uses: ./.github/workflows/dotnet-k8s-test.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      caller-workflow-name: 'k8s-os-patching'
+      caller-repository: ${{ inputs.repo_name }}
+
   update-secrets:
-    needs: [ run-java-k8s-test, run-python-k8s-test ]
-    if: ${{ always() && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success') }}
+    needs: [ run-java-k8s-test, run-python-k8s-test, run-dotnet-k8s-test ]
+    if: ${{ always() && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success' || needs.run-dotnet-k8s-test.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS Credentials
