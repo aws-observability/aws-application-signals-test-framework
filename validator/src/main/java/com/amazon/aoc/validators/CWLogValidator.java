@@ -66,9 +66,11 @@ public class CWLogValidator implements IValidator {
           String operation = (String) expectedAttributes.get("Operation");
           String remoteService = (String) expectedAttributes.get("RemoteService");
           String remoteOperation = (String) expectedAttributes.get("RemoteOperation");
+          String remoteResourceType = (String) expectedAttributes.get("RemoteResourceType");
+          String remoteResourceIdentifier = (String) expectedAttributes.get("RemoteResourceIdentifier");
 
           Map<String, Object> actualLog =
-                  this.getActualLog(operation, remoteService, remoteOperation);
+                  this.getActualLog(operation, remoteService, remoteOperation, remoteResourceType, remoteResourceIdentifier);
           log.info("Value of an actual log: {}", actualLog);
 
           if (actualLog == null) throw new BaseException(ExceptionCode.EXPECTED_LOG_NOT_FOUND);
@@ -126,7 +128,7 @@ public class CWLogValidator implements IValidator {
   }
 
   private Map<String, Object> getActualLog(
-      String operation, String remoteService, String remoteOperation) throws Exception {
+    String operation, String remoteService, String remoteOperation, String remoteResourceType, String remoteResourceIdentifier) throws Exception {
     String dependencyFilter = null;
 
     // Dependency calls will have the remoteService and remoteOperation attribute, but service calls
@@ -137,6 +139,10 @@ public class CWLogValidator implements IValidator {
       dependencyFilter = "&& ($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS)";
     } else {
       dependencyFilter = String.format("&& ($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")", remoteService, remoteOperation);
+    }
+
+    if (remoteResourceType != null && remoteResourceIdentifier != null) {
+      dependencyFilter += String.format(" && ($.RemoteResourceType = %%%s%%) && ($.RemoteResourceIdentifier = %%%s%%)", remoteResourceType, remoteResourceIdentifier);
     }
 
     String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") %s }", context.getServiceName(), operation, dependencyFilter);
