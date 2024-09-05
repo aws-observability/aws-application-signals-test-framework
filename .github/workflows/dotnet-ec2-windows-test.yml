@@ -175,7 +175,6 @@ jobs:
         run: |
           echo "FRONTEND_SSM_ASSOCIATION_ID=$(terraform output frontend_script_association_id)" >> $GITHUB_ENV
           echo "REMOTE_SSM_ASSOCIATION__ID=$(terraform output remote_script_association_id)" >> $GITHUB_ENV
-          echo "TRAFFIC_GENERATOR_DOCUMENT_NAME=$(terraform output traffic_generator_script_document_name)" >> $GITHUB_ENV
         working-directory: terraform/dotnet/ec2/windows
 
       - name: Get the sample app endpoint
@@ -246,53 +245,6 @@ jobs:
           }
           check_status ${{ env.FRONTEND_SSM_ASSOCIATION_ID }}
           check_status ${{ env.REMOTE_SSM_ASSOCIATION__ID }}
-
-#      - name: Trigger Traffic Generator SSM Document and wait for completion with timeout
-#        run: |
-#          run_command() {
-#            local instance_id=$1
-#            local document_name=$2
-#            local max_attempts=20  # 10 minutes timeout with 30 seconds interval
-#            local attempt=0
-#            local interval=30
-#
-#            command_id=$(aws ssm send-command \
-#              --instance-ids "$instance_id" \
-#              --document-name "$document_name" \
-#              --query "Command.CommandId" \
-#              --output text)
-#
-#            echo "Triggered SSM Document $document_name on instance $instance_id with Command ID: $command_id"
-#
-#            while [[ $attempt -lt $max_attempts ]]; do
-#              status=$(aws ssm list-command-invocations \
-#                --command-id "$command_id" \
-#                --details \
-#                --query "CommandInvocations[0].Status" \
-#                --output text)
-#
-#              echo "Attempt $((attempt + 1))/$max_attempts: Current status of command $command_id: $status"
-#
-#              if [[ "$status" == "Success" || "$status" == "Failed" ]]; then
-#                echo "SSM Command $command_id completed with status: $status"
-#                if [[ "$status" == "Failed" ]]; then
-#                  exit 1
-#                fi
-#                break
-#              else
-#                echo "Waiting for SSM Command $command_id to complete..."
-#                sleep $interval
-#                attempt=$((attempt + 1))
-#              fi
-#            done
-#
-#            if [[ $attempt -ge $max_attempts ]]; then
-#              echo "Timeout reached: SSM Command $command_id did not complete within 10 minutes."
-#              exit 1
-#            fi
-#          }
-#
-#          run_command ${{ env.MAIN_SERVICE_INSTANCE_ID }} ${{ env.TRAFFIC_GENERATOR_DOCUMENT_NAME }}
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'

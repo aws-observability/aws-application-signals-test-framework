@@ -36,7 +36,3 @@ output "frontend_script_association_id" {
 output "remote_script_association_id" {
   value = aws_ssm_association.remote_service_association.id
 }
-
-output "traffic_generator_script_document_name" {
-  value = aws_ssm_document.traffic_generator_setup.name
-}

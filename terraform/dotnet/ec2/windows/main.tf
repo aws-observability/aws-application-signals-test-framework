@@ -227,27 +227,3 @@ resource "aws_ssm_association" "remote_service_association" {
   }
   depends_on = [aws_instance.remote_service_instance]
 }
-
-resource "aws_ssm_document" "traffic_generator_setup" {
-  name          = "traffic_generator_setup_${var.test_id}"
-  document_type = "Command"
-
-  content = <<-DOC
-  {
-    "schemaVersion": "2.2",
-    "description": "Setup traffic generator",
-    "mainSteps": [
-      {
-        "action": "aws:runPowerShellScript",
-        "name": "setupTrafficGenerator",
-        "inputs": {
-          "runCommand": [
-            "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator-setup.ps1 ./traffic-generator-setup.ps1",
-            "powershell -ExecutionPolicy Bypass -File traffic-generator-setup.ps1 -RemoteServicePrivateEndpoint \"${aws_instance.remote_service_instance.private_ip}\" -TestID \"${var.test_id}\" -TestCanaryType \"${var.canary_type}\" -AWSRegion \"${var.aws_region}\""
-          ]
-        }
-      }
-    ]
-  }
-  DOC
-}
