@@ -180,8 +180,8 @@ jobs:
       validation-result: ${{ needs.update-secrets.result }}
 
   cleanup-if-failed:
-    needs: [ run-java-k8s-test, run-python-k8s-test ]
-    if: ${{ always() && (needs.run-java-k8s-test.result != 'success' && needs.run-python-k8s-test.result != 'success') }}
+    needs: [ run-java-k8s-test, run-python-k8s-test, run-dotnet-k8s-test ]
+    if: ${{ always() && (needs.run-java-k8s-test.result != 'success' && needs.run-python-k8s-test.result != 'success' && needs.run-dotnet-k8s-test.result != 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Delete Key Pair and EC2 Instance
