@@ -112,10 +112,22 @@ jobs:
       caller-workflow-name: 'k8s-os-patching'
       caller-repository: ${{ inputs.repo_name }}
 
+  # TODO: Update to use dotnet-k8s-test once it's available
   run-dotnet-k8s-test:
     if: ${{ inputs.LANGUAGE == 'dotnet' }}
     needs: create-k8s-on-ec2
-    uses: ./.github/workflows/dotnet-k8s-test.yml
+    uses: ./.github/workflows/java-k8s-test.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      caller-workflow-name: 'k8s-os-patching'
+      caller-repository: ${{ inputs.repo_name }}
+
+  # TODO: Update to use node-k8s-test once it's available
+  run-node-k8s-test:
+    if: ${{ inputs.LANGUAGE == 'node' }}
+    needs: create-k8s-on-ec2
+    uses: ./.github/workflows/java-k8s-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
@@ -123,8 +135,8 @@ jobs:
       caller-repository: ${{ inputs.repo_name }}
 
   update-secrets:
-    needs: [ run-java-k8s-test, run-python-k8s-test, run-dotnet-k8s-test ]
-    if: ${{ always() && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success' || needs.run-dotnet-k8s-test.result == 'success') }}
+    needs: [ run-java-k8s-test, run-python-k8s-test, run-dotnet-k8s-test, run-node-k8s-test ]
+    if: ${{ always() && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success' || needs.run-dotnet-k8s-test.result == 'success'  || needs.run-node-k8s-test.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS Credentials
@@ -180,14 +192,14 @@ jobs:
       validation-result: ${{ needs.update-secrets.result }}
 
   cleanup-if-failed:
-    needs: [ run-java-k8s-test, run-python-k8s-test, run-dotnet-k8s-test ]
-    if: ${{ always() && (needs.run-java-k8s-test.result != 'success' && needs.run-python-k8s-test.result != 'success' && needs.run-dotnet-k8s-test.result != 'success') }}
+    needs: [ run-java-k8s-test, run-python-k8s-test, run-dotnet-k8s-test, run-node-k8s-test ]
+    if: ${{ always() && (needs.run-java-k8s-test.result != 'success' && needs.run-python-k8s-test.result != 'success' && needs.run-dotnet-k8s-test.result != 'success' && needs.run-node-k8s-test.result != 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Delete Key Pair and EC2 Instance
         run: |
           PENDING_SECRET_KEYS=(
-            "e2e-test/${{ env.REPO }}/${{ env.LANGUAGE }}-k8s-master-node-endpoint-pending-value"
+            "e2e-test/${{ matrix.instance.repo_name }}/${{ matrix.instance.language }}-k8s-master-node-endpoint-pending-value"
           )
           endpoint_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[0]}" --query SecretString --output text)
           
@@ -199,10 +211,10 @@ jobs:
           if [ -n "$instance_name" ]; then
             prev_testing_id=$(echo $instance_name | awk -F'-' '{print $(NF-1)"-"$NF}')
           
-            aws ec2 delete-key-pair --key-name "k8s-on-ec2-${{ env.EC2_NAME }}-${{ env.LANGUAGE }}-key-pair-$prev_testing_id"
+            aws ec2 delete-key-pair --key-name "k8s-on-ec2-${{ matrix.instance.ec2_name }}-${{ matrix.instance.language }}-key-pair-$prev_testing_id"
           
-            main_instance_name=k8s-on-ec2-${{ env.EC2_NAME }}-${{ env.LANGUAGE }}-master-$prev_testing_id
-            worker_instance_name=k8s-on-ec2-${{ env.EC2_NAME }}-${{ env.LANGUAGE }}-worker-$prev_testing_id
+            main_instance_name=k8s-on-ec2-${{ matrix.instance.ec2_name }}-${{ matrix.instance.language }}-master-$prev_testing_id
+            worker_instance_name=k8s-on-ec2-${{ matrix.instance.ec2_name }}-${{ matrix.instance.language }}-worker-$prev_testing_id
             main_instance_id=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=$main_instance_name" \
             --query "Reservations[*].Instances[*].InstanceId" \
