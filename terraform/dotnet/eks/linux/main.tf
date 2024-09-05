@@ -114,16 +114,6 @@ resource "kubernetes_deployment" "dotnet_app_deployment" {
               name = "OTEL_SERVICE_NAME"
               value = "dotnet-application-${var.test_id}"
             }
-#          env {
-#              #Updated plugin name since it's incorrect in the addon
-#              name = "OTEL_DOTNET_AUTO_PLUGINS"
-#              value = "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
-#            }
-#          env {
-#              #Updated plugin name since it's incorrect in the addon
-#              name = "OTEL_EXPORTER_OTLP_ENDPOINT"
-#              value = " http://cloudwatch-agent.amazon-cloudwatch:4316"
-#            }
           port {
             container_port = 8080
           }
@@ -189,17 +179,6 @@ resource "kubernetes_deployment" "dotnet_r_app_deployment" {
           name = "back-end"
           image = var.dotnet_remote_app_image
           image_pull_policy = "Always"
-#          env {
-#              #Updated plugin name since it's incorrect in the addon
-#              name = "OTEL_DOTNET_AUTO_PLUGINS"
-#              value = "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
-#            }
-#          env {
-#              #Updated plugin name since it's incorrect in the addon
-#              name = "OTEL_EXPORTER_OTLP_ENDPOINT"
-#              value = " http://cloudwatch-agent.amazon-cloudwatch:4316"
-#            }
-
           port {
             container_port = 8081
           }
