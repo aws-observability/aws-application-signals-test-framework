@@ -8,9 +8,18 @@ param (
 $ProgressPreference = 'SilentlyContinue'
 
 msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
-Start-Sleep -Seconds 30
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-aws --version
+$awsCliInstalled = Get-Command aws -ErrorAction SilentlyContinue
+
+while (-not $awsCliInstalled) {
+    Write-Host "Waiting for AWS CLI"
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    $awsCliInstalled = Get-Command aws -ErrorAction SilentlyContinue
+    Write-Host "Waiting"
+    Start-Sleep -Seconds 5
+}
+Write-Host "AWS CLI Installed"
+
 wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
 .\dotnet-install.ps1 -Version 8.0.302
 

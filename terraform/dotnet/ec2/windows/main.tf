@@ -88,8 +88,6 @@ resource "aws_instance" "main_service_instance" {
       Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
       Stop-Service -Name TermService -Force
       Set-Service -Name TermService -StartupType Disabled
-      msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
-      Start-Sleep -Seconds 30
       Write-Host "Finish execution"
       Stop-Transcript
   </powershell>
@@ -124,9 +122,6 @@ resource "aws_instance" "remote_service_instance" {
       Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
       Stop-Service -Name TermService -Force
       Set-Service -Name TermService -StartupType Disabled
-      Write-Host "Install AWS-CLI"
-      msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
-      Start-Sleep -Seconds 30
       Write-Host "Finish execution"
       Stop-Transcript
   </powershell>
@@ -149,9 +144,6 @@ resource "aws_ssm_document" "main_service_setup" {
         "name": "setupMainService",
         "inputs": {
           "runCommand": [
-            "msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn",
-            "Start-Sleep -Seconds 30",
-            "$env:Path = [System.Environment]::GetEnvironmentVariable(\"Path\",\"Machine\") + \";\" + [System.Environment]::GetEnvironmentVariable(\"Path\",\"User\")",
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/amazon-cloudwatch-agent.json ./amazon-cloudwatch-agent.json",
             "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/dotnet-ec2-win-default-setup.ps1 ./dotnet-ec2-win-default-setup.ps1",
@@ -190,9 +182,6 @@ resource "aws_ssm_document" "remote_service_setup" {
         "name": "setupRemoteService",
         "inputs": {
           "runCommand": [
-            "msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn",
-            "Start-Sleep -Seconds 30",
-            "$env:Path = [System.Environment]::GetEnvironmentVariable(\"Path\",\"Machine\") + \";\" + [System.Environment]::GetEnvironmentVariable(\"Path\",\"User\")",
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/amazon-cloudwatch-agent.json ./amazon-cloudwatch-agent.json",
             "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/dotnet-ec2-win-default-remote-setup.ps1 ./dotnet-ec2-win-default-remote-setup.ps1",
@@ -229,9 +218,6 @@ resource "aws_ssm_document" "traffic_generator_setup" {
         "name": "setupTrafficGenerator",
         "inputs": {
           "runCommand": [
-            "msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn",
-            "Start-Sleep -Seconds 30",
-            "$env:Path = [System.Environment]::GetEnvironmentVariable(\"Path\",\"Machine\") + \";\" + [System.Environment]::GetEnvironmentVariable(\"Path\",\"User\")",
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator-setup.ps1 ./traffic-generator-setup.ps1",
             "powershell -ExecutionPolicy Bypass -File traffic-generator-setup.ps1 -RemoteServicePrivateEndpoint \"${aws_instance.remote_service_instance.private_ip}\" -TestID \"${var.test_id}\" -TestCanaryType \"${var.canary_type}\" -AWSRegion \"${var.aws_region}\""
           ]
