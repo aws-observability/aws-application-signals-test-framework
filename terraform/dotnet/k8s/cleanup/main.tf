@@ -36,10 +36,10 @@ resource "null_resource" "cleanup" {
 
       # Delete sample app resources
       echo "LOG: Deleting sample app namespace"
-      kubectl delete namespace python-sample-app-namespace
+      kubectl delete namespace dotnet-sample-app-namespace
       echo "LOG: Deleting sample app deployment files"
-      [ ! -e python-frontend-service-depl.yaml ] || rm python-frontend-service-depl.yaml
-      [ ! -e python-remote-service-depl.yaml ] || rm python-remote-service-depl.yaml
+      [ ! -e dotnet-frontend-service-depl.yaml ] || rm dotnet-frontend-service-depl.yaml
+      [ ! -e dotnet-remote-service-depl.yaml ] || rm dotnet-remote-service-depl.yaml
       sleep 10
 
       # Print cluster state when done clean up procedures
@@ -47,8 +47,8 @@ resource "null_resource" "cleanup" {
       kubectl get pods -A
 
       # Delete ssm parameter for main and remote service ip
-      aws ssm delete-parameter --name python-main-service-ip-${var.test_id}
-      aws ssm delete-parameter --name python-remote-service-ip-${var.test_id}
+      aws ssm delete-parameter --name dotnet-main-service-ip-${var.test_id}
+      aws ssm delete-parameter --name dotnet-remote-service-ip-${var.test_id}
 
       EOF
     ]
