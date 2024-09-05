@@ -126,6 +126,8 @@ resource "aws_launch_configuration" "launch_configuration" {
     tmux new-session -d -s frontend
 
     # Export environment variables for instrumentation
+    # Note: We use OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express to avoid
+    # having to validate around the telemetry generated for middleware
     tmux send-keys -t frontend 'export OTEL_METRICS_EXPORTER=none' C-m
     tmux send-keys -t frontend 'export OTEL_TRACES_EXPORTER=otlp' C-m
     tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true' C-m
@@ -243,6 +245,8 @@ resource "null_resource" "remote_service_setup" {
       tmux new-session -d -s remote
 
       # Export environment variables for instrumentation
+      # Note: We use OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express to avoid
+      # having to validate around the telemetry generated for middleware
       tmux send-keys -t remote 'export OTEL_METRICS_EXPORTER=none' C-m
       tmux send-keys -t remote 'export OTEL_TRACES_EXPORTER=otlp' C-m
       tmux send-keys -t remote 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true' C-m
