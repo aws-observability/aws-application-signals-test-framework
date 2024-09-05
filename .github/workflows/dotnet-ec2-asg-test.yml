@@ -1,0 +1,285 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# This is a reusable workflow for running the Dotnet E2E Canary test for Application Signals.
+# It is meant to be called from another workflow.
+# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
+name: Dotnet EC2 ASG Use Case
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        required: true
+        type: string
+      staging_distro_name:
+        required: false
+        default: 'aws-opentelemetry-distro'
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.dotnet-ec2-asg.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.dotnet-ec2-asg.outputs.validation-result }}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/dotnet-sample-app.zip
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
+  ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+
+jobs:
+  dotnet-ec2-asg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
+    steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          repository: aws-observability/aws-application-signals-test-framework
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Set Get ADOT Distro command environment variable
+        run: |
+          if [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
+            # Get staging distro file from staging bucket
+            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
+          else
+            # After Release will switch to latest tag instead of hard code version for canary purpose
+            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/download/v1.2.0/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV
+          fi
+
+      - name: Set Get CW Agent command environment variable
+        run: |
+          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+            # Get cloudwatch agent staging file if triggered by cw-a repo
+            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
+          else
+            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+          fi
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/ec2/asg && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Deploy sample app via terraform and wait for endpoint to come online
+        working-directory: terraform/dotnet/ec2/asg
+        run: |
+          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
+          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
+          # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
+          # that it failed at some point
+          retry_counter=0
+          max_retry=2
+          while [ $retry_counter -lt $max_retry ]; do
+            echo "Attempt $retry_counter"
+            deployment_failed=0
+            terraform apply -auto-approve \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
+              -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
+              -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
+            || deployment_failed=$?
+          
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
+            fi
+          
+            # If the success is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
+            # resources created from terraform and try again.
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Destroying terraform"
+              terraform destroy -auto-approve \
+                -var="test_id=${{ env.TESTING_ID }}" 
+          
+              retry_counter=$(($retry_counter+1))
+            else
+              # If deployment succeeded, then exit the loop
+              break
+            fi
+          
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
+              exit 1
+            fi
+          done
+
+      - name: Wait for ASG instance to be ready
+        run: |
+          # Wait for up to 15 minutes
+          retry_counter=0
+          max_retry=90
+          while [ $retry_counter -lt $max_retry ]; do
+            instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names dotnet-ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
+            status_ok=$(aws ec2 describe-instance-status --instance-ids $instance_id | jq '(.InstanceStatuses[] | select(.InstanceStatus.Status == "ok" and .SystemStatus.Status == "ok")) != {}')
+          
+            if [ "$status_ok" == "true" ]; then
+              echo "The instance $instance_id is ready."
+              echo "MAIN_SERVICE_INSTANCE_ID=$instance_id" >> $GITHUB_ENV
+              break
+            fi
+          
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Instance Id $instance_id did not become ready with status $status_ok"
+              exit 1
+            fi
+          
+            sleep 10
+          done
+
+      - name: Get the sample app and EC2 instance information
+        working-directory: terraform/dotnet/ec2/asg
+        run: |
+          main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids ${{ env.MAIN_SERVICE_INSTANCE_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
+          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
+          echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> $GITHUB_ENV
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
+
+      - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew == 'failure'
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      # Validation for pulse telemetry data
+      - name: Validate generated EMF logs
+        id: log-validation
+        run: ./gradlew validator:run --args='-c dotnet/ec2/asg/log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --platform-info dotnet-ec2-single-asg-${{ env.TESTING_ID }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
+          --rollup'
+
+      - name: Validate generated metrics
+        id: metric-validation
+        if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/asg/metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --platform-info dotnet-ec2-single-asg-${{ env.TESTING_ID }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
+          --rollup'
+#
+      - name: Validate generated traces
+        id: trace-validation
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/asg/trace-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --platform-info dotnet-ec2-single-asg-${{ env.TESTING_ID }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --private-dns-name ${{ env.PRIVATE_DNS_NAME }}
+          --rollup'
+
+      - name: Save test results
+        if: always()
+        id: validation-result
+        run: |
+          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+            echo "validation-result=success" >> $GITHUB_OUTPUT
+          else
+            echo "validation-result=failure" >> $GITHUB_OUTPUT
+          fi
+
+      # Clean up Procedures
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        working-directory: terraform/dotnet/ec2/asg
+        run: |
+          terraform destroy -auto-approve \
+            -var="test_id=${{ env.TESTING_ID }}"

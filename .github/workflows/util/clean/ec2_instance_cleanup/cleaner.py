@@ -175,7 +175,7 @@ def _prepare_report_and_upload(groups_to_delete, instances_to_terminate) -> bool
     return True
 
 
-def _terminate_instances(instances_to_terminate):
+def _terminate_instances(instances):
     # Terminate the instances
     instance_ids = [instance['InstanceId'] for instance in instances]
     try:
@@ -189,7 +189,7 @@ def _terminate_instances(instances_to_terminate):
 if __name__ == '__main__':
     groups = _get_autoscaling_groups_to_delete()
     instances = _get_instances_to_terminate()
-    
+
     if len(groups) == 0 and len(instances) == 0:
         logging.info("No resource to clean up")
         exit(0)
