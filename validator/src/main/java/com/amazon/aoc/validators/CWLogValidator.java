@@ -128,7 +128,7 @@ public class CWLogValidator implements IValidator {
   }
 
   private Map<String, Object> getActualLog(
-      String operation, String remoteService, String remoteOperation, String remoteResourceType, String remoteResourceIdentifier) throws Exception {
+    String operation, String remoteService, String remoteOperation, String remoteResourceType, String remoteResourceIdentifier) throws Exception {
     String dependencyFilter = null;
 
     // Dependency calls will have the remoteService and remoteOperation attribute, but service calls
@@ -142,7 +142,7 @@ public class CWLogValidator implements IValidator {
     }
 
     if (remoteResourceType != null && remoteResourceIdentifier != null) {
-      dependencyFilter += String.format(" && ($.RemoteResourceType = %%%s%%) && ($.RemoteResourceIdentifier = %%%s%%)", remoteResourceType, remoteResourceIdentifier);
+      dependencyFilter += String.format(" && ($.RemoteResourceType = \"%s\") && ($.RemoteResourceIdentifier = \"%s\")", remoteResourceType, remoteResourceIdentifier);
     }
 
     String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") %s }", context.getServiceName(), operation, dependencyFilter);
