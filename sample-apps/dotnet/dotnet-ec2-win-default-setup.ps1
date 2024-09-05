@@ -58,9 +58,6 @@ dotnet build
 
 Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_frontend_service.dll"
 
-Write-Host "Start Sleep"
-Start-Sleep -Seconds 30
-
 wget -O nodejs.zip https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip
 Expand-Archive -Path .\nodejs.zip -DestinationPath .\nodejs -Force
 $currentdir = Get-Location
