@@ -37,20 +37,6 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Environment
-      value: ec2:default
-    -
-      name: Operation
-      value: GET healthcheck
-    -
-      name: Service
-      value: {{remoteServiceName}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
       name: Service
       value: {{serviceName}}
     -
