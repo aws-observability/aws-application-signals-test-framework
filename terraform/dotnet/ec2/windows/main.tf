@@ -171,7 +171,7 @@ resource "aws_ssm_document" "main_service_setup" {
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/amazon-cloudwatch-agent.json ./amazon-cloudwatch-agent.json",
             "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/dotnet-ec2-win-default-setup.ps1 ./dotnet-ec2-win-default-setup.ps1",
-            "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand \"${var.get_cw_agent_rpm_command}\" -GetAdotDistroCommand \"${var.get_adot_distro_command}\" -GetSampleAppCommand \"${var.sample_app_zip}\" -TestId \"${var.test_id}\""
+            "powershell -ExecutionPolicy Bypass -File ./dotnet-ec2-win-default-setup.ps1 -GetCloudwatchAgentCommand \"${var.get_cw_agent_rpm_command}\" -GetAdotDistroCommand \"${var.get_adot_distro_command}\" -GetSampleAppCommand \"${var.sample_app_zip}\" -TestId \"${var.test_id}\" -RemoteServicePrivateEndpoint \"${aws_instance.remote_service_instance.private_ip}\" -TestCanaryType \"${var.canary_type}\" -AWSRegion \"${var.aws_region}\""
           ]
         }
       }
