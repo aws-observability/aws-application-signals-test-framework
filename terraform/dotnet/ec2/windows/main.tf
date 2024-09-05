@@ -88,6 +88,18 @@ resource "aws_instance" "main_service_instance" {
       Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
       Stop-Service -Name TermService -Force
       Set-Service -Name TermService -StartupType Disabled
+      msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
+      $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+      $awsCliInstalled = Get-Command aws -ErrorAction SilentlyContinue
+
+      while (-not $awsCliInstalled) {
+          Write-Host "Waiting for AWS CLI"
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          $awsCliInstalled = Get-Command aws -ErrorAction SilentlyContinue
+          Write-Host "Waiting"
+          Start-Sleep -Seconds 5
+      }
+      Write-Host "AWS CLI Installed"
       Write-Host "Finish execution"
       Stop-Transcript
   </powershell>
@@ -122,6 +134,18 @@ resource "aws_instance" "remote_service_instance" {
       Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
       Stop-Service -Name TermService -Force
       Set-Service -Name TermService -StartupType Disabled
+      msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
+      $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+      $awsCliInstalled = Get-Command aws -ErrorAction SilentlyContinue
+
+      while (-not $awsCliInstalled) {
+          Write-Host "Waiting for AWS CLI"
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          $awsCliInstalled = Get-Command aws -ErrorAction SilentlyContinue
+          Write-Host "Waiting"
+          Start-Sleep -Seconds 5
+      }
+      Write-Host "AWS CLI Installed"
       Write-Host "Finish execution"
       Stop-Transcript
   </powershell>
