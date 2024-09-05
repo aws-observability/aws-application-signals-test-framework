@@ -188,9 +188,9 @@ jobs:
 
       - name: Monitor EC2 instances readiness in Systems Manager
         run: |
-          max_attempts=20
+          max_attempts=60
           attempt=0
-          interval=30
+          interval=10
 
           check_instance_ready() {
             local instance_id=$1
@@ -221,8 +221,8 @@ jobs:
         run: |
           check_status() {
             local association_id=$1
-            local max_attempts=30  # Maximum number of attempts
-            local interval=30  # 30 seconds interval
+            local max_attempts=60  # Maximum number of attempts
+            local interval=10  # 10 seconds interval
             local attempt=0
 
             while [[ $attempt -lt $max_attempts ]]; do
