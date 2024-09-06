@@ -1,0 +1,64 @@
+[{
+  "name": "^{{serviceName}}$",
+  "http": {
+    "request": {
+      "url": "^{{endpoint}}/outgoing-http-call$",
+      "method": "^GET$"
+    }
+  },
+  "aws": {
+    "account_id": "^{{accountId}}$"
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET /outgoing-http-call$",
+    "aws.local.environment": "^ec2:{{platformInfo}}$"
+  },
+  "metadata": {
+    "default": {
+      "EC2.AutoScalingGroup": "^{{platformInfo}}$",
+      "EC2.InstanceId": "^{{instanceId}}$",
+      "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
+      "otel.resource.host.id": "^{{instanceId}}$",
+      "PlatformType": "^AWS::EC2$",
+      "otel.resource.host.image.id": "^{{instanceAmi}}$",
+      "otel.resource.host.type": "^t3.micro$",
+      "otel.resource.host.name": "^{{privateDnsName}}$",
+      "aws.span.kind": "^LOCAL_ROOT$"
+    }
+  },
+  "subsegments": [
+    {
+      "name": "^www.amazon.com:80$",
+      "annotations": {
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^GET /outgoing-http-call$",
+        "aws.remote.service": "^www.amazon.com:80$",
+        "aws.remote.operation": "^GET /$",
+        "aws.local.environment": "^ec2:{{platformInfo}}$"
+      },
+      "metadata": {
+        "default": {
+          "EC2.InstanceId": "^{{instanceId}}$",
+          "PlatformType": "^AWS::EC2$",
+          "aws.span.kind": "^CLIENT$"
+        }
+      },
+      "http": {
+        "request": {
+          "url": "^http://www.amazon.com/$",
+          "method": "^GET$"
+        }
+      },
+      "subsegments": [
+        {
+          "name": "^www.amazon.com$"
+        }
+      ],
+      "namespace": "^remote$"
+    }
+  ]
+},
+{
+  "name": "^www.amazon.com:80$"
+}]

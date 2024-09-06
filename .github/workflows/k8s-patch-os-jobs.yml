@@ -33,7 +33,7 @@ jobs:
     steps:
       - name: Generate Testing ID
         run: |
-          echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+          echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -112,22 +112,22 @@ jobs:
       caller-workflow-name: 'k8s-os-patching'
       caller-repository: ${{ inputs.repo_name }}
 
-  # TODO: Update to use dotnet-k8s-test once it's available
   run-dotnet-k8s-test:
     if: ${{ inputs.LANGUAGE == 'dotnet' }}
     needs: create-k8s-on-ec2
-    uses: ./.github/workflows/java-k8s-test.yml
+    # TODO: Point to REAL K8s implementation after K8s Infra created.
+    uses: ./.github/workflows/dummy-k8s-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
       caller-workflow-name: 'k8s-os-patching'
       caller-repository: ${{ inputs.repo_name }}
 
-  # TODO: Update to use node-k8s-test once it's available
   run-node-k8s-test:
     if: ${{ inputs.LANGUAGE == 'node' }}
     needs: create-k8s-on-ec2
-    uses: ./.github/workflows/java-k8s-test.yml
+    # TODO: Point to REAL K8s implementation after K8s Infra created.
+    uses: ./.github/workflows/dummy-k8s-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
@@ -136,7 +136,7 @@ jobs:
 
   update-secrets:
     needs: [ run-java-k8s-test, run-python-k8s-test, run-dotnet-k8s-test, run-node-k8s-test ]
-    if: ${{ always() && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success' || needs.run-dotnet-k8s-test.result == 'success'  || needs.run-node-k8s-test.result == 'success') }}
+    if: ${{ always() && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success'  || needs.run-dotnet-k8s-test.result == 'success'  || needs.run-node-k8s-test.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS Credentials

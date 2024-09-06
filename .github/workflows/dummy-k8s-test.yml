@@ -1,0 +1,28 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# This is a DUMMY reusable workflow for running K8s Infra Creation in New Language
+# It is meant to be called from another workflow.
+# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
+name: Dummy K8s on EC2 Use Case
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        required: true
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+      caller-repository:
+        required: false
+        type: string
+
+jobs:
+  dummy-k8s:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: I am a Dummy Test, Replace me after done implementation
+        id: job-started
+        run: echo "I am a Dummy Test"

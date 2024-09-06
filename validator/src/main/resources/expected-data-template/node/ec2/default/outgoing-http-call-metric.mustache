@@ -3,19 +3,8 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
       name: Operation
-      value: GET aws-sdk-call
+      value: GET /outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -29,7 +18,7 @@
   dimensions:
     -
       name: Operation
-      value: GET /aws-sdk-call
+      value: GET /outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -38,10 +27,10 @@
       value: ec2:default
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /
     -
       name: RemoteService
-      value: AWS::S3
+      value: www.amazon.com:80
 
 -
   metricName: Latency
@@ -53,52 +42,6 @@
     -
       name: Environment
       value: ec2:default
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
 
 -
   metricName: Latency
@@ -112,21 +55,32 @@
       value: ec2:default
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /
     -
       name: RemoteService
-      value: AWS::S3
+      value: www.amazon.com:80
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
     -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
+      name: Service
+      value: {{serviceName}}
     -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteService
+      value: www.amazon.com:80
 
 -
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
+    -
+      name: Operation
+      value: GET /outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -140,21 +94,7 @@
   dimensions:
     -
       name: Operation
-      value: GET aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
+      value: GET /outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -163,10 +103,10 @@
       value: ec2:default
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /
     -
       name: RemoteService
-      value: AWS::S3
+      value: www.amazon.com:80
 
 -
   metricName: Error
@@ -178,9 +118,6 @@
     -
       name: Environment
       value: ec2:default
-    -
-      name: RemoteService
-      value: AWS::S3
 
 -
   metricName: Error
@@ -194,36 +131,10 @@
       value: ec2:default
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /
     -
       name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
+      value: www.amazon.com:80
 
 -
   metricName: Error
@@ -236,22 +147,16 @@
       name: Environment
       value: ec2:default
     -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
       name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
+      value: www.amazon.com:80
 
 -
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
+    -
+      name: Operation
+      value: GET /outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -265,21 +170,7 @@
   dimensions:
     -
       name: Operation
-      value: GET aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
+      value: GET /outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
@@ -288,10 +179,10 @@
       value: ec2:default
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /
     -
       name: RemoteService
-      value: AWS::S3
+      value: www.amazon.com:80
 
 -
   metricName: Fault
@@ -303,9 +194,6 @@
     -
       name: Environment
       value: ec2:default
-    -
-      name: RemoteService
-      value: AWS::S3
 
 -
   metricName: Fault
@@ -319,37 +207,10 @@
       value: ec2:default
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /
     -
       name: RemoteService
-      value: AWS::S3
-
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
+      value: www.amazon.com:80
 
 -
   metricName: Fault
@@ -362,14 +223,5 @@
       name: Environment
       value: ec2:default
     -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
       name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
+      value: www.amazon.com:80

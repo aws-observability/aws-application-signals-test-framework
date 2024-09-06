@@ -3,19 +3,8 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
       name: Operation
-      value: GET aws-sdk-call
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -29,7 +18,7 @@
   dimensions:
     -
       name: Operation
-      value: GET /aws-sdk-call
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -38,10 +27,46 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /healthcheck
     -
       name: RemoteService
-      value: AWS::S3
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:{{platformInfo}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: Environment
+      value: ec2:default
 
 -
   metricName: Latency
@@ -55,7 +80,7 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: AWS::S3
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Latency
@@ -69,42 +94,41 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /healthcheck
     -
       name: RemoteService
-      value: AWS::S3
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Latency
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
       name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
+      value: {{remoteServiceDeploymentName}}
 
 -
-  metricName: Latency
+  metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
     -
+      name: Operation
+      value: GET /remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:{{platformInfo}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
+    -
       name: Service
       value: {{serviceName}}
     -
@@ -112,16 +136,24 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /healthcheck
     -
       name: RemoteService
-      value: AWS::S3
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
     -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
+      name: Environment
+      value: ec2:default
     -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
+      name: Operation
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
 
 -
   metricName: Error
@@ -139,34 +171,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET aws-sdk-call
-    -
       name: Service
-      value: {{serviceName}}
+      value: {{remoteServiceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
+      value: ec2:default
 
 -
   metricName: Error
@@ -180,7 +189,7 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: AWS::S3
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Error
@@ -194,64 +203,26 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /healthcheck
     -
       name: RemoteService
-      value: AWS::S3
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
       name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
+    -
+      name: Operation
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -265,33 +236,55 @@
   dimensions:
     -
       name: Operation
-      value: GET aws-sdk-call
+      value: GET /remote-service
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
       value: ec2:{{platformInfo}}
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
+    -
+      name: Environment
+      value: ec2:default
     -
       name: Operation
-      value: GET /aws-sdk-call
+      value: GET /healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
       value: ec2:{{platformInfo}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
     -
-      name: RemoteOperation
-      value: GetBucketLocation
+      name: Service
+      value: {{remoteServiceName}}
     -
-      name: RemoteService
-      value: AWS::S3
+      name: Environment
+      value: ec2:default
 
 -
   metricName: Fault
@@ -305,7 +298,7 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteService
-      value: AWS::S3
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
@@ -319,56 +312,15 @@
       value: ec2:{{platformInfo}}
     -
       name: RemoteOperation
-      value: GetBucketLocation
+      value: GET /healthcheck
     -
       name: RemoteService
-      value: AWS::S3
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
       name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
+      value: {{remoteServiceDeploymentName}}

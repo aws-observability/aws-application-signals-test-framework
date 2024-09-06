@@ -3,25 +3,14 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
       name: Operation
-      value: GET aws-sdk-call
+      value: GET /aws-sdk-call
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
 
 -
   metricName: Latency
@@ -35,7 +24,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -52,7 +41,18 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteService
       value: AWS::S3
@@ -66,7 +66,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -86,7 +86,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -95,7 +95,7 @@
       value: AWS::S3
     -
       name: RemoteResourceIdentifier
-      value: {{testingId}}
+      value: e2e-test-bucket-name-{{testingId}}
     -
       name: RemoteResourceType
       value: AWS::S3::Bucket
@@ -109,7 +109,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -118,35 +118,10 @@
       value: AWS::S3
     -
       name: RemoteResourceIdentifier
-      value: {{testingId}}
+      value: e2e-test-bucket-name-{{testingId}}
     -
       name: RemoteResourceType
       value: AWS::S3::Bucket
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
 
 -
   metricName: Error
@@ -160,7 +135,21 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /aws-sdk-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -177,7 +166,18 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteService
       value: AWS::S3
@@ -191,7 +191,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -211,7 +211,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -220,7 +220,7 @@
       value: AWS::S3
     -
       name: RemoteResourceIdentifier
-      value: {{testingId}}
+      value: e2e-test-bucket-name-{{testingId}}
     -
       name: RemoteResourceType
       value: AWS::S3::Bucket
@@ -234,7 +234,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -243,35 +243,10 @@
       value: AWS::S3
     -
       name: RemoteResourceIdentifier
-      value: {{testingId}}
+      value: e2e-test-bucket-name-{{testingId}}
     -
       name: RemoteResourceType
       value: AWS::S3::Bucket
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:{{platformInfo}}
 
 -
   metricName: Fault
@@ -285,7 +260,21 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /aws-sdk-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -302,7 +291,18 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteService
       value: AWS::S3
@@ -316,7 +316,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -336,7 +336,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -345,7 +345,7 @@
       value: AWS::S3
     -
       name: RemoteResourceIdentifier
-      value: {{testingId}}
+      value: e2e-test-bucket-name-{{testingId}}
     -
       name: RemoteResourceType
       value: AWS::S3::Bucket
@@ -359,7 +359,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ec2:{{platformInfo}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -368,7 +368,9 @@
       value: AWS::S3
     -
       name: RemoteResourceIdentifier
-      value: {{testingId}}
+      value: e2e-test-bucket-name-{{testingId}}
     -
       name: RemoteResourceType
       value: AWS::S3::Bucket
+
+

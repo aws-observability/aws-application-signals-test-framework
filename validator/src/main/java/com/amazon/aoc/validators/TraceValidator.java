@@ -109,10 +109,11 @@ public class TraceValidator implements IValidator {
                       Matcher matcher = pattern.matcher(actual.toString());
 
                       if (!matcher.find()) {
-                        log.error("data model validation failed");
-                        log.info("mismatched data model field list");
-                        log.info("value of stored trace map: {}", entry.getValue());
-                        log.info("value of retrieved map: {}", retrievedTrace.get(targetKey));
+                        log.error("Data model validation failed");
+                        log.info("Mismatched data model field list");
+                        log.info("Mismatched data for key: {}", targetKey);
+                        log.info("Value of stored trace map: {}", entry.getValue());
+                        log.info("Value of retrieved map: {}", retrievedTrace.get(targetKey));
                         log.info("==========================================");
                         throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
                       }
