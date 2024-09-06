@@ -4,6 +4,9 @@
     "request": {
       "url": "^{{endpoint}}/remote-service$",
       "method": "^GET$"
+    },
+    "response": {
+      "status": "^200$"
     }
   },
   "aws": {
@@ -12,14 +15,16 @@
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
     "aws.local.operation": "^GET remote-service$",
-    "aws.local.environment": "^ec2:default$"
+    "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
   },
   "metadata": {
     "default": {
-      "EC2.InstanceId": "^{{instanceId}}$",
-      "PlatformType": "^AWS::EC2$",
-      "otel.resource.host.image.id": "^{{instanceAmi}}$",
-      "otel.resource.host.type": "^t3.small$",
+      "K8s.Namespace": "^{{appNamespace}}",
+      "otel.resource.K8s.Workload": "^dotnet-app-deployment-{{testingId}}$",
+      "otel.resource.K8s.Node": "^i-[A-Za-z0-9]{17}$",
+      "otel.resource.K8s.Pod": "^dotnet-app-deployment-{{testingId}}(-[A-Za-z0-9]*)*$",
+      "otel.resource.host.name": "^ip(-[0-9]{1,3}){4}.*$",
+      "PlatformType": "^K8s$",
       "aws.span.kind": "^LOCAL_ROOT$"
     }
   },
@@ -37,12 +42,13 @@
         "aws.local.operation": "^GET /remote-service$",
         "aws.remote.service": "^{{remoteServiceDeploymentName}}$",
         "aws.remote.operation": "^GET /healthcheck$",
-        "aws.local.environment": "^ec2:default$"
+        "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$",
+        "aws.remote.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
       },
       "metadata": {
         "default": {
-          "EC2.InstanceId": "^{{instanceId}}$",
-          "PlatformType": "^AWS::EC2$",
+          "K8s.Namespace": "^{{appNamespace}}$",
+          "PlatformType": "^K8s$",
           "aws.span.kind": "^CLIENT$"
         }
        },
@@ -51,7 +57,7 @@
   ]
 },
 {
-  "name": "^{{remoteServiceName}}$",
+  "name": "^{{remoteServiceDeploymentName}}$",
   "http": {
     "request": {
       "url": "^http://(([0-9]{1,3}.){3}[0-9]{1,3}):8081/healthcheck$",
@@ -59,16 +65,15 @@
     }
   },
   "annotations": {
-    "aws.local.service": "^{{remoteServiceName}}$",
+    "aws.local.service": "^{{remoteServiceDeploymentName}}$",
     "aws.local.operation": "^GET healthcheck$",
-    "aws.local.environment": "^ec2:default$"
+    "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
   },
   "metadata": {
     "default": {
-      "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
-      "PlatformType": "^AWS::EC2$",
-      "otel.resource.host.image.id": "^{{instanceAmi}}$",
-      "otel.resource.host.type": "^t3.small$",
+      "otel.resource.K8s.Workload": "^{{remoteServiceDeploymentName}}$",
+      "otel.resource.K8s.Node": "^i-[A-Za-z0-9]{17}$",
+      "otel.resource.K8s.Pod": "^{{remoteServiceDeploymentName}}(-[A-Za-z0-9]*)*$",
       "aws.span.kind": "^LOCAL_ROOT$"
     }
   }
