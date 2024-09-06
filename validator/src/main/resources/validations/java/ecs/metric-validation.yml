@@ -1,0 +1,4 @@
+-
+  validationType: "cw-metric"
+  callingType: "none"
+  expectedMetricTemplate: "JAVA_ECS_HC_CALL_METRIC"

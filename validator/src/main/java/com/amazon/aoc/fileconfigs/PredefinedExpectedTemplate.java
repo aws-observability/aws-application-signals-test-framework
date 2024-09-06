@@ -96,6 +96,11 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_K8S_CLIENT_CALL_METRIC("/expected-data-template/java/k8s/client-call-metric.mustache"),
   JAVA_K8S_CLIENT_CALL_TRACE("/expected-data-template/java/k8s/client-call-trace.mustache"),
 
+  /** Java ECS Test Case Validations */
+  JAVA_ECS_HC_CALL_LOG("/expected-data-template/java/ecs/hc-log.mustache"),
+  JAVA_ECS_HC_CALL_METRIC("/expected-data-template/java/ecs/hc-metric.mustache"),
+  JAVA_ECS_HC_CALL_TRACE("/expected-data-template/java/ecs/hc-trace.mustache"),
+
   /** Metric Limiter Test Case Validations */
   JAVA_METRIC_LIMITER_METRIC("/expected-data-template/java/metric_limiter/metric-limiter-metric.mustache"),
 
@@ -173,6 +178,11 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_K8S_CLIENT_CALL_LOG("/expected-data-template/python/k8s/client-call-log.mustache"),
   PYTHON_K8S_CLIENT_CALL_METRIC("/expected-data-template/python/k8s/client-call-metric.mustache"),
   PYTHON_K8S_CLIENT_CALL_TRACE("/expected-data-template/python/k8s/client-call-trace.mustache"),
+
+  /** Python ECS Test Case Validations */
+  PYTHON_ECS_HC_CALL_LOG("/expected-data-template/python/ecs/hc-log.mustache"),
+  PYTHON_ECS_HC_CALL_METRIC("/expected-data-template/python/ecs/hc-metric.mustache"),
+  PYTHON_ECS_HC_CALL_TRACE("/expected-data-template/python/ecs/hc-trace.mustache"),
 
   /** DotNet EC2 Default Test Case Validations */
   DOTNET_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG(
