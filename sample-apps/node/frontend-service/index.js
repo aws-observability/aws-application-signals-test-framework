@@ -1,17 +1,32 @@
-'use strict';
-
-const http = require('http');
+const AWSXRay = require('aws-xray-sdk');
+const XRayExpress = AWSXRay.express;
 const express = require('express');
-const mysql = require('mysql2');
+
+// Capture all AWS clients we create
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+AWS.config.update({region: process.env.DEFAULT_AWS_REGION || 'us-west-2'});
+
+// Capture all outgoing https requests
+AWSXRay.captureHTTPsGlobal(require('https'));
+const http = require('http');
+
+// Capture MySQL queries
+const mysql = AWSXRay.captureMySQL(require('mysql'));
 const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
 
-const PORT = parseInt(process.env.SAMPLE_APP_PORT || '8000', 10);
 
 const app = express();
+const PORT = parseInt(process.env.SAMPLE_APP_PORT || '8000', 10);
 
+app.use(XRayExpress.openSegment('SampleSite'));
 app.get('/healthcheck', (req, res) => {
-  console.log(`/healthcheck called successfully`)
-  res.send('healthcheck');
+  const seg = AWSXRay.getSegment();
+  const sub = seg.addNewSubsegment('customSubsegment');
+  setTimeout(() => {
+    sub.close();
+    console.log(`/healthcheck called successfully`)
+    res.send('healthcheck');
+  }, 500);
 });
 
 app.get('/outgoing-http-call', (req, res) => {
@@ -39,9 +54,9 @@ app.get('/aws-sdk-call', async (req, res) => {
   const bucketName = 'e2e-test-bucket-name-' + (req.query.testingId || 'MISSING_ID');
   try {
     await s3Client.send(
-      new GetBucketLocationCommand({
-        Bucket: bucketName,
-      }),
+        new GetBucketLocationCommand({
+          Bucket: bucketName,
+        }),
     ).then((data) => {
       console.log('/aws-sdk-call called successfully; UNEXPECTEDLY RETURNED DATA: ' + data);
       res.send('/aws-sdk-call called successfully; UNEXPECTEDLY RETURNED DATA: ' + data);
@@ -52,29 +67,6 @@ app.get('/aws-sdk-call', async (req, res) => {
       res.send('/aws-sdk-call called successfully');
     }
   }
-});
-
-app.get('/remote-service', (req, res) => {
-  const endpoint = req.query.ip || 'localhost';
-  const options = {
-    hostname: endpoint,
-    port: 8001,
-    method: 'GET',
-    path: '/healthcheck'
-  };
-
-  const request = http.request(options, (rs) => {
-    rs.setEncoding('utf8');
-    rs.on('data', (result) => {
-      console.log(`/remote-service called successfully: ${result}`);
-      res.send(`/remote-service called successfully: ${result}`);
-    });
-  });
-  request.on('error', (err) => {
-    console.log('/remote-service called with errors: ' + err.errors);
-    res.send('/remote-service called with errors: ' + err.errors);
-  })
-  request.end();
 });
 
 app.get('/client-call', (req, res) => {
@@ -122,6 +114,8 @@ app.get('/mysql', (req, res) => {
     });
   });
 });
+
+app.use(XRayExpress.closeSegment());
 
 app.listen(PORT, () => {
   console.log(`Listening for requests on http://localhost:${PORT}`);
