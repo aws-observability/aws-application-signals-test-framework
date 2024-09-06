@@ -75,6 +75,55 @@
       value: AWS::S3
 
 -
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /aws-sdk-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceIdentifier
+      value: dotnet-e2e-ec2-default-test-{{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceIdentifier
+      value: dotnet-e2e-ec2-default-test-{{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+
+-
   metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
@@ -151,6 +200,55 @@
       value: AWS::S3
 
 -
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /aws-sdk-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceIdentifier
+      value: dotnet-e2e-ec2-default-test-{{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceIdentifier
+      value: dotnet-e2e-ec2-default-test-{{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+
+-
   metricName: Fault
   namespace: {{metricNamespace}}
   dimensions:
@@ -226,3 +324,52 @@
       name: RemoteService
       value: AWS::S3
 
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /aws-sdk-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceIdentifier
+      value: dotnet-e2e-ec2-default-test-{{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
+    -
+      name: RemoteResourceIdentifier
+      value: dotnet-e2e-ec2-default-test-{{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
