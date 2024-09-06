@@ -77,19 +77,30 @@ app.get('/remote-service', (req, res) => {
   request.end();
 });
 
-app.get('/client-call', (req, res) => {
-  // Immediately respond to the client without waiting for the HTTP request to complete
-  res.status(202).send('/client-call called successfully');
-  console.log('/client-call called successfully')
+// The following logic serves as the async call made by the /client-call API
+let makeAsyncCall = false;
+setInterval(() => {
+  if (makeAsyncCall) {
+    makeAsyncCall = false;
+    console.log('Async call triggered by /client-call API');
 
-  const request = http.get('http://local-root-client-call', (rs) => {
-    rs.setEncoding('utf8');
-    rs.on('data', (result) => {
-      res.send(`/client-call response: ${result}`);
+    const request = http.get('http://local-root-client-call', (rs) => {
+      rs.setEncoding('utf8');
+      rs.on('data', (result) => {
+        res.send(`GET local-root-client-call response: ${result}`);
+      });
     });
-  });
-  request.on('error', (err) => {});
-  request.end();
+    request.on('error', (err) => {}); // Expected
+    request.end();
+  }
+}, 5000); // Check every 5 seconds
+
+app.get('/client-call', (req, res) => {
+  res.send('/client-call called successfully');
+  console.log('/client-call called successfully');
+
+  // Trigger async call to generate telemetry for InternalOperation use case
+  makeAsyncCall = true;
 });
 
 app.get('/mysql', (req, res) => {

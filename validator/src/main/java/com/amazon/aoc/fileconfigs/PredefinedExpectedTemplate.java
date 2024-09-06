@@ -227,6 +227,40 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EKS_LINUX_CLIENT_CALL_LOG("/expected-data-template/dotnet/eks/linux/client-call-log.mustache"),
   DOTNET_EKS_LINUX_CLIENT_CALL_METRIC("/expected-data-template/dotnet/eks/linux/client-call-metric.mustache"),
   DOTNET_EKS_LINUX_CLIENT_CALL_TRACE("/expected-data-template/dotnet/eks/linux/client-call-trace.mustache"),
+
+  /** Node EC2 Default Test Case Validations */
+  NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/node/ec2/default/outgoing-http-call-log.mustache"),
+  NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/node/ec2/default/outgoing-http-call-metric.mustache"),
+  NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/node/ec2/default/outgoing-http-call-trace.mustache"),
+
+  NODE_EC2_DEFAULT_AWS_SDK_CALL_LOG("/expected-data-template/node/ec2/default/aws-sdk-call-log.mustache"),
+  NODE_EC2_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/node/ec2/default/aws-sdk-call-metric.mustache"),
+  NODE_EC2_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/node/ec2/default/aws-sdk-call-trace.mustache"),
+
+  NODE_EC2_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/node/ec2/default/remote-service-log.mustache"),
+  NODE_EC2_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/node/ec2/default/remote-service-metric.mustache"),
+  NODE_EC2_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/node/ec2/default/remote-service-trace.mustache"),
+
+  NODE_EC2_DEFAULT_CLIENT_CALL_LOG("/expected-data-template/node/ec2/default/client-call-log.mustache"),
+  NODE_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/node/ec2/default/client-call-metric.mustache"),
+  NODE_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/node/ec2/default/client-call-trace.mustache"),
+
+  /** Node EC2 ASG Test Case Validations */
+  NODE_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/node/ec2/asg/outgoing-http-call-log.mustache"),
+  NODE_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/node/ec2/asg/outgoing-http-call-metric.mustache"),
+  NODE_EC2_ASG_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/node/ec2/asg/outgoing-http-call-trace.mustache"),
+
+  NODE_EC2_ASG_AWS_SDK_CALL_LOG("/expected-data-template/node/ec2/asg/aws-sdk-call-log.mustache"),
+  NODE_EC2_ASG_AWS_SDK_CALL_METRIC("/expected-data-template/node/ec2/asg/aws-sdk-call-metric.mustache"),
+  NODE_EC2_ASG_AWS_SDK_CALL_TRACE("/expected-data-template/node/ec2/asg/aws-sdk-call-trace.mustache"),
+
+  NODE_EC2_ASG_REMOTE_SERVICE_LOG("/expected-data-template/node/ec2/asg/remote-service-log.mustache"),
+  NODE_EC2_ASG_REMOTE_SERVICE_METRIC("/expected-data-template/node/ec2/asg/remote-service-metric.mustache"),
+  NODE_EC2_ASG_REMOTE_SERVICE_TRACE("/expected-data-template/node/ec2/asg/remote-service-trace.mustache"),
+
+  NODE_EC2_ASG_CLIENT_CALL_LOG("/expected-data-template/node/ec2/asg/client-call-log.mustache"),
+  NODE_EC2_ASG_CLIENT_CALL_METRIC("/expected-data-template/node/ec2/asg/client-call-metric.mustache"),
+  NODE_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/node/ec2/asg/client-call-trace.mustache"),
   ;
 
   private String path;
