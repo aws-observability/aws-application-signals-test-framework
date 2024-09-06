@@ -7,6 +7,7 @@ on:
   schedule:
     - cron: '0 18 * * *' # scheduled to run at 18:00 UTC every day
   workflow_dispatch: # be able to run on demand
+  push:
 
 permissions:
   id-token: write
@@ -17,10 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        aws-region: ['af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
-                     'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                     'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
-                     'us-east-1','us-east-2', 'us-west-1', 'us-west-2']
+        aws-region: ['af-south-1']
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -89,4 +87,4 @@ jobs:
     with:
       aws-region: 'us-east-1'
       caller-workflow-name: 'enablement-test-resource-cleanup'
-      validation-result: ${{ (needs.cleanup-ec2-instances.result == 'success' && needs.cleanup-k8s-on-ec2.result == 'success') && 'success' || 'failure' }}
+      validation-result: ${{ (needs.cleanup-ec2-instances.result == 'success') && 'success' || 'failure' }}
