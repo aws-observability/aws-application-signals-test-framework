@@ -19,12 +19,20 @@ jobs:
         instance: [
           { repo_name: 'amazon-cloudwatch-agent-operator', ec2_name: 'cw-agent-operator-release', language: 'java' },
           { repo_name: 'amazon-cloudwatch-agent-operator', ec2_name: 'cw-agent-operator-release', language: 'python' },
+          { repo_name: 'amazon-cloudwatch-agent-operator', ec2_name: 'cw-agent-operator-release', language: 'dotnet' },
+          { repo_name: 'amazon-cloudwatch-agent-operator', ec2_name: 'cw-agent-operator-release', language: 'node' },
           { repo_name: 'amazon-cloudwatch-agent', ec2_name: 'cw-agent-release', language: 'java' },
           { repo_name: 'amazon-cloudwatch-agent', ec2_name: 'cw-agent-release', language: 'python' },
-          { repo_name: 'aws-otel-python-instrumentation', ec2_name: 'adot-python-release', language: 'python' },
+          { repo_name: 'amazon-cloudwatch-agent', ec2_name: 'cw-agent-release', language: 'dotnet' },
+          { repo_name: 'amazon-cloudwatch-agent', ec2_name: 'cw-agent-release', language: 'node' },
           { repo_name: 'aws-otel-java-instrumentation', ec2_name: 'adot-java-release', language: 'java' },
+          { repo_name: 'aws-otel-python-instrumentation', ec2_name: 'adot-python-release', language: 'python' },
+          { repo_name: 'aws-otel-dotnet-instrumentation', ec2_name: 'adot-dotnet-release', language: 'dotnet' },
+          { repo_name: 'aws-otel-js-instrumentation', ec2_name: 'adot-node-release', language: 'node' },
+          { repo_name: 'aws-application-signals-test-framework', ec2_name: 'java-canary', language: 'java' },
           { repo_name: 'aws-application-signals-test-framework', ec2_name: 'python-canary', language: 'python' },
-          { repo_name: 'aws-application-signals-test-framework', ec2_name: 'java-canary', language: 'java' } ]
+          { repo_name: 'aws-application-signals-test-framework', ec2_name: 'dotnet-canary', language: 'dotnet' },
+          { repo_name: 'aws-application-signals-test-framework', ec2_name: 'node-canary', language: 'node' } ]
     uses: ./.github/workflows/k8s-patch-os-jobs.yml
     secrets: inherit
     with:

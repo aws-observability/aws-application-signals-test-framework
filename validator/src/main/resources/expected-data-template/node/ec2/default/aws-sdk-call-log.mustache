@@ -1,0 +1,22 @@
+[{
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:default$",
+  "PlatformType": "^AWS::EC2$",
+  "Operation": "GET /aws-sdk-call",
+  "Version": "^1$",
+  "Telemetry.Source": "^LocalRootSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}.*$"
+},
+{
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:default$",
+  "PlatformType": "^AWS::EC2$",
+  "Operation": "GET /aws-sdk-call",
+  "Version": "^1$",
+  "RemoteService": "AWS::S3",
+  "RemoteOperation": "GetBucketLocation",
+  "RemoteResourceIdentifier": "^e2e-test-bucket-name-{{testingId}}$",
+  "RemoteResourceType": "^AWS::S3::Bucket$",
+  "Telemetry.Source": "^ClientSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}.*$"
+}]

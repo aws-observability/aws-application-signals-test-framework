@@ -8,6 +8,10 @@ on:
     - cron: '0 18 * * *' # scheduled to run at 18:00 UTC every day
   workflow_dispatch: # be able to run on demand
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   cleanup-ec2-instances:
     strategy:
@@ -53,3 +57,36 @@ jobs:
         run: |
           python -m pip install -r requirements.txt
           python cleaner.py
+
+  cleanup-k8s-cluster:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.RESOURCE_CLEANER_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Cleanup K8s cluster
+        working-directory: .github/workflows/util/clean/k8s_cluster_cleanup
+        env:
+          AWS_DEFAULT_REGION: 'us-east-1'
+          S3_REPORTS_BUCKET: ${{ secrets.S3_CLEAUP_REPORTS_BUCKET }}-prod-us-east-1
+        run: |
+          python -m pip install -r requirements.txt
+          python cleaner.py
+
+  publish-metric:
+    needs: [ cleanup-ec2-instances, cleanup-k8s-cluster ]
+    if: always()
+    uses: ./.github/workflows/enablement-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      caller-workflow-name: 'enablement-test-resource-cleanup'
+      validation-result: ${{ (needs.cleanup-ec2-instances.result == 'success' && needs.cleanup-k8s-cluster.result == 'success') && 'success' || 'failure' }}
