@@ -55,8 +55,6 @@ public class XRayService {
   public List<TraceSummary> searchTraces(String traceFilter) {
     Date currentDate = new Date();
     Date pastDate = new DateTime(currentDate).minusSeconds(SEARCH_PERIOD).toDate();
-    log.info("Searching for traces between {} and {}", pastDate, currentDate);
-    log.info("Filter expression: {}", traceFilter);
     GetTraceSummariesResult traceSummaryResult =
             awsxRay.getTraceSummaries(
                     new GetTraceSummariesRequest()
