@@ -31,7 +31,7 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class XRayService {
   private AWSXRay awsxRay;
-  private final int SEARCH_PERIOD = 300;
+  private final int SEARCH_PERIOD = 60;
   public static String DEFAULT_TRACE_ID = "1-00000000-000000000000000000000000";
 
   public XRayService(String region) {
