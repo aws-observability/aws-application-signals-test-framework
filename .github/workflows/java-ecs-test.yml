@@ -85,7 +85,6 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
-      # ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
       - name: Retrieve account
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
