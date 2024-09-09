@@ -9,9 +9,6 @@ on:
   schedule:
     - cron: '*/15 * * * *' # run the workflow every 15 minutes
   workflow_dispatch: # be able to run the workflow on demand
-  push:
-    branches:
-      - ecs-no-call-zzhlogin
 
 permissions:
   id-token: write
