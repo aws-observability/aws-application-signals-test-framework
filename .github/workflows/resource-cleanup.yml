@@ -89,4 +89,4 @@ jobs:
     with:
       aws-region: 'us-east-1'
       caller-workflow-name: 'enablement-test-resource-cleanup'
-      validation-result: ${{ (needs.cleanup-ec2-instances.result == 'success' && needs.cleanup-k8s-on-ec2.result == 'success') && 'success' || 'failure' }}
+      validation-result: ${{ (needs.cleanup-ec2-instances.result == 'success' && needs.cleanup-k8s-cluster.result == 'success') && 'success' || 'failure' }}
