@@ -45,10 +45,10 @@ jobs:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-python-e2e-ec2-asg-canary-test'
 
-  pypl:
+  pypi:
     uses: ./.github/workflows/python-ec2-default-retry.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
-      caller-workflow-name: 'appsignals-python-e2e-ec2-pypl-canary-test'
-      otel-source: 'pypl'
+      caller-workflow-name: 'appsignals-python-e2e-ec2-pypi-canary-test'
+      otel-source: 'pypi'
