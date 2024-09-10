@@ -37,9 +37,11 @@ resource "null_resource" "deploy" {
       [ ! -e python-remote-service-depl.yaml ] || rm python-remote-service-depl.yaml
 
       # Clone and install operator onto cluster
-      echo "LOG: Cloning helm-charts repo"
+      echo "LOG: Getting latest helm chart release URL"
       latest_version_url=$(curl -s https://api.github.com/repos/aws-observability/helm-charts/releases/latest | grep "tarball_url" | cut -d '"' -f 4)
       echo "LOG: The latest helm chart version url is $latest_version_url"
+
+      echo "LOG: Downloading and unpacking the helm chart repo"
       curl -L $latest_version_url -o aws-observability-helm-charts-latest.tar.gz
       mkdir helm-charts
       tar -xvzf aws-observability-helm-charts-latest.tar.gz -C helm-charts
