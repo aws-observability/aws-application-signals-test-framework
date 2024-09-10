@@ -53,28 +53,8 @@
                     {
                         "name": "^mysql$",
                         "sql": {
-                            "url": "^Create connection$",
-                            "database_type": "^mysql$"
-                        },
-                        "annotations": {
-                            "aws.remote.operation": "^UnknownRemoteOperation$",
-                            "aws.local.operation": "^GET /mysql$",
-                            "aws.remote.resource.type": "^DB::Connection$",
-                            "aws.remote.resource.identifier": "^{{remoteResourceIdentifier}}$",
-                            "aws.remote.service": "^mysql$",
-                            "aws.local.service": "^{{serviceName}}$",
-                            "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
-                        },
-                        "metadata": {
-                            "default": {
-                                "EC2.AutoScalingGroup": "^eks-.+",
-                                "EKS.Cluster": "^{{platformInfo}}$",
-                                "K8s.Namespace": "^{{appNamespace}}$",
-                                "PlatformType": "^AWS::EKS$",
-                                "aws.span.kind": "^CLIENT$"
-                            }
-                        },
-                        "namespace": "^remote$"
+                            "url": "^Create connection$"
+                        }
                     },
                     {
                         "name": "^mysql$",
@@ -87,7 +67,7 @@
                             "aws.remote.operation": "^SELECT$",
                             "aws.local.operation": "^GET /mysql$",
                             "aws.remote.resource.type": "^DB::Connection$",
-                            "aws.remote.resource.identifier": "^information_schema|{{remoteResourceIdentifier}}$",
+                            "aws.remote.resource.identifier": "^{{remoteResourceIdentifier}}$",
                             "aws.remote.service": "^mysql$",
                             "aws.local.service": "^{{serviceName}}$",
                             "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
