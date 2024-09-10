@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  default:
+  github:
     strategy:
       fail-fast: false
       matrix:
@@ -29,3 +29,12 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-python-e2e-ec2-canary-test'
+      staging-wheel-name: 'aws_opentelemetry_distro-0.3.0-py3-none-any.whl'
+
+  pypi:
+    uses: ./.github/workflows/python-ec2-default-retry.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      caller-workflow-name: 'appsignals-python-e2e-ec2-pypi-canary-test'
+      otel-source: 'pypi'
