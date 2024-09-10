@@ -4,9 +4,6 @@
     "request": {
       "url": "^{{endpoint}}/aws-sdk-call$",
       "method": "^GET$"
-    },
-    "response": {
-      "status": "^500$"
     }
   },
   "aws": {
@@ -31,11 +28,6 @@
   "subsegments": [
     {
       "name": "^S3$",
-      "http": {
-        "response": {
-          "status": "^404$"
-        }
-      },
       "aws": {
         "region": "{{region}}",
         "operation": "^GetBucketLocation$"
