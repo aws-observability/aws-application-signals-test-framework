@@ -4,7 +4,7 @@
 # This is a reusable workflow for running the DotNet E2E Canary test for Application Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: DotNet EC2 Windows Default Use Case
+name: DotNet EC2 Windows Use Case
 on:
   workflow_call:
     inputs:
