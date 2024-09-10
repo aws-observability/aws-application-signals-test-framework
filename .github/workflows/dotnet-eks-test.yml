@@ -104,6 +104,8 @@ jobs:
         with:
           secret-ids:
             ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+            DOTNET_MAIN_SAMPLE_APP_IMAGE, e2e-test/dotnet-main-sample-app-image
+            DOTNET_REMOTE_SAMPLE_APP_IMAGE, e2e-test/dotnet-remote-sample-app-image
 
       # ADOT_E2E_TEST_ROLE_ARN is used to access main build e2e test cluster
       # E2E_TEST_ROLE_ARN is used to access canary e2e test cluster
@@ -139,7 +141,7 @@ jobs:
       - name: Delete all sample app namespaces
         continue-on-error: true
         timeout-minutes: 5
-        run: kubectl get namespace | awk '/^ns-[0-9]+-[0-9]+/{print $1}' | xargs kubectl delete namespace
+        run: kubectl get namespace | awk '/^ns-[0-9]+-[0-9]+/{print $1}' | xargs -r kubectl delete namespace
 
       - name: Create role for AWS access from the sample app
         id: create_service_account
@@ -178,8 +180,8 @@ jobs:
 
       - name: Set Sample App Image
         run: |
-          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}" >> $GITHUB_ENV
-          echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}" >> $GITHUB_ENV
+          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
+          echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-dotnet-app

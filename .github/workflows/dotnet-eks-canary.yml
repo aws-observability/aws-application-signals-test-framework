@@ -24,7 +24,7 @@ permissions:
 
 
 jobs:
-  dotnet-e2e-eks-test:
+  eks:
     strategy:
       fail-fast: false
       matrix:
