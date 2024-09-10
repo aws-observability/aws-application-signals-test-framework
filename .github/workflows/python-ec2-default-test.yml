@@ -104,13 +104,8 @@ jobs:
           elif [ "${{ env.OTEL_SOURCE }}" == "pypi" ]; then
             echo GET_ADOT_WHEEL_COMMAND="python3.9 -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> $GITHUB_ENV
           else
-            latest_release_version=$(curl -sL https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest \
-            | grep 'releases/tag/' \
-            | sed 's|.*releases/tag/\(.*\)\".*|\1|' \
-            | grep '^v' \
-            | head -n 1 \
-            | sed 's/^v//')
-
+            latest_release_version=$(curl -sL https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest | grep -oP '/releases/tag/v\K[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+            echo "The latest version is $latest_release_version"
             echo GET_ADOT_WHEEL_COMMAND="wget -O ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-$latest_release_version-py3-none-any.whl \
             && python3.9 -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> $GITHUB_ENV
           fi
