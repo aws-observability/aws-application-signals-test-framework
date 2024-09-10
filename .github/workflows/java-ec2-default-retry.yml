@@ -14,6 +14,10 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      otel-source:
+        required: false
+        type: string
+        default: 'github'
 
 permissions:
   id-token: write
@@ -26,6 +30,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      otel-source: ${{ inputs.otel-source }}
 
   java-ec2-default-attempt-2:
     needs: [ java-ec2-default-attempt-1 ]
@@ -35,6 +40,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      otel-source: ${{ inputs.otel-source }}
 
   publish-metric-attempt-1:
     needs: [ java-ec2-default-attempt-1, java-ec2-default-attempt-2 ]
