@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-r-app-deployment-${TESTING_ID}
+  namespace: sample-app-namespace
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: remote-app
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: remote-app
+      annotations:
+        instrumentation.opentelemetry.io/inject-nodejs: "true"
+    spec:
+      containers:
+        - name: remote
+          image: ${IMAGE}
+          ports:
+            - containerPort: 8001
+          env:
+            # Note: We use OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express to avoid
+            # having to validate around the telemetry generated for middleware
+            - name: "OTEL_NODE_DISABLED_INSTRUMENTATIONS"
+              value: "fs,dns,express"
+      imagePullSecrets:
+        - name: ecr-secret
