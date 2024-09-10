@@ -50,6 +50,7 @@ resource "null_resource" "deploy" {
       kubectl wait --for=condition=Ready pods --all --selector=app.kubernetes.io/name=amazon-cloudwatch-observability -n amazon-cloudwatch --timeout=60s
       kubectl wait --for=condition=Ready pods --all --selector=app.kubernetes.io/name=cloudwatch-agent -n amazon-cloudwatch --timeout=60s
 
+      # Prepare image pull secret and service account for pulling staging ECRs in release testing
       if [ "${var.repository}" = "amazon-cloudwatch-agent" ]; then
         RELEASE_TESTING_SECRET_NAME=release-testing-ecr-secret
         RELEASE_TESTING_TOKEN=`aws ecr --region=us-west-2 get-authorization-token --output text --query authorizationData[].authorizationToken | base64 -d | cut -d: -f2`
@@ -74,6 +75,7 @@ resource "null_resource" "deploy" {
         kubectl delete pods --all -n amazon-cloudwatch
       fi
 
+      # Patch ECRs for release testing based on which repo we are testing in
       if [ "${var.repository}" = "amazon-cloudwatch-agent-operator" ]; then
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${var.patch_image_arn}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
         kubectl delete pods --all -n amazon-cloudwatch
@@ -86,7 +88,7 @@ resource "null_resource" "deploy" {
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
       elif [ "${var.repository}" = "aws-otel-js-instrumentation" ]; then
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/3", "value": "--auto-instrumentation-java-image=${var.patch_image_arn}"}]'
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/3", "value": "--auto-instrumentation-nodejs-image=${var.patch_image_arn}"}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
@@ -157,9 +159,10 @@ resource "null_resource" "deploy" {
       kubectl patch deployment traffic-generator -n sample-app-namespace --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "ecr-secret"}]}]'
                 
       # Add the appropriate environment variables to the traffic generator
-      kubectl set env -n sample-app-namespace deployment/traffic-generator MAIN_ENDPOINT=$(kubectl get pods -n sample-app-namespace --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8000
-      kubectl set env -n sample-app-namespace deployment/traffic-generator REMOTE_ENDPOINT=$(kubectl get pod --selector=app=remote-app -n sample-app-namespace -o jsonpath='{.items[0].status.podIP}')
-      kubectl set env -n sample-app-namespace deployment/traffic-generator ID=${var.test_id}
+      kubectl set env -n sample-app-namespace deployment/traffic-generator \
+        MAIN_ENDPOINT=$(kubectl get pods -n sample-app-namespace --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8000 \
+        REMOTE_ENDPOINT=$(kubectl get pod --selector=app=remote-app -n sample-app-namespace -o jsonpath='{.items[0].status.podIP}') \
+        ID=${var.test_id}
       
       sleep 10
 
