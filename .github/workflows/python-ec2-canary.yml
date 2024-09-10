@@ -29,7 +29,6 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-python-e2e-ec2-canary-test'
-      staging-wheel-name: 'aws_opentelemetry_distro-0.3.0-py3-none-any.whl'
 
   pypi:
     uses: ./.github/workflows/python-ec2-default-retry.yml
