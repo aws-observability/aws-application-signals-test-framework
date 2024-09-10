@@ -14,6 +14,10 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      otel-source:
+        required: false
+        type: string
+        default: 'github'
     outputs:
       job-started:
         value: ${{ jobs.java-ec2-default.outputs.job-started }}
@@ -27,6 +31,7 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  OTEL_SOURCE: ${{ inputs.otel-source }}
   SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/main-service.jar
   SAMPLE_APP_REMOTE_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/remote-service.jar
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
@@ -48,7 +53,7 @@ jobs:
         run: echo "job-started=true" >> $GITHUB_OUTPUT
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> $GITHUB_ENV
 
       - uses: actions/checkout@v4
         with:
@@ -93,6 +98,10 @@ jobs:
           if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
             echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
+          elif [ "${{ env.OTEL_SOURCE }}" == "maven" ]; then
+            latest_version=$(curl -s "https://search.maven.org/solrsearch/select?q=g:software.amazon.opentelemetry+a:aws-opentelemetry-agent&core=gav&rows=1&wt=json" | jq -r '.response.docs[0].v')
+            echo "Latest version for Maven is: $latest_version"
+            echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://repo1.maven.org/maven2/software/amazon/opentelemetry/aws-opentelemetry-agent/$latest_version/aws-opentelemetry-agent-$latest_version.jar" >> $GITHUB_ENV
           else
             echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
           fi

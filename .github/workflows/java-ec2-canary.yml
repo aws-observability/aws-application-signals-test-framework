@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 jobs:
-  default:
+  github:
     strategy:
       fail-fast: false
       matrix:
@@ -29,3 +29,11 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-e2e-ec2-canary-test'
+
+  maven:
+    uses: ./.github/workflows/java-ec2-default-retry.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      caller-workflow-name: 'appsignals-e2e-ec2-maven-canary-test'
+      otel-source: 'maven'
