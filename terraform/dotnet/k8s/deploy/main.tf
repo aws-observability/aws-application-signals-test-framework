@@ -157,9 +157,10 @@ resource "null_resource" "deploy" {
       kubectl patch deployment traffic-generator -n dotnet-sample-app-namespace --type='json' -p='[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "ecr-secret"}]}]'
 
       # Add the appropriate environment variables to the traffic generator
-      kubectl set env -n dotnet-sample-app-namespace deployment/traffic-generator MAIN_ENDPOINT=$(kubectl get pods -n dotnet-sample-app-namespace --selector=app=dotnet-sample-app -o jsonpath='{.items[0].status.podIP}'):8080
-      kubectl set env -n dotnet-sample-app-namespace deployment/traffic-generator REMOTE_ENDPOINT=$(kubectl get pod -n dotnet-sample-app-namespace --selector=app=dotnet-remote-app -o jsonpath='{.items[0].status.podIP}')
-      kubectl set env -n dotnet-sample-app-namespace deployment/traffic-generator ID=${var.test_id}
+      kubectl set env -n dotnet-sample-app-namespace deployment/traffic-generator \
+      MAIN_ENDPOINT=$(kubectl get pods -n dotnet-sample-app-namespace --selector=app=dotnet-sample-app -o jsonpath='{.items[0].status.podIP}'):8080 \
+      REMOTE_ENDPOINT=$(kubectl get pod -n dotnet-sample-app-namespace --selector=app=dotnet-remote-app -o jsonpath='{.items[0].status.podIP}') \
+      ID=${var.test_id}
 
       sleep 10
       EOF
