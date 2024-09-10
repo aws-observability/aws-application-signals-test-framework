@@ -26,8 +26,6 @@ spec:
               value: "0.0.0.0:8080"
             - name: ASPNETCORE_URLS
               value: "http://+:8080"
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: "http://cloudwatch-agent.amazon-cloudwatch:4316"
             - name: OTEL_DOTNET_AUTO_PLUGINS
               value: "AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
       imagePullSecrets:
