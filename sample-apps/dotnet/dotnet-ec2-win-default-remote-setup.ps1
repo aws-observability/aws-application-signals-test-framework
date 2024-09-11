@@ -5,11 +5,17 @@ param (
     [string]$TestId
 )
 
+# This file is used to deploy and instrumentation remote sample app for Dotnet E2E Canary test
+# This is the most stable way to do that in automatically test workflow invloving EC2 and SSM
+
+# To avoid written UI for download and extract zip step, saving lots of time
 $ProgressPreference = 'SilentlyContinue'
 
+# Install Dotnet
 wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
 .\dotnet-install.ps1 -Version 8.0.302
 
+# Install and start Cloudwatch Agent
 Invoke-Expression $GetCloudwatchAgentCommand
 
 Write-Host "Installing Cloudwatch Agent"
@@ -19,17 +25,20 @@ Write-Host "Install Finished"
 
 & "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
+# Get Instrumentation Artifacts and Sample App
 Invoke-Expression $GetAdotDistroCommand
 
 Invoke-Expression $GetSampleAppCommand
 
 Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force
 
+# Allow income traffic from main-service
 New-NetFirewallRule -DisplayName "Allow TCP 8081" -Direction Inbound -Protocol TCP -LocalPort 8081 -Action Allow
 
 $current_dir = Get-Location
 Write-Host $current_dir
 
+# Config Env variable for Windows EC2
 Set-Location -Path "./asp_remote_service"
 $env:CORECLR_ENABLE_PROFILING = "1"
 $env:CORECLR_PROFILER = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"

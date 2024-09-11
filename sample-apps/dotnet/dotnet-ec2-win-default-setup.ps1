@@ -8,11 +8,17 @@ param (
     [string]$AWSRegion
 )
 
+# This file is used to deploy and instrumentation main sample app for Dotnet E2E Canary test
+# This is the most stable way to do that in automatically test workflow invloving EC2 and SSM
+
+# To avoid written UI for download and extract zip step, saving lots of time
 $ProgressPreference = 'SilentlyContinue'
 
+# Install Dotnet
 wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
 .\dotnet-install.ps1 -Version 8.0.302
 
+# Install and start Cloudwatch Agent
 Invoke-Expression $GetCloudwatchAgentCommand
 
 Write-Host "Installing Cloudwatch Agent"
@@ -20,16 +26,20 @@ msiexec /i amazon-cloudwatch-agent.msi
 Start-Sleep -Seconds 10
 Write-Host "Install Finished"
 
-# Debug
+# Even after this step, it only expose 8080 to localhost and local (EC2) network on current config, so it's safe
+# Leave it here for Debug purpose
 New-NetFirewallRule -DisplayName "Allow TCP 8080" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow
 
 & "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
+# Get Instrumentation Artifacts and Sample App
 Invoke-Expression $GetAdotDistroCommand
 
 Invoke-Expression $GetSampleAppCommand
 
 Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force
+
+# Config Env variable for Windows EC2
 
 $current_dir = Get-Location
 Write-Host $current_dir
@@ -61,6 +71,9 @@ Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_fron
 Write-Host "Start Sleep"
 Start-Sleep -Seconds 10
 
+# Deploy Traffic Generator
+
+# Install node and setup path for node
 wget -O nodejs.zip https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip
 Expand-Archive -Path .\nodejs.zip -DestinationPath .\nodejs -Force
 $currentdir = Get-Location
@@ -74,7 +87,7 @@ Expand-Archive -Path "./traffic-generator.zip" -DestinationPath "./" -Force
 # Install the traffic generator dependencies
 npm install
 
-
+# Start traffic generator
 $env:MAIN_ENDPOINT = "localhost:8080"
 $env:REMOTE_ENDPOINT = $RemoteServicePrivateEndpoint
 $env:ID = $TestId
