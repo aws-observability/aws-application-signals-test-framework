@@ -101,9 +101,9 @@ jobs:
         run: |
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
             # Get cloudwatch agent staging file if triggered by cw-a repo
-            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/windows/amd64/latest/amazon-cloudwatch-agent.msi ./cw-agent.msi" >> $GITHUB_ENV
+            echo GET_CW_AGENT_MSI_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/windows/amd64/latest/amazon-cloudwatch-agent.msi ./cw-agent.msi" >> $GITHUB_ENV
           else
-            echo GET_CW_AGENT_RPM_COMMAND= "wget -O ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi" >> $GITHUB_ENV
+            echo GET_CW_AGENT_MSI_COMMAND= "wget -O ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi" >> $GITHUB_ENV
           fi
 
       - name: Set up terraform
@@ -138,7 +138,7 @@ jobs:
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
-              -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
+              -var="get_cw_agent_msi_command=${{ env.GET_CW_AGENT_MSI_COMMAND }}" \
               -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
             || deployment_failed=$?
           
@@ -156,7 +156,6 @@ jobs:
               retry_counter=$(($retry_counter+1))
             else
               # If deployment succeeded, then exit the loop
-              # Wait 10 min for SSM document to execute success
               break
             fi
           
@@ -167,23 +166,23 @@ jobs:
           done
 
       - name: Get the ec2 instance ami id
+        working-directory: terraform/dotnet/ec2/windows
         run: |
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
-        working-directory: terraform/dotnet/ec2/windows
 
       - name: Get SSM outputs
+        working-directory: terraform/dotnet/ec2/windows
         run: |
           echo "FRONTEND_SSM_ASSOCIATION_ID=$(terraform output frontend_script_association_id)" >> $GITHUB_ENV
           echo "REMOTE_SSM_ASSOCIATION__ID=$(terraform output remote_script_association_id)" >> $GITHUB_ENV
-        working-directory: terraform/dotnet/ec2/windows
 
       - name: Get the sample app endpoint
+        working-directory: terraform/dotnet/ec2/windows
         run: |
           echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_INSTANCE_ID=$(terraform output remote_service_instance_id)" >> $GITHUB_ENV
-        working-directory: terraform/dotnet/ec2/windows
 
       - name: Monitor EC2 instances readiness in Systems Manager
         run: |
