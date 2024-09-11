@@ -80,9 +80,6 @@ resource "aws_instance" "main_service_instance" {
 
   user_data = <<-EOF
   <powershell>
-      $file = $env:SystemRoot + "\Temp\" + (Get-Date).ToString("MM-dd-yy-hh-mm") + ".log"
-      New-Item $file -ItemType file
-      Start-Transcript -Path $file -Append
       Write-Host "Block RDP"
       Get-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-In)" | Set-NetFirewallRule -Enabled False
       Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
@@ -101,7 +98,6 @@ resource "aws_instance" "main_service_instance" {
       }
       Write-Host "AWS CLI Installed"
       Write-Host "Finish execution"
-      Stop-Transcript
   </powershell>
   <persist>true</persist>
   EOF
@@ -126,9 +122,6 @@ resource "aws_instance" "remote_service_instance" {
 
   user_data = <<-EOF
   <powershell>
-      $file = $env:SystemRoot + "\Temp\" + (Get-Date).ToString("MM-dd-yy-hh-mm") + ".log"
-      New-Item $file -ItemType file
-      Start-Transcript -Path $file -Append
       Write-Host "Block RDP"
       Get-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-In)" | Set-NetFirewallRule -Enabled False
       Get-Service -Name TermService | Select-Object -ExpandProperty DependentServices | ForEach-Object { Stop-Service -Name $_.Name -Force }
@@ -147,7 +140,6 @@ resource "aws_instance" "remote_service_instance" {
       }
       Write-Host "AWS CLI Installed"
       Write-Host "Finish execution"
-      Stop-Transcript
   </powershell>
   <persist>true</persist>
   EOF
