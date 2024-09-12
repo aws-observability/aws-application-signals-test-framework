@@ -211,6 +211,24 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_ASG_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/asg/client-call-metric.mustache"),
   DOTNET_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/asg/client-call-trace.mustache"),
 
+  /** DotNet K8s Test Case Validations */
+  DOTNET_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/dotnet/k8s/outgoing-http-call-log.mustache"),
+  DOTNET_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/dotnet/k8s/outgoing-http-call-metric.mustache"),
+  DOTNET_K8S_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/dotnet/k8s/outgoing-http-call-trace.mustache"),
+
+  DOTNET_K8S_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/k8s/aws-sdk-call-log.mustache"),
+  DOTNET_K8S_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/k8s/aws-sdk-call-metric.mustache"),
+  DOTNET_K8S_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/k8s/aws-sdk-call-trace.mustache"),
+
+  DOTNET_K8S_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/k8s/remote-service-log.mustache"),
+  DOTNET_K8S_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/k8s/remote-service-metric.mustache"),
+  DOTNET_K8S_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/k8s/remote-service-trace.mustache"),
+
+  DOTNET_K8S_CLIENT_CALL_LOG("/expected-data-template/dotnet/k8s/client-call-log.mustache"),
+  DOTNET_K8S_CLIENT_CALL_METRIC("/expected-data-template/dotnet/k8s/client-call-metric.mustache"),
+  DOTNET_K8S_CLIENT_CALL_TRACE("/expected-data-template/dotnet/k8s/client-call-trace.mustache"),
+
+
   /** DotNet EKS Linux Test Case Validations */
   DOTNET_EKS_LINUX_OUTGOING_HTTP_CALL_LOG("/expected-data-template/dotnet/eks/linux/outgoing-http-call-log.mustache"),
   DOTNET_EKS_LINUX_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/dotnet/eks/linux/outgoing-http-call-metric.mustache"),
