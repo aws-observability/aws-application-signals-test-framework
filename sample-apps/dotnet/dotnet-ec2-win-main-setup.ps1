@@ -22,7 +22,26 @@ Invoke-Expression $GetCloudwatchAgentCommand
 
 Write-Host "Installing Cloudwatch Agent"
 msiexec /i amazon-cloudwatch-agent.msi
-Start-Sleep -Seconds 10
+$timeout = 30
+$interval = 5
+$filePath = "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1"
+$elapsedTime = 0
+
+while ($elapsedTime -lt $timeout) {
+    if (Test-Path $filePath) {
+        Write-Host "Install Finished"
+        break
+    } else {
+        Write-Host "Cloudwatch Agent not found: $filePath. Checking again in $interval seconds..."
+        Start-Sleep -Seconds $interval
+        $elapsedTime += $interval
+    }
+}
+
+if ($elapsedTime -ge $timeout) {
+    Write-Host "CloudWatch not found after $timeout seconds."
+}
+
 Write-Host "Install Finished"
 
 # Even after this step, it only expose 8080 to localhost and local (EC2) network on current config, so it's safe
