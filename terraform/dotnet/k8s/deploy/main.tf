@@ -40,7 +40,7 @@ resource "null_resource" "deploy" {
       echo "LOG: Cloning helm charts repo"
       git clone https://github.com/aws-observability/helm-charts.git -q
       cd helm-charts/charts/amazon-cloudwatch-observability
-      git reset --hard d92e2850f6b88b5e47f4071e557f87b88d73fa75
+      git reset --hard f175d76ee0aa8d85e89535765d8bf6c49fdb07cb
 
       echo "LOG: Installing CloudWatch Agent Operator using Helm"
       helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${var.aws_region} --set clusterName=k8s-cluster-${var.test_id}
