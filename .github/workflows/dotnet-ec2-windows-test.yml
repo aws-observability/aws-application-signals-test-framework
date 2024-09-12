@@ -184,10 +184,11 @@ jobs:
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_INSTANCE_ID=$(terraform output remote_service_instance_id)" >> $GITHUB_ENV
 
-      - name: Monitor EC2 instances readiness in Systems Manager
-        timeout-minutes: 5
+      - name: Monitor EC2 instances readiness and SSM execute status in Systems Manager
+        timeout-minutes: 12
         run: |
-          max_attempts=60
+          # Allow up to 5 min for EC2 instance connect to SSM
+          max_attempts=30
           attempt=0
           interval=10
 
@@ -215,15 +216,13 @@ jobs:
 
           check_instance_ready ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           check_instance_ready ${{ env.REMOTE_SERVICE_INSTANCE_ID }}
+          
+          # Allow up to 10 min for SSM Document to run
+          max_attempts=60
+          attempt = 0
 
-      - name: Repeatedly check SSM Association status until success or max attempts
-        timeout-minutes: 12
-        run: |
           check_status() {
             local association_id=$1
-            local max_attempts=60  # Maximum number of attempts
-            local interval=10  # 10 seconds interval
-            local attempt=0
 
             while [[ $attempt -lt $max_attempts ]]; do
               aws ssm describe-association --association-id $association_id
@@ -244,6 +243,7 @@ jobs:
               exit 1
             fi
           }
+          
           check_status ${{ env.FRONTEND_SSM_ASSOCIATION_ID }}
           check_status ${{ env.REMOTE_SSM_ASSOCIATION__ID }}
 
