@@ -36,11 +36,15 @@ resource "null_resource" "deploy" {
       [ ! -e remote-service-depl.yaml ] || rm remote-service-depl.yaml
 
       # Clone and install operator onto cluster
-      echo "LOG: Cloning helm-charts repo"
-      git clone https://github.com/aws-observability/helm-charts -q
+      echo "LOG: Getting latest helm chart release URL"
+      latest_version_url=$(curl -s https://api.github.com/repos/aws-observability/helm-charts/releases/latest | grep "tarball_url" | cut -d '"' -f 4)
+      echo "LOG: The latest helm chart version url is $latest_version_url"
 
-      cd helm-charts/charts/amazon-cloudwatch-observability/
-      git reset --hard e0e99c77f69ef388b0ffce769371f7c735a776e4
+      echo "LOG: Downloading and unpacking the helm chart repo"
+      curl -L $latest_version_url -o aws-observability-helm-charts-latest.tar.gz
+      mkdir helm-charts
+      tar -xvzf aws-observability-helm-charts-latest.tar.gz -C helm-charts
+      cd helm-charts/aws-observability-helm-charts*/charts/amazon-cloudwatch-observability
 
       echo "LOG: Installing CloudWatch Agent Operator using Helm"
       helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${var.aws_region} --set clusterName=k8s-cluster-${var.test_id}
