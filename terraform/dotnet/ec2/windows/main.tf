@@ -25,7 +25,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["Windows_Server-2019-English-Full-Base-*"]
+    values = ["Windows_Server-2022-English-Full-Base-*"]
   }
   filter {
     name   = "state"
