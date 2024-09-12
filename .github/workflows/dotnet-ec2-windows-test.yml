@@ -185,6 +185,7 @@ jobs:
           echo "REMOTE_SERVICE_INSTANCE_ID=$(terraform output remote_service_instance_id)" >> $GITHUB_ENV
 
       - name: Monitor EC2 instances readiness in Systems Manager
+        timeout-minutes: 5
         run: |
           max_attempts=60
           attempt=0
@@ -216,6 +217,7 @@ jobs:
           check_instance_ready ${{ env.REMOTE_SERVICE_INSTANCE_ID }}
 
       - name: Repeatedly check SSM Association status until success or max attempts
+        timeout-minutes: 12
         run: |
           check_status() {
             local association_id=$1
