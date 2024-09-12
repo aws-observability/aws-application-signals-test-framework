@@ -29,4 +29,4 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       test-cluster-name: 'e2e-node-canary-test'
-      caller-workflow-name: 'appsignals-e2e-eks-canary-test'
+      caller-workflow-name: 'appsignals-node-e2e-eks-canary-test'
