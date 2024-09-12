@@ -101,7 +101,7 @@ jobs:
         run: |
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
             # Get cloudwatch agent staging file if triggered by cw-a repo
-            echo GET_CW_AGENT_MSI_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/windows/amd64/latest/amazon-cloudwatch-agent.msi ./cw-agent.msi" >> $GITHUB_ENV
+            echo GET_CW_AGENT_MSI_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon-cloudwatch-agent.msi ./cw-agent.msi" >> $GITHUB_ENV
           else
             echo GET_CW_AGENT_MSI_COMMAND= "wget -O ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi" >> $GITHUB_ENV
           fi
