@@ -4,7 +4,6 @@ param (
     [string]$GetSampleAppCommand,
     [string]$TestId,
     [string]$RemoteServicePrivateEndpoint,
-    [string]$TestCanaryType,
     [string]$AWSRegion
 )
 
@@ -91,7 +90,6 @@ npm install
 $env:MAIN_ENDPOINT = "localhost:8080"
 $env:REMOTE_ENDPOINT = $RemoteServicePrivateEndpoint
 $env:ID = $TestId
-$env:CANARY_TYPE = $TestCanaryType
 
 Start-Process -FilePath "npm" -ArgumentList "start"
 
