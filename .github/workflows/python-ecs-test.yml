@@ -114,16 +114,14 @@ jobs:
           echo MAIN_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
           echo REMOTE_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
 
-      # Swich to use the public image for ADOT instrumentation
-      - name: Set Get ADOT Wheel command environment variable
+      - name: Set ADOT Python image environment variable
         run: |
           if [ "${{ github.event.repository.name }}" = "aws-otel-python-instrumentation" ]; then
-            # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
+            # Use the staging image build by the ADOT Python repo
             echo ADOT_INSTRUMENTATION_IMAGE_URI=="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
           else
-            # ADOT_INSTRUMENTATION_IMAGE_TAG=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-            # echo ADOT_INSTRUMENTATION_IMAGE_URI="public.ecr.aws/aws-observability/adot-autoinstrumentation-python:$ADOT_INSTRUMENTATION_IMAGE_TAG" >> $GITHUB_ENV
-            echo ADOT_INSTRUMENTATION_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/adot-python-distro:latest" >> $GITHUB_ENV
+            ADOT_INSTRUMENTATION_IMAGE_TAG=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
+            echo ADOT_INSTRUMENTATION_IMAGE_URI="public.ecr.aws/aws-observability/adot-autoinstrumentation-python:$ADOT_INSTRUMENTATION_IMAGE_TAG" >> $GITHUB_ENV
           fi
 
       # Switch to use the public image for CW Agent

@@ -28,7 +28,6 @@ import java.util.List;
 import org.joda.time.DateTime;
 import lombok.extern.log4j.Log4j2;
 
-@Log4j2
 public class XRayService {
   private AWSXRay awsxRay;
   private final int SEARCH_PERIOD = 60;

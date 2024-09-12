@@ -140,7 +140,8 @@ public class TraceValidator implements IValidator {
       traceFilter += " AND (annotation.aws_local_service = \"local-root-client-call\" OR annotation.aws_local_service = \"local-root-client-call:80\")" ;
     } else {
       traceFilter += (String.format(" AND annotation.aws_local_operation = \"%s %s\"",
-              validationConfig.getHttpMethod().toUpperCase(), validationConfig.getHttpPath()));
+              validationConfig.getHttpMethod().toUpperCase(),
+              validationConfig.getHttpPath()));
     }
     log.info("Trace Filter: {}", traceFilter);
     List<TraceSummary> retrieveTraceLists = xrayService.searchTraces(traceFilter);

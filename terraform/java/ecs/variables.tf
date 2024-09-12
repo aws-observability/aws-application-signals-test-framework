@@ -31,7 +31,6 @@ variable "sample_app_name" {
 }
 
 variable "sample_app_image" {
-  // public.ecr.aws/m0o7p6d1/aws-apm-java-springboot-main-service:latest
   default = ""
 }
 
@@ -39,11 +38,9 @@ variable "sample_remote_app_image" {
   default = ""
 }
 variable "adot_instrumentation_image" {
-  // public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.32.3
   default = ""
 }
 
 variable "cwagent_image" {
-  // public.ecr.aws/y8s3a7r9/cloudwatch-agent:latest
   default = ""
 }

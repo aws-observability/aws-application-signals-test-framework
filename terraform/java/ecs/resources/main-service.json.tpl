@@ -113,13 +113,13 @@
   },
   {
     "name": "traffic-gen",
-    "image": "curlimages/curl:8.8.0",
+    "image": "amazonlinux:2",
     "cpu": 0,
     "essential": true,
     "command": [
       "sh",
       "-c",
-      "while true; do curl http://localhost:8080/; sleep 15; done"
+      "while true; do wget -qO- http://localhost:8080/; sleep 10; done"
     ]
   }
 ]
