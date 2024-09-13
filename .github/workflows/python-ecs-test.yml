@@ -26,10 +26,6 @@ on:
       validation-result:
         value: ${{ jobs.python-ecs.outputs.validation-result }}
 
-concurrency:
-  group: '${{ github.workflow }} @ ${{ inputs.aws-region }}'
-  cancel-in-progress: false
-
 permissions:
   id-token: write
   contents: read
