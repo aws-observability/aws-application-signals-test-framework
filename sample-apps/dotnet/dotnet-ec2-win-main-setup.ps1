@@ -24,11 +24,12 @@ Write-Host "Installing Cloudwatch Agent"
 msiexec /i amazon-cloudwatch-agent.msi
 $timeout = 30
 $interval = 5
-$filePath = "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1"
+$call_cloudwatch = & "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1"
 $elapsedTime = 0
 
 while ($elapsedTime -lt $timeout) {
-    if (Test-Path $filePath) {
+    if ($call_cloudwatch) {
+        Start-Sleep -Seconds $interval
         Write-Host "Install Finished"
         break
     } else {
@@ -41,7 +42,6 @@ while ($elapsedTime -lt $timeout) {
 if ($elapsedTime -ge $timeout) {
     Write-Host "CloudWatch not found after $timeout seconds."
 }
-Start-Sleep -Seconds 15
 
 Write-Host "Install Finished"
 
