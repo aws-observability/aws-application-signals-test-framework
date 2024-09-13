@@ -40,6 +40,8 @@ if ($elapsedTime -ge $timeout) {
     Write-Host "CloudWatch not found after $timeout seconds."
 }
 
+Start-Sleep -Seconds 15
+
 & "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
 # Get Instrumentation Artifacts and Sample App

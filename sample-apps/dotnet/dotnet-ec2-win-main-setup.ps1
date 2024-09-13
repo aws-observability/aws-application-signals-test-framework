@@ -41,6 +41,7 @@ while ($elapsedTime -lt $timeout) {
 if ($elapsedTime -ge $timeout) {
     Write-Host "CloudWatch not found after $timeout seconds."
 }
+Start-Sleep -Seconds 15
 
 Write-Host "Install Finished"
 
