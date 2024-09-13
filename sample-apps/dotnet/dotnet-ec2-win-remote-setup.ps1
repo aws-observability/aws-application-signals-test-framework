@@ -31,6 +31,7 @@ while ($elapsedTime -lt $timeout) {
         Write-Host "Install Finished"
         break
     } else {
+        $call_cloudwatch = & "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1"
         Write-Host "Cloudwatch Agent not found: $filePath. Checking again in $interval seconds..."
         Start-Sleep -Seconds $interval
         $elapsedTime += $interval
