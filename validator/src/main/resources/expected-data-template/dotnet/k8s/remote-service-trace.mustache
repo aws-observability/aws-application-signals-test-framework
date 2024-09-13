@@ -11,7 +11,7 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^GET remote-service$",
+    "aws.local.operation": "^GET /remote-service$",
     "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
   },
   "metadata": {
@@ -63,7 +63,7 @@
   },
   "annotations": {
     "aws.local.service": "^{{remoteServiceDeploymentName}}$",
-    "aws.local.operation": "^GET healthcheck$",
+    "aws.local.operation": "^GET /healthcheck$",
     "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
   },
   "metadata": {
