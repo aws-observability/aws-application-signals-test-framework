@@ -50,15 +50,14 @@ Write-Host "Install Finished"
 # Leave it here for Debug purpose
 New-NetFirewallRule -DisplayName "Allow TCP 8080" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow
 
+& "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
+
 # Get Instrumentation Artifacts and Sample App
 Invoke-Expression $GetAdotDistroCommand
 
 Invoke-Expression $GetSampleAppCommand
 
 Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force
-
-# Start Cloudwatch Agent
-& "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
 # Config Env variable for Windows EC2
 

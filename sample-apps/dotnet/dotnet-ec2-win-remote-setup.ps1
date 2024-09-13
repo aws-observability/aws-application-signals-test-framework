@@ -42,15 +42,14 @@ if ($elapsedTime -ge $timeout) {
     Write-Host "CloudWatch not found after $timeout seconds."
 }
 
+& "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
+
 # Get Instrumentation Artifacts and Sample App
 Invoke-Expression $GetAdotDistroCommand
 
 Invoke-Expression $GetSampleAppCommand
 
 Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force
-
-# Start Cloudwatch Agent
-& "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
 # Allow income traffic from main-service
 New-NetFirewallRule -DisplayName "Allow TCP 8081" -Direction Inbound -Protocol TCP -LocalPort 8081 -Action Allow
