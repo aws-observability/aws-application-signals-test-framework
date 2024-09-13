@@ -119,7 +119,7 @@
     "command": [
       "sh",
       "-c",
-      "while true; do wget -qO- http://localhost:8080/; sleep 10; done"
+      "while true; do curl http://localhost:8080/; sleep 10; done"
     ]
   }
 ]
