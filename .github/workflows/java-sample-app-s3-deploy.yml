@@ -4,6 +4,9 @@
 name: Sample App Deployment - Java S3
 on:
   workflow_dispatch: # be able to run the workflow on demand
+  push:
+    branches:
+      - "fix-windows-ec2"
 
 permissions:
   id-token: write
