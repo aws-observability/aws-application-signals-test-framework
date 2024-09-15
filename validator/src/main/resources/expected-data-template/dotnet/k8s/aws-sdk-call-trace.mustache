@@ -1,0 +1,56 @@
+[{
+  "name": "^{{serviceName}}$",
+  "http": {
+    "request": {
+      "url": "^{{endpoint}}/aws-sdk-call$",
+      "method": "^GET$"
+    }
+  },
+  "aws": {
+    "account_id": "^{{accountId}}$"
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET /aws-sdk-call$",
+    "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$"
+  },
+  "metadata": {
+    "default": {
+      "K8s.Namespace": "^{{appNamespace}}",
+      "otel.resource.K8s.Workload": "^dotnet-sample-app-deployment-{{testingId}}$",
+      "otel.resource.K8s.Node": "^i-[A-Za-z0-9]{17}$",
+      "otel.resource.K8s.Pod": "^dotnet-sample-app-deployment-{{testingId}}(-[A-Za-z0-9]*)*$",
+      "otel.resource.host.name": "^ip(-[0-9]{1,3}){4}.*$",
+      "PlatformType": "^K8s$",
+      "aws.span.kind": "^LOCAL_ROOT$"
+    }
+  },
+  "subsegments": [
+    {
+      "name": "^S3$",
+      "aws": {
+        "region": "{{region}}",
+        "operation": "^GetBucketLocation$"
+      },
+      "annotations": {
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^GET /aws-sdk-call$",
+        "aws.remote.service": "^AWS::S3$",
+        "aws.remote.operation": "^GetBucketLocation$",
+        "aws.local.environment": "^k8s:{{platformInfo}}/{{appNamespace}}$",
+        "aws.remote.resource.type": "AWS::S3::Bucket"
+      },
+      "metadata": {
+        "default": {
+          "K8s.Namespace": "^{{appNamespace}}$",
+          "PlatformType": "^K8s$",
+          "aws.span.kind": "^CLIENT$"
+        }
+      },
+      "namespace": "^aws$"
+    }
+  ]
+},
+{
+  "name": "^S3$"
+}]

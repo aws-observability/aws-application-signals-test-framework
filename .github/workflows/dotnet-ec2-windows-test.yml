@@ -1,28 +1,28 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# This is a reusable workflow for running the Enablement test for App Signals.
+# This is a reusable workflow for running the DotNet E2E Canary test for Application Signals.
 # It is meant to be called from another workflow.
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
-name: Node EC2 Default Use Case
+name: DotNet EC2 Windows Use Case
 on:
   workflow_call:
     inputs:
       aws-region:
         required: true
         type: string
+      staging_distro_name:
+        required: false
+        default: 'aws-opentelemetry-distro'
+        type: string
       caller-workflow-name:
         required: true
         type: string
-      staging-instrumentation-name:
-        required: false
-        default: '@aws/aws-distro-opentelemetry-node-autoinstrumentation'
-        type: string
     outputs:
       job-started:
-        value: ${{ jobs.node-ec2-default.outputs.job-started }}
+        value: ${{ jobs.dotnet-ec2-windows.outputs.job-started }}
       validation-result:
-        value: ${{ jobs.node-ec2-default.outputs.validation-result }}
+        value: ${{ jobs.dotnet-ec2-windows.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -30,17 +30,16 @@ permissions:
 
 env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
-  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
-  ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/node-sample-app.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  SAMPLE_APP_ZIP: "aws s3 cp s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/dotnet-sample-app.zip ./dotnet-sample-app.zip"
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
+  ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  node-ec2-default:
+  dotnet-ec2-windows:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -51,17 +50,12 @@ jobs:
         id: job-started
         run: echo "job-started=true" >> $GITHUB_OUTPUT
 
-      - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
-
       - uses: actions/checkout@v4
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
-      # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
-      # fails due to transient issues. If it fails here, then we will try again later before the validators
       - name: Initiate Gradlew Daemon
         id: initiate-gradlew
         uses: ./.github/workflows/actions/execute_and_retry
@@ -72,6 +66,9 @@ jobs:
           max_retry: 3
           sleep_time: 60
 
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -81,31 +78,32 @@ jobs:
       - name: Retrieve account
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
-          secret-ids: |
+          secret-ids:
             ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
 
-      # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
       - name: Configure AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
-      - name: Set Get ADOT Instrumentation command environment variable
+      - name: Set Get ADOT Distro command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
-            echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+          if [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
+            # Get staging distro file from staging bucket
+            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }}; Expand-Archive -Path /${{ env.ADOT_DISTRO_NAME }} -DestinationPath ./dotnet-distro" >> $GITHUB_ENV
           else
-            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+            # After Release will switch to latest tag instead of hard code version for canary purpose
+            echo GET_ADOT_DISTRO_COMMAND="wget -O ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-windows.zip; Expand-Archive -Path ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -DestinationPath ./dotnet-distro -Force" >> $GITHUB_ENV
           fi
 
       - name: Set Get CW Agent command environment variable
         run: |
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
-            echo GET_CW_AGENT_RPM_COMMAND="aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
+            # Get cloudwatch agent staging file if triggered by cw-a repo
+            echo GET_CW_AGENT_MSI_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon-cloudwatch-agent.msi ./cw-agent.msi" >> $GITHUB_ENV
           else
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            echo GET_CW_AGENT_MSI_COMMAND= "wget -O ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi" >> $GITHUB_ENV
           fi
 
       - name: Set up terraform
@@ -119,16 +117,16 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/node/ec2/default && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/ec2/windows && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
 
       - name: Deploy sample app via terraform and wait for endpoint to come online
-        working-directory: terraform/node/ec2/default
+        working-directory: terraform/dotnet/ec2/windows
         run: |
-          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online.
-          # There may be occasional failures due to transitivity issues, so try up to 2 times.
+          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
+          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
           # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
           # that it failed at some point
           retry_counter=0
@@ -140,27 +138,27 @@ jobs:
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
-              -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
-              -var="get_adot_instrumentation_command=${{ env.GET_ADOT_INSTRUMENTATION_COMMAND }}" \
+              -var="get_cw_agent_msi_command=${{ env.GET_CW_AGENT_MSI_COMMAND }}" \
+              -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
             || deployment_failed=$?
-
+          
             if [ $deployment_failed -eq 1 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
             fi
-
+          
             # If the success is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
             # resources created from terraform and try again.
             if [ $deployment_failed -eq 1 ]; then
               echo "Destroying terraform"
               terraform destroy -auto-approve \
-                -var="test_id=${{ env.TESTING_ID }}"
-
+                -var="test_id=${{ env.TESTING_ID }}" 
+          
               retry_counter=$(($retry_counter+1))
             else
               # If deployment succeeded, then exit the loop
               break
             fi
-
+          
             if [ $retry_counter -eq $max_retry ]; then
               echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
               exit 1
@@ -168,23 +166,96 @@ jobs:
           done
 
       - name: Get the ec2 instance ami id
-        working-directory: terraform/node/ec2/default
+        working-directory: terraform/dotnet/ec2/windows
         run: |
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
 
-      - name: Get the sample app and EC2 instance information
-        working-directory: terraform/node/ec2/default
+      - name: Get SSM outputs
+        working-directory: terraform/dotnet/ec2/windows
         run: |
-          echo "MAIN_SERVICE_ENDPOINT=localhost:8000" >> $GITHUB_ENV
+          echo "FRONTEND_SSM_ASSOCIATION_ID=$(terraform output frontend_script_association_id)" >> $GITHUB_ENV
+          echo "REMOTE_SSM_ASSOCIATION__ID=$(terraform output remote_script_association_id)" >> $GITHUB_ENV
+
+      - name: Get the sample app endpoint
+        working-directory: terraform/dotnet/ec2/windows
+        run: |
+          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_INSTANCE_ID=$(terraform output remote_service_instance_id)" >> $GITHUB_ENV
+
+# A standard Windows Deployment Script are Expect to run ~5min, plus waiting for SSM to be setup in EC2 instance ~2min
+# 12 Min loose upper timeout bound is designed to allow for a rate situation: in a very small chance,
+# It's possible for SSM document to take up to 8min to run and still produce expect setup outcome
+      - name: Monitor EC2 instances readiness and SSM execute status in Systems Manager
+        timeout-minutes: 12
+        run: |
+          # Allow up to 5 min for EC2 instance connect to SSM
+          max_attempts=30
+          attempt=0
+          interval=10
+
+          check_instance_ready() {
+            local instance_id=$1
+            while [[ $attempt -lt $max_attempts ]]; do
+              state=$(aws ssm describe-instance-information --filters Key=InstanceIds,Values=$instance_id --query "InstanceInformationList[0].PingStatus" --output text)
+              echo "Attempt $((attempt + 1))/$max_attempts: Current SSM state of instance $instance_id: $state"
+
+              if [[ "$state" == "Online" ]]; then
+                echo "Instance $instance_id is 'Online' in Systems Manager and ready."
+                break
+              else
+                echo "Waiting for instance $instance_id to be 'Online' in Systems Manager..."
+                sleep $interval
+                attempt=$((attempt + 1))
+              fi
+            done
+
+            if [[ $attempt -ge $max_attempts ]]; then
+              echo "Timeout reached: Instance $instance_id did not become 'Online' in Systems Manager within expected time."
+              exit 1
+            fi
+          }
+
+          check_instance_ready ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          check_instance_ready ${{ env.REMOTE_SERVICE_INSTANCE_ID }}
+          
+          # Allow up to 10 min for SSM Document to run
+          max_attempts=60
+          attempt=0
+
+          check_status() {
+            local association_id=$1
+
+            while [[ $attempt -lt $max_attempts ]]; do
+              aws ssm describe-association --association-id $association_id
+              local status=$(aws ssm describe-association --association-id $association_id --query "AssociationDescription.Overview.AssociationStatusAggregatedCount.Success" --output text)
+              echo "Attempt $((attempt + 1))/$max_attempts: Current status of SSM Association $association_id: $status"
+              if [[ "$status" == "1" ]]; then
+                echo "SSM Association $association_id succeeded."
+                break
+              else
+                echo "Waiting for SSM Association $association_id to succeed..."
+                sleep $interval
+                attempt=$((attempt + 1))
+              fi
+            done
+
+            if [[ $attempt -ge $max_attempts ]]; then
+              echo "Max attempts reached: SSM Association $association_id did not succeed after $max_attempts attempts."
+              exit 1
+            fi
+          }
+          
+          check_status ${{ env.FRONTEND_SSM_ASSOCIATION_ID }}
+          check_status ${{ env.REMOTE_SSM_ASSOCIATION__ID }}
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:
-          command: "./gradlew :validator:build"
+          command: "./gradlew"
           cleanup: "./gradlew clean"
           max_retry: 3
           sleep_time: 60
@@ -192,16 +263,15 @@ jobs:
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
         id: log-validation
-        run: ./gradlew validator:run --args='-c node/ec2/default/log-validation.yml
+        run: ./gradlew validator:run --args='-c dotnet/ec2/windows/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
-          --region ${{ inputs.aws-region }}
-          --account-id ${{ env.ACCOUNT_ID }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name node-sample-application-${{ env.TESTING_ID }}
-          --remote-service-name node-sample-remote-application-${{ env.TESTING_ID }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
@@ -210,16 +280,15 @@ jobs:
       - name: Validate generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c node/ec2/default/metric-validation.yml
+        run: ./gradlew validator:run --args='-c dotnet/ec2/windows/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
-          --region ${{ inputs.aws-region }}
-          --account-id ${{ env.ACCOUNT_ID }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name node-sample-application-${{ env.TESTING_ID }}
-          --remote-service-name node-sample-remote-application-${{ env.TESTING_ID }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
@@ -228,23 +297,23 @@ jobs:
       - name: Validate generated traces
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c node/ec2/default/trace-validation.yml
+        run: ./gradlew validator:run --args='-c dotnet/ec2/windows/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}
-          --region ${{ inputs.aws-region }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name node-sample-application-${{ env.TESTING_ID }}
-          --remote-service-name node-sample-remote-application-${{ env.TESTING_ID }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
       - name: Refresh AWS Credentials
-        if: ${{ always() && github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
@@ -264,7 +333,7 @@ jobs:
       - name: Terraform destroy
         if: always()
         continue-on-error: true
-        working-directory: terraform/node/ec2/default
+        working-directory: terraform/dotnet/ec2/windows
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"

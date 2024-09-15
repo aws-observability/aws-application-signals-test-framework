@@ -6,7 +6,7 @@
 ## Operator and our sample app and remote service onto a native K8s cluster, call the
 ## APIs, and validate the generated telemetry, including logs, metrics, and traces.
 ## It will then clean up the cluster and EC2 instance it runs on for the next test run.
-name: Node K8s Enablement Canary Testing
+name: Dotnet K8s Enablement Canary Testing
 on:
   schedule:
     - cron: '*/15 * * * *' # run the workflow every 15 minutes
@@ -18,9 +18,9 @@ permissions:
 
 jobs:
   k8s:
-    uses: ./.github/workflows/node-k8s-retry.yml
+    uses: ./.github/workflows/dotnet-k8s-retry.yml
     secrets: inherit
     with:
       # To run in more regions, a cluster must be provisioned manually on EC2 instances in that region
       aws-region: 'us-east-1'
-      caller-workflow-name: 'appsignals-node-e2e-k8s-canary-test'
+      caller-workflow-name: 'appsignals-e2e-dotnet-k8s-canary-test'

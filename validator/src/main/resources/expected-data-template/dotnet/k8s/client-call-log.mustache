@@ -1,0 +1,30 @@
+[{
+  "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
+  "Environment": "^k8s:{{platformInfo}}/{{appNamespace}}$",
+  "K8s.Namespace": "^{{appNamespace}}$",
+  "K8s.Node": "^i-[A-Za-z0-9]{17}$",
+  "K8s.Pod": "^dotnet-sample-app-deployment-{{testingId}}(-[A-Za-z0-9]*)*$",
+  "K8s.Workload": "^dotnet-sample-app-deployment-{{testingId}}$",
+  "PlatformType": "^K8s$",
+  "Service": "^{{serviceName}}$",
+  "Operation": "InternalOperation",
+  "Version": "^1$",
+  "Telemetry.Source": "^LocalRootSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}.*$"
+},
+{
+  "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
+  "Environment": "^k8s:{{platformInfo}}/{{appNamespace}}$",
+  "K8s.Namespace": "^{{appNamespace}}$",
+  "K8s.Node": "^i-[A-Za-z0-9]{17}$",
+  "K8s.Pod": "^dotnet-sample-app-deployment-{{testingId}}(-[A-Za-z0-9]*)*$",
+  "K8s.Workload": "^dotnet-sample-app-deployment-{{testingId}}$",
+  "PlatformType": "^K8s$",
+  "Service": "^{{serviceName}}$",
+  "Operation": "InternalOperation",
+  "Version": "^1$",
+  "RemoteService": "local-root-client-call:80",
+  "RemoteOperation": "GET /",
+  "Telemetry.Source": "^ClientSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}.*$"
+}]
