@@ -23,34 +23,33 @@ plugins {
 
 group = "com.amazon.sampleapp"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_11
-java.targetCompatibility = JavaVersion.VERSION_11
+java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.targetCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
   mavenCentral()
 }
 
 dependencies {
-  implementation(platform("software.amazon.awssdk:bom:2.20.78"))
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-logging")
-  implementation("io.opentelemetry:opentelemetry-api:1.34.1")
-  implementation("software.amazon.awssdk:s3")
-  implementation("software.amazon.awssdk:sts")
-  implementation("com.mysql:mysql-connector-j:8.0.33")
+  implementation ("org.apache.httpcomponents:httpclient:4.5.13")
 }
 
 jib {
+  from {
+    image = "openjdk:8-jdk"
+  }
+
   to {
     image = "<ECR_IMAGE_LINK>:<TAG>"
   }
-
   container {
-    mainClass = "com.amazon.sampleapp.FrontendService"
+    mainClass = "com.amazon.sampleapp.RemoteService"
     ports = listOf("8080")
   }
 }
 
 application {
-  mainClass.set("com.amazon.sampleapp.FrontendService")
+  mainClass.set("com.amazon.sampleapp.RemoteService")
 }
