@@ -1,0 +1,13 @@
+[{
+    "ECS.Cluster": "^{{platformInfo}}$",
+    "ECS.TaskDefinitionFamily": "^{{serviceName}}$",
+    "ECS.TaskDefinitionRevision": "[0-9]*",
+    "ECS.TaskId": "[A-Za-z0-9]*",
+    "Environment": "^ecs:{{platformInfo}}$",
+    "Operation": "GET /",
+    "PlatformType": "^AWS::ECS$",
+    "Service": "^{{serviceName}}$",
+    "Telemetry.Agent": "^CWAgent\/([A-Za-z0-9.-]*)$",
+    "Telemetry.SDK": "^opentelemetry,([A-Za-z0-9-.]*),java,Auto$",
+    "Telemetry.Source": "^LocalRootSpan$"
+}]

@@ -1,0 +1,6 @@
+-
+  validationType: "trace"
+  callingType: "none"
+  httpMethod: "get"
+  httpPath: "/"
+  expectedTraceTemplate: "PYTHON_ECS_HC_CALL_TRACE"

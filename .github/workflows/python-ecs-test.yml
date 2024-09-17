@@ -1,0 +1,276 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# This is a reusable workflow for running the E2E test for App Signals.
+# It is meant to be called from another workflow.
+# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
+name: Python ECS Use Case
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        required: true
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+      adot-image-name:
+        required: false
+        type: string
+      cwagent-image-name:
+        required: false
+        type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.python-ecs.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.python-ecs.outputs.validation-result }}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
+  CLUSTER_NAME: e2e-test-python
+  SAMPLE_APP_NAME: main-service-python
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+
+jobs:
+  python-ecs:
+    runs-on: ubuntu-latest
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
+    steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
+      - name: Generate testing id and sample app namespace
+        run: |
+          echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v4
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+        # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
+        # fails due to transient issues. If it fails here, then we will try again later before the validators
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+            PYTHON_MAIN_SAMPLE_APP_IMAGE, e2e-test/python-main-sample-app-image
+            PYTHON_REMOTE_SAMPLE_APP_IMAGE, e2e-test/python-remote-sample-app-image
+
+      # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
+      - name: Configure AWS Credentials
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ecs && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Set Sample App Image
+        run: |
+          echo MAIN_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
+          echo REMOTE_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
+
+      - name: Set ADOT Python image environment variable
+        run: |
+          if [ "${{ github.event.repository.name }}" = "aws-otel-python-instrumentation" ]; then
+            # Use the staging image build by the ADOT Python repo
+            echo ADOT_INSTRUMENTATION_IMAGE_URI=="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
+          else
+            ADOT_INSTRUMENTATION_IMAGE_TAG=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
+            echo ADOT_INSTRUMENTATION_IMAGE_URI="public.ecr.aws/aws-observability/adot-autoinstrumentation-python:$ADOT_INSTRUMENTATION_IMAGE_TAG" >> $GITHUB_ENV
+          fi
+
+      # Switch to use the public image for CW Agent
+      - name: Set Get CW Agent command environment variable
+        run: |
+          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+            echo CWAGENT_IMAGE_URI="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
+          else
+            # echo CWAGENT_IMAGE_URI="public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest" >> $GITHUB_ENV
+            echo CWAGENT_IMAGE_URI="public.ecr.aws/y8s3a7r9/cloudwatch-agent:latest" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy sample app via terraform and wait for the endpoint to come online
+        id: deploy-sample-app
+        working-directory: terraform/python/ecs
+        run: |
+          # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online. 
+          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
+          # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
+          # that it failed at some point
+          retry_counter=0
+          max_retry=2
+          while [ $retry_counter -lt $max_retry ]; do
+            echo "Attempt $retry_counter"
+            deployment_failed=0
+            terraform apply -auto-approve \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="ecs_cluster_name=${{ env.CLUSTER_NAME }}-${{ env.TESTING_ID }}" \
+              -var="sample_app_name=${{ env.SAMPLE_APP_NAME }}-${{ env.TESTING_ID }}" \
+              -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_URI }}" \
+              -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_URI }}" \
+              -var="adot_instrumentation_image=${{ env.ADOT_INSTRUMENTATION_IMAGE_URI }}" \
+              -var="cwagent_image=${{ env.CWAGENT_IMAGE_URI }}" \
+            || deployment_failed=$?
+          
+            if [ $deployment_failed -ne 0 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
+            fi
+          
+            # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
+            # resources created from terraform and try again.
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Destroying terraform"
+              terraform destroy -auto-approve \
+                -var="test_id=${{ env.TESTING_ID }}" \
+                -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+                -var="ecs_cluster_name=${{ env.CLUSTER_NAME }}-${{ env.TESTING_ID }}" \
+                -var="sample_app_name=${{ env.SAMPLE_APP_NAME }}-${{ env.TESTING_ID }}" \
+                -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_URI }}" \
+                -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_URI }}" \
+                -var="adot_instrumentation_image=${{ env.ADOT_INSTRUMENTATION_IMAGE_URI }}" \
+                -var="cwagent_image=${{ env.CWAGENT_IMAGE_URI }}"
+          
+              retry_counter=$(($retry_counter+1))
+            else
+              # If deployment succeeded, then exit the loop
+              break
+            fi
+          
+            if [ $retry_counter -ge $max_retry ]; then
+              echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
+              exit 1
+            fi
+          done
+
+      - name: Sleep to Wait for Canary Generated and Log Artifact Versions
+        run: |
+          sleep 120
+          echo "ADOT Image: ${{ env.ADOT_INSTRUMENTATION_IMAGE_URI }}";
+          echo "CW Agent Image: ${{ env.CWAGENT_IMAGE_URI }}";
+
+      - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew == 'failure'
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      # Validation for app signals telemetry data
+      - name: Call endpoint and validate generated EMF logs
+        id: log-validation
+        if: steps.deploy-sample-app.outcome == 'success' && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ecs/log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --platform-info ${{ env.CLUSTER_NAME }}-${{ env.TESTING_ID }}
+          --service-name ${{env.SAMPLE_APP_NAME }}-${{ env.TESTING_ID }}
+          --rollup'
+
+      - name: Call endpoints and validate generated metrics
+        id: metric-validation
+        if: (steps.deploy-sample-app.outcome == 'success' || steps.log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ecs/metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --platform-info ${{ env.CLUSTER_NAME }}-${{ env.TESTING_ID }}
+          --service-name ${{env.SAMPLE_APP_NAME }}-${{ env.TESTING_ID }}
+          --rollup'
+
+      - name: Call endpoints and validate generated traces
+        id: trace-validation
+        if: (steps.deploy-sample-app.outcome == 'success' || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ecs/trace-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --platform-info ${{ env.CLUSTER_NAME }}-${{ env.TESTING_ID }}
+          --service-name ${{env.SAMPLE_APP_NAME }}-${{ env.TESTING_ID }}
+          --rollup'
+
+      - name: Refresh AWS Credentials
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Save test results
+        if: always()
+        id: validation-result
+        run: |
+          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+            echo "validation-result=success" >> $GITHUB_OUTPUT
+          else
+            echo "validation-result=failure" >> $GITHUB_OUTPUT
+          fi
+
+      # Clean up Procedures
+
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        working-directory: terraform/python/ecs
+        run: |
+          terraform destroy -auto-approve \
+            -var="test_id=${{ env.TESTING_ID }}" \
+            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+            -var="ecs_cluster_name=${{ env.CLUSTER_NAME }}-${{ env.TESTING_ID }}" \
+            -var="sample_app_name=${{ env.SAMPLE_APP_NAME }}-${{ env.TESTING_ID }}" \
+            -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_URI }}" \
+            -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_URI }}" \
+            -var="adot_instrumentation_image=${{ env.ADOT_INSTRUMENTATION_IMAGE_URI }}" \
+            -var="cwagent_image=${{ env.CWAGENT_IMAGE_URI }}"

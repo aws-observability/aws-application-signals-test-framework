@@ -1,0 +1,6 @@
+-
+  validationType: "trace"
+  callingType: "none"
+  httpMethod: "get"
+  httpPath: "/"
+  expectedTraceTemplate: "JAVA_ECS_HC_CALL_TRACE"

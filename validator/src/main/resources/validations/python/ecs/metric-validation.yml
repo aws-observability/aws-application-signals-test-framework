@@ -1,0 +1,4 @@
+-
+  validationType: "cw-metric"
+  callingType: "none"
+  expectedMetricTemplate: "PYTHON_ECS_HC_CALL_METRIC"
