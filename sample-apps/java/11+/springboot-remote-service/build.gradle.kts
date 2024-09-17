@@ -13,6 +13,12 @@
  * permissions and limitations under the License.
  */
 
+val javaVersion = if (project.hasProperty("javaVersion")) {
+  JavaVersion.toVersion(project.property("javaVersion").toString())
+} else {
+  JavaVersion.VERSION_11
+}
+
 plugins {
   java
   application
@@ -23,8 +29,8 @@ plugins {
 
 group = "com.amazon.sampleapp"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_11
-java.targetCompatibility = JavaVersion.VERSION_11
+java.sourceCompatibility = javaVersion
+java.targetCompatibility = javaVersion
 
 repositories {
   mavenCentral()
@@ -33,9 +39,15 @@ repositories {
 dependencies {
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-logging")
+  implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.20")
+  testImplementation("org.jetbrains.kotlin:kotlin-test:2.0.20")
 }
 
 jib {
+  from {
+    image = "openjdk:$javaVersion-jdk"
+  }
+
   to {
     image = "<ECR_IMAGE_LINK>:<TAG>"
   }
