@@ -3,14 +3,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
 
 -
   metricName: Latency
@@ -24,7 +21,21 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /aws-sdk-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -41,18 +52,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteService
       value: AWS::S3
@@ -66,7 +66,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -86,7 +86,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -94,11 +94,11 @@
       name: RemoteService
       value: AWS::S3
     -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
-    -
       name: RemoteResourceIdentifier
       value: {{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
 -
   metricName: Latency
@@ -109,121 +109,19 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
     -
       name: RemoteService
       value: AWS::S3
-    -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
     -
       name: RemoteResourceIdentifier
       value: {{testingId}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /aws-sdk-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
     -
       name: RemoteResourceType
       value: AWS::S3::Bucket
-    -
-      name: RemoteResourceIdentifier
-      value: {{testingId}}
 
 -
   metricName: Error
@@ -234,7 +132,86 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /aws-sdk-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /aws-sdk-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteService
+      value: AWS::S3
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /aws-sdk-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -242,12 +219,45 @@
       name: RemoteService
       value: AWS::S3
     -
+      name: RemoteResourceIdentifier
+      value: {{testingId}}
+    -
       name: RemoteResourceType
       value: AWS::S3::Bucket
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
     -
       name: RemoteResourceIdentifier
       value: {{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
 
 -
   metricName: Fault
@@ -261,7 +271,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
 
 -
   metricName: Fault
@@ -275,7 +285,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -292,18 +302,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteService
       value: AWS::S3
@@ -317,7 +316,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -337,7 +336,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -345,11 +344,11 @@
       name: RemoteService
       value: AWS::S3
     -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
-    -
       name: RemoteResourceIdentifier
       value: {{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket
 
 -
   metricName: Fault
@@ -360,7 +359,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -368,8 +367,8 @@
       name: RemoteService
       value: AWS::S3
     -
-      name: RemoteResourceType
-      value: AWS::S3::Bucket
-    -
       name: RemoteResourceIdentifier
       value: {{testingId}}
+    -
+      name: RemoteResourceType
+      value: AWS::S3::Bucket

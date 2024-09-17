@@ -23,4 +23,4 @@ jobs:
     with:
       # To run in more regions, a cluster must be provisioned manually on EC2 instances in that region
       aws-region: 'us-east-1'
-      caller-workflow-name: 'appsignals-e2e-node-k8s-canary-test'
+      caller-workflow-name: 'appsignals-node-e2e-k8s-canary-test'

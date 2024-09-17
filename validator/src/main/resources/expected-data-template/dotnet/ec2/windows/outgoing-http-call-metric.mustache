@@ -3,14 +3,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET /outgoing-http-call
-    -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
 
 -
   metricName: Latency
@@ -24,35 +21,21 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-    -
-      name: RemoteOperation
-      value: GET /
-    -
-      name: RemoteService
-      value: aws.amazon.com:443
+      value: ec2:default
 
 -
   metricName: Latency
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
+      name: Operation
+      value: GET /outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -69,7 +52,24 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /
+    -
+      name: RemoteService
+      value: aws.amazon.com:443
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteService
       value: aws.amazon.com:443
@@ -79,14 +79,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET /outgoing-http-call
-    -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
 
 -
   metricName: Error
@@ -100,7 +97,21 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /outgoing-http-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -117,18 +128,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -145,7 +145,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteService
       value: aws.amazon.com:443
@@ -155,14 +155,11 @@
   namespace: {{metricNamespace}}
   dimensions:
     -
-      name: Operation
-      value: GET /outgoing-http-call
-    -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
 
 -
   metricName: Fault
@@ -176,7 +173,21 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /outgoing-http-call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -193,18 +204,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -221,7 +221,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: k8s:{{platformInfo}}/{{appNamespace}}
+      value: ec2:default
     -
       name: RemoteService
       value: aws.amazon.com:443

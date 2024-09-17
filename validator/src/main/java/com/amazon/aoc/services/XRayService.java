@@ -26,7 +26,6 @@ import com.amazonaws.services.xray.model.TraceSummary;
 import java.util.Date;
 import java.util.List;
 import org.joda.time.DateTime;
-import lombok.extern.log4j.Log4j2;
 
 public class XRayService {
   private AWSXRay awsxRay;

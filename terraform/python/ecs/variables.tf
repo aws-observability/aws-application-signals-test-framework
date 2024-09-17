@@ -19,7 +19,7 @@ variable "test_id" {
 }
 
 variable "aws_region" {
-  default = "us-west-2"
+  default = "<e.g. us-east-1>"
 }
 
 variable "ecs_cluster_name" {

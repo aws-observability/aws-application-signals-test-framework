@@ -13,34 +13,26 @@
 # permissions and limitations under the License.
 # -------------------------------------------------------------------------
 
-
-variable "test_id" {
-  default = "dummy-123"
+output "sample_app_remote_service_private_ip" {
+  value = aws_instance.remote_service_instance.private_ip
 }
 
-variable "aws_region" {
-  default = "<e.g. us-east-1>"
+output "main_service_instance_id" {
+  value = aws_instance.main_service_instance.id
 }
 
-variable "ecs_cluster_name" {
-  default = "e2e-test-java"
+output "remote_service_instance_id" {
+  value = aws_instance.remote_service_instance.id
 }
 
-variable "sample_app_name" {
-  default = ""
+output "ec2_instance_ami" {
+  value = data.aws_ami.ami.id
 }
 
-variable "sample_app_image" {
-  default = ""
+output "frontend_script_association_id" {
+  value = aws_ssm_association.main_service_association.id
 }
 
-variable "sample_remote_app_image" {
-  default = ""
-}
-variable "adot_instrumentation_image" {
-  default = ""
-}
-
-variable "cwagent_image" {
-  default = ""
+output "remote_script_association_id" {
+  value = aws_ssm_association.remote_service_association.id
 }
