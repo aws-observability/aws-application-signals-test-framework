@@ -114,7 +114,7 @@ jobs:
         run: |
           if [ "${{ github.event.repository.name }}" = "aws-otel-python-instrumentation" ]; then
             # Use the staging image build by the ADOT Python repo
-            echo ADOT_INSTRUMENTATION_IMAGE_URI=="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
+            echo ADOT_INSTRUMENTATION_IMAGE_URI="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
           else
             ADOT_INSTRUMENTATION_IMAGE_TAG=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
             echo ADOT_INSTRUMENTATION_IMAGE_URI="public.ecr.aws/aws-observability/adot-autoinstrumentation-python:$ADOT_INSTRUMENTATION_IMAGE_TAG" >> $GITHUB_ENV
