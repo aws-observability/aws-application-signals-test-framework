@@ -93,6 +93,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
+# TODO: Use Latest version from Maven by latest_version=$(curl -s "https://search.maven.org/solrsearch/select?q=g:software.amazon.opentelemetry+a:aws-opentelemetry-agent&core=gav&rows=1&wt=json" | jq -r '.response.docs[0].v')
       - name: Set Get ADOT Wheel command environment variable
         run: |
           if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
