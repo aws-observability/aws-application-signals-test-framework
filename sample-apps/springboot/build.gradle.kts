@@ -16,7 +16,7 @@
 val javaVersion = if (project.hasProperty("javaVersion")) {
   JavaVersion.toVersion(project.property("javaVersion").toString())
 } else {
-  JavaVersion.VERSION_11
+  JavaVersion.VERSION_22
 }
 
 plugins {
@@ -25,7 +25,13 @@ plugins {
   id("org.springframework.boot")
   id("io.spring.dependency-management") version "1.1.0"
   id("com.google.cloud.tools.jib")
-  id("org.jetbrains.kotlin.jvm") version "2.0.0"
+  kotlin("jvm") version "2.0.20"
+}
+
+kotlin {
+  jvmToolchain {
+    languageVersion.set(JavaLanguageVersion.of(22)) // Set the desired Java version
+  }
 }
 
 group = "com.amazon.sampleapp"
@@ -45,6 +51,8 @@ dependencies {
   implementation("software.amazon.awssdk:s3")
   implementation("software.amazon.awssdk:sts")
   implementation("com.mysql:mysql-connector-j:8.0.33")
+  implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.20")
+  testImplementation("org.jetbrains.kotlin:kotlin-test:2.0.20")
 }
 
 jib {
