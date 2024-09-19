@@ -13,6 +13,12 @@
  * permissions and limitations under the License.
  */
 
+val javaVersion = if (project.hasProperty("javaVersion")) {
+  JavaVersion.toVersion(project.property("javaVersion").toString())
+} else {
+  JavaVersion.VERSION_11
+}
+
 plugins {
   java
   application
@@ -23,8 +29,8 @@ plugins {
 
 group = "com.amazon.sampleapp"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_11
-java.targetCompatibility = JavaVersion.VERSION_11
+java.sourceCompatibility = javaVersion
+java.targetCompatibility = javaVersion
 
 repositories {
   mavenCentral()
