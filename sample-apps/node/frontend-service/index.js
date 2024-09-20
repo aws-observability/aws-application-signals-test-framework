@@ -6,7 +6,7 @@ const mysql = require('mysql2');
 const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
 const { BedrockAgentClient, ListPromptsCommand, ListAgentVersionsCommand, GetKnowledgeBaseCommand, GetDataSourceCommand } = require('@aws-sdk/client-bedrock-agent');
 const { BedrockAgentRuntimeClient, InvokeAgentCommand, GetAgentMemoryCommand, RetrieveCommand } = require('@aws-sdk/client-bedrock-agent-runtime')
-const { BedrockClient, ListFoundationModelsCommand } = require('@aws-sdk/client-bedrock');
+const { BedrockClient, GetGuardrailCommand } = require('@aws-sdk/client-bedrock');
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
 
 const PORT = parseInt(process.env.SAMPLE_APP_PORT || '8000', 10);
@@ -202,7 +202,7 @@ Response - Full response for RetrieveCommand: ${JSON.stringify(resp, null, 2)}
 app.get('/bedrock', async (req, res) => {
   const bedrockClient = new BedrockClient({ region: 'us-east-1' });
   try {
-    const resp = await bedrockClient.send(new ListFoundationModelsCommand());
+    const resp = await bedrockClient.send(new GetGuardrailCommand({ guardrailIdentifier: 'yalzttk80hfi' }));
 
     // Decode the response body
     // const decoder = new TextDecoder('utf-8');
@@ -210,7 +210,7 @@ app.get('/bedrock', async (req, res) => {
     const log = `
 =================================================
 /bedrock called successfully!
-Response - First model in the list: ${JSON.stringify(resp.modelSummaries[0], null, 2)}
+Response - Full response from GetGuardrailCommand: ${JSON.stringify(resp, null, 2)}
 =================================================`
     console.log(log);
     res.send(log);
