@@ -78,7 +78,7 @@ Response - First prompt in the list for ListPromptsCommand: ${JSON.stringify(res
     if (e instanceof Error) {
       const log = `
 =================================================
-/bedrock-agent call failed: ${e.message}
+/bedrock-agent call failed: ${e.stack}
 =================================================`
       console.log(log);
       res.send(log);
