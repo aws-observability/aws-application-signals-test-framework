@@ -4,6 +4,10 @@ const http = require('http');
 const express = require('express');
 const mysql = require('mysql2');
 const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
+const { BedrockAgentClient, ListPromptsCommand, ListAgentVersionsCommand, GetKnowledgeBaseCommand, GetDataSourceCommand } = require('@aws-sdk/client-bedrock-agent');
+const { BedrockAgentRuntimeClient, InvokeAgentCommand, GetAgentMemoryCommand, RetrieveCommand } = require('@aws-sdk/client-bedrock-agent-runtime')
+const { BedrockClient, ListFoundationModelsCommand } = require('@aws-sdk/client-bedrock');
+const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
 
 const PORT = parseInt(process.env.SAMPLE_APP_PORT || '8000', 10);
 
@@ -50,6 +54,215 @@ app.get('/aws-sdk-call', async (req, res) => {
     if (e instanceof Error) {
       console.log('/aws-sdk-call called successfully')
       res.send('/aws-sdk-call called successfully');
+    }
+  }
+});
+
+// done
+app.get('/bedrock-agent', async (req, res) => {
+  const bedrockAgentClient = new BedrockAgentClient({ region: 'us-east-1' });
+  try {
+    const resp = await bedrockAgentClient.send(new ListPromptsCommand({}));
+
+    // Decode the response body
+    // const decoder = new TextDecoder('utf-8');
+    // const decodedResponseBody = decoder.decode(resp);
+    const log = `
+=================================================
+/bedrock-agent called successfully!
+Response - First prompt in the list for ListPromptsCommand: ${JSON.stringify(resp.promptSummaries[0], null, 2)}
+=================================================`
+    console.log(log);
+    res.send(log);
+  } catch (e) {
+    if (e instanceof Error) {
+      const log = `
+=================================================
+/bedrock-agent call failed: ${e.message}
+=================================================`
+      console.log(log);
+      res.send(log);
+    }
+  }
+});
+
+// done
+app.get('/bedrock-agent-agent-operation', async (req, res) => {
+  const bedrockAgentClient = new BedrockAgentClient({ region: 'us-east-1' });
+  try {
+    const resp = await bedrockAgentClient.send(new ListAgentVersionsCommand({ agentId: 'JMVCQS1RBJ'}));
+
+    // Decode the response body
+    // const decoder = new TextDecoder('utf-8');
+    // const decodedResponseBody = decoder.decode(resp);
+    const log = `
+=================================================
+/bedrock-agent-agent-operation called successfully!
+Response - First agent version in the list for ListAgentVersionsCommand: ${JSON.stringify(resp.agentVersionSummaries[0], null, 2)}
+=================================================`
+    console.log(log);
+    res.send(log);
+  } catch (e) {
+    if (e instanceof Error) {
+      const log = `
+=================================================
+/bedrock-agent-agent-operation call failed: ${e.message}
+=================================================`
+      console.log(log);
+      res.send(log);
+    }
+  }
+});
+
+// done
+app.get('/bedrock-agent-knowledge-base-operation', async (req, res) => {
+  const bedrockAgentClient = new BedrockAgentClient({ region: 'us-east-1' });
+  try {
+    const resp = await bedrockAgentClient.send(new GetKnowledgeBaseCommand({ knowledgeBaseId: 'D9UMGXCCZJ' }));
+
+    // Decode the response body
+    // const decoder = new TextDecoder('utf-8');
+    // const decodedResponseBody = decoder.decode(resp);
+    const log = `
+=================================================
+/bedrock-agent-knowledge-base-operation called successfully!
+Response - Knowledge base name for GetKnowledgeBaseCommand({ knowledgeBaseId: 'D9UMGXCCZJ' }): ${JSON.stringify(resp.knowledgeBase.name, null, 2)}
+=================================================`
+    console.log(log);
+    res.send(log);
+  } catch (e) {
+    if (e instanceof Error) {
+      const log = `
+=================================================
+/bedrock-agent-knowledge-base-operation call failed: ${e.message}
+=================================================`
+      console.log(log);
+      res.send(log);
+    }
+  }
+});
+
+// done
+app.get('/bedrock-agent-data-source-operation', async (req, res) => {
+  const bedrockAgentClient = new BedrockAgentClient({ region: 'us-east-1' });
+  try {
+    const resp = await bedrockAgentClient.send(new GetDataSourceCommand({ knowledgeBaseId: 'D9UMGXCCZJ', dataSourceId: 'XQDUXSYBHD' }));
+
+    // Decode the response body
+    // const decoder = new TextDecoder('utf-8');
+    // const decodedResponseBody = decoder.decode(resp);
+    const log = `
+=================================================
+/bedrock-agent-data-source-operation called successfully!
+Response - Data source name for GetDataSourceCommand: ${JSON.stringify(resp.dataSource.name, null, 2)}
+=================================================`
+    console.log(log);
+    res.send(log);
+  } catch (e) {
+    if (e instanceof Error) {
+      const log = `
+=================================================
+/bedrock-agent-data-source-operation call failed: ${e.message}
+=================================================`
+      console.log(log);
+      res.send(log);
+    }
+  }
+});
+
+// done
+app.get('/bedrock-agent-runtime', async (req, res) => {
+  const bedrockAgentRuntimeClient = new BedrockAgentRuntimeClient({ region: 'us-east-1' });
+  try {
+    const resp = await bedrockAgentRuntimeClient.send(new RetrieveCommand({ knowledgeBaseId: 'D9UMGXCCZJ', retrievalQuery: { text: 'query' } }));
+
+    // Decode the response body
+    // const decoder = new TextDecoder('utf-8');
+    // const decodedResponseBody = decoder.decode(resp);
+    const log = `
+=================================================
+/bedrock-agent-runtime called successfully!
+Response - Full response for RetrieveCommand: ${JSON.stringify(resp, null, 2)}
+=================================================`
+    console.log(log);
+    res.send(log);
+  } catch (e) {
+    if (e instanceof Error) {
+      const log = `
+=================================================
+/bedrock-agent-runtime call failed: ${e.message}
+=================================================`
+      console.log(log);
+      res.send(log);
+    }
+  }
+});
+
+// done
+app.get('/bedrock', async (req, res) => {
+  const bedrockClient = new BedrockClient({ region: 'us-east-1' });
+  try {
+    const resp = await bedrockClient.send(new ListFoundationModelsCommand());
+
+    // Decode the response body
+    // const decoder = new TextDecoder('utf-8');
+    // const decodedResponseBody = decoder.decode(resp);
+    const log = `
+=================================================
+/bedrock called successfully!
+Response - First model in the list: ${JSON.stringify(resp.modelSummaries[0], null, 2)}
+=================================================`
+    console.log(log);
+    res.send(log);
+  } catch (e) {
+    if (e instanceof Error) {
+      const log = `
+=================================================
+/bedrock call failed: ${e.message}
+=================================================`
+      console.log(log);
+      res.send(log);
+    }
+  }
+});
+
+// done
+app.get('/bedrock-runtime', async (req, res) => {
+  const bedrockRuntimeClient = new BedrockRuntimeClient({ region: 'us-east-1' });
+  const prompt = 'Write me a small haiku about working at AWS'
+  const input = {
+    modelId:"amazon.titan-text-lite-v1",
+    contentType:"application/json",
+    accept:"application/json",
+    body: JSON.stringify({
+      inputText:prompt,
+      textGenerationConfig: {
+        maxTokenCount: 512
+      }
+    })
+  };
+  try {
+    const command = new InvokeModelCommand(input);
+    const resp = await bedrockRuntimeClient.send(command)
+
+    // Decode the response body
+    const decoder = new TextDecoder('utf-8');
+    const decodedResponseBody = JSON.stringify(JSON.parse(decoder.decode(resp.body)), null, 2);
+    const log = `
+=================================================
+/bedrock-runtime called successfully!
+Response: ${decodedResponseBody}
+=================================================`
+    console.log(log);
+    res.send(log);
+  } catch (e) {
+    if (e instanceof Error) {
+      const log = `
+=================================================
+/bedrock-runtime call failed: ${e.message}
+=================================================`
+      console.log(log)
+      res.send(log);
     }
   }
 });

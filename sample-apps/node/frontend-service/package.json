@@ -10,7 +10,12 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "@aws-sdk/client-bedrock": "3.654.0",
+    "@aws-sdk/client-bedrock-agent": "3.654.0",
+    "@aws-sdk/client-bedrock-agent-runtime": "3.654.0",
+    "@aws-sdk/client-bedrock-runtime": "3.654.0",
     "@aws-sdk/client-s3": "^3.621.0",
+    "@aws/aws-distro-opentelemetry-node-autoinstrumentation": "file:aws-aws-distro-opentelemetry-node-autoinstrumentation-0.1.0-dev0.tgz",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.6",
     "express": "^4.21.0",
