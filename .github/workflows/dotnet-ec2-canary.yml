@@ -10,9 +10,6 @@ on:
   workflow_dispatch: # be able to run the workflow on demand
   schedule:
     - cron: '*/15 * * * *' # run the workflow every 15 minutes
-  push:
-    branches:
-      - "fix-windows-ec2"
 
 permissions:
   id-token: write
