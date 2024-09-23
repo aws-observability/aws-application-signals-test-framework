@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -170,11 +171,13 @@ public class FrontendServiceController {
   @ResponseBody
   public String mysql() {
     logger.info("mysql received");
+    final String rdsMySQLClusterPassword = new String(new Base64().decode(System.getenv("RDS_MYSQL_CLUSTER_PASSWORD").getBytes()));
+
     try {
       Connection connection = DriverManager.getConnection(
               System.getenv().get("RDS_MYSQL_CLUSTER_CONNECTION_URL"),
               System.getenv().get("RDS_MYSQL_CLUSTER_USERNAME"),
-              System.getenv().get("RDS_MYSQL_CLUSTER_PASSWORD"));
+              rdsMySQLClusterPassword);
       Statement statement = connection.createStatement();
       statement.executeQuery("SELECT * FROM tables LIMIT 1;");
     } catch (SQLException e) {

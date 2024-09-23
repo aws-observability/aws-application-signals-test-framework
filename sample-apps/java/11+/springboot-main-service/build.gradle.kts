@@ -45,7 +45,7 @@ dependencies {
   implementation("io.opentelemetry:opentelemetry-api:1.34.1")
   implementation("software.amazon.awssdk:s3")
   implementation("software.amazon.awssdk:sts")
-  implementation("com.mysql:mysql-connector-j:8.0.33")
+  implementation("com.mysql:mysql-connector-j:8.4.0")
   implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.20")
   testImplementation("org.jetbrains.kotlin:kotlin-test:2.0.20")
 }
