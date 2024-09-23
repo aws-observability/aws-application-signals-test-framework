@@ -14,8 +14,9 @@ param (
 $ProgressPreference = 'SilentlyContinue'
 
 # Install Dotnet
-wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1 | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
-.\dotnet-install.ps1 -Version 8.0.302 | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
+Write-Host "Installing Dotnet" | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
+wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
+.\dotnet-install.ps1 -Version 8.0.302
 
 # Install and start Cloudwatch Agent
 Invoke-Expression $GetCloudwatchAgentCommand | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
