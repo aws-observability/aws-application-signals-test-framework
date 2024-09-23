@@ -1,0 +1,4 @@
+-
+  validationType: "cw-log"
+  callingType: "none"
+  expectedLogStructureTemplate: "JAVA_ECS_HC_CALL_LOG"

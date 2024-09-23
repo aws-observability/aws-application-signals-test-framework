@@ -1,0 +1,74 @@
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ecs:{{platformInfo}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ecs:{{platformInfo}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ecs:{{platformInfo}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ecs:{{platformInfo}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET /
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ecs:{{platformInfo}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ecs:{{platformInfo}}

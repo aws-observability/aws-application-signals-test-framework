@@ -1,0 +1,30 @@
+[
+  {
+    "name": "^{{serviceName}}$",
+    "http": {
+      "request": {
+        "url": "^http://localhost:8080/$",
+        "method": "^GET$"
+      }
+    },
+    "aws": {
+      "account_id": "^{{accountId}}$"
+    },
+    "annotations": {
+      "aws.local.service": "^{{serviceName}}$",
+      "aws.local.operation": "^GET /$",
+      "aws.local.environment": "^ecs:{{platformInfo}}$"
+    },
+    "metadata": {
+      "default": {
+        "otel.resource.aws.ecs.launchtype": "^fargate$",
+        "otel.resource.aws.ecs.task.revision": "[0-9]*",
+        "otel.resource.cloud.platform": "^aws_ecs$",
+        "aws.ecs.cluster.name": "^{{platformInfo}}$",
+        "aws.ecs.task.id": "[A-Za-z0-9]*",
+        "PlatformType": "^AWS::ECS$",
+        "aws.span.kind": "^LOCAL_ROOT$"
+      }
+    }
+  }
+]
