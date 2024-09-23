@@ -14,13 +14,13 @@ param (
 $ProgressPreference = 'SilentlyContinue'
 
 # Install Dotnet
-wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
-.\dotnet-install.ps1 -Version 8.0.302
+wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1 | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
+.\dotnet-install.ps1 -Version 8.0.302 | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 # Install and start Cloudwatch Agent
-Invoke-Expression $GetCloudwatchAgentCommand
+Invoke-Expression $GetCloudwatchAgentCommand | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
-Write-Host "Installing Cloudwatch Agent"
+Write-Host "Installing Cloudwatch Agent" | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 msiexec /i amazon-cloudwatch-agent.msi
 $timeout = 30
 $interval = 5
@@ -44,7 +44,7 @@ if ($elapsedTime -ge $timeout) {
     Write-Host "CloudWatch not found after $timeout seconds."
 }
 
-Write-Host "Install Finished"
+Write-Host "Install Finished" | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 # Even after this step, it only expose 8080 to localhost and local (EC2) network on current config, so it's safe
 # Leave it here for Debug purpose
@@ -53,11 +53,11 @@ New-NetFirewallRule -DisplayName "Allow TCP 8080" -Direction Inbound -Protocol T
 & "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
 # Get Instrumentation Artifacts and Sample App
-Invoke-Expression $GetAdotDistroCommand
+Invoke-Expression $GetAdotDistroCommand | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
-Invoke-Expression $GetSampleAppCommand
+Invoke-Expression $GetSampleAppCommand | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
-Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force
+Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 # Config Env variable for Windows EC2
 
@@ -83,7 +83,7 @@ $env:OTEL_TRACES_SAMPLER = "always_on"
 $env:ASPNETCORE_URLS = "http://0.0.0.0:8080"
 
 
-dotnet build
+dotnet build | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 
 Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_frontend_service.dll"
@@ -94,18 +94,18 @@ Start-Sleep -Seconds 10
 # Deploy Traffic Generator
 
 # Install node and setup path for node
-wget -O nodejs.zip https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip
-Expand-Archive -Path .\nodejs.zip -DestinationPath .\nodejs -Force
+wget -O nodejs.zip https://nodejs.org/dist/v20.16.0/node-v20.16.0-win-x64.zip | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
+Expand-Archive -Path .\nodejs.zip -DestinationPath .\nodejs -Force | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 $currentdir = Get-Location
-Write-Host $currentdir
+Write-Host $currentdir | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 $env:Path += ";$currentdir" + "\nodejs\node-v20.16.0-win-x64"
 
 # Bring in the traffic generator files to EC2 Instance
 aws s3 cp "s3://aws-appsignals-sample-app-prod-$AWSRegion/traffic-generator.zip" "./traffic-generator.zip"
-Expand-Archive -Path "./traffic-generator.zip" -DestinationPath "./" -Force
+Expand-Archive -Path "./traffic-generator.zip" -DestinationPath "./" -Force | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 # Install the traffic generator dependencies
-npm install
+npm install | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 # Start traffic generator
 $env:MAIN_ENDPOINT = "localhost:8080"
