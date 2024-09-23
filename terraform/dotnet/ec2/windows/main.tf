@@ -232,7 +232,7 @@ resource "aws_ssm_document" "main_service_setup" {
             "$env:REMOTE_ENDPOINT = '${aws_instance.remote_service_instance.private_ip}'",
             "$env:ID = '${var.test_id}'",
 
-            "Start-Process -FilePath 'npm' -ArgumentList 'start'",
+            "Start-Process -FilePath 'npm' -ArgumentList 'start'"
           ]
         }
       }
