@@ -5,7 +5,7 @@
 ## test the artifacts for Application Signals enablement. It will deploy a sample app and remote
 ## service onto an EKS cluster, call the APIs, and validate the generated telemetry,
 ## including logs, metrics, and traces.
-name: Python EKS Enablement Canary Testing
+name: Test
 on:
   push:
 
@@ -20,10 +20,11 @@ jobs:
       fail-fast: false
       matrix:
         aws-region: ['us-east-1']
-    uses: ./.github/workflows/python-eks-retry.yml
+    uses: ./.github/workflows/java-eks-retry.yml
     secrets: inherit
     with:
       aws-region: ${{ matrix.aws-region }}
       test-cluster-name: 'e2e-playground'
       caller-workflow-name: 'test'
       language-version: 'v11'
+
