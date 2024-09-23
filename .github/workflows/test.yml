@@ -1,0 +1,28 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+## This workflow aims to run the Application Signals Python end-to-end tests as a canary to
+## test the artifacts for Application Signals enablement. It will deploy a sample app and remote
+## service onto an EKS cluster, call the APIs, and validate the generated telemetry,
+## including logs, metrics, and traces.
+name: Python EKS Enablement Canary Testing
+on:
+  push:
+
+permissions:
+  id-token: write
+  contents: read
+
+
+jobs:
+  eks:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: ['us-east-1']
+    uses: ./.github/workflows/python-eks-retry.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'

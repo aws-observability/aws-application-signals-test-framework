@@ -64,8 +64,8 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
+          repository: 'harrryr/aws-application-signals-test-framework'
+          ref: java-sample-app-version
           fetch-depth: 0
 
         # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
@@ -217,8 +217,8 @@ jobs:
 
       - name: Set Sample App Image
         run: |
-          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
-          echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
+          echo MAIN_SAMPLE_APP_IMAGE_ARN="612966150583.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
+          echo REMOTE_SAMPLE_APP_IMAGE_ARN="612966150583.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-sample-app
