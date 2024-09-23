@@ -218,7 +218,7 @@ resource "aws_ssm_document" "main_service_setup" {
             "Expand-Archive -Path .\\nodejs.zip -DestinationPath .\\nodejs -Force",
             "$currentdir = Get-Location",
             "Write-Host $currentdir",
-            "$env:Path += ';$currentdir\\nodejs\\node-v20.16.0-win-x64'",
+            "$env:Path += ';C:\\Windows\\system32\\asp_frontend_service\\nodejs\\node-v20.16.0-win-x64'",
 
             "# Bring in the traffic generator files to EC2 Instance",
             "aws s3 cp 's3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip' './traffic-generator.zip'",
