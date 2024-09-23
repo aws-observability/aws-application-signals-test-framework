@@ -26,3 +26,4 @@ jobs:
       aws-region: ${{ matrix.aws-region }}
       test-cluster-name: 'e2e-playground'
       caller-workflow-name: 'test'
+      language-version: 'v11'
