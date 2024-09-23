@@ -185,10 +185,10 @@ jobs:
           echo "REMOTE_SERVICE_INSTANCE_ID=$(terraform output remote_service_instance_id)" >> $GITHUB_ENV
 
 # A standard Windows Deployment Script are Expect to run ~5min, plus waiting for SSM to be setup in EC2 instance ~2min
-# 12 Min loose upper timeout bound is designed to allow for a rate situation: in a very small chance,
+# 15 Min loose upper timeout bound is designed to allow for a rate situation: in a very small chance,
 # It's possible for SSM document to take up to 8min to run and still produce expect setup outcome
       - name: Monitor EC2 instances readiness and SSM execute status in Systems Manager
-        timeout-minutes: 12
+        timeout-minutes: 15
         run: |
           # Allow up to 5 min for EC2 instance connect to SSM
           max_attempts=30

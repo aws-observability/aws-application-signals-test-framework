@@ -12,13 +12,14 @@ param (
 $ProgressPreference = 'SilentlyContinue'
 
 # Install Dotnet
+Write-Host "Installing Dotnet" | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
 .\dotnet-install.ps1 -Version 8.0.302
 
 # Install and start Cloudwatch Agent
-Invoke-Expression $GetCloudwatchAgentCommand
+Invoke-Expression $GetCloudwatchAgentCommand | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
-Write-Host "Installing Cloudwatch Agent"
+Write-Host "Installing Cloudwatch Agent" | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 msiexec /i amazon-cloudwatch-agent.msi
 $timeout = 30
 $interval = 5
@@ -31,6 +32,7 @@ while ($elapsedTime -lt $timeout) {
         Write-Host "Install Finished"
         break
     } else {
+        $call_cloudwatch = & "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1"
         Write-Host "Cloudwatch Agent not found: $filePath. Checking again in $interval seconds..."
         Start-Sleep -Seconds $interval
         $elapsedTime += $interval
@@ -44,14 +46,14 @@ if ($elapsedTime -ge $timeout) {
 & "C:\Program Files\Amazon\AmazonCloudWatchAgent\amazon-cloudwatch-agent-ctl.ps1" -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
 # Get Instrumentation Artifacts and Sample App
-Invoke-Expression $GetAdotDistroCommand
+Invoke-Expression $GetAdotDistroCommand | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
-Invoke-Expression $GetSampleAppCommand
+Invoke-Expression $GetSampleAppCommand | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
-Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force
+Expand-Archive -Path .\dotnet-sample-app.zip -DestinationPath .\ -Force | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 # Allow income traffic from main-service
-New-NetFirewallRule -DisplayName "Allow TCP 8081" -Direction Inbound -Protocol TCP -LocalPort 8081 -Action Allow
+New-NetFirewallRule -DisplayName "Allow TCP 8081" -Direction Inbound -Protocol TCP -LocalPort 8081 -Action Allow | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 $current_dir = Get-Location
 Write-Host $current_dir
@@ -76,7 +78,7 @@ $env:OTEL_TRACES_SAMPLER = "always_on"
 $env:ASPNETCORE_URLS = "http://0.0.0.0:8081"
 
 
-dotnet build
+dotnet build | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 
 Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_remote_service.dll"
