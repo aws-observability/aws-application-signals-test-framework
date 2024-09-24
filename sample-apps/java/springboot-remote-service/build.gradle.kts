@@ -14,10 +14,11 @@
  */
 
 val javaVersion = if (project.hasProperty("javaVersion")) {
-  JavaVersion.toVersion(project.property("javaVersion").toString())
+  project.property("javaVersion").toString()
 } else {
-  JavaVersion.VERSION_11
+  "11"
 }
+val javaVersionRefactored = JavaVersion.toVersion(javaVersion)
 
 plugins {
   java
@@ -29,8 +30,8 @@ plugins {
 
 group = "com.amazon.sampleapp"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = javaVersion
-java.targetCompatibility = javaVersion
+java.sourceCompatibility = javaVersionRefactored
+java.targetCompatibility = javaVersionRefactored
 
 repositories {
   mavenCentral()
@@ -39,17 +40,16 @@ repositories {
 dependencies {
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-logging")
-  implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.20")
-  testImplementation("org.jetbrains.kotlin:kotlin-test:2.0.20")
+  implementation ("org.apache.httpcomponents:httpclient:4.5.13")
 }
 
 jib {
   from {
     image = "openjdk:$javaVersion-jdk"
   }
-
+  // Replace this value with the ECR Image URI
   to {
-    image = "<ECR_IMAGE_LINK>:<TAG>"
+    image = "{{ECR_IMAGE_URI}}"
   }
   container {
     mainClass = "com.amazon.sampleapp.RemoteService"
