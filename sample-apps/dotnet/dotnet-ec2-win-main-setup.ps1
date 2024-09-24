@@ -12,11 +12,10 @@ param (
 
 # To avoid written UI for download and extract zip step, saving lots of time
 $ProgressPreference = 'SilentlyContinue'
-$Env:AWS_MAX_ATTEMPTS = "10"
 
 # Install Dotnet
 Write-Host "Installing Dotnet" | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
-wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1 -MaximumRetryCount 5 -RetryIntervalSec 10
+wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
 .\dotnet-install.ps1 -Version 8.0.302
 
 # Install and start Cloudwatch Agent
