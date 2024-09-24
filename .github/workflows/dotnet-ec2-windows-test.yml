@@ -220,18 +220,23 @@ jobs:
           check_instance_ready ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           check_instance_ready ${{ env.REMOTE_SERVICE_INSTANCE_ID }}
           
-          run_command() {
-            local instance_id=$1
-            local document_name=$2
+          main_command_id=$(aws ssm send-command \
+              --instance-ids "${{ env.MAIN_SERVICE_INSTANCE_ID }}" \
+              --document-name "${{ env.FRONTEND_DOCUMENT_NAME }}" \
+              --query "Command.CommandId" \
+              --output text)
+          
+          remote_command_id=$(aws ssm send-command \
+              --instance-ids "${{ env.REMOTE_SERVICE_INSTANCE_ID }}" \
+              --document-name "${{ env.REMOTE_DOCUMENT_NAME }}" \
+              --query "Command.CommandId" \
+              --output text)
+          
+          watch_command() {
+            local command_id=$1
             local max_attempts=20  # 10 minutes timeout with 30 seconds interval
             local attempt=0
             local interval=30
-
-            command_id=$(aws ssm send-command \
-              --instance-ids "$instance_id" \
-              --document-name "$document_name" \
-              --query "Command.CommandId" \
-              --output text)
 
             echo "Triggered SSM Document $document_name on instance $instance_id with Command ID: $command_id"
 
@@ -263,8 +268,8 @@ jobs:
             fi
           }
           
-          run_command ${{ env.MAIN_SERVICE_INSTANCE_ID }} ${{ env.FRONTEND_DOCUMENT_NAME }}
-          run_command ${{ env.REMOTE_SERVICE_INSTANCE_ID }} ${{ env.REMOTE_DOCUMENT_NAME }}
+          watch_command $main_command_id
+          watch_command $remote_command_id
           
           
 #          # Allow up to 10 min for SSM Document to run
