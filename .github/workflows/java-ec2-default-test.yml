@@ -14,6 +14,10 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      cpu-architecture:
+        required: false
+        type: string
+        default: "x86_64"
       otel-source:
         required: false
         type: string
@@ -32,6 +36,7 @@ env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/main-service.jar
   SAMPLE_APP_REMOTE_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/remote-service.jar
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
@@ -112,7 +117,11 @@ jobs:
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
             echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
           else
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            else
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            fi
           fi
 
       - name: Set up terraform
@@ -150,6 +159,7 @@ jobs:
               -var="sample_remote_app_jar=${{ env.SAMPLE_APP_REMOTE_SERVICE_JAR }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="get_adot_jar_command=${{ env.GET_ADOT_JAR_COMMAND }}" \
+              -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then
