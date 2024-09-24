@@ -172,17 +172,6 @@ resource "aws_ssm_document" "main_service_setup" {
   DOC
 }
 
-# # Create SSM Association for main service instance
-# resource "aws_ssm_association" "main_service_association" {
-#   name = aws_ssm_document.main_service_setup.name
-#   targets {
-#     key    = "InstanceIds"
-#     values = [aws_instance.main_service_instance.id]
-#   }
-#
-#   depends_on = [aws_instance.main_service_instance]
-# }
-
 # Create SSM Document for remote service setup
 resource "aws_ssm_document" "remote_service_setup" {
   name          = "remote_service_setup_${var.test_id}"
@@ -209,13 +198,3 @@ resource "aws_ssm_document" "remote_service_setup" {
   }
   DOC
 }
-
-# # Create SSM Association for remote service instance
-# resource "aws_ssm_association" "remote_service_association" {
-#   name = aws_ssm_document.remote_service_setup.name
-#   targets {
-#     key    = "InstanceIds"
-#     values = [aws_instance.remote_service_instance.id]
-#   }
-#   depends_on = [aws_instance.remote_service_instance]
-# }

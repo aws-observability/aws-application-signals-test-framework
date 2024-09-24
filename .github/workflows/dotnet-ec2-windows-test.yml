@@ -238,8 +238,6 @@ jobs:
             local attempt=0
             local interval=30
 
-            echo "Triggered SSM Document $document_name on instance $instance_id with Command ID: $command_id"
-
             while [[ $attempt -lt $max_attempts ]]; do
               status=$(aws ssm list-command-invocations \
                 --command-id "$command_id" \
@@ -270,37 +268,6 @@ jobs:
           
           watch_command $main_command_id
           watch_command $remote_command_id
-          
-          
-#          # Allow up to 10 min for SSM Document to run
-#          max_attempts=60
-#          attempt=0
-#
-#          check_status() {
-#            local association_id=$1
-#
-#            while [[ $attempt -lt $max_attempts ]]; do
-#              aws ssm describe-association --association-id $association_id
-#              local status=$(aws ssm describe-association --association-id $association_id --query "AssociationDescription.Overview.AssociationStatusAggregatedCount.Success" --output text)
-#              echo "Attempt $((attempt + 1))/$max_attempts: Current status of SSM Association $association_id: $status"
-#              if [[ "$status" == "1" ]]; then
-#                echo "SSM Association $association_id succeeded."
-#                break
-#              else
-#                echo "Waiting for SSM Association $association_id to succeed..."
-#                sleep $interval
-#                attempt=$((attempt + 1))
-#              fi
-#            done
-#
-#            if [[ $attempt -ge $max_attempts ]]; then
-#              echo "Max attempts reached: SSM Association $association_id did not succeed after $max_attempts attempts."
-#              exit 1
-#            fi
-#          }
-#
-#          check_status ${{ env.FRONTEND_SSM_ASSOCIATION_ID }}
-#          check_status ${{ env.REMOTE_SSM_ASSOCIATION__ID }}
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
