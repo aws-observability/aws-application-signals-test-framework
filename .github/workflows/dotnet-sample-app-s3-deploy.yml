@@ -6,7 +6,7 @@ on:
   workflow_dispatch: # be able to run the workflow on demand
   push:
     branches:
-      - "ec2-windows-retry"
+      - "ec2-windows-rety"
 
 permissions:
   id-token: write
