@@ -1,6 +1,8 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
+# This workflow is for building and uploading the Java sample application to ECR. Java 11 will be built and uploaded to all regions to be used by the canary while other versions (8, 17, 21, 22)
+# will be uploaded to us-east-1 for the purpose of testing ADOT Java
 name: Sample App Deployment - Java ECR
 on:
   workflow_dispatch: # be able to run the workflow on demand
@@ -14,7 +16,7 @@ env:
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
 
 jobs:
-  upload-java-main-service-image:
+  java-v11-main:
     strategy:
       fail-fast: false
       matrix:
@@ -47,13 +49,13 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
-      - name: Build and Upload Main Service Image v11
-        working-directory: sample-apps/java/8/springboot-main-service
+      - name: Build and Upload Main Service Image
+        working-directory: sample-apps/java/springboot-main-service
         run: |
-          sed -i 's#"<ECR_IMAGE_LINK>:<TAG>"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v11"#g' build.gradle.kts
+          sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v11"#g' build.gradle.kts
           gradle jib -P javaVersion=11
 
-  upload-java-remote-service-image:
+  java-v11-remote:
     strategy:
       fail-fast: false
       matrix:
@@ -86,13 +88,13 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
-      - name: Build and Upload Remote Service Image v11
-        working-directory: sample-apps/java/11+/springboot-remote-service
+      - name: Build and Upload Remote Service Image
+        working-directory: sample-apps/java/springboot-remote-service
         run: |
-          sed -i 's#"<ECR_IMAGE_LINK>:<TAG>"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v11"#g' build.gradle.kts
+          sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v11"#g' build.gradle.kts
           gradle jib -P javaVersion=11
 
-  upload-java-versions-main-service-image:
+  java-main:
     strategy:
       fail-fast: false
       matrix:
@@ -118,21 +120,13 @@ jobs:
           secret-ids: |
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
 
-      - name: Build and Upload Main Service Image v11+
-        if: ${{ matrix.java-version != 8 }}
-        working-directory: sample-apps/java/11+/springboot-main-service
+      - name: Build and Upload Main Service Image
+        working-directory: sample-apps/java/springboot-main-service
         run: |
-          sed -i 's#"<ECR_IMAGE_LINK>:<TAG>"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ matrix.java-version }}"#g' build.gradle.kts
+          sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ matrix.java-version }}"#g' build.gradle.kts
           gradle jib -P javaVersion=${{ matrix.java-version }}
 
-      - name: Build and Upload Main Service Image v8
-        if: ${{ matrix.java-version == 8 }}
-        working-directory: sample-apps/java/8/springboot-main-service
-        run: |
-          sed -i 's#"<ECR_IMAGE_LINK>:<TAG>"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ matrix.java-version }}"#g' build.gradle.kts
-          gradle jib -P javaVersion=${{ matrix.java-version }}
-
-  upload-java-versions-remote-service-image:
+  java-remote:
     strategy:
       fail-fast: false
       matrix:
@@ -158,16 +152,8 @@ jobs:
           secret-ids: |
             JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
 
-      - name: Build and Upload Remote Service Image v11+
-        if: ${{ matrix.java-version != 8 }}
-        working-directory: sample-apps/java/11+/springboot-remote-service
+      - name: Build and Upload Remote Service Image
+        working-directory: sample-apps/java/springboot-remote-service
         run: |
-          sed -i 's#"<ECR_IMAGE_LINK>:<TAG>"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ matrix.java-version }}"#g' build.gradle.kts
-          gradle jib -P javaVersion=${{ matrix.java-version }}
-
-      - name: Build and Upload Remote Service Image v8
-        if: ${{ matrix.java-version == 8 }}
-        working-directory: sample-apps/java/8/springboot-remote-service
-        run: |
-          sed -i 's#"<ECR_IMAGE_LINK>:<TAG>"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ matrix.java-version }}"#g' build.gradle.kts
+          sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ matrix.java-version }}"#g' build.gradle.kts
           gradle jib -P javaVersion=${{ matrix.java-version }}
