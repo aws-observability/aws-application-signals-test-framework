@@ -29,10 +29,18 @@ output "ec2_instance_ami" {
   value = data.aws_ami.ami.id
 }
 
-output "frontend_script_association_id" {
-  value = aws_ssm_association.main_service_association.id
+# output "frontend_script_association_id" {
+#   value = aws_ssm_association.main_service_association.id
+# }
+
+output "frontend_document_name" {
+  value = aws_ssm_document.main_service_setup.name
 }
 
-output "remote_script_association_id" {
-  value = aws_ssm_association.remote_service_association.id
+# output "remote_script_association_id" {
+#   value = aws_ssm_association.remote_service_association.id
+# }
+
+output "remote_document_name" {
+  value = aws_ssm_document.remote_service_setup.name
 }
