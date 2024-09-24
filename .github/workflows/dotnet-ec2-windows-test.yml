@@ -94,7 +94,8 @@ jobs:
             echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }}; Expand-Archive -Path /${{ env.ADOT_DISTRO_NAME }} -DestinationPath ./dotnet-distro" >> $GITHUB_ENV
           else
             # After Release will switch to latest tag instead of hard code version for canary purpose
-            echo GET_ADOT_DISTRO_COMMAND="wget -O ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -MaximumRetryCount 5 -RetryIntervalSec 10; Expand-Archive -Path ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -DestinationPath ./dotnet-distro -Force" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="wget -O ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -MaximumRetryCount 5 -RetryIntervalSec 10; Expand-Archive -Path 
+          ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -DestinationPath ./dotnet-distro -Force" >> $GITHUB_ENV
           fi
 
       - name: Set Get CW Agent command environment variable
