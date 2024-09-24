@@ -208,6 +208,11 @@ jobs:
             RDS_MYSQL_CLUSTER_SECRETS, ${{env.RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME}}
           parse-json-secrets: true
 
+      - name: Convert RDS database credentials to base64
+        continue-on-error: true
+        run: |
+          echo "RDS_MYSQL_CLUSTER_SECRETS_PASSWORD_BASE64=$(echo -n '${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' | base64)" >> $GITHUB_ENV
+
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
@@ -246,7 +251,7 @@ jobs:
               -var='python_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}' \
               -var='rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}' \
               -var='rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}' \
-              -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' \
+              -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD_BASE64}}' \
               -var='rds_mysql_cluster_database=information_schema' \
               -var='account_id=${{ env.ACCOUNT_ID }}' \
             || deployment_failed=$?
