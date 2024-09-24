@@ -2,6 +2,7 @@
 ## SPDX-License-Identifier: Apache-2.0
 import logging
 import os
+import base64
 import threading
 import time
 
@@ -110,10 +111,14 @@ def get_xray_trace_id():
 
 def mysql(request):
     logger.info("mysql received")
+
+    encoded_password = os.environ["RDS_MYSQL_CLUSTER_PASSWORD"]
+    decoded_password = base64.b64decode(encoded_password).decode('utf-8')
+
     try:
         connection = pymysql.connect(host=os.environ["RDS_MYSQL_CLUSTER_ENDPOINT"],
                                      user=os.environ["RDS_MYSQL_CLUSTER_USERNAME"],
-                                     password=os.environ["RDS_MYSQL_CLUSTER_PASSWORD"],
+                                     password=decoded_password,
                                      database=os.environ["RDS_MYSQL_CLUSTER_DATABASE"])
         with connection:
             with connection.cursor() as cursor:
