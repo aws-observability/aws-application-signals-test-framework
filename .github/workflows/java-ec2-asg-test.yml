@@ -18,6 +18,9 @@ on:
         required: false
         type: string
         default: "x86_64"
+      options:
+        - "x86_64"
+        - "arm64"
     outputs:
       job-started:
         value: ${{ jobs.java-ec2-asg.outputs.job-started }}
