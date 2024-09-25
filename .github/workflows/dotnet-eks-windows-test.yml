@@ -93,8 +93,8 @@ jobs:
 
       - name: Generate testing id and dotnet sample app namespace
         run: |
-          echo TESTING_ID="${{ env.E2E_TEST_AWS_REGION }}-${{ github.run_id }}-${{ github.run_number }}-windows" >> $GITHUB_ENV
-          echo DOTNET_SAMPLE_APP_NAMESPACE="ns-windows-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+          echo TESTING_ID="${{ env.E2E_TEST_AWS_REGION }}-${{ github.run_id }}-${{ github.run_number }}-w" >> $GITHUB_ENV
+          echo DOTNET_SAMPLE_APP_NAMESPACE="ns-w-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -136,7 +136,7 @@ jobs:
       - name: Delete all sample app namespaces
         continue-on-error: true
         timeout-minutes: 5
-        run: kubectl get namespace | awk '/^ns-[0-9]+-[0-9]+/{print $1}' | xargs -r kubectl delete namespace
+        run: kubectl get namespace | awk '/^ns-w-[0-9]+-[0-9]+/{print $1}' | xargs -r kubectl delete namespace
 
       - name: Create role for AWS access from the sample app
         id: create_service_account
