@@ -104,7 +104,6 @@ jobs:
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids: |
-#            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
             DOTNET_MAIN_SAMPLE_APP_IMAGE, e2e-test/dotnet-main-sample-app-image
             DOTNET_REMOTE_SAMPLE_APP_IMAGE, e2e-test/dotnet-remote-sample-app-image
 
@@ -113,7 +112,6 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-#          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
