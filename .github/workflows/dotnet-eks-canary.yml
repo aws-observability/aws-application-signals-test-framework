@@ -35,3 +35,15 @@ jobs:
       aws-region: ${{ matrix.aws-region }}
       test-cluster-name: 'e2e-dotnet-canary-test'
       caller-workflow-name: 'appsignals-dotnet-e2e-eks-canary-test'
+
+  eks-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: ['ap-southeast-3']
+    uses: ./.github/workflows/dotnet-eks-windows-test.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      test-cluster-name: 'e2e-dotnet-windows-canary-test'
+      caller-workflow-name: 'appsignals-dotnet-windows-e2e-eks-canary-test'
