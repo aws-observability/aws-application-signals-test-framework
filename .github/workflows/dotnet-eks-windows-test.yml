@@ -94,7 +94,7 @@ jobs:
       - name: Generate testing id and dotnet sample app namespace
         run: |
           echo TESTING_ID="${{ env.E2E_TEST_AWS_REGION }}-${{ github.run_id }}-${{ github.run_number }}-w" >> $GITHUB_ENV
-          echo DOTNET_SAMPLE_APP_NAMESPACE="ns-w-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+          echo DOTNET_SAMPLE_APP_NAMESPACE="ns-w-${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
