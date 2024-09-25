@@ -188,7 +188,7 @@ jobs:
 # 15 Min loose upper timeout bound is designed to allow for a rate situation: in a very small chance,
 # It's possible for SSM document to take up to 8min to run and still produce expect setup outcome
       - name: Monitor EC2 instances readiness and SSM execute status in Systems Manager
-        timeout-minutes: 15
+        timeout-minutes: 18
         run: |
           # Allow up to 5 min for EC2 instance connect to SSM
           max_attempts=30
@@ -234,7 +234,7 @@ jobs:
           
           watch_command() {
             local command_id=$1
-            local max_attempts=20  # 10 minutes timeout with 30 seconds interval
+            local max_attempts=30  # 15 minutes timeout with 30 seconds interval
             local attempt=0
             local interval=30
 
