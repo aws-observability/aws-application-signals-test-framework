@@ -11,11 +11,12 @@ on:
     - cron: '*/15 * * * *' # run the workflow every 15 minutes
   workflow_dispatch: # be able to run the workflow on demand
   push:
-    "dotnet-windows-eks"
+    branches:
+      - "dotnet-windows-eks"
 
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
+#concurrency:
+#  group: ${{ github.workflow }}
+#  cancel-in-progress: false
 
 permissions:
   id-token: write
