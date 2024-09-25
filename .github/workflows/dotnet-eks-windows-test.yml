@@ -168,7 +168,7 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/eks/linux && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/eks/windows && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
