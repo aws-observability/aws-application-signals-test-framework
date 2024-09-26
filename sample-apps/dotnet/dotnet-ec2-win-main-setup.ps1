@@ -15,7 +15,7 @@ $ProgressPreference = 'SilentlyContinue'
 
 # Install Dotnet
 Write-Host "Installing Dotnet" | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
-wget -O dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1
+curl.exe -L -o dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1 --retry 5 --retry-all-errors --retry-delay 5
 .\dotnet-install.ps1 -Version 8.0.302
 
 # Install and start Cloudwatch Agent
