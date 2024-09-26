@@ -10,7 +10,7 @@
       "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
       "otel.resource.host.id": "^{{instanceId}}$",
       "otel.resource.host.image.id": "^{{instanceAmi}}$",
-      "otel.resource.host.type": "^t3.micro$",
+      "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$",
       "otel.resource.host.name": "^{{privateDnsName}}$"
     }
   },

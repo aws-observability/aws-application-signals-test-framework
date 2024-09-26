@@ -17,6 +17,10 @@ on:
       java-version:
         required: true
         type: string
+      cpu-architecture:
+        required: false
+        type: string
+        default: "x86_64"
       otel-source:
         required: false
         type: string
@@ -35,6 +39,7 @@ jobs:
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       java-version: ${{ inputs.java-version }}
       otel-source: ${{ inputs.otel-source }}
+      cpu-architecture: ${{ inputs.cpu-architecture }}
 
   java-ec2-default-attempt-2:
     needs: [ java-ec2-default-attempt-1 ]
@@ -46,6 +51,7 @@ jobs:
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       java-version: ${{ inputs.java-version }}
       otel-source: ${{ inputs.otel-source }}
+      cpu-architecture: ${{ inputs.cpu-architecture }}
 
   publish-metric-attempt-1:
     needs: [ java-ec2-default-attempt-1, java-ec2-default-attempt-2 ]

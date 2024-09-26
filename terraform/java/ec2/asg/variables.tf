@@ -48,3 +48,7 @@ variable "canary_type" {
 variable "language_version" {
   default = "11"
 }
+
+  variable "cpu_architecture" {
+  default = "x86_64"
+}
