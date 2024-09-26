@@ -46,7 +46,6 @@ env:
   CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
   DOTNET_MAIN_SAMPLE_APP_IMAGE: appsignals-dotnet-windows-main-service
   DOTNET_REMOTE_SAMPLE_APP_IMAGE: appsignals-dotnet-windows-remote-service
-  ACCOUNT_ID: ${{ secrets.EKS_WINDOWS_TEST_ROLE_ID }}
 
 jobs:
   dotnet-eks:
@@ -107,17 +106,14 @@ jobs:
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids: |
-#            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
-            DOTNET_MAIN_SAMPLE_APP_IMAGE, e2e-test/dotnet-main-sample-app-image
-            DOTNET_REMOTE_SAMPLE_APP_IMAGE, e2e-test/dotnet-remote-sample-app-image
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
 
       # ADOT_E2E_TEST_ROLE_ARN is used to access main build e2e test cluster
       # E2E_TEST_ROLE_ARN is used to access canary e2e test cluster
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-#          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       # local directory to store the kubernetes config
