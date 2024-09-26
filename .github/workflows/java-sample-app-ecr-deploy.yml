@@ -1,8 +1,10 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# This workflow is for building and uploading the Java sample application to ECR. Java 11 will be built and uploaded to all regions to be used by the canary while other versions (8, 17, 21, 22)
-# will be uploaded to us-east-1 for the purpose of testing ADOT Java
+# This workflow is for building and uploading the Java sample application to ECR.
+# Java 11 will be built and uploaded to all regions to be used by the canary while
+# other versions (8, 17, 21, 22) will be uploaded to us-east-1 for the purpose of
+# testing ADOT Java
 name: Sample App Deployment - Java ECR
 on:
   workflow_dispatch: # be able to run the workflow on demand
