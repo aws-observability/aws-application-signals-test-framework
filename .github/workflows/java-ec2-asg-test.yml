@@ -14,11 +14,11 @@ on:
       caller-workflow-name:
         required: true
         type: string
-      java-version:
-        description: "Currently support version 8, 11, 17, 21, 22"
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
         required: false
         type: string
-        default: '11'
+        default: "x86_64"
     outputs:
       job-started:
         value: ${{ jobs.java-ec2-asg.outputs.job-started }}
@@ -32,9 +32,9 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
-  JAVA_VERSION: ${{ inputs.java-version }}
-  SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/java-main-service-v${{ inputs.java-version }}.jar
-  SAMPLE_APP_REMOTE_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/java-remote-service-v${{ inputs.java-version }}.jar
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/main-service.jar
+  SAMPLE_APP_REMOTE_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/remote-service.jar
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
@@ -54,7 +54,7 @@ jobs:
         run: echo "job-started=true" >> $GITHUB_OUTPUT
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> $GITHUB_ENV
 
       - uses: actions/checkout@v4
         with:
@@ -109,7 +109,11 @@ jobs:
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
             echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
           else
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            fi
           fi
 
       - name: Set up terraform
@@ -147,7 +151,7 @@ jobs:
               -var="sample_remote_app_jar=${{ env.SAMPLE_APP_REMOTE_SERVICE_JAR }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="get_adot_jar_command=${{ env.GET_ADOT_JAR_COMMAND }}" \
-              -var="language_version=${{ env.JAVA_VERSION }}" \
+              -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then

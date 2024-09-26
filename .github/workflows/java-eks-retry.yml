@@ -17,6 +17,9 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      java-version:
+        required: true
+        type: string
 
 concurrency:
   group: 'java-eks-${{ inputs.aws-region }}-${{ github.ref_name }}'
@@ -34,6 +37,7 @@ jobs:
       aws-region: ${{ inputs.aws-region }}
       test-cluster-name: ${{ inputs.test-cluster-name }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      java-version: '11'
 
   java-eks-attempt-2:
     needs: [ java-eks-attempt-1 ]
@@ -44,6 +48,7 @@ jobs:
       aws-region: ${{ inputs.aws-region }}
       test-cluster-name: ${{ inputs.test-cluster-name }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      java-version: '11'
 
   publish-metric-attempt-1:
     needs: [ java-eks-attempt-1, java-eks-attempt-2 ]

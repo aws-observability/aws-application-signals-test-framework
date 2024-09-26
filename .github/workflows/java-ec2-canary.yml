@@ -29,7 +29,7 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-e2e-ec2-canary-test'
-      java-version: '11'
+      cpu-architecture: 'x86_64'
 
   maven:
     uses: ./.github/workflows/java-ec2-default-retry.yml
@@ -38,4 +38,4 @@ jobs:
       aws-region: 'us-east-1'
       caller-workflow-name: 'appsignals-e2e-ec2-maven-canary-test'
       otel-source: 'maven'
-      java-version: '11'
+      cpu-architecture: 'x86_64'

@@ -53,7 +53,7 @@ data "aws_ami" "ami" {
   most_recent      = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -61,7 +61,7 @@ data "aws_ami" "ami" {
   }
   filter {
     name   = "architecture"
-    values = ["x86_64"]
+    values = [var.cpu_architecture]
   }
   filter {
     name   = "image-type"
@@ -86,7 +86,7 @@ data "aws_ami" "ami" {
 
 resource "aws_launch_configuration" "launch_configuration" {
   image_id      = data.aws_ami.ami.id
-  instance_type = "t3.micro"
+  instance_type = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
   key_name = local.ssh_key_name
   associate_public_ip_address = true
   iam_instance_profile = "APP_SIGNALS_EC2_TEST_ROLE"
@@ -96,14 +96,8 @@ resource "aws_launch_configuration" "launch_configuration" {
     #!/bin/bash
     # Make the Terraform fail if any step throws an error
     set -o errexit
-    # Install wget
-    sudo yum install wget -y
-    # Install Java
-    if [[ "${var.language_version}" == "8" ]]; then
-      sudo yum install java-1.8.0-amazon-corretto -y
-    else
-      sudo yum install java-${var.language_version}-amazon-corretto -y
-    fi
+    # Install Java 11 and wget
+    sudo yum install wget java-11-amazon-corretto -y
 
     # Copy in CW Agent configuration
     agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -164,7 +158,7 @@ resource "aws_autoscaling_group" "asg" {
 
 resource "aws_instance" "remote_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.micro"
+  instance_type                         = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -192,14 +186,8 @@ resource "null_resource" "remote_service_setup" {
       <<-EOF
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      # Install wget
-      sudo yum install wget -y
-      # Install Java
-      if [[ "${var.language_version}" == "8" ]]; then
-        sudo yum install java-1.8.0-amazon-corretto -y
-      else
-        sudo yum install java-${var.language_version}-amazon-corretto -y
-      fi
+      # Install Java 11 and wget
+      sudo yum install wget java-11-amazon-corretto -y
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'

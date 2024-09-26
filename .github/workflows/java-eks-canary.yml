@@ -30,3 +30,4 @@ jobs:
       aws-region: ${{ matrix.aws-region }}
       test-cluster-name: 'e2e-canary-test'
       caller-workflow-name: 'appsignals-e2e-eks-canary-test'
+      java-version: '11'
