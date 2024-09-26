@@ -4,6 +4,9 @@ version: '3'
 services:
   asp_frontend_service:
     image: dotnetsampleapp/frontend-service
+    dns:
+      - "8.8.8.8"
+      - "8.8.6.6"
     build:
       context: .
       dockerfile: asp_frontend_service/Dockerfile
@@ -14,6 +17,9 @@ services:
 
   asp_remote_service:
     image: dotnetsampleapp/remote-service
+    dns:
+      - "8.8.8.8"
+      - "8.8.6.6"
     build:
       context: .
       dockerfile: asp_remote_service/Dockerfile
