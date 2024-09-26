@@ -34,8 +34,7 @@ permissions:
   contents: read
 
 env:
-#  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
-  E2E_TEST_ACCOUNT_ID: ${{ secrets.EKS_WINDOWS_TEST_ROLE_ID }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CLUSTER_NAME: ${{ inputs.test-cluster-name }}
