@@ -251,16 +251,6 @@ resource "kubernetes_deployment" "traffic_generator" {
         }
       }
       spec {
-        toleration {
-          key      = "windows"
-          operator = "Equal"
-          value    = "true"
-          effect   = "NoSchedule"
-        }
-        node_selector = {
-          "kubernetes.io/os": "windows",
-          "kubernetes.io/arch": "amd64"
-        }
         container {
           name  = "traffic-generator"
           image = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
