@@ -17,9 +17,6 @@ package com.amazon.sampleapp;
 
 import io.opentelemetry.api.trace.Span;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -29,7 +26,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +47,7 @@ import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
 @Controller
 public class FrontendServiceController {
   private static final Logger logger = LoggerFactory.getLogger(FrontendServiceController.class);
-  private final HttpClient httpClient;
+  private final CloseableHttpClient httpClient;
   private final S3Client s3;
   private AtomicBoolean shouldSendLocalRootClientCall = new AtomicBoolean(false);
 
@@ -54,26 +56,26 @@ public class FrontendServiceController {
     ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     Runnable runnableTask =
-        () -> {
-          if (shouldSendLocalRootClientCall.get()) {
-            shouldSendLocalRootClientCall.set(false);
-            HttpRequest request =
-                HttpRequest.newBuilder()
-                    .uri(URI.create("http://local-root-client-call"))
-                    .GET()
-                    .build();
-            try {
-              HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
-            } catch (Exception e) {
-            }
-          }
-        };
+            () -> {
+              if (shouldSendLocalRootClientCall.get()) {
+                shouldSendLocalRootClientCall.set(false);
+                HttpGet request = new HttpGet("http://local-root-client-call");
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                  HttpEntity entity = response.getEntity();
+                  if (entity != null) {
+                    logger.info(EntityUtils.toString(entity));
+                  }
+                } catch (Exception e) {
+                  logger.error("Error in recurring task: {}", e.getMessage());
+                }
+              }
+            };
     // Run with initial 0.1s delay, every 1 second
     executorService.scheduleAtFixedRate(runnableTask, 100, 1000, TimeUnit.MILLISECONDS);
   }
 
   @Autowired
-  public FrontendServiceController(HttpClient httpClient, S3Client s3) {
+  public FrontendServiceController(CloseableHttpClient httpClient, S3Client s3) {
     this.httpClient = httpClient;
     this.s3 = s3;
   }
@@ -89,39 +91,30 @@ public class FrontendServiceController {
   @ResponseBody
   public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
     String bucketName = "e2e-test-bucket-name";
-    // Add a unique test ID to bucketname to associate buckets to specific test runs
     if (testingId != null) {
       bucketName += "-" + testingId;
     }
     GetBucketLocationRequest bucketLocationRequest =
-        GetBucketLocationRequest.builder().bucket(bucketName).build();
+            GetBucketLocationRequest.builder().bucket(bucketName).build();
     try {
       s3.getBucketLocation(bucketLocationRequest);
     } catch (Exception e) {
-      // bucketName does not exist, so this is expected.
-      logger.error("Error occurred when trying to get bucket location of: " + bucketName);
-      logger.error("Could not retrieve http request:" + e.getLocalizedMessage());
+      logger.error("Error occurred when trying to get bucket location of: " + bucketName, e);
     }
     return getXrayTraceId();
   }
 
-  // test http instrumentation (java client)
+  // test http instrumentation (Apache HttpClient for Java 8)
   @GetMapping("/outgoing-http-call")
   @ResponseBody
   public String httpCall() {
-    HttpRequest request =
-        HttpRequest.newBuilder().uri(URI.create("https://www.amazon.com")).GET().build();
-
-    try {
-      HttpResponse<String> response =
-          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-      int statusCode = response.statusCode();
-
+    HttpGet request = new HttpGet("https://www.amazon.com");
+    try (CloseableHttpResponse response = httpClient.execute(request)) {
+      int statusCode = response.getStatusLine().getStatusCode();
       logger.info("outgoing-http-call status code: " + statusCode);
     } catch (Exception e) {
-      logger.error("Could not complete http request:" + e.getMessage());
+      logger.error("Could not complete HTTP request: {}", e.getMessage());
     }
-
     return getXrayTraceId();
   }
 
@@ -129,25 +122,15 @@ public class FrontendServiceController {
   @GetMapping("/remote-service")
   @ResponseBody
   public String downstreamService(@RequestParam("ip") String ip) {
-    // Ensure IP doesn't have extra slashes anywhere
     ip = ip.replace("/", "");
-    HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(URI.create("http://" + ip + ":8080/healthcheck"))
-            .GET()
-            .build();
-
-    try {
-      HttpResponse<String> response =
-          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-      int statusCode = response.statusCode();
-
+    HttpGet request = new HttpGet("http://" + ip + ":8080/healthcheck");
+    try (CloseableHttpResponse response = httpClient.execute(request)) {
+      int statusCode = response.getStatusLine().getStatusCode();
       logger.info("Remote service call status code: " + statusCode);
       return getXrayTraceId();
     } catch (Exception e) {
-      logger.error("Could not complete http request to remote service:" + e.getMessage());
+      logger.error("Could not complete HTTP request to remote service: {}", e.getMessage());
     }
-
     return getXrayTraceId();
   }
 
@@ -157,13 +140,6 @@ public class FrontendServiceController {
   public String asyncService() {
     logger.info("Client-call received");
     shouldSendLocalRootClientCall.set(true);
-    // This API is used to trigger the http://local-root-client-call call on running on the executor
-    // recurring service, which will generate a local root client span. The E2E testing will attempt
-    // to validate the span
-    // generated by the /local-root-client-call, not this /client-call API call. Therefore, the
-    // traceId of this API call is not needed and we return an invalid traceId to indicate that the
-    // call was received but to not use this
-    // traceId.
     return "{\"traceId\": \"1-00000000-000000000000000000000000\"}";
   }
 
@@ -173,19 +149,17 @@ public class FrontendServiceController {
   public String mysql() {
     logger.info("mysql received");
     final String rdsMySQLClusterPassword = new String(new Base64().decode(System.getenv("RDS_MYSQL_CLUSTER_PASSWORD").getBytes()));
-
     try {
       Connection connection = DriverManager.getConnection(
-              System.getenv().get("RDS_MYSQL_CLUSTER_CONNECTION_URL"),
-              System.getenv().get("RDS_MYSQL_CLUSTER_USERNAME"),
+              System.getenv("RDS_MYSQL_CLUSTER_CONNECTION_URL"),
+              System.getenv("RDS_MYSQL_CLUSTER_USERNAME"),
               rdsMySQLClusterPassword);
       Statement statement = connection.createStatement();
       statement.executeQuery("SELECT * FROM tables LIMIT 1;");
     } catch (SQLException e) {
-      logger.error("Could not complete SQL request:{}", e.getMessage());
+      logger.error("Could not complete SQL request: {}", e.getMessage());
       throw new RuntimeException(e);
     }
-
     return getXrayTraceId();
   }
 
@@ -193,7 +167,6 @@ public class FrontendServiceController {
   private String getXrayTraceId() {
     String traceId = Span.current().getSpanContext().getTraceId();
     String xrayTraceId = "1-" + traceId.substring(0, 8) + "-" + traceId.substring(8);
-
     return String.format("{\"traceId\": \"%s\"}", xrayTraceId);
   }
 }

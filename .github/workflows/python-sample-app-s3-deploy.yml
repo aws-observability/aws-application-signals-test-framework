@@ -42,8 +42,6 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
           aws-region: ${{ matrix.aws-region }}
 
-
-
       - name: Build Sample App Zip
         working-directory: sample-apps/python
         run: zip -r python-sample-app.zip .

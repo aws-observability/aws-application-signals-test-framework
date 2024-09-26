@@ -44,3 +44,7 @@ variable "get_adot_jar_command" {
 variable "canary_type" {
   default = "java-ec2-default"
 }
+
+variable "cpu_architecture" {
+  default = "x86_64"
+}

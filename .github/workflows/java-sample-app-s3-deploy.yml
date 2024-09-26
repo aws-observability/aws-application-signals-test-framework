@@ -1,6 +1,8 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
+# This workflow is for building and uploading the Java sample application to S3 bucket. Java 11 will be built and uploaded to all regions to be used by the canary while other versions (8, 17, 21, 22)
+# will be uploaded to us-east-1 for the purpose of testing ADOT Java
 name: Sample App Deployment - Java S3
 on:
   workflow_dispatch: # be able to run the workflow on demand
@@ -9,15 +11,19 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+
 jobs:
-  upload-main-service-jar:
+  java-v11-main:
     strategy:
       fail-fast: false
       matrix:
         aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
                       'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
                       'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
-                      'us-east-1','us-east-2', 'us-west-1', 'us-west-2' ]
+                      'us-east-1','us-east-2','us-west-1','us-west-2' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +33,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
       - name: Retrieve account
@@ -39,25 +45,23 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
-      - name: Build Main Jar
-        working-directory: sample-apps/springboot
-        run: gradle build
+      - name: Build and Upload Main Jar
+        working-directory: sample-apps/java/springboot-main-service
+        run: |
+          gradle build -P javaVersion=11
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v11.jar
 
-      - name: Upload to S3
-        working-directory: sample-apps/springboot
-        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/libs/springboot-*-SNAPSHOT.jar --key main-service.jar
-
-  upload-remote-service-jar:
+  java-v11-remote:
     strategy:
       fail-fast: false
       matrix:
-          aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
-                        'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                        'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
-                        'us-east-1','us-east-2','us-west-1', 'us-west-2' ]
+        aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
+                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
+                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+                      'us-east-1','us-east-2','us-west-1','us-west-2' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,7 +71,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
       - name: Retrieve account
@@ -79,14 +83,81 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
-      - name: Build Main Jar
-        working-directory: sample-apps/springboot-remote-service
-        run: gradle build
+      - name: Build and Upload Main Jar
+        working-directory: sample-apps/java/springboot-remote-service
+        run: |
+          gradle build -P javaVersion=11
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v11.jar
 
-      - name: Upload to S3
-        working-directory: sample-apps/springboot-remote-service
-        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key remote-service.jar
+  java-main:
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [ '8', '17', '21', '22' ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+          check-latest: true
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Build and Upload Main Jar
+        working-directory: sample-apps/java/springboot-main-service
+        run: |
+          # For Java 8, springboot must be lower than version 3
+          # For Java 11,17,21, they are compatible with both springboot version
+          # For Java 22 and above, springboot must be version 3 or higher
+          if [ "${{ matrix.java-version }}" = "22" ]; then
+            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
+            cat build.gradle.kts
+          fi
+          
+          gradle build -P javaVersion=${{ matrix.java-version }}
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-us-east-1 --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v${{ matrix.java-version }}.jar
+
+  java-remote:
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: [ '8', '17', '21', '22' ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+          check-latest: true
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Build and Upload Remote Jar
+        working-directory: sample-apps/java/springboot-remote-service
+        run: |
+          # For Java 8, springboot must be lower than version 3
+          # For Java 11,17,21, they are compatible with both springboot version
+          # For Java 22 and above, springboot must be version 3 or higher
+          if [ "${{ matrix.java-version }}" = "22" ]; then
+            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
+            cat build.gradle.kts
+          fi
+          
+          gradle build -P javaVersion=${{ matrix.java-version }}
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-us-east-1 --body ./build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v${{ matrix.java-version }}.jar
+
 

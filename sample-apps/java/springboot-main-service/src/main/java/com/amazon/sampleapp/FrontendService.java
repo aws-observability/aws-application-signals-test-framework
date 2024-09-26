@@ -15,7 +15,8 @@
 
 package com.amazon.sampleapp;
 
-import java.net.http.HttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -25,8 +26,8 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class FrontendService {
 
   @Bean
-  public HttpClient httpClient() {
-    return HttpClient.newHttpClient();
+  public CloseableHttpClient httpClient() {
+    return HttpClients.createDefault();
   }
 
   @Bean
