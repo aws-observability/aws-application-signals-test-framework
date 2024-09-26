@@ -112,8 +112,8 @@ resource "kubernetes_deployment" "dotnet_app_deployment" {
           effect   = "NoSchedule"
         }
         node_selector = {
-          kubernetes.io/os: "windows",
-          kubernetes.io/arch: "amd64"
+          "kubernetes.io/os": "windows",
+          "kubernetes.io/arch": "amd64"
         }
         container {
           name = "back-end"
