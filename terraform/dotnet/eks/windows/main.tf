@@ -185,8 +185,8 @@ resource "kubernetes_deployment" "dotnet_r_app_deployment" {
       }
       spec {
         node_selector = {
-          kubernetes.io/os: "windows",
-          kubernetes.io/arch: "amd64"
+          "kubernetes.io/os": "windows",
+          "kubernetes.io/arch": "amd64"
         }
         service_account_name = var.service_account_aws_access
         toleration {
@@ -258,8 +258,8 @@ resource "kubernetes_deployment" "traffic_generator" {
           effect   = "NoSchedule"
         }
         node_selector = {
-          kubernetes.io/os: "windows",
-          kubernetes.io/arch: "amd64"
+          "kubernetes.io/os": "windows",
+          "kubernetes.io/arch": "amd64"
         }
         container {
           name  = "traffic-generator"
