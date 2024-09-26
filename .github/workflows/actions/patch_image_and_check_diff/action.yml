@@ -122,6 +122,20 @@ runs:
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
 
+    - name: Patch the Node ADOT image and restart CloudWatch pods
+      if: ${{ inputs.repository == 'aws-otel-js-instrumentation' }}
+      shell: bash
+      run: |
+        kubectl patch deploy -namazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/5", "value": "--auto-instrumentation-nodejs-image=${{ inputs.patch-image-arn }}"}]'
+        kubectl delete pods --all -n amazon-cloudwatch
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+
+        kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
+        sleep 10
+        kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
+
     - name: Patch the CloudWatch Agent image and restart CloudWatch pods
       if: ${{ inputs.repository == 'amazon-cloudwatch-agent' }}
       shell: bash
@@ -153,7 +167,7 @@ runs:
         kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=amazon-cloudwatch-observability -o json | \
         jq '.items[0].spec.containers[0].args'
     
-    - name: Log pod Adot image ID and save image to the environment
+    - name: Log pod ADOT image ID and save image to the environment
       id: latest-adot-image
       shell: bash
       run: |
@@ -193,30 +207,39 @@ runs:
         echo "FLUENT_BIT_IMAGE"=$(kubectl get pods -n amazon-cloudwatch -l k8s-app=fluent-bit -o json | \
         jq '.items[0].status.containerStatuses[0].imageID') >> $GITHUB_OUTPUT
 
-    - name: Check if Python Adot image has changed
+    - name: Check if Python ADOT image has changed
       if: ${{ inputs.repository == 'aws-otel-python-instrumentation' }}
       shell: bash
       run: |
         if [ ${{ steps.default-adot-image.outputs.DEFAULT_ADOT_IMAGE }} = ${{ steps.latest-adot-image.outputs.LATEST_ADOT_IMAGE }} ]; then
-          echo "Adot image did not change"
+          echo "ADOT image did not change"
           exit 1
         fi
 
-    - name: Check if Java Adot image has changed
+    - name: Check if Java ADOT image has changed
       if: ${{ inputs.repository == 'aws-otel-java-instrumentation' }}
       shell: bash
       run: |
         if [ ${{ steps.default-adot-image.outputs.DEFAULT_ADOT_IMAGE }} = ${{ steps.latest-adot-image.outputs.LATEST_ADOT_IMAGE }} ]; then
-          echo "Adot image did not change"
+          echo "ADOT image did not change"
           exit 1
         fi
 
-    - name: Check if DotNet Adot image has changed
+    - name: Check if DotNet ADOT image has changed
       if: ${{ inputs.repository == 'aws-otel-dotnet-instrumentation' }}
       shell: bash
       run: |
         if [ ${{ steps.default-adot-image.outputs.DEFAULT_ADOT_IMAGE }} = ${{ steps.latest-adot-image.outputs.LATEST_ADOT_IMAGE }} ]; then
-          echo "Adot image did not change"
+          echo "ADOT image did not change"
+          exit 1
+        fi
+
+    - name: Check if Node ADOT image has changed
+      if: ${{ inputs.repository == 'aws-otel-js-instrumentation' }}
+      shell: bash
+      run: |
+        if [ ${{ steps.default-adot-image.outputs.DEFAULT_ADOT_IMAGE }} = ${{ steps.latest-adot-image.outputs.LATEST_ADOT_IMAGE }} ]; then
+          echo "ADOT image did not change"
           exit 1
         fi
 
