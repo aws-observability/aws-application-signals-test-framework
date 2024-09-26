@@ -106,9 +106,9 @@ resource "kubernetes_deployment" "dotnet_app_deployment" {
       spec {
         service_account_name = var.service_account_aws_access
         toleration {
-          key      = "os"
+          key      = "windows"
           operator = "Equal"
-          value    = "windows"
+          value    = "true"
           effect   = "NoSchedule"
         }
         node_selector = {
@@ -190,9 +190,9 @@ resource "kubernetes_deployment" "dotnet_r_app_deployment" {
         }
         service_account_name = var.service_account_aws_access
         toleration {
-          key      = "os"
+          key      = "windows"
           operator = "Equal"
-          value    = "windows"
+          value    = "true"
           effect   = "NoSchedule"
         }
         container {
@@ -252,9 +252,9 @@ resource "kubernetes_deployment" "traffic_generator" {
       }
       spec {
         toleration {
-          key      = "os"
+          key      = "windows"
           operator = "Equal"
-          value    = "windows"
+          value    = "true"
           effect   = "NoSchedule"
         }
         node_selector = {
