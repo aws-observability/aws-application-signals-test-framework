@@ -54,7 +54,7 @@ jobs:
       - name: Build and Upload Main Service Image
         working-directory: sample-apps/java/springboot-main-service
         run: |
-          sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v11"#g' build.gradle.kts
+          sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v11"#g' build.gradle.kts
           gradle jib -P javaVersion=11
 
   java-v11-remote:
@@ -93,7 +93,7 @@ jobs:
       - name: Build and Upload Remote Service Image
         working-directory: sample-apps/java/springboot-remote-service
         run: |
-          sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v11"#g' build.gradle.kts
+          sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v11"#g' build.gradle.kts
           gradle jib -P javaVersion=11
 
   java-main:
