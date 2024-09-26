@@ -111,6 +111,10 @@ resource "kubernetes_deployment" "dotnet_app_deployment" {
           value    = "windows"
           effect   = "NoSchedule"
         }
+        node_selector = {
+          kubernetes.io/os: "windows",
+          kubernetes.io/arch: "amd64"
+        }
         container {
           name = "back-end"
           image = var.dotnet_app_image
@@ -180,6 +184,10 @@ resource "kubernetes_deployment" "dotnet_r_app_deployment" {
         }
       }
       spec {
+        node_selector = {
+          kubernetes.io/os: "windows",
+          kubernetes.io/arch: "amd64"
+        }
         service_account_name = var.service_account_aws_access
         toleration {
           key      = "os"
@@ -248,6 +256,10 @@ resource "kubernetes_deployment" "traffic_generator" {
           operator = "Equal"
           value    = "windows"
           effect   = "NoSchedule"
+        }
+        node_selector = {
+          kubernetes.io/os: "windows",
+          kubernetes.io/arch: "amd64"
         }
         container {
           name  = "traffic-generator"
