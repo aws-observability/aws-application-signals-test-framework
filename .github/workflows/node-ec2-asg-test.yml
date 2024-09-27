@@ -16,7 +16,7 @@ on:
         type: string
       staging-instrumentation-name:
         required: false
-        default: 'aws-opentelemetry-distro'
+        default: '@aws/aws-distro-opentelemetry-node-autoinstrumentation'
         type: string
     outputs:
       job-started:
@@ -92,20 +92,13 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
-      # TODO: Remove the following step once release testing is ready
-      - name: TEMPORARY TEST CONFIGS
-        run: |
-          echo ADOT_INSTRUMENTATION_NAME="aws-aws-distro-opentelemetry-node-autoinstrumentation-0.0.1.tgz" >> $GITHUB_ENV
-
       - name: Set Get ADOT Instrumentation command environment variable
         run: |
-          echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-        # TODO: Reintroduce release testing logic when artifacts are ready
-        # if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
-        #   echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-        # else
-        #   echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-        # fi
+          if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+          else
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+          fi
 
       - name: Set Get CW Agent command environment variable
         run: |
