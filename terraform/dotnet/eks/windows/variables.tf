@@ -17,30 +17,38 @@ variable "test_id" {
   default = "dummy-123"
 }
 
+variable "kube_directory_path" {
+    default = "./.kube"
+}
+
 variable "aws_region" {
-  default = "<aws-region>"
+  default = "<e.g. us-east-1>"
 }
 
-variable "user" {
-  default = "ec2-user"
+variable "eks_cluster_name" {
+  default = "<cluster-name>"
 }
 
-variable "sample_app_zip" {
-  default = "s3://<bucket-name>/<zip>"
+variable "eks_cluster_context_name" {
+  default = "<region>.<cluster-name>"
 }
 
-variable "get_adot_wheel_command" {
-  default = "aws s3 cp s3://<bucket-name>/<whl> ./<whl> && pip install <whl>"
+variable "test_namespace" {
+  default = "dotnet-app-namespace"
 }
 
-variable "get_cw_agent_rpm_command" {
-  default = "<command> s3://<bucket-name>/<jar>"
+variable "service_account_aws_access" {
+  default = "dotnet-app-service-account"
 }
 
-variable "canary_type" {
-  default = "python-ec2-asg"
+variable "dotnet_app_image" {
+  default = "<ECR_IMAGE_LINK>:<TAG>"
 }
 
-variable "cpu_architecture" {
-  default = "x86_64"
+variable "dotnet_remote_app_image" {
+  default = "<ECR_IMAGE_LINK>:<TAG>"
+}
+
+variable "account_id" {
+  default = "<AWS_ACCOUNT_ID>"
 }
