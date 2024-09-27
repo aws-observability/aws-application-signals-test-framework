@@ -10,9 +10,6 @@ on:
   schedule:
     - cron: '* */1 * * *' # run the workflow every one hour
   workflow_dispatch: # be able to run the workflow on demand
-  push:
-    branches:
-      - "dotnet-windows-eks"
 
 concurrency:
   group: ${{ github.workflow }}
