@@ -94,7 +94,7 @@ jobs:
             echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }}; Expand-Archive -Path /${{ env.ADOT_DISTRO_NAME }} -DestinationPath ./dotnet-distro" >> $GITHUB_ENV
           else
             # After Release will switch to latest tag instead of hard code version for canary purpose
-            echo GET_ADOT_DISTRO_COMMAND="wget -O ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-windows.zip; Expand-Archive -Path ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -DestinationPath ./dotnet-distro -Force" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="curl.exe -L -o ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-windows.zip --retry 5 --retry-all-errors --retry-delay 5; Expand-Archive -Path ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -DestinationPath ./dotnet-distro -Force" >> $GITHUB_ENV
           fi
 
       - name: Set Get CW Agent command environment variable
@@ -103,7 +103,7 @@ jobs:
             # Get cloudwatch agent staging file if triggered by cw-a repo
             echo GET_CW_AGENT_MSI_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon-cloudwatch-agent.msi ./cw-agent.msi" >> $GITHUB_ENV
           else
-            echo GET_CW_AGENT_MSI_COMMAND= "wget -O ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi" >> $GITHUB_ENV
+            echo GET_CW_AGENT_MSI_COMMAND= "curl.exe -L -o ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi --retry 5 --retry-all-errors --retry-delay 5" >> $GITHUB_ENV
           fi
 
       - name: Set up terraform
@@ -173,8 +173,8 @@ jobs:
       - name: Get SSM outputs
         working-directory: terraform/dotnet/ec2/windows
         run: |
-          echo "FRONTEND_SSM_ASSOCIATION_ID=$(terraform output frontend_script_association_id)" >> $GITHUB_ENV
-          echo "REMOTE_SSM_ASSOCIATION__ID=$(terraform output remote_script_association_id)" >> $GITHUB_ENV
+          echo "FRONTEND_DOCUMENT_NAME=$(terraform output frontend_document_name)" >> $GITHUB_ENV
+          echo "REMOTE_DOCUMENT_NAME=$(terraform output remote_document_name)" >> $GITHUB_ENV
 
       - name: Get the sample app endpoint
         working-directory: terraform/dotnet/ec2/windows
@@ -188,7 +188,7 @@ jobs:
 # 15 Min loose upper timeout bound is designed to allow for a rate situation: in a very small chance,
 # It's possible for SSM document to take up to 8min to run and still produce expect setup outcome
       - name: Monitor EC2 instances readiness and SSM execute status in Systems Manager
-        timeout-minutes: 15
+        timeout-minutes: 18
         run: |
           # Allow up to 5 min for EC2 instance connect to SSM
           max_attempts=30
@@ -220,35 +220,54 @@ jobs:
           check_instance_ready ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           check_instance_ready ${{ env.REMOTE_SERVICE_INSTANCE_ID }}
           
-          # Allow up to 10 min for SSM Document to run
-          max_attempts=60
-          attempt=0
-
-          check_status() {
-            local association_id=$1
+          main_command_id=$(aws ssm send-command \
+              --instance-ids "${{ env.MAIN_SERVICE_INSTANCE_ID }}" \
+              --document-name "${{ env.FRONTEND_DOCUMENT_NAME }}" \
+              --query "Command.CommandId" \
+              --output text)
+          
+          remote_command_id=$(aws ssm send-command \
+              --instance-ids "${{ env.REMOTE_SERVICE_INSTANCE_ID }}" \
+              --document-name "${{ env.REMOTE_DOCUMENT_NAME }}" \
+              --query "Command.CommandId" \
+              --output text)
+          
+          watch_command() {
+            local command_id=$1
+            local max_attempts=30  # 15 minutes timeout with 30 seconds interval
+            local attempt=0
+            local interval=30
 
             while [[ $attempt -lt $max_attempts ]]; do
-              aws ssm describe-association --association-id $association_id
-              local status=$(aws ssm describe-association --association-id $association_id --query "AssociationDescription.Overview.AssociationStatusAggregatedCount.Success" --output text)
-              echo "Attempt $((attempt + 1))/$max_attempts: Current status of SSM Association $association_id: $status"
-              if [[ "$status" == "1" ]]; then
-                echo "SSM Association $association_id succeeded."
+              status=$(aws ssm list-command-invocations \
+                --command-id "$command_id" \
+                --details \
+                --query "CommandInvocations[0].Status" \
+                --output text)
+
+              echo "Attempt $((attempt + 1))/$max_attempts: Current status of command $command_id: $status"
+
+              if [[ "$status" == "Success" || "$status" == "Failed" ]]; then
+                echo "SSM Command $command_id completed with status: $status"
+                if [[ "$status" == "Failed" ]]; then
+                  exit 1
+                fi
                 break
               else
-                echo "Waiting for SSM Association $association_id to succeed..."
+                echo "Waiting for SSM Command $command_id to complete..."
                 sleep $interval
                 attempt=$((attempt + 1))
               fi
             done
 
             if [[ $attempt -ge $max_attempts ]]; then
-              echo "Max attempts reached: SSM Association $association_id did not succeed after $max_attempts attempts."
+              echo "Timeout reached: SSM Command $command_id did not complete within 10 minutes."
               exit 1
             fi
           }
           
-          check_status ${{ env.FRONTEND_SSM_ASSOCIATION_ID }}
-          check_status ${{ env.REMOTE_SSM_ASSOCIATION__ID }}
+          watch_command $main_command_id
+          watch_command $remote_command_id
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew == 'failure'
