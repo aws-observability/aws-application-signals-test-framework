@@ -45,6 +45,10 @@ variable "canary_type" {
   default = "java-ec2-asg"
 }
 
-variable "cpu_architecture" {
+variable "language_version" {
+  default = "11"
+}
+
+  variable "cpu_architecture" {
   default = "x86_64"
 }
