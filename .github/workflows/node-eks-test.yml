@@ -180,8 +180,8 @@ jobs:
             RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraenablementscriptpythone2eclusterformysql"
           elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-test" ]; then
             RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroracwagente2eclusterformysql"
-          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-adot-test" ]; then
-            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraadote2eclusterformysql"
+          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-node-adot-test" ]; then
+            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraadotnodee2eclusterformysql"
           elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-operator-test" ]; then
             RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroracwagentoperatore2eclusterformysql"
           elif [ "${{ env.CLUSTER_NAME }}" = "e2e-node-canary-test" ]; then
