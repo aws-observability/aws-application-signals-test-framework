@@ -202,29 +202,29 @@ jobs:
             "e2e-test/${{ matrix.instance.repo_name }}/${{ matrix.instance.language }}-k8s-master-node-endpoint-pending-value"
           )
           endpoint_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[0]}" --query SecretString --output text)
-          
+
           instance_name=$(aws ec2 describe-instances \
             --filters "Name=ip-address,Values=$endpoint_secret" \
             --query "Reservations[*].Instances[*].{Name:Tags[?Key=='Name']|[0].Value}" \
             --output text)
-          
+
           if [ -n "$instance_name" ]; then
             prev_testing_id=$(echo $instance_name | awk -F'-' '{print $(NF-1)"-"$NF}')
-          
+
             aws ec2 delete-key-pair --key-name "k8s-on-ec2-${{ matrix.instance.ec2_name }}-${{ matrix.instance.language }}-key-pair-$prev_testing_id"
-          
+
             main_instance_name=k8s-on-ec2-${{ matrix.instance.ec2_name }}-${{ matrix.instance.language }}-master-$prev_testing_id
             worker_instance_name=k8s-on-ec2-${{ matrix.instance.ec2_name }}-${{ matrix.instance.language }}-worker-$prev_testing_id
             main_instance_id=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=$main_instance_name" \
             --query "Reservations[*].Instances[*].InstanceId" \
             --output text)
-          
+
             worker_instance_id=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=$worker_instance_name" \
             --query "Reservations[*].Instances[*].InstanceId" \
             --output text)
-          
+
             aws ec2 terminate-instances --instance-ids $main_instance_id
             aws ec2 terminate-instances --instance-ids $worker_instance_id
           fi
