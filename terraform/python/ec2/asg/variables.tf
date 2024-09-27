@@ -40,3 +40,7 @@ variable "get_cw_agent_rpm_command" {
 variable "canary_type" {
   default = "python-ec2-asg"
 }
+
+variable "language_version" {
+  default = "3.9"
+}
