@@ -33,7 +33,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      java-version: '11'
+      java-version: ${{ inputs.java-version }}
 
   java-k8s-attempt-2:
     needs: [ java-k8s-attempt-1 ]
@@ -43,7 +43,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      java-version: '11'
+      java-version: ${{ inputs.java-version }}
 
   publish-metric-attempt-1:
     needs: [ java-k8s-attempt-1, java-k8s-attempt-2 ]
