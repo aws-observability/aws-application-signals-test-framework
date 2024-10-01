@@ -14,6 +14,9 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      python-version:
+        required: true
+        type: string
 
 permissions:
   id-token: write
@@ -26,6 +29,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      python-version: ${{ inputs.python-version }}
 
   python-ecs-attempt-2:
     needs: [ python-ecs-attempt-1 ]
@@ -35,6 +39,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      python-version: ${{ inputs.python-version }}
 
   publish-metric-attempt-1:
     needs: [ python-ecs-attempt-1, python-ecs-attempt-2 ]

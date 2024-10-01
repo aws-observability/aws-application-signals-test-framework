@@ -6,9 +6,7 @@
 ## call the APIs, and validate the generated telemetry, including logs, metrics, and traces.
 name: Python ECS Enablement Canary Testing
 on:
-  schedule:
-    - cron: '*/15 * * * *' # run the workflow every 15 minutes
-  workflow_dispatch: # be able to run the workflow on demand
+  push:
 
 permissions:
   id-token: write
