@@ -40,3 +40,7 @@ variable "get_cw_agent_rpm_command" {
 variable "canary_type" {
   default = "python-ec2-asg"
 }
+
+variable "cpu_architecture" {
+  default = "x86_64"
+}
