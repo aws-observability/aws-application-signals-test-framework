@@ -107,8 +107,15 @@ resource "null_resource" "main_service_setup" {
       <<-EOF
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      # Install Java 11 and wget
-      sudo yum install wget java-11-amazon-corretto -y
+      # Install wget
+      sudo yum install wget -y
+      # Install Java
+      echo
+      if [[ "${var.language_version}" == "8" ]]; then
+        sudo yum install java-1.8.0-amazon-corretto -y
+      else
+        sudo yum install java-${var.language_version}-amazon-corretto -y
+      fi
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -190,8 +197,14 @@ resource "null_resource" "remote_service_setup" {
       <<-EOF
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      # Install Java 11 and wget
-      sudo yum install wget java-11-amazon-corretto -y
+      # Install wget
+      sudo yum install wget -y
+      # Install Java
+      if [[ "${var.language_version}" == "8" ]]; then
+        sudo yum install java-1.8.0-amazon-corretto -y
+      else
+        sudo yum install java-${var.language_version}-amazon-corretto -y
+      fi
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'

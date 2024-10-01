@@ -17,6 +17,11 @@ on:
       caller-repository:
         required: false
         type: string
+      java-version:
+        description: "Currently support version 8, 11, 17, 21, 22"
+        required: false
+        type: string
+        default: '11'
       adot-image-name:
         required: false
         type: string
@@ -37,6 +42,7 @@ env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   CALLER_REPOSITORY: ${{ inputs.caller-repository }}
+  JAVA_VERSION: ${{ inputs.java-version }}
   ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
   CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
@@ -114,9 +120,9 @@ jobs:
         working-directory: terraform/java/k8s/deploy/resources
         run: |
           sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' frontend-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}#' frontend-service-depl.yaml
+          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}#' frontend-service-depl.yaml
           sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' remote-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}#' remote-service-depl.yaml
+          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}#' remote-service-depl.yaml
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key frontend-service-depl-${{ env.TESTING_ID }}.yaml --body frontend-service-depl.yaml
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key remote-service-depl-${{ env.TESTING_ID }}.yaml --body remote-service-depl.yaml
 
