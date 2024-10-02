@@ -137,13 +137,8 @@ resource "null_resource" "main_service_setup" {
       export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
 
       cd ./asp_frontend_service
+      dotnet add package AWS.Distro.OpenTelemetry.AutoInstrumentation --prerelease
       dotnet build --runtime linux-x64
-      pwd
-      ls
-      ls bin
-      ls bin/Debug
-      ls bin/Debug/netcoreapp8.0
-      ls bin/Debug/netcoreapp8.0/linux-x64
       dos2unix bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh
       nohup sh bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp8.0/linux-x64/asp_frontend_service.dll &
 
@@ -234,6 +229,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id}
       export ASPNETCORE_URLS=http://0.0.0.0:8081
 
+      dotnet add package AWS.Distro.OpenTelemetry.AutoInstrumentation --prerelease
       dotnet build --runtime linux-x64
       dos2unix bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh
       nohup sh bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp8.0/linux-x64/asp_remote_service.dll &
