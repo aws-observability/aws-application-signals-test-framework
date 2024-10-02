@@ -138,7 +138,6 @@ resource "null_resource" "main_service_setup" {
 
       cd ./asp_frontend_service
       dotnet build --runtime linux-x64
-      cd bin/Debug/netcoreapp8.0
       dos2unix bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh
       nohup sh bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp8.0/linux-x64/asp_frontend_service.dll &
 
@@ -230,7 +229,6 @@ resource "null_resource" "remote_service_setup" {
       export ASPNETCORE_URLS=http://0.0.0.0:8081
 
       dotnet build --runtime linux-x64
-      cd bin/Debug/netcoreapp8.0
       dos2unix bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh
       nohup sh bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp8.0/linux-x64/asp_remote_service.dll &
 
