@@ -29,10 +29,6 @@ variable "sample_app_zip" {
   default = "s3://<bucket-name>/<zip>"
 }
 
-variable "get_adot_distro_command" {
-  default = "aws s3 cp s3://<bucket-name>/<distro> ./<distro> && unzip <distro>"
-}
-
 variable "get_cw_agent_rpm_command" {
   default = "<command> s3://<bucket-name>/<jar>"
 }
