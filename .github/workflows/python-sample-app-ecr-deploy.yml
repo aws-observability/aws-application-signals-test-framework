@@ -1,6 +1,10 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
+# This workflow is for building and uploading the Python sample application to ECR.
+# Python 3.10 will be built and uploaded to all regions to be used by the canary while
+# other versions (3.8, 3.9, 3.11, 3.12) will be uploaded to us-east-1 for the purpose of
+# testing ADOT Python
 name: Sample App Deployment - Python ECR
 on:
   workflow_dispatch: # be able to run the workflow on demand
@@ -9,8 +13,12 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+
 jobs:
-  upload-main-service-image:
+  python-3-10:
     strategy:
       fail-fast: false
       matrix:
@@ -27,19 +35,21 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
       - name: Retrieve account
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
-          secret-ids:
+          secret-ids: |
             ACCOUNT_ID, region-account/${{ matrix.aws-region }}
+            PYTHON_MAIN_SAMPLE_APP_IMAGE, e2e-test/python-main-sample-app-image
+            PYTHON_REMOTE_SAMPLE_APP_IMAGE, e2e-test/python-remote-sample-app-image
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
       - name: Login to Amazon ECR
@@ -53,10 +63,56 @@ jobs:
 
       - name: Upload Main Service Image
         run: |
-          docker tag pythonsampleapp/frontend-service ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}
-          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_FE_SA_IMG }}
+          docker tag pythonsampleapp/frontend-service ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}:v3.10
+          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}:v3.10
       
       - name: Upload Remote Service Image
         run: |
-          docker tag pythonsampleapp/remote-service ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}
-          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_PYTHON_E2E_RE_SA_IMG }}
+          docker tag pythonsampleapp/remote-service ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}:v3.10
+          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}:v3.10
+
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ '3.8', '3.9', '3.11', '3.12' ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            ACCOUNT_ID, region-account/us-east-1
+            PYTHON_MAIN_SAMPLE_APP_IMAGE, e2e-test/python-main-sample-app-image
+            PYTHON_REMOTE_SAMPLE_APP_IMAGE, e2e-test/python-remote-sample-app-image
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker compose build
+        working-directory: sample-apps/python
+        run: |
+          sed -i 's#python:3.10#python:${{ matrix.python-version }}#g' ./django_frontend_service/Dockerfile
+          sed -i 's#python:3.10#python:${{ matrix.python-version }}#g' ./django_remote_service/Dockerfile
+          docker compose build
+
+      - name: Upload Main Service Image
+        run: |
+          docker tag pythonsampleapp/frontend-service ${{ env.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}:v${{ matrix.python-version }}
+          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}:v${{ matrix.python-version }}
+
+      - name: Upload Remote Service Image
+        run: |
+          docker tag pythonsampleapp/remote-service ${{ env.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}:v${{ matrix.python-version }}
+          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}:v${{ matrix.python-version }}
