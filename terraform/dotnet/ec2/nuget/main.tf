@@ -138,6 +138,12 @@ resource "null_resource" "main_service_setup" {
 
       cd ./asp_frontend_service
       dotnet build --runtime linux-x64
+      pwd
+      ls
+      ls bin
+      ls bin/Debug
+      ls bin/Debug/netcoreapp8.0
+      ls bin/Debug/netcoreapp8.0/linux-x64
       dos2unix bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh
       nohup sh bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp8.0/linux-x64/asp_frontend_service.dll &
 
