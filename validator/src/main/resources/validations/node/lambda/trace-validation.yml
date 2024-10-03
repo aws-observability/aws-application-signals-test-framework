@@ -1,0 +1,5 @@
+-
+  validationType: "trace"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedTraceTemplate: "NODE_LAMBDA_INVOKE_TRACE"
