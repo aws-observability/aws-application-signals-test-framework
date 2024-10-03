@@ -118,7 +118,7 @@ resource "aws_launch_configuration" "launch_configuration" {
         sudo make install
 
         # Return back to ec2-user directory
-        cd /home/ec2-user
+        cd ~
     else
       sudo dnf install -y python${var.language_version}
       sudo dnf install -y python${var.language_version}-pip
@@ -250,7 +250,7 @@ resource "null_resource" "remote_service_setup" {
           sudo make install
 
           # Return back to ec2-user directory
-          cd /home/ec2-user
+          cd ~
       else
         sudo dnf install -y python${var.language_version}
         sudo dnf install -y python${var.language_version}-pip
