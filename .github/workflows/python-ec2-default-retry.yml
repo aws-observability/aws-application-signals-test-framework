@@ -21,6 +21,10 @@ on:
         required: false
         default: 'aws-opentelemetry-distro'
         type: string
+      cpu-architecture:
+        required: false
+        type: string
+        default: "x86_64"
       otel-source:
         required: false
         type: string
@@ -40,6 +44,7 @@ jobs:
       python-version: ${{ inputs.python-version }}
       staging-wheel-name: ${{ inputs.staging-wheel-name }}
       otel-source: ${{ inputs.otel-source }}
+      cpu-architecture: ${{ inputs.cpu-architecture }}
 
   python-ec2-default-attempt-2:
     needs: [ python-ec2-default-attempt-1 ]
@@ -52,6 +57,7 @@ jobs:
       python-version: ${{ inputs.python-version }}
       staging-wheel-name: ${{ inputs.staging-wheel-name }}
       otel-source: ${{ inputs.otel-source }}
+      cpu-architecture: ${{ inputs.cpu-architecture }}
 
   publish-metric-attempt-1:
     needs: [ python-ec2-default-attempt-1, python-ec2-default-attempt-2 ]

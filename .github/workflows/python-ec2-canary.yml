@@ -30,6 +30,7 @@ jobs:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-python-e2e-ec2-canary-test'
       python-version: '3.9'
+      cpu-architecture: 'x86_64'
 
   pypi:
     uses: ./.github/workflows/python-ec2-default-retry.yml
@@ -39,3 +40,4 @@ jobs:
       caller-workflow-name: 'appsignals-python-e2e-ec2-pypi-canary-test'
       python-version: '3.9'
       otel-source: 'pypi'
+      cpu-architecture: 'x86_64'

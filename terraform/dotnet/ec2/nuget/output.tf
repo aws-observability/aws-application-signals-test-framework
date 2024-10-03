@@ -13,42 +13,14 @@
 # permissions and limitations under the License.
 # -------------------------------------------------------------------------
 
-variable "test_id" {
-  default = "dummy-123"
+output "sample_app_remote_service_private_ip" {
+  value = aws_instance.remote_service_instance.private_ip
 }
 
-variable "aws_region" {
-  default = "<aws-region>"
+output "main_service_instance_id" {
+  value = aws_instance.main_service_instance.id
 }
 
-variable "user" {
-  default = "ec2-user"
-}
-
-variable "sample_app_jar" {
-  default = "s3://<bucket-name>/<jar>"
-}
-
-variable "sample_remote_app_jar" {
-  default = "s3://<bucket-name>/<jar>"
-}
-
-variable "get_cw_agent_rpm_command" {
-  default = "<command> s3://<bucket-name>/<jar>"
-}
-
-variable "get_adot_jar_command" {
-  default = "<command> s3://<bucket-name>/<jar>"
-}
-
-variable "canary_type" {
-  default = "java-ec2-asg"
-}
-
-variable "language_version" {
-  default = "11"
-}
-
-  variable "cpu_architecture" {
-  default = "x86_64"
+output "ec2_instance_ami" {
+  value = data.aws_ami.ami.id
 }

@@ -36,11 +36,15 @@ resource "null_resource" "deploy" {
       [ ! -e remote-service-depl.yaml ] || rm remote-service-depl.yaml
 
       # Clone and install operator onto cluster
-      echo "LOG: Cloning helm-charts repo"
-      # TODO: Update to latest release version of the code
-      git clone https://github.com/aws-observability/helm-charts -q
-      cd helm-charts/charts/amazon-cloudwatch-observability/
-      git reset --hard b407a9545a03e377703ef965a2ee655aa6df7406
+      echo "LOG: Getting latest helm chart release URL"
+      latest_version_url=$(curl -s https://api.github.com/repos/aws-observability/helm-charts/releases/latest | grep "tarball_url" | cut -d '"' -f 4)
+      echo "LOG: The latest helm chart version url is $latest_version_url"
+
+      echo "LOG: Downloading and unpacking the helm chart repo"
+      curl -L $latest_version_url -o aws-observability-helm-charts-latest.tar.gz
+      mkdir helm-charts
+      tar -xvzf aws-observability-helm-charts-latest.tar.gz -C helm-charts
+      cd helm-charts/aws-observability-helm-charts*/charts/amazon-cloudwatch-observability
 
       echo "LOG: Installing CloudWatch Agent Operator using Helm"
       helm upgrade --install --debug --namespace amazon-cloudwatch amazon-cloudwatch-operator ./ --create-namespace --set region=${var.aws_region} --set clusterName=k8s-cluster-${var.test_id}
@@ -88,7 +92,7 @@ resource "null_resource" "deploy" {
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
       elif [ "${var.repository}" = "aws-otel-js-instrumentation" ]; then
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/3", "value": "--auto-instrumentation-nodejs-image=${var.patch_image_arn}"}]'
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/5", "value": "--auto-instrumentation-nodejs-image=${var.patch_image_arn}"}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
@@ -121,7 +125,7 @@ resource "null_resource" "deploy" {
       aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key remote-service-depl-${var.test_id}.yaml remote-service-depl.yaml
 
       # Patch the staging image if this is running as part of release testing
-      if [ "${var.repository}" = "aws-otel-java-instrumentation" ]; then
+      if [ "${var.repository}" = "aws-otel-js-instrumentation" ]; then
         RELEASE_TESTING_SECRET_NAME=release-testing-ecr-secret
         kubectl delete secret -n sample-app-namespace --ignore-not-found $RELEASE_TESTING_SECRET_NAME
         kubectl create secret -n sample-app-namespace docker-registry $RELEASE_TESTING_SECRET_NAME \

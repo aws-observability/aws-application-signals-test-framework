@@ -28,11 +28,11 @@ resource "aws_default_vpc" "default" {}
 
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "aws_ssh_key" {
-  key_name = "instance_key-${var.test_id}"
+  key_name   = "instance_key-${var.test_id}"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
@@ -42,11 +42,11 @@ locals {
 }
 
 data "aws_ami" "ami" {
-  owners = ["amazon"]
-  most_recent      = true
+  owners      = ["amazon"]
+  most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
+    values = ["al20*-ami-minimal-*-x86_64"]
   }
   filter {
     name   = "state"
@@ -54,7 +54,7 @@ data "aws_ami" "ami" {
   }
   filter {
     name   = "architecture"
-    values = [var.cpu_architecture]
+    values = ["x86_64"]
   }
   filter {
     name   = "image-type"
@@ -78,13 +78,13 @@ data "aws_ami" "ami" {
 }
 
 resource "aws_instance" "main_service_instance" {
-  ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
+  instance_type                        = "t3.small"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
   metadata_options {
     http_tokens = "required"
   }
@@ -96,26 +96,24 @@ resource "aws_instance" "main_service_instance" {
 
 resource "null_resource" "main_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-      # Make the Terraform fail if any step throws an error
-      set -o errexit
-      # Install wget
-      sudo yum install wget -y
-      # Install Java
-      echo
-      if [[ "${var.language_version}" == "8" ]]; then
-        sudo yum install java-1.8.0-amazon-corretto -y
-      else
-        sudo yum install java-${var.language_version}-amazon-corretto -y
-      fi
+      #!/bin/bash
+
+      # Install DotNet and wget
+      sudo yum install -y wget
+      sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+      sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
+      sudo dnf install -y dotnet-sdk-8.0
+      sudo yum install unzip -y
+      sudo yum install dos2unix -y
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -126,21 +124,23 @@ resource "null_resource" "main_service_setup" {
       sudo rpm -U ./cw-agent.rpm
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
-      # Get ADOT
-      ${var.get_adot_jar_command}
-
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_jar} ./main-service.jar
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      unzip -o dotnet-sample-app.zip
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
-      OTEL_METRICS_EXPORTER=none \
-      OTEL_LOGS_EXPORT=none \
-      OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
-      OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \
-      nohup java -jar main-service.jar &> nohup.out &
+      # Get Absolute Path
+      current_dir=$(pwd)
+      echo $current_dir
+
+      # Export environment variables for instrumentation
+      export ASPNETCORE_URLS=http://0.0.0.0:8080
+      export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
+
+      cd ./asp_frontend_service
+      dotnet add package AWS.Distro.OpenTelemetry.AutoInstrumentation --prerelease
+      dotnet build --runtime linux-x64
+      dos2unix bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh
+      nohup sh bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp8.0/linux-x64/asp_frontend_service.dll &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -148,17 +148,16 @@ resource "null_resource" "main_service_setup" {
       # Check if the application is up. If it is not up, then exit 1.
       attempt_counter=0
       max_attempts=30
-      until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "http://localhost:8080" | tr -d '"')); do
+      until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8080" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
-          echo "Failed to connect to endpoint."
-          exit 1
+          echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
+          deployment_failed=1
+          break
         fi
         echo "Attempting to connect to the main endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
         sleep 10
       done
-
-      echo "Successfully connected to main endpoint"
 
       EOF
     ]
@@ -168,13 +167,13 @@ resource "null_resource" "main_service_setup" {
 }
 
 resource "aws_instance" "remote_service_instance" {
-  ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
+  instance_type                        = "t3.small"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
   metadata_options {
     http_tokens = "required"
   }
@@ -186,25 +185,24 @@ resource "aws_instance" "remote_service_instance" {
 
 resource "null_resource" "remote_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.remote_service_instance.public_ip
+    host        = aws_instance.remote_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-      # Make the Terraform fail if any step throws an error
-      set -o errexit
-      # Install wget
-      sudo yum install wget -y
-      # Install Java
-      if [[ "${var.language_version}" == "8" ]]; then
-        sudo yum install java-1.8.0-amazon-corretto -y
-      else
-        sudo yum install java-${var.language_version}-amazon-corretto -y
-      fi
+      #!/bin/bash
+
+      # Install DotNet and wget
+      sudo yum install -y wget
+      sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+      sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
+      sudo dnf install -y dotnet-sdk-8.0
+      sudo yum install unzip -y
+      sudo yum install dos2unix -y
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -215,21 +213,23 @@ resource "null_resource" "remote_service_setup" {
       sudo rpm -U ./cw-agent.rpm
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
-      # Get ADOT
-      ${var.get_adot_jar_command}
-
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_remote_app_jar} ./remote-service.jar
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      unzip -o dotnet-sample-app.zip
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
-      OTEL_METRICS_EXPORTER=none \
-      OTEL_LOGS_EXPORT=none \
-      OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
-      OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \
-      nohup java -jar remote-service.jar &> nohup.out &
+      # Get Absolute Path
+      current_dir=$(pwd)
+      echo $current_dir
+
+      # Export environment variables for instrumentation
+      cd ./asp_remote_service
+      export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id}
+      export ASPNETCORE_URLS=http://0.0.0.0:8081
+
+      dotnet add package AWS.Distro.OpenTelemetry.AutoInstrumentation --prerelease
+      dotnet build --runtime linux-x64
+      dos2unix bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh
+      nohup sh bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp8.0/linux-x64/asp_remote_service.dll &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -237,17 +237,16 @@ resource "null_resource" "remote_service_setup" {
       # Check if the application is up. If it is not up, then exit 1.
       attempt_counter=0
       max_attempts=30
-      until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "http://localhost:8080/healthcheck" | tr -d '"')); do
+      until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8081" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
-          echo "Failed to connect to endpoint."
-          exit 1
+          echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
+          deployment_failed=1
+          break
         fi
         echo "Attempting to connect to the remote endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
         sleep 10
       done
-
-      echo "Successfully connected to remote endpoint"
 
       EOF
     ]

@@ -14,6 +14,9 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      java-version:
+        required: true
+        type: string
 
 concurrency:
   group: 'java-k8s-${{ inputs.aws-region }}-${{ github.ref_name }}'
@@ -30,6 +33,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      java-version: ${{ inputs.java-version }}
 
   java-k8s-attempt-2:
     needs: [ java-k8s-attempt-1 ]
@@ -39,6 +43,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      java-version: ${{ inputs.java-version }}
 
   publish-metric-attempt-1:
     needs: [ java-k8s-attempt-1, java-k8s-attempt-2 ]
