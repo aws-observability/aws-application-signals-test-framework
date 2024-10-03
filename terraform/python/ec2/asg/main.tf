@@ -98,8 +98,31 @@ resource "aws_launch_configuration" "launch_configuration" {
     # Install Python and wget
     sudo yum install wget -y
     sudo yum install unzip -y
-    sudo dnf install -y python3.9
-    sudo dnf install -y python3.9-pip
+
+    # Dnf does not have the module for python 3.10, 3,10, 3.12, therefore we need to manually install it by downloading the package from the python website.
+    # Building and installing the package takes longer then installing it through dnf, so a seperate installation process was made.
+    # The canary should run on a version without the manual installation process
+    if [ "${var.language_version}" == "3.8" ] || [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ]; then
+        # Install modules required to compile Python and also run the sample app
+        sudo dnf groupinstall "Development Tools" -y
+        sudo dnf install openssl-devel sqlite-devel libffi-devel -y
+
+        # Download the Python package
+        cd /usr/src
+        sudo wget https://www.python.org/ftp/python/${var.language_version}.0/Python-${var.language_version}.0.tgz
+        sudo tar xzf Python-${var.language_version}.0.tgz
+
+        # Compile and install Python using c++
+        cd Python-${var.language_version}.0
+        sudo ./configure
+        sudo make install
+
+        # Return back to ec2-user directory
+        cd ~
+    else
+      sudo dnf install -y python${var.language_version}
+      sudo dnf install -y python${var.language_version}-pip
+    fi
 
     # Copy in CW Agent configuration
     agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -109,6 +132,10 @@ resource "aws_launch_configuration" "launch_configuration" {
     ${var.get_cw_agent_rpm_command}
     sudo rpm -U ./cw-agent.rpm
     sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
+
+    # Install modules with specific version so that it doesn't cause errors with Python 3.8
+    sudo python${var.language_version} -m pip install importlib-metadata==8.4.0 "protobuf>=3.19,<5.0"
+    sudo python${var.language_version} -m pip install grpcio --only-binary=:all:
 
     # Get ADOT Wheel and install it
     ${var.get_adot_wheel_command}
@@ -122,7 +149,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     # Delete the requests requirement as it is installed already using rpm. Only applicable for ec2 instances
     # created by Auto Scaling Groups
     sudo sed -i '/requests/d' ./ec2-requirements.txt
-    python3.9 -m pip install -r ec2-requirements.txt
+    sudo python${var.language_version} -m pip install -r ec2-requirements.txt
     export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
     export OTEL_PYTHON_DISTRO="aws_distro"
     export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
@@ -135,8 +162,8 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
     export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
     export OTEL_TRACES_SAMPLER=always_on
-    python3.9 manage.py migrate
-    nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8000 --noreload &
+    python${var.language_version} manage.py migrate
+    nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
@@ -203,8 +230,31 @@ resource "null_resource" "remote_service_setup" {
       # Install Python and wget
       sudo yum install wget -y
       sudo yum install unzip -y
-      sudo dnf install -y python3.9
-      sudo dnf install -y python3.9-pip
+
+      # Dnf does not have the module for python 3.10, 3,10, 3.12, therefore we need to manually install it by downloading the package from the python website.
+      # Building and installing the package takes longer then installing it through dnf, so a seperate installation process was made.
+      # The canary should run on a version without the manual installation process
+      if [ "${var.language_version}" == "3.8" ] || [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ]; then
+          # Install modules required to compile Python and also run the sample app
+          sudo dnf groupinstall "Development Tools" -y
+          sudo dnf install openssl-devel sqlite-devel libffi-devel -y
+
+          # Download the Python package
+          cd /usr/src
+          sudo wget https://www.python.org/ftp/python/${var.language_version}.0/Python-${var.language_version}.0.tgz
+          sudo tar xzf Python-${var.language_version}.0.tgz
+
+          # Compile and install Python using c++
+          cd Python-${var.language_version}.0
+          sudo ./configure
+          sudo make install
+
+          # Return back to ec2-user directory
+          cd ~
+      else
+        sudo dnf install -y python${var.language_version}
+        sudo dnf install -y python${var.language_version}-pip
+      fi
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -215,6 +265,10 @@ resource "null_resource" "remote_service_setup" {
       sudo rpm -U ./cw-agent.rpm
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
+      # Install modules with specific version so that it doesn't cause errors with Python 3.8
+      sudo python${var.language_version} -m pip install importlib-metadata==8.4.0 "protobuf>=3.19,<5.0"
+      sudo python${var.language_version} -m pip install grpcio --only-binary=:all:
+
       # Get ADOT Wheel and install it
       ${var.get_adot_wheel_command}
 
@@ -224,8 +278,8 @@ resource "null_resource" "remote_service_setup" {
 
       # Export environment variables for instrumentation
       cd ./django_remote_service
+      sudo python${var.language_version} -m pip install -r requirements.txt --force-reinstall
       export DJANGO_SETTINGS_MODULE="django_remote_service.settings"
-      python3.9 -m pip install -r requirements.txt --force-reinstall
       export OTEL_PYTHON_DISTRO="aws_distro"
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
       export OTEL_METRICS_EXPORTER=none
@@ -237,8 +291,8 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
       export OTEL_SERVICE_NAME=python-sample-remote-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
-      python3.9 manage.py migrate
-      nohup opentelemetry-instrument python3.9 manage.py runserver 0.0.0.0:8001 --noreload &
+      python${var.language_version} manage.py migrate
+      nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8001 --noreload &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
