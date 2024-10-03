@@ -14,6 +14,11 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      python-version:
+        description: "Currently support version 3.8, 3.9, 3.10, 3.11, 3.12"
+        required: false
+        type: string
+        default: '3.10'
       adot-image-name:
         required: false
         type: string
@@ -33,6 +38,7 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  PYTHON_VERSION: ${{ inputs.python-version }}
   ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
   CLUSTER_NAME: e2e-test-python
   SAMPLE_APP_NAME: main-service-python
@@ -107,8 +113,8 @@ jobs:
 
       - name: Set Sample App Image
         run: |
-          echo MAIN_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
-          echo REMOTE_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
+          echo MAIN_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.PYTHON_VERSION }}" >> $GITHUB_ENV
+          echo REMOTE_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.PYTHON_VERSION }}" >> $GITHUB_ENV
 
       - name: Set ADOT Python image environment variable
         run: |
