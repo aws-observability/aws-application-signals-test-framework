@@ -25,3 +25,4 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-e2e-python-ecs-canary-test'
+      python-version: '3.10'
