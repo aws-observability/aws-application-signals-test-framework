@@ -1,0 +1,10 @@
+-
+  validationType: "cw-log"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedLogStructureTemplate: "PYTHON_LAMBDA_INVOKE_LOG"
+-
+  validationType: "cw-log"
+  httpPath: "/lambda-aws-sdk"
+  callingType: "lambda-aws-sdk"
+  expectedLogStructureTemplate: "PYTHON_LAMBDA_AWS_SDK_CALL_LOG"
