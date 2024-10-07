@@ -125,6 +125,14 @@ jobs:
       - name: Build and Upload Main Service Image
         working-directory: sample-apps/java/springboot-main-service
         run: |
+          # For Java 8, springboot must be lower than version 3
+          # For Java 11,17,21, they are compatible with both springboot version
+          # For Java 22 and above, springboot must be version 3 or higher
+          if [ "${{ matrix.java-version }}" = "22" ]; then
+            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
+            cat build.gradle.kts
+          fi
+
           sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ matrix.java-version }}"#g' build.gradle.kts
           gradle jib -P javaVersion=${{ matrix.java-version }}
 
@@ -157,5 +165,13 @@ jobs:
       - name: Build and Upload Remote Service Image
         working-directory: sample-apps/java/springboot-remote-service
         run: |
+          # For Java 8, springboot must be lower than version 3
+          # For Java 11,17,21, they are compatible with both springboot version
+          # For Java 22 and above, springboot must be version 3 or higher
+          if [ "${{ matrix.java-version }}" = "22" ]; then
+            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
+            cat build.gradle.kts
+          fi
+
           sed -i 's#"{{ECR_IMAGE_URI}}"#"${{ env.E2E_TEST_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ matrix.java-version }}"#g' build.gradle.kts
           gradle jib -P javaVersion=${{ matrix.java-version }}

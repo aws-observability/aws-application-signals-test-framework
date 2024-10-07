@@ -41,6 +41,10 @@ variable "canary_type" {
   default = "python-ec2-default"
 }
 
+variable "language_version" {
+  default = "3.9"
+}
+
 variable "cpu_architecture" {
   default = "x86_64"
 }

@@ -26,6 +26,7 @@ plugins {
   id("org.springframework.boot")
   id("io.spring.dependency-management") version "1.1.0"
   id("com.google.cloud.tools.jib")
+  id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
 }
 
 group = "com.amazon.sampleapp"
@@ -46,6 +47,8 @@ dependencies {
   implementation("software.amazon.awssdk:sts")
   implementation("com.mysql:mysql-connector-j:8.4.0")
   implementation ("org.apache.httpcomponents:httpclient:4.5.13")
+  implementation("org.jetbrains.kotlin:kotlin-stdlib:2.0.20")
+  testImplementation("org.jetbrains.kotlin:kotlin-test:2.0.20")
 }
 
 jib {

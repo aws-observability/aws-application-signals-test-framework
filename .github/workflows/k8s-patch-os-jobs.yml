@@ -5,6 +5,9 @@ name: K8s Patch OS Job
 on:
   workflow_call:
     inputs:
+      jitter_index:
+        required: true
+        type: number
       repo_name:
         required: true
         type: string
@@ -20,6 +23,7 @@ permissions:
   contents: read
 
 env:
+  JITTER_INDEX: ${{ inputs.jitter_index }}
   REPO: ${{ inputs.repo_name }}
   EC2_NAME: ${{ inputs.ec2_name }}
   LANGUAGE:  ${{ inputs.language }}
@@ -31,6 +35,10 @@ jobs:
   create-k8s-on-ec2:
     runs-on: ubuntu-latest
     steps:
+      # Sleep 20 seconds between each job's start
+      - name: Sleep to avoid throttling limits
+        run: sleep $((${{ env.JITTER_INDEX }} * 20))
+
       - name: Generate Testing ID
         run: |
           echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
