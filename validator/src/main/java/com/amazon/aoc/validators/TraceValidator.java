@@ -138,6 +138,10 @@ public class TraceValidator implements IValidator {
     // and not through external callers
     if (validationConfig.getHttpPath().contains("client-call")) {
       traceFilter += " AND (annotation.aws_local_service = \"local-root-client-call\" OR annotation.aws_local_service = \"local-root-client-call:80\")" ;
+    } else if (validationConfig.getHttpPath().contains("lambda-invoke")) {
+      traceFilter += (String.format(" AND annotation.aws_local_operation = \"%s/%s\"",
+              context.getServiceName(),
+              "Handler"));
     } else {
       traceFilter += (String.format(" AND annotation.aws_local_operation = \"%s %s\"",
               validationConfig.getHttpMethod().toUpperCase(),
