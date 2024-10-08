@@ -7,7 +7,7 @@ variable "function_name" {
 variable "sdk_layer_name" {
   type        = string
   description = "Name of published SDK layer"
-  default     = "AWSOpenTelemetryDistroJs"
+  default     = "AWSOpenTelemetryDistroPython"
 }
 
 variable "tracing_mode" {
@@ -18,8 +18,8 @@ variable "tracing_mode" {
 
 variable "runtime" {
   type        = string
-  description = "NodeJS runtime version used for sample Lambda Function"
-  default     = "nodejs20.x"
+  description = "Python runtime version used for sample Lambda Function"
+  default     = "python3.12"
 }
 
 variable "architecture" {
