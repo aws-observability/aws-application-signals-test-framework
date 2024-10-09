@@ -2,3 +2,7 @@
   validationType: "cw-log"
   callingType: "none"
   expectedLogStructureTemplate: "PYTHON_ECS_HC_CALL_LOG"
+-
+  validationType: "cw-log"
+  callingType: "none"
+  expectedLogStructureTemplate: "PYTHON_RUNTIME_METRIC_LOG"

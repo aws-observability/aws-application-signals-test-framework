@@ -22,4 +22,7 @@
   httpMethod: "get"
   callingType: "http"
   expectedMetricTemplate: "PYTHON_EC2_ASG_CLIENT_CALL_METRIC"
-
+-
+  validationType: "cw-metric"
+  callingType: "none"
+  expectedMetricTemplate: "PYTHON_RUNTIME_METRIC"

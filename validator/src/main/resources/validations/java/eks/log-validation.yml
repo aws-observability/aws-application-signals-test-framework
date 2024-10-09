@@ -28,3 +28,7 @@
   httpMethod: "get"
   callingType: "http"
   expectedLogStructureTemplate: "JAVA_EKS_RDS_MYSQL_LOG"
+-
+  validationType: "cw-log"
+  callingType: "none"
+  expectedLogStructureTemplate: "JAVA_RUNTIME_METRIC_LOG"
