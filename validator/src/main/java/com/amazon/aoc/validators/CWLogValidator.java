@@ -150,6 +150,7 @@ public class CWLogValidator implements IValidator {
     if (operation != null) {
       dependencyFilter += String.format(" && ($.Operation = \"%s\")", operation);
     } else {
+      // runtime metrics don't have Operation
       dependencyFilter += "&& ($.Operation NOT EXISTS)";
     }
 
