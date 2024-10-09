@@ -28,3 +28,7 @@
   httpMethod: "get"
   callingType: "http"
   expectedLogStructureTemplate: "PYTHON_EKS_RDS_MYSQL_LOG"
+-
+  validationType: "cw-log"
+  callingType: "none"
+  expectedLogStructureTemplate: "PYTHON_RUNTIME_METRIC_LOG"

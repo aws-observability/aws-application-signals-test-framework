@@ -28,3 +28,7 @@
   httpMethod: "get"
   callingType: "http"
   expectedMetricTemplate: "PYTHON_EKS_RDS_MYSQL_METRIC"
+-
+  validationType: "cw-metric"
+  callingType: "none"
+  expectedMetricTemplate: "PYTHON_RUNTIME_METRIC"
