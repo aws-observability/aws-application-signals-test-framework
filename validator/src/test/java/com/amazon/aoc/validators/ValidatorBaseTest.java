@@ -28,6 +28,7 @@ public class ValidatorBaseTest {
         context.setRemoteServiceName(REMOTE_SERVICE_NAME);
         context.setRemoteServiceDeploymentName(REMOTE_SERVICE_DEPLOYMENT_NAME);
         context.setTestingId(TESTING_ID);
+        context.setLogGroup("/aws/application-signals/data");
         return context;
     }
 
