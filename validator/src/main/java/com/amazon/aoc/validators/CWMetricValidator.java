@@ -19,29 +19,30 @@ import com.amazon.aoc.exception.BaseException;
 import com.amazon.aoc.exception.ExceptionCode;
 import com.amazon.aoc.fileconfigs.FileConfig;
 import com.amazon.aoc.helpers.CWMetricHelper;
-import com.amazon.aoc.helpers.MustacheHelper;
 import com.amazon.aoc.helpers.RetryHelper;
 import com.amazon.aoc.models.Context;
 import com.amazon.aoc.models.ValidationConfig;
 import com.amazon.aoc.services.CloudWatchService;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.Metric;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import lombok.extern.log4j.Log4j2;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
-import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 public class CWMetricValidator implements IValidator {
-  private static int DEFAULT_MAX_RETRY_COUNT = 80;
+  private static final int DEFAULT_MAX_RETRY_COUNT = 80;
+  private static final String ANY_VALUE = "ANY_VALUE";
 
-  private MustacheHelper mustacheHelper = new MustacheHelper();
   private Context context;
   private ValidationConfig validationConfig;
   private FileConfig expectedMetric;
@@ -50,12 +51,12 @@ public class CWMetricValidator implements IValidator {
   private CWMetricHelper cwMetricHelper;
   private int maxRetryCount;
 
-  // for unit test
+  @VisibleForTesting
   public void setCloudWatchService(CloudWatchService cloudWatchService) {
     this.cloudWatchService = cloudWatchService;
   }
 
-  // for unit test so that we lower the count to 1
+  @VisibleForTesting
   public void setMaxRetryCount(int maxRetryCount) {
     this.maxRetryCount = maxRetryCount;
   }
@@ -134,7 +135,7 @@ public class CWMetricValidator implements IValidator {
           log.info("expected metricList is {}", expectedMetricList);
           compareMetricLists(expectedMetricList, actualMetricList);
         });
-    
+
     log.info("validation is passed for path {}", validationConfig.getHttpPath());
   }
 
@@ -152,50 +153,57 @@ public class CWMetricValidator implements IValidator {
   }
 
   /**
-   * Check if every metric in toBeChckedMetricList is in baseMetricList.
+   * Check if every metric in expectedMetricList is in actualMetricList.
    *
-   * @param toBeCheckedMetricList toBeCheckedMetricList
-   * @param baseMetricList baseMetricList
+   * @param expectedMetricList expectedMetricList
+   * @param actualMetricList actualMetricList
    */
-  private void compareMetricLists(List<Metric> toBeCheckedMetricList, List<Metric> baseMetricList)
+  private void compareMetricLists(List<Metric> expectedMetricList, List<Metric> actualMetricList)
       throws BaseException {
 
-    // load metrics into a hash set
-    Set<Metric> metricSet =
-        new TreeSet<>(
-            (Metric o1, Metric o2) -> {
-              // check namespace
-              if (!o1.getNamespace().equals(o2.getNamespace())) {
-                return o1.getNamespace().compareTo(o2.getNamespace());
-              }
-
-              // check metric name
-              if (!o1.getMetricName().equals(o2.getMetricName())) {
-                return o1.getMetricName().compareTo(o2.getMetricName());
-              }
-
-              // sort and check dimensions
-              List<Dimension> dimensionList1 = o1.getDimensions();
-              List<Dimension> dimensionList2 = o2.getDimensions();
-
-              // sort
-              dimensionList1.sort(Comparator.comparing(Dimension::getName));
-              dimensionList2.sort(Comparator.comparing(Dimension::getName));
-
-              return dimensionList1.toString().compareTo(dimensionList2.toString());
-            });
-    for (Metric metric : baseMetricList) {
-      metricSet.add(metric);
-    }
-    for (Metric metric : toBeCheckedMetricList) {
-      if (!metricSet.contains(metric)) {
-        throw new BaseException(
-            ExceptionCode.EXPECTED_METRIC_NOT_FOUND,
-            String.format(
-                "metric in %ntoBeCheckedMetricList: %s is not found in %nbaseMetricList: %s %n",
-                metric, metricSet));
+      Set<Metric> matchAny = new HashSet<>();
+      Set<Metric> matchExact = new HashSet<>();
+      for (Metric metric : expectedMetricList) {
+          metric.getDimensions().sort(Comparator.comparing(Dimension::getName));
+          if (metric.getDimensions().stream().anyMatch(d -> ANY_VALUE.equals(d.getValue()))) {
+              matchAny.add(metric);
+          } else {
+              matchExact.add(metric);
+          }
       }
-    }
+
+      Set<Metric> actualMetricSet = new HashSet<>();
+      for (Metric metric : actualMetricList) {
+         metric.getDimensions().sort(Comparator.comparing(Dimension::getName));
+         actualMetricSet.add(metric);
+      }
+      matchExact.removeAll(actualMetricSet);
+      if (!matchExact.isEmpty())  {
+          throw new BaseException(
+                  ExceptionCode.EXPECTED_METRIC_NOT_FOUND,
+                  String.format(
+                          "metric in %ntoBeCheckedMetricList: %s is not found in %nbaseMetricList: %s %n",
+                          matchExact.stream().findAny().get(), actualMetricSet));
+      }
+
+      Iterator<Metric> iter = matchAny.iterator();
+      while (iter.hasNext()) {
+          Metric expected = iter.next();
+          // There's a waste of computation because part of the actualMetricSet has been visited in the matchExact. Assuming
+          // the actualMetricSet size is small, do the comparison again to keep the logic simple.
+          for (Metric actual : actualMetricSet) {
+            if (metricEquals(expected, actual)) {
+                iter.remove();
+            }
+          }
+      }
+     if (!matchAny.isEmpty()) {
+         throw new BaseException(
+                 ExceptionCode.EXPECTED_METRIC_NOT_FOUND,
+                 String.format(
+                         "metric in %ntoBeCheckedMetricList: %s is not found in %nbaseMetricList: %s %n",
+                         matchAny.stream().findAny().get(), actualMetricSet));
+     }
   }
 
   private List<Metric> listMetricFromCloudWatch(
@@ -219,6 +227,29 @@ public class CWMetricValidator implements IValidator {
     }
     return result;
   }
+
+    private boolean metricEquals(Metric expected, Metric actual) {
+        if (expected.getNamespace().equals(actual.getNamespace())
+                && expected.getMetricName().equals(actual.getMetricName())) {
+            if (expected.getDimensions().size() == actual.getDimensions().size()) {
+                for (int i = 0; i < expected.getDimensions().size(); i++) {
+                    if (!dimensionEquals(expected.getDimensions().get(i), actual.getDimensions().get(i))) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean dimensionEquals(Dimension expected, Dimension actual) {
+        if (expected.getName().equals(actual.getName())) {
+            return ANY_VALUE.equals(expected.getValue()) ||
+                    expected.getValue().equals(actual.getValue());
+        }
+        return false;
+    }
 
   @Override
   public void init(

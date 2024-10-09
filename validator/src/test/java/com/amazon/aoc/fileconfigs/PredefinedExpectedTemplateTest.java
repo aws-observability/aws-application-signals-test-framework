@@ -15,19 +15,22 @@
 
 package com.amazon.aoc.fileconfigs;
 
-import java.io.IOException;
-import java.net.URL;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
+import java.net.URL;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 public class PredefinedExpectedTemplateTest {
-  @Test
-  public void ensureTemplatesAreExisting() throws IOException {
-    for (PredefinedExpectedTemplate predefinedExpectedTemplate :
-        PredefinedExpectedTemplate.values()) {
-      URL path = predefinedExpectedTemplate.getPath();
-      // also check if tostring can return a valid filepath
-      IOUtils.toString(new URL(path.toString()));
+    @Test
+    public void ensureTemplatesAreExisting() throws Exception {
+        for (PredefinedExpectedTemplate predefinedExpectedTemplate :
+                PredefinedExpectedTemplate.values()) {
+            URL path = predefinedExpectedTemplate.getPath();
+            assertNotNull(path);
+            // also check if tostring can return a valid filepath
+            IOUtils.toString(new URL(path.toString()));
+        }
     }
-  }
 }
