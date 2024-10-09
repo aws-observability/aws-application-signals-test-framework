@@ -26,6 +26,7 @@ import com.amazon.aoc.services.CloudWatchService;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.Metric;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import lombok.extern.log4j.Log4j2;
 
@@ -177,20 +178,21 @@ public class CWMetricValidator implements IValidator {
          metric.getDimensions().sort(Comparator.comparing(Dimension::getName));
          actualMetricSet.add(metric);
       }
-      matchExact.removeAll(actualMetricSet);
+      Set<Metric> actualMetricSnapshot = ImmutableSet.copyOf(actualMetricSet);
+
+      actualMetricSet.removeAll(matchExact);
+      matchExact.removeAll(actualMetricSnapshot);
       if (!matchExact.isEmpty())  {
           throw new BaseException(
                   ExceptionCode.EXPECTED_METRIC_NOT_FOUND,
                   String.format(
                           "metric in %ntoBeCheckedMetricList: %s is not found in %nbaseMetricList: %s %n",
-                          matchExact.stream().findAny().get(), actualMetricSet));
+                          matchExact.stream().findAny().get(), actualMetricSnapshot));
       }
 
       Iterator<Metric> iter = matchAny.iterator();
       while (iter.hasNext()) {
           Metric expected = iter.next();
-          // There's a waste of computation because part of the actualMetricSet has been visited in the matchExact. Assuming
-          // the actualMetricSet size is small, do the comparison again to keep the logic simple.
           for (Metric actual : actualMetricSet) {
             if (metricEquals(expected, actual)) {
                 iter.remove();
@@ -202,7 +204,7 @@ public class CWMetricValidator implements IValidator {
                  ExceptionCode.EXPECTED_METRIC_NOT_FOUND,
                  String.format(
                          "metric in %ntoBeCheckedMetricList: %s is not found in %nbaseMetricList: %s %n",
-                         matchAny.stream().findAny().get(), actualMetricSet));
+                         matchAny.stream().findAny().get(), actualMetricSnapshot));
      }
   }
 

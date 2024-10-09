@@ -97,3 +97,16 @@
     -
       name: Environment
       value: ANY_VALUE
+-
+  metricName: Fault
+  namespace: metricNamespace
+  dimensions:
+  -
+    name: Service
+    value: serviceName
+  -
+    name: Environment
+    value: ec2:default
+  -
+    name: Operation
+    value: operationName
