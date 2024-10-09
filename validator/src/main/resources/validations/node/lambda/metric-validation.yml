@@ -2,10 +2,10 @@
   validationType: "cw-metric"
   httpPath: "/lambda-invoke"
   callingType: "lambda-invoke"
-  expectedLogStructureTemplate: "NODE_LAMBDA_INVOKE_METRIC"
+  expectedMetricTemplate: "NODE_LAMBDA_INVOKE_METRIC"
 
 -
   validationType: "cw-metric"
   httpPath: "/lambda-aws-sdk"
   callingType: "lambda-aws-sdk"
-  expectedLogStructureTemplate: "NODE_LAMBDA_AWS_SDK_CALL_METRIC"
+  expectedMetricTemplate: "NODE_LAMBDA_AWS_SDK_CALL_METRIC"

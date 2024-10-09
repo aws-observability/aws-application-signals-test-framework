@@ -21,7 +21,7 @@ module "hello-lambda-function" {
   runtime       = var.runtime
 
   create_package         = false
-  local_existing_package = "${var.layer_artifacts_directory}/function.zip"
+  local_existing_package = "${var.layer_artifacts_directory}/pyfunction.zip"
 
   memory_size = 512
   timeout     = 30
