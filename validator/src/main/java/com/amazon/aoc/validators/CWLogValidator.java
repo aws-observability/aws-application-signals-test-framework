@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -145,7 +147,14 @@ public class CWLogValidator implements IValidator {
       dependencyFilter += String.format(" && ($.RemoteResourceType = %%%s%%) && ($.RemoteResourceIdentifier = %%%s%%)", remoteResourceType, remoteResourceIdentifier);
     }
 
-    String filterPattern = String.format("{ ($.Service = %s) && ($.Operation = \"%s\") %s }", context.getServiceName(), operation, dependencyFilter);
+    if (operation != null) {
+      dependencyFilter += String.format(" && ($.Operation = \"%s\")", operation);
+    } else {
+      // runtime metrics don't have Operation
+      dependencyFilter += "&& ($.Operation NOT EXISTS)";
+    }
+
+    String filterPattern = String.format("{ ($.Service = %s) %s }", context.getServiceName(), dependencyFilter);
     log.info("Filter Pattern for Log Search: " + filterPattern);
 
     List<FilteredLogEvent> retrievedLogs =
@@ -173,5 +182,15 @@ public class CWLogValidator implements IValidator {
     this.expectedLog = expectedLogTemplate;
     this.cloudWatchService = new CloudWatchService(context.getRegion());
     this.maxRetryCount = DEFAULT_MAX_RETRY_COUNT;
+  }
+
+  @VisibleForTesting
+  public void setCloudWatchService(CloudWatchService cloudWatchService) {
+    this.cloudWatchService = cloudWatchService;
+  }
+
+  @VisibleForTesting
+  public void setMaxRetryCount(int maxRetryCount) {
+    this.maxRetryCount = maxRetryCount;
   }
 }

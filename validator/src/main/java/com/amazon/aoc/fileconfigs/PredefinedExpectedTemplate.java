@@ -104,6 +104,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   /** Metric Limiter Test Case Validations */
   JAVA_METRIC_LIMITER_METRIC("/expected-data-template/java/metric_limiter/metric-limiter-metric.mustache"),
 
+  JAVA_RUNTIME_METRIC_LOG("/expected-data-template/java/runtime/runtime-log.mustache"),
+  JAVA_RUNTIME_METRIC("/expected-data-template/java/runtime/runtime-metric.mustache"),
+
   /** Python EKS Test Case Validations */
   PYTHON_EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/eks/outgoing-http-call-log.mustache"),
   PYTHON_EKS_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/eks/outgoing-http-call-metric.mustache"),
@@ -183,6 +186,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_ECS_HC_CALL_LOG("/expected-data-template/python/ecs/hc-log.mustache"),
   PYTHON_ECS_HC_CALL_METRIC("/expected-data-template/python/ecs/hc-metric.mustache"),
   PYTHON_ECS_HC_CALL_TRACE("/expected-data-template/python/ecs/hc-trace.mustache"),
+
+  PYTHON_RUNTIME_METRIC_LOG("/expected-data-template/python/runtime/runtime-log.mustache"),
+  PYTHON_RUNTIME_METRIC("/expected-data-template/python/runtime/runtime-metric.mustache"),
 
   /** DotNet EC2 Default Test Case Validations */
   DOTNET_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG(

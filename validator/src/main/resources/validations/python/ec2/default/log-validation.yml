@@ -22,4 +22,7 @@
   httpMethod: "get"
   callingType: "http"
   expectedLogStructureTemplate: "PYTHON_EC2_DEFAULT_CLIENT_CALL_LOG"
-
+-
+  validationType: "cw-log"
+  callingType: "none"
+  expectedLogStructureTemplate: "PYTHON_RUNTIME_METRIC_LOG"
