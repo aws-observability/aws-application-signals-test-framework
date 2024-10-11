@@ -97,4 +97,4 @@ jobs:
         working-directory: sample-apps/traffic-generator
         run: |
           zip traffic-generator.zip ./index.js ./package.json
-          aws s3 cp traffic-generator.zip s3://aws-appsignals-sample-app-prod-${{ matrix.aws-region }}/traffic-generator.zip
+          aws s3 cp traffic-generator.zip s3://aws-appsignals-sample-app-zmengyi-${{ matrix.aws-region }}/traffic-generator.zip
