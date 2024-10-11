@@ -89,6 +89,10 @@ resource "aws_instance" "main_service_instance" {
     http_tokens = "required"
   }
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Name = "main-service-${var.test_id}"
   }
