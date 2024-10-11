@@ -66,6 +66,6 @@ jobs:
             aws cloudwatch put-metric-data --namespace 'ADOT/GitHubActions' \
             --metric-name Failure \
             --dimensions repository=${{ github.repository }},branch=${{ github.ref_name }},workflow=${{ env.CALLER_WORKFLOW_NAME }} \
-            --value 0.0 \
+            --value 1.0 \
             --region ${{ env.E2E_TEST_AWS_REGION }}
           fi
