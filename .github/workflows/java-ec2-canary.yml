@@ -33,7 +33,7 @@ jobs:
     uses: ./.github/workflows/java-ec2-default-retry.yml
     secrets: inherit
     with:
-      aws-region: 'us-east-1'
+      aws-region: 'us-east-2'
       caller-workflow-name: 'appsignals-e2e-ec2-maven-canary-test'
       otel-source: 'maven'
       java-version: '11'

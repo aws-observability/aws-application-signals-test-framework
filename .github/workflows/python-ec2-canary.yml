@@ -33,7 +33,7 @@ jobs:
     uses: ./.github/workflows/python-ec2-default-retry.yml
     secrets: inherit
     with:
-      aws-region: 'us-east-1'
+      aws-region: 'us-east-2'
       caller-workflow-name: 'appsignals-python-e2e-ec2-pypi-canary-test'
       python-version: '3.9'
       otel-source: 'pypi'
