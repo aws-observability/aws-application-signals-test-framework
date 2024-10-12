@@ -47,7 +47,7 @@ env:
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   PYTHON_VERSION: ${{ inputs.python-version }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
-  ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
+  ADOT_WHEEL_NAME: aws_opentelemetry_distro-0.5.0.dev0-py3-none-any.whl
   OTEL_SOURCE: ${{ inputs.otel-source }}
   SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-zmengyi-${{ inputs.aws-region }}/python-sample-app.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
