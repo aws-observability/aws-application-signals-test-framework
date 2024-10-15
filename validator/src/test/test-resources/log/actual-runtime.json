@@ -1,0 +1,12 @@
+[
+  {
+    "timestamp": 1728448275567,
+    "message": "{\"EC2.InstanceId\":\"i-0aa390d458bf782b1\",\"Environment\":\"ec2:default\",\"Host\":\"ip-172-31-24-105.ec2.internal\",\"PlatformType\":\"AWS::EC2\",\"Service\":\"serviceName\",\"Telemetry.Agent\":\"CWAgent/1.300047.0-9-g132e908d\",\"Telemetry.SDK\":\"opentelemetry,1.33.0-aws-SNAPSHOT,java,Auto\",\"Telemetry.Source\":\"RuntimeMetric\",\"Version\":\"1\",\"_aws\":{\"CloudWatchMetrics\":[{\"Namespace\":\"ApplicationSignals\",\"Dimensions\":[[\"Environment\",\"Service\"]],\"Metrics\":[{\"Name\":\"JVMClassLoaded\",\"Unit\":\"1\"},{\"Name\":\"JVMMemoryNonHeapUsed\",\"Unit\":\"by\"},{\"Name\":\"JVMCpuRecentUtilization\",\"Unit\":\"1\"},{\"Name\":\"JVMMemoryHeapUsed\",\"Unit\":\"by\"},{\"Name\":\"JVMMemoryUsedAfterLastGC\",\"Unit\":\"by\"},{\"Name\":\"JVMMemoryOldGenUsed\",\"Unit\":\"by\"},{\"Name\":\"JVMMemorySurvivorSpaceUsed\",\"Unit\":\"by\"},{\"Name\":\"JVMMemoryEdenSpaceUsed\",\"Unit\":\"by\"},{\"Name\":\"JVMThreadCount\",\"Unit\":\"1\"},{\"Name\":\"JVMCpuTime\",\"Unit\":\"ns\"}]}],\"Timestamp\":1728448275567},\"JVMClassLoaded\":7685,\"JVMCpuRecentUtilization\":0.0007508212106992023,\"JVMCpuTime\":150530000000,\"JVMMemoryEdenSpaceUsed\":48234496,\"JVMMemoryHeapUsed\":74651136,\"JVMMemoryNonHeapUsed\":58388280,\"JVMMemoryOldGenUsed\":23270912,\"JVMMemorySurvivorSpaceUsed\":3145728,\"JVMMemoryUsedAfterLastGC\":20167680,\"JVMThreadCount\":16}",
+    "ingestionTime": 1728448275588
+  },
+  {
+    "timestamp": 1728448275567,
+    "message": "{\"EC2.InstanceId\":\"i-0aa390d458bf782b1\",\"Environment\":\"ec2:default\",\"Host\":\"ip-172-31-24-105.ec2.internal\",\"PlatformType\":\"AWS::EC2\",\"Service\":\"serviceName\",\"Telemetry.Agent\":\"CWAgent/1.300047.0-9-g132e908d\",\"Telemetry.SDK\":\"opentelemetry,1.33.0-aws-SNAPSHOT,java,Auto\",\"Telemetry.Source\":\"RuntimeMetric\",\"Version\":\"1\",\"_aws\":{\"CloudWatchMetrics\":[{\"Namespace\":\"ApplicationSignals\",\"Dimensions\":[[\"Environment\",\"Service\"]],\"Metrics\":[{\"Name\":\"JVMGCDuration\",\"Unit\":\"Milliseconds\"},{\"Name\":\"JVMGCCount\",\"Unit\":\"1\"},{\"Name\":\"JVMGCOldGenDuration\",\"Unit\":\"Milliseconds\"},{\"Name\":\"JVMGCYoungGenDuration\",\"Unit\":\"Milliseconds\"},{\"Name\":\"JVMGCOldGenCount\",\"Unit\":\"1\"},{\"Name\":\"JVMGCYoungGenCount\",\"Unit\":\"1\"}]}],\"Timestamp\":1728448275567},\"JVMGCCount\":0,\"JVMGCDuration\":0,\"JVMGCOldGenCount\":0,\"JVMGCOldGenDuration\":0,\"JVMGCYoungGenCount\":0,\"JVMGCYoungGenDuration\":0}",
+    "ingestionTime": 1728448275588
+  }
+]

@@ -144,6 +144,42 @@ public class CWMetricValidatorTest {
     }
   }
 
+  @Test
+  public void testValidateE2E_MatchAny() throws Exception{
+    ValidationConfig validationConfig =
+            initValidationConfig(TEMPLATE_ROOT + "endToEnd_expectedRuntimeMetrics.mustache");
+
+    List<Metric> localServiceMetrics = getTestMetrics("endToEnd_actualRuntimeMetrics");
+    List<Metric> remoteServiceMetrics = getTestMetrics("endToEnd_remoteMetricsWithService");
+    // Skip remoteMetricsWithRemoteApp, which contains the [RemoteService] rollup.
+    List<Metric> remoteMetricsWithRemoteApp = List.of();
+    List<Metric> remoteMetricsWithAmazon = getTestMetrics("endToEnd_remoteMetricsWithAmazon");
+    List<Metric> remoteMetricsWithAwsSdk = getTestMetrics("endToEnd_remoteMetricsWithAwsSdk");
+    List<Metric> remoteMetricsWithAwsSdkWithTarget =
+            getTestMetrics("endToEnd_remoteMetricsWithAwsSdk");
+
+    CloudWatchService cloudWatchService =
+            mockCloudWatchService(
+                    localServiceMetrics,
+                    remoteServiceMetrics,
+                    remoteMetricsWithRemoteApp,
+                    remoteMetricsWithAmazon,
+                    remoteMetricsWithAwsSdk,
+                    remoteMetricsWithAwsSdkWithTarget);
+
+    try {
+      validate(validationConfig, cloudWatchService);
+    } catch (BaseException be) {
+      String actualMessage = be.getMessage();
+      String expectedMessage =
+              "expectedMetricList: {Namespace: metricNamespace,MetricName: metricName,Dimensions: [{Name: RemoteService,Value: "
+                      + REMOTE_SERVICE_DEPLOYMENT_NAME
+                      + "}]} is not found in";
+      assertTrue(actualMessage.contains(expectedMessage), actualMessage);
+    }
+
+  }
+
   private Context initContext() {
     // fake vars
     String testingId = "testingId";
