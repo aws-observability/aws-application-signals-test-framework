@@ -111,7 +111,8 @@ jobs:
       - name: Set Lambda Layer artifact directory path
         run: echo ARTIFACTS_DIR="${{ github.workspace }}/lambda_artifacts" >> $GITHUB_ENV
 
-      - name: Download Lambda Layer and Function artifacts
+      - name: Download Lambda Layer and Function artifacts for E2E Test
+        if: ${{ github.event.inputs.CALLER_WORKFLOW_NAME != 'appsignals-python-e2e-lambda-canary-test' }}
         run: |
           aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/layer-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/layer.zip |
           aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/function-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/pyfunction.zip
