@@ -54,3 +54,22 @@ jobs:
         working-directory: sample-apps/node
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./node-sample-app.zip --key node-sample-app.zip
 
+      - name: Build Lambda Sample App
+        uses: actions/checkout@v4
+        with:
+          repository: 'aws-observability/aws-otel-js-instrumentation'
+      - name: Setup Layer Tools
+        shell: bash
+        run: npm install
+        working-directory: lambda-layer
+      - name: Build Lambda Sample App
+        shell: bash
+        run: npm install
+        working-directory: lambda-layer/sample-apps/aws-sdk
+
+      - name: Upload to Lambda Sample App to S3
+        working-directory: lambda-layer/sample-apps/aws-sdk
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/function.zip --key jsfunction.zip
+
+
+

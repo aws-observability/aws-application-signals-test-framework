@@ -9,6 +9,10 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+
 jobs:
   python-zip:
     strategy:
@@ -49,4 +53,17 @@ jobs:
       - name: Upload to S3
         working-directory: sample-apps/python
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
+
+      - name: Build Lambda Sample App
+        uses: actions/checkout@v4
+        with:
+          repository: 'aws-observability/aws-otel-python-instrumentation'
+      - name: Build sample lambda function
+        shell: bash
+        run: ./package-lambda-function.sh
+        working-directory: lambda-layer/sample-apps
+
+      - name: Upload to Lambda Sample App to S3
+        working-directory: lambda-layer/sample-apps
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/function.zip --key pyfunction.zip
 
