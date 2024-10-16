@@ -71,7 +71,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
         # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
@@ -112,13 +112,13 @@ jobs:
         run: echo ARTIFACTS_DIR="${{ github.workspace }}/lambda_artifacts" >> $GITHUB_ENV
 
       - name: Download Lambda Layer and Function artifacts for E2E Test
-        if: ${{ github.event.inputs.CALLER_WORKFLOW_NAME != 'appsignals-python-e2e-lambda-canary-test' }}
+        if: ${{ env.CALLER_WORKFLOW_NAME != 'appsignals-python-e2e-lambda-canary-test' }}
         run: |
           aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/layer-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/layer.zip |
           aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/function-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/pyfunction.zip
 
       - name: Set Canary Environment Variable
-        if: ${{ github.event.inputs.CALLER_WORKFLOW_NAME == 'appsignals-python-e2e-lambda-canary-test' }}
+        if: ${{ env.CALLER_WORKFLOW_NAME == 'appsignals-python-e2e-lambda-canary-test' }}
         run: |
           echo IS_CANARY=true >> $GITHUB_ENV |
           aws s3 cp {{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/pyfunction.zip
