@@ -112,8 +112,9 @@ jobs:
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
             echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
           elif [ "${{ env.OTEL_SOURCE }}" == "maven" ]; then
-            echo "Latest version for Maven is: 1.32.3"
-            echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://repo1.maven.org/maven2/software/amazon/opentelemetry/aws-opentelemetry-agent/1.32.3/aws-opentelemetry-agent-1.32.3.jar" >> $GITHUB_ENV
+            echo "Latest version for Maven is: 1.32.4"
+            echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://repo1.maven.org/maven2/software/amazon/opentelemetry/aws-opentelemetry-agent/1.32.4/aws-opentelemetry-agent-1.32.4.jar" >> 
+          $GITHUB_ENV
           else
             echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
           fi
