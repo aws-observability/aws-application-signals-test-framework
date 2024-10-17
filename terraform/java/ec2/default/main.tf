@@ -140,7 +140,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \
-      nohup java -jar main-service.jar &> nohup.out &
+      nohup java -XX:+UseG1GC -jar main-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -206,6 +206,9 @@ resource "null_resource" "remote_service_setup" {
         sudo yum install java-${var.language_version}-amazon-corretto -y
       fi
 
+      # enable ec2 instance connect for debug
+      sudo yum install ec2-instance-connect -y
+
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
@@ -229,7 +232,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \
-      nohup java -jar remote-service.jar &> nohup.out &
+      nohup java -XX:+UseG1GC -jar remote-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30

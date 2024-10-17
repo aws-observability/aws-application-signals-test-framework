@@ -22,3 +22,7 @@
   httpMethod: "get"
   callingType: "http"
   expectedMetricTemplate: "PYTHON_K8S_CLIENT_CALL_METRIC"
+-
+  validationType: "cw-metric"
+  callingType: "none"
+  expectedMetricTemplate: "PYTHON_RUNTIME_METRIC"

@@ -22,4 +22,7 @@
   httpMethod: "get"
   callingType: "http"
   expectedLogStructureTemplate: "JAVA_EC2_DEFAULT_CLIENT_CALL_LOG"
-
+-
+  validationType: "cw-log"
+  callingType: "none"
+  expectedLogStructureTemplate: "JAVA_RUNTIME_METRIC_LOG"
