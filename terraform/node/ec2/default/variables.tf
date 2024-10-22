@@ -25,6 +25,16 @@ variable "user" {
   default = "ec2-user"
 }
 
+variable "cpu_architecture" {
+  default = "x86_64" # an alternative value is "arm64"
+}
+
+variable "language_version" {
+  # none means to use the version packaged with the OS
+  # other alternatives are "14", "16", "18", "20", "22"
+  default = "none"
+}
+
 variable "sample_app_zip" {
   default = "s3://<bucket-name>/<zip>"
 }
