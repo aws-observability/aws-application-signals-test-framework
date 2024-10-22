@@ -1,0 +1,51 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+## This workflow aims to run the Application Signals end-to-end tests as a canary to
+## test the artifacts for App Signals enablement. It will deploy a sample app and remote
+## service on two EC2 instances, call the APIs, and validate the generated telemetry,
+## including logs, metrics, and traces.
+name: Node EC2 Enablement Release Testing
+on:
+  push:
+    branches:
+      - add-node-tests
+  # workflow_dispatch: # be able to run the workflow on demand
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-multiple-node-versions:
+    strategy:
+      fail-fast: false
+      matrix:
+        # aws-region: ['af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
+        #              'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
+        #              'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+        #              'us-east-1','us-east-2', 'us-west-1', 'us-west-2']
+        node-version: [ '14', '16', '18', '20', '22' ]
+    uses: ./.github/workflows/node-ec2-default-retry.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      node-version: ${{ matrix.node-version }}
+      cpu-architecture: 'x86_64'
+      caller-workflow-name: 'test-nodejs'
+
+  test-arm64-cpu-architecture:
+    uses: ./.github/workflows/node-ec2-default-retry.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      cpu-architecture: 'arm64'
+      caller-workflow-name: 'test-nodejs'
+
+  # to make sure existing tests are not affected by current changes
+  test-without-node-version-and-cpu-architecture:
+    uses: ./.github/workflows/node-ec2-default-retry.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      caller-workflow-name: 'test-nodejs'
