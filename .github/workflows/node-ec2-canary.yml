@@ -8,7 +8,7 @@
 name: Node EC2 Enablement Canary Testing
 on:
   schedule:
-    - cron: '*/15 * * * *' # run the workflow every 15 minutes
+    - cron: '10,35 * * * *' # run the workflow at 10th and 35th minute of every hour
   workflow_dispatch: # be able to run the workflow on demand
 
 permissions:

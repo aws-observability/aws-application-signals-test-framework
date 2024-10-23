@@ -8,7 +8,7 @@
 name: Dotnet EKS Enablement Canary Testing
 on:
   schedule:
-    - cron: '*/15 * * * *' # run the workflow every 15 minutes
+    - cron: '4,29 * * * *' # run the workflow at 4th and 29th minute of every hour
   workflow_dispatch: # be able to run the workflow on demand
 
 concurrency:
