@@ -351,6 +351,11 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_K8S_CLIENT_CALL_METRIC("/expected-data-template/node/k8s/client-call-metric.mustache"),
   NODE_K8S_CLIENT_CALL_TRACE("/expected-data-template/node/k8s/client-call-trace.mustache"),
 
+  /** Node ECS Test Case Validations */
+  NODE_ECS_HC_CALL_LOG("/expected-data-template/node/ecs/hc-log.mustache"),
+  NODE_ECS_HC_CALL_METRIC("/expected-data-template/node/ecs/hc-metric.mustache"),
+  NODE_ECS_HC_CALL_TRACE("/expected-data-template/node/ecs/hc-trace.mustache"),
+
   /** Node Lambda Test Case Validations */
   NODE_LAMBDA_INVOKE_LOG("/expected-data-template/node/lambda/lambda-invoke-log.mustache"),
   NODE_LAMBDA_INVOKE_METRIC("/expected-data-template/node/lambda/lambda-invoke-metric.mustache"),
