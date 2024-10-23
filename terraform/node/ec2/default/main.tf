@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent      = true
   filter {
     name = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -54,7 +54,7 @@ data "aws_ami" "ami" {
   }
   filter {
     name   = "architecture"
-    values = ["x86_64"]
+    values = ["${var.cpu_architecture}"]
   }
   filter {
     name   = "image-type"
@@ -79,7 +79,7 @@ data "aws_ami" "ami" {
 
 resource "aws_instance" "main_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.small"
+  instance_type                         = var.cpu_architecture == "arm64" ? "t4g.small" : "t3.small"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -108,7 +108,21 @@ resource "null_resource" "main_service_setup" {
       #!/bin/bash
 
       # Set up environment
-      sudo yum install nodejs unzip wget tmux aws-cli -y
+      sudo yum install unzip wget tmux aws-cli -y
+
+      # Install nvm
+      wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+
+      # Install the specified Node.js version, or use the system's version if 'none'
+      if [[ "${var.language_version}" != "none" ]]; then
+        nvm install ${var.language_version}
+        nvm use ${var.language_version}
+      else
+        sudo yum install nodejs -y
+        echo "Using the default Node.js version provided by the OS"
+      fi
 
       echo "Node version in use: $(node -v)"
 
@@ -176,7 +190,7 @@ resource "null_resource" "main_service_setup" {
 
 resource "aws_instance" "remote_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = "t3.small"
+  instance_type                         = var.cpu_architecture == "arm64" ? "t4g.small" : "t3.small"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -205,7 +219,21 @@ resource "null_resource" "remote_service_setup" {
       #!/bin/bash
 
       # Set up environment
-      sudo yum install nodejs unzip wget tmux aws-cli -y
+      sudo yum install unzip wget tmux aws-cli -y
+
+      # Install nvm
+      wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+
+      # Install the specified Node.js version, or use the system's version if 'none'
+      if [[ "${var.language_version}" != "none" ]]; then
+        nvm install ${var.language_version}
+        nvm use ${var.language_version}
+      else
+        sudo yum install nodejs -y
+        echo "Using the default Node.js version provided by the OS"
+      fi
 
       echo "Node version in use: $(node -v)"
 

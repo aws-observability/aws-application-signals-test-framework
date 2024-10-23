@@ -19,7 +19,7 @@
       "EC2.InstanceId": "^{{instanceId}}$",
       "PlatformType": "^AWS::EC2$",
       "otel.resource.host.image.id": "^{{instanceAmi}}$",
-      "otel.resource.host.type": "^t3.small$",
+      "otel.resource.host.type": "^(t3.small|t4g.small)$",
       "aws.span.kind": "^LOCAL_ROOT$"
     }
   },
@@ -71,7 +71,7 @@
       "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
       "PlatformType": "^AWS::EC2$",
       "otel.resource.host.image.id": "^{{instanceAmi}}$",
-      "otel.resource.host.type": "^t3.small$",
+      "otel.resource.host.type": "^(t3.small|t4g.small)$",
       "aws.span.kind": "^LOCAL_ROOT$"
     }
   }
