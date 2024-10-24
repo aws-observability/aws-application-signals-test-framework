@@ -2,12 +2,12 @@
   "name": "^{{serviceName}}$",
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^{{serviceName}}/Handler$",
+    "aws.local.operation": "^{{serviceName}}/FunctionHandler$",
     "aws.local.environment": "^lambda:default$"
   },
   "metadata": {
     "default": {
-      "faas.id": "arn:aws:lambda:{{region}}:{{accountId}}:function:{{serviceName}}",
+      "faas.id": "arn:aws:lambda:{{region}}:{{accountId}}:function:{{serviceName}}$",
     }
   },
   "subsegments": [
