@@ -14,6 +14,17 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      node-version:
+        description: "Currently support version 14, 16, 18, 20, 22"
+        required: false
+        type: string
+        # 'none' means to use the node version come with the OS
+        default: 'none'
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
+        required: false
+        type: string
+        default: "x86_64"
       staging-instrumentation-name:
         required: false
         default: '@aws/aws-distro-opentelemetry-node-autoinstrumentation'
@@ -31,6 +42,8 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  NODE_VERSION: ${{ inputs.node-version }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name }}
   SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/node-sample-app.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
@@ -52,7 +65,7 @@ jobs:
         run: echo "job-started=true" >> $GITHUB_OUTPUT
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ inputs.node-version }}-${{ inputs.cpu-architecture }}" >> $GITHUB_ENV
 
       - uses: actions/checkout@v4
         with:
@@ -105,7 +118,11 @@ jobs:
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
             echo GET_CW_AGENT_RPM_COMMAND="aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
           else
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            architecture="amd64"
+            if [ "${{ inputs.cpu-architecture }}" = "arm64" ]; then
+              architecture="arm64" 
+            fi
+            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/${architecture}/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
           fi
 
       - name: Set up terraform
@@ -142,6 +159,8 @@ jobs:
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="get_adot_instrumentation_command=${{ env.GET_ADOT_INSTRUMENTATION_COMMAND }}" \
+              -var="language_version=${{ env.NODE_VERSION }}" \
+              -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then
