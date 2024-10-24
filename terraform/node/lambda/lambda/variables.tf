@@ -28,6 +28,12 @@ variable "architecture" {
   default     = "x86_64"
 }
 
+variable "region" {
+  type        = string
+  description = "Lambda function running region, default value is us-west-2"
+  default     = "us-west-2"
+}
+
 variable "is_canary" {
   type        = bool
   default     = false
