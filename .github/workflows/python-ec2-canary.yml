@@ -8,7 +8,7 @@
 name: Python EC2 Enablement Canary Testing
 on:
   schedule:
-    - cron: '*/15 * * * *' # run the workflow every 15 minutes
+    - cron: '16,41 * * * *' # run the workflow at 16th and 41th minute of every hour
   workflow_dispatch: # be able to run the workflow on demand
 
 permissions:

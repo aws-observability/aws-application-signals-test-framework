@@ -8,7 +8,7 @@
 name: Node EKS Enablement Canary Testing
 on:
   schedule:
-    - cron: '*/15 * * * *' # run the workflow every 15 minutes
+    - cron: '12,37 * * * *' # run the workflow at 12th and 37th minute of every hour
   workflow_dispatch: # be able to run the workflow on demand
 
 permissions:
