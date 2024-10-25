@@ -21,5 +21,8 @@ spec:
           image: ${IMAGE}
           ports:
             - containerPort: 8081
+          env:
+            - name: OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED
+              value: "false"
       imagePullSecrets:
         - name: ecr-secret

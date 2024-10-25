@@ -124,6 +124,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     OTEL_METRICS_EXPORTER=none \
     OTEL_LOGS_EXPORT=none \
     OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
+    OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false \
     OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
     OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
@@ -220,6 +221,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
+      OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false \
       OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
       OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \

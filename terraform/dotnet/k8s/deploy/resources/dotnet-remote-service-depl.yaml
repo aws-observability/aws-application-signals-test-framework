@@ -24,6 +24,8 @@ spec:
               value: "0.0.0.0:8081"
             - name: ASPNETCORE_URLS
               value: "http://+:8081"
+            - name: OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED
+              value: "false"
           ports:
             - containerPort: 8081
       imagePullSecrets:
