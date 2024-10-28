@@ -123,7 +123,11 @@ resource "kubernetes_deployment" "dotnet_app_deployment" {
               #inject the test id to service name for unique App Signals metrics
               name = "OTEL_SERVICE_NAME"
               value = "dotnet-application-${var.test_id}"
-            }
+          }
+          env {
+            name = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
+            value = "false"
+          }
           port {
             container_port = 8080
           }
@@ -201,6 +205,10 @@ resource "kubernetes_deployment" "dotnet_r_app_deployment" {
           image_pull_policy = "Always"
           port {
             container_port = 8081
+          }
+          env {
+            name = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
+            value = "false"
           }
         }
       }

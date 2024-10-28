@@ -150,6 +150,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_METRICS_EXPORTER=none
       export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+      export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
       export ASPNETCORE_URLS=http://0.0.0.0:8080
       dotnet build
@@ -252,6 +253,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id}
       export OTEL_METRICS_EXPORTER=none
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
+      export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
       export ASPNETCORE_URLS=http://0.0.0.0:8081
       dotnet build

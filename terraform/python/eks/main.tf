@@ -135,6 +135,10 @@ resource "kubernetes_deployment" "python_app_deployment" {
             name = "RDS_MYSQL_CLUSTER_PASSWORD"
             value = var.rds_mysql_cluster_password
           }
+          env {
+            name = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
+            value = "false"
+          }
           port {
             container_port = 8000
           }
@@ -204,7 +208,11 @@ resource "kubernetes_deployment" "python_r_app_deployment" {
           env {
               name = "DJANGO_SETTINGS_MODULE"
               value = "django_remote_service.settings"
-            }
+          }
+          env {
+            name = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
+            value = "false"
+          }
           port {
             container_port = 8001
           }
