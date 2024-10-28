@@ -34,6 +34,12 @@ variable "is_canary" {
   description = "Whether to create the resource or not"
 }
 
+variable "region" {
+  type        = string
+  description = "Lambda function running region, default value is us-west-2"
+  default     = "us-west-2"
+}
+
 variable "layer_artifacts_directory" {
   type        = string
   default = "./layer_artifacts"
