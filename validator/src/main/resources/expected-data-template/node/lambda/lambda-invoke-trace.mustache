@@ -1,32 +1,11 @@
 [{
-  "name": "^{{serviceName}}$",
-  "annotations": {
-    "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^{{serviceName}}/FunctionHandler$"
-  },
-  "metadata": {
-    "default": {
-      "faas.id": "arn:aws:lambda:{{region}}:{{accountId}}:function:{{serviceName}}$"
-    }
+  "name": "^{{serviceName}}/default$",
   },
   "subsegments": [
     {
-      "name": "^S3$",
+      "name": "^Lambda$",
       "aws": {
-        "span.kind": "^CLIENT$"
-      },
-      "annotations": {
-        "aws.local.service": "^{{serviceName}}$",
-        "aws.local.operation": "^S3.ListBuckets$",
-        "aws.remote.service": "^AWS::S3$",
-        "aws.remote.operation": "^ListBuckets$"
-      },
-      "metadata": {
-        "default": {
-          "rpc.service": "^S3$",
-          "rpc.method": "^ListBuckets$",
-          "rpc.system": "^aws-api$"
-        }
+        "function_name": "^{{serviceName}}$",
       },
       "namespace": "^aws$"
     }
