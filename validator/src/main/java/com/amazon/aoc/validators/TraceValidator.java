@@ -141,7 +141,7 @@ public class TraceValidator implements IValidator {
     } else if (validationConfig.getHttpPath().contains("lambda-invoke")) {
       traceFilter += (String.format(" AND annotation.aws_local_operation = \"%s/%s\"",
               context.getServiceName(),
-              "Handler"));
+              "FunctionHandler"));
     } else {
       traceFilter += (String.format(" AND annotation.aws_local_operation = \"%s %s\"",
               validationConfig.getHttpMethod().toUpperCase(),

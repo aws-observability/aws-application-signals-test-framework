@@ -136,6 +136,7 @@ jobs:
           -var="sdk_layer_name=AWSOpenTelemetryDistroJs-${{ github.run_id }}" 
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" 
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
+          -var="region=${{ env.E2E_TEST_AWS_REGION }}"
           -var="is_canary=${{ env.IS_CANARY }}"'
           max_retry: 6
           sleep_time: 60
@@ -217,4 +218,6 @@ jobs:
           cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/node/lambda/lambda && terraform destroy -auto-approve \
           -var="sdk_layer_name=AWSOpenTelemetryDistroJs-${{ github.run_id }}" \
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" \
-          -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
+          -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}" \
+          -var="region=${{ env.E2E_TEST_AWS_REGION }}" \
+          -var="is_canary=${{ env.IS_CANARY }}"
