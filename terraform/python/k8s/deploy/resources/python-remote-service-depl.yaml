@@ -28,6 +28,8 @@ spec:
               value: "/django_remote_app"
             - name: "DJANGO_SETTINGS_MODULE"
               value: "django_remote_service.settings"
+            - name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
+              value: "false"
           ports:
             - containerPort: 8001
       imagePullSecrets:

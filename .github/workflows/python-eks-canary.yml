@@ -8,7 +8,7 @@
 name: Python EKS Enablement Canary Testing
 on:
   schedule:
-    - cron: '*/15 * * * *' # run the workflow every 15 minutes
+    - cron: '18,43 * * * *' # run the workflow at 18th and 43th minute of every hour
   workflow_dispatch: # be able to run the workflow on demand
 
 permissions:

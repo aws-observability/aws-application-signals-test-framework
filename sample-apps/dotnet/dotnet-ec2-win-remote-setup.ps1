@@ -74,6 +74,7 @@ $env:OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT = "http://127.0.0.1:4316/v1/
 $env:OTEL_METRICS_EXPORTER = "none"
 $env:OTEL_RESOURCE_ATTRIBUTES = "service.name=dotnet-sample-remote-application-$TestId"
 $env:OTEL_AWS_APPLICATION_SIGNALS_ENABLED = "true"
+$env:OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED = "false"
 $env:OTEL_TRACES_SAMPLER = "always_on"
 $env:ASPNETCORE_URLS = "http://0.0.0.0:8081"
 

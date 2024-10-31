@@ -26,11 +26,12 @@ module "hello-lambda-function" {
   memory_size = 512
   timeout     = 30
 
-  layers = var.is_canary ? [local.sdk_layer_arns_amd64.us-west-1] : [aws_lambda_layer_version.sdk_layer[0].arn]
+  layers = var.is_canary ? [local.sdk_layer_arns_amd64[var.region]] : [aws_lambda_layer_version.sdk_layer[0].arn]
 
   environment_variables = {
     AWS_LAMBDA_EXEC_WRAPPER     = "/opt/otel-instrument"
     OTEL_AWS_APPLICATION_SIGNALS_ENABLED = "true"
+    OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED = "false"
     OTEL_METRICS_EXPORTER       = "none"
   }
 

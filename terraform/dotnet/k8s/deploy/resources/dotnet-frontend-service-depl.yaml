@@ -26,5 +26,7 @@ spec:
               value: "0.0.0.0:8080"
             - name: ASPNETCORE_URLS
               value: "http://+:8080"
+            - name: OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED
+              value: "false"
       imagePullSecrets:
         - name: ecr-secret
