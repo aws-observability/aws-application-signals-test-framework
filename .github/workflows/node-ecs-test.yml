@@ -116,10 +116,8 @@ jobs:
             # Use the staging image build by the ADOT node repo
             echo ADOT_INSTRUMENTATION_IMAGE_URI="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
           else
-            # ADOT_INSTRUMENTATION_IMAGE_TAG=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-js-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-            # ADOT_INSTRUMENTATION_IMAGE_TAG="v0.1.0"
-            # echo ADOT_INSTRUMENTATION_IMAGE_URI="public.ecr.aws/aws-observability/adot-autoinstrumentation-node:$ADOT_INSTRUMENTATION_IMAGE_TAG" >> $GITHUB_ENV
-            echo ADOT_INSTRUMENTATION_IMAGE_URI="public.ecr.aws/e8l6r3w7/adot-autoinstrumentation-node-js:latest" >> $GITHUB_ENV
+            ADOT_INSTRUMENTATION_IMAGE_TAG=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-js-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
+            echo ADOT_INSTRUMENTATION_IMAGE_URI="public.ecr.aws/aws-observability/adot-autoinstrumentation-node:$ADOT_INSTRUMENTATION_IMAGE_TAG" >> $GITHUB_ENV
           fi
 
       # Switch to use the public image for CW Agent
@@ -128,8 +126,7 @@ jobs:
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
             echo CWAGENT_IMAGE_URI="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
           else
-            # echo CWAGENT_IMAGE_URI="public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest" >> $GITHUB_ENV
-            echo CWAGENT_IMAGE_URI="136146983976.dkr.ecr.us-east-1.amazonaws.com/cloudwatch-agent:1.300047.0b872" >> $GITHUB_ENV
+            echo CWAGENT_IMAGE_URI="public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest" >> $GITHUB_ENV
           fi
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
