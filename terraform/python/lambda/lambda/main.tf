@@ -17,7 +17,7 @@ module "hello-lambda-function" {
 
   architectures = compact([var.architecture])
   function_name = var.function_name
-  handler       = "index.handler"
+  handler       = "lambda_function.lambda_handler"
   runtime       = var.runtime
 
   create_package         = false

@@ -59,23 +59,22 @@ jobs:
       otel-source: ${{ inputs.otel-source }}
       cpu-architecture: ${{ inputs.cpu-architecture }}
 
-# TODO: will publish metrics after data quality issue is fixed
-#  publish-metric-attempt-1:
-#    needs: [ python-lambda-attempt-1, python-lambda-attempt-2 ]
-#    if: always()
-#    uses: ./.github/workflows/enablement-test-publish-result.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ inputs.aws-region }}
-#      caller-workflow-name: ${{ inputs.caller-workflow-name }}
-#      validation-result: ${{ needs.python-lambda-attempt-1.outputs.validation-result || needs.python-lambda-attempt-2.outputs.validation-result }}
-#
-#  publish-metric-attempt-2:
-#    needs: [ python-lambda-attempt-1, python-lambda-attempt-2, publish-metric-attempt-1 ]
-#    if: ${{ always() && needs.publish-metric-attempt-1.outputs.job-started != 'true' }}
-#    uses: ./.github/workflows/enablement-test-publish-result.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ inputs.aws-region }}
-#      caller-workflow-name: ${{ inputs.caller-workflow-name }}
-#      validation-result: ${{ needs.python-lambda-attempt-1.outputs.validation-result || needs.python-lambda-attempt-2.outputs.validation-result }}
+  publish-metric-attempt-1:
+    needs: [ python-lambda-attempt-1, python-lambda-attempt-2 ]
+    if: always()
+    uses: ./.github/workflows/enablement-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ inputs.aws-region }}
+      caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      validation-result: ${{ needs.python-lambda-attempt-1.outputs.validation-result || needs.python-lambda-attempt-2.outputs.validation-result }}
+
+  publish-metric-attempt-2:
+    needs: [ python-lambda-attempt-1, python-lambda-attempt-2, publish-metric-attempt-1 ]
+    if: ${{ always() && needs.publish-metric-attempt-1.outputs.job-started != 'true' }}
+    uses: ./.github/workflows/enablement-test-publish-result.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ inputs.aws-region }}
+      caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      validation-result: ${{ needs.python-lambda-attempt-1.outputs.validation-result || needs.python-lambda-attempt-2.outputs.validation-result }}
