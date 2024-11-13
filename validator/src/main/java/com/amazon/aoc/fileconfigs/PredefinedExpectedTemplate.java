@@ -43,6 +43,23 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EKS_RDS_MYSQL_METRIC("/expected-data-template/java/eks/rds-mysql-metric.mustache"),
   JAVA_EKS_RDS_MYSQL_TRACE("/expected-data-template/java/eks/rds-mysql-trace.mustache"),
 
+  /** JAVA EKS Test Case Validations */
+  JAVA_EKS_OTLP_OCB_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/eks-otlp-ocb/outgoing-http-call-log.mustache"),
+  JAVA_EKS_OTLP_OCB_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/eks-otlp-ocb/outgoing-http-call-metric.mustache"),
+  JAVA_EKS_OTLP_OCB_OUTGOING_HTTP_CALL_TRACE("/expected-data-template/java/eks-otlp-ocb/outgoing-http-call-trace.mustache"),
+
+  JAVA_EKS_OTLP_OCB_AWS_SDK_CALL_LOG("/expected-data-template/java/eks-otlp-ocb/aws-sdk-call-log.mustache"),
+  JAVA_EKS_OTLP_OCB_AWS_SDK_CALL_METRIC("/expected-data-template/java/eks-otlp-ocb/aws-sdk-call-metric.mustache"),
+  JAVA_EKS_OTLP_OCB_AWS_SDK_CALL_TRACE("/expected-data-template/java/eks-otlp-ocb/aws-sdk-call-trace.mustache"),
+
+  JAVA_EKS_OTLP_OCB_REMOTE_SERVICE_LOG("/expected-data-template/java/eks-otlp-ocb/remote-service-log.mustache"),
+  JAVA_EKS_OTLP_OCB_REMOTE_SERVICE_METRIC("/expected-data-template/java/eks-otlp-ocb/remote-service-metric.mustache"),
+  JAVA_EKS_OTLP_OCB_REMOTE_SERVICE_TRACE("/expected-data-template/java/eks-otlp-ocb/remote-service-trace.mustache"),
+
+  JAVA_EKS_OTLP_OCB_CLIENT_CALL_LOG("/expected-data-template/java/eks-otlp-ocb/client-call-log.mustache"),
+  JAVA_EKS_OTLP_OCB_CLIENT_CALL_METRIC("/expected-data-template/java/eks-otlp-ocb/client-call-metric.mustache"),
+  JAVA_EKS_OTLP_OCB_CLIENT_CALL_TRACE("/expected-data-template/java/eks-otlp-ocb/client-call-trace.mustache"),
+
   /** Java EC2 Default Test Case Validations */
   JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/default/outgoing-http-call-log.mustache"),
   JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC(
