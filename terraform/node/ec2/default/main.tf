@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent      = true
   filter {
     name = "name"
-    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
+    values = ["al20*-ami-minimal-2023.6.20241031.0-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
