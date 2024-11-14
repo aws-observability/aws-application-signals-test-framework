@@ -91,6 +91,10 @@ resource "aws_launch_configuration" "launch_configuration" {
   associate_public_ip_address = true
   iam_instance_profile        = "APP_SIGNALS_EC2_TEST_ROLE"
   security_groups             = [aws_default_vpc.default.default_security_group_id]
+  
+  root_block_device {
+    volume_size = 5
+  }
 
   user_data = <<-EOF
     #!/bin/bash
@@ -185,8 +189,13 @@ resource "aws_instance" "remote_service_instance" {
   vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
   associate_public_ip_address          = true
   instance_initiated_shutdown_behavior = "terminate"
+
   metadata_options {
     http_tokens = "required"
+  }
+
+  root_block_device {
+    volume_size = 5
   }
 
   tags = {
