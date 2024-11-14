@@ -34,9 +34,9 @@ on:
         default: 'github'
     outputs:
       job-started:
-        value: ${{ jobs.python-ec2-default.outputs.job-started }}
+        value: ${{ jobs.python-lambda-default.outputs.job-started }}
       validation-result:
-        value: ${{ jobs.python-ec2-default.outputs.validation-result }}
+        value: ${{ jobs.python-lambda-default.outputs.validation-result }}
 
 permissions:
   id-token: write
