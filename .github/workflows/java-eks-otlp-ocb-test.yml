@@ -54,7 +54,7 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  otlp-ocb:
+  test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -189,7 +189,6 @@ jobs:
           echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
           echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
 
-      # TODO: Fix retry, clean-app-signals doesn't work for enable-app-signals-ocb.sh
       - name: Install OTel Operator using enablement script
         uses: ./.github/workflows/actions/execute_and_retry
         with:
@@ -197,10 +196,8 @@ jobs:
             ${{ env.CLUSTER_NAME }} \
             ${{ env.E2E_TEST_AWS_REGION }} \
             ${{ env.SAMPLE_APP_NAMESPACE }}"
-          max_retry: 1
+          max_retry: 3
           sleep_time: 60
-          # TODO: cleanup and increase retries
-          # cleanup: "TODO"
 
       - name: Install OTel Collector
         uses: ./.github/workflows/actions/execute_and_retry
@@ -208,6 +205,8 @@ jobs:
           command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks-otlp-ocb/util && kubectl apply -f ./appsignals-collector.yaml -n ${{ env.SAMPLE_APP_NAMESPACE }}"
           cleanup: "kubectl delete -f ./appsignals-collector.yaml -n ${{ env.SAMPLE_APP_NAMESPACE }} && \
             aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}"
+          max_retry: 3
+          sleep_time: 60
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-sample-app
@@ -389,16 +388,13 @@ jobs:
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}
-      
-      # TODO: Fix, doesn't work right now because of the following error
-      # `serviceaccount "default/appsignals-collector" was not created by eksctl; will not be deleted`
-      # Not a necessary piece of code anyways, service account persisting is not an issue
+
       - name: Remove Application Signals Collector IAM service account
         if: always()
         continue-on-error: true
         run: |
           eksctl delete iamserviceaccount \
-            --name appsignals-collector \                 
+            --name appsignals-collector \
             --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
             --cluster ${{ env.CLUSTER_NAME }} \
             --region ${{ env.E2E_TEST_AWS_REGION }}
