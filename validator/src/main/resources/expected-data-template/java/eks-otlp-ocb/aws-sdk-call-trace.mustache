@@ -19,7 +19,6 @@
   },
   "metadata": {
     "default": {
-        "EC2.AutoScalingGroup": "^eks-.+",
         "EKS.Cluster": "^{{platformInfo}}$",
         "K8s.Namespace": "^{{appNamespace}}",
         "otel.resource.K8s.Workload": "^sample-app-deployment-{{testingId}}",
@@ -37,7 +36,7 @@
           "name": "^S3$",
           "http": {
             "request": {
-              "url": "^https://e2e-test-bucket-name-{{testingId}}.s3.{{region}}.amazonaws.com\\?location$",
+              "url": "^https://e2e-test-bucket-name-{{testingId}}.s3.us-west-1.amazonaws.com\\?location$",
               "method": "^GET$"
             }
           },
@@ -52,7 +51,6 @@
           },
           "metadata": {
             "default": {
-              "EC2.AutoScalingGroup": "^eks-.+",
               "EKS.Cluster": "^{{platformInfo}}$",
               "K8s.Namespace": "^{{appNamespace}}$",
               "PlatformType": "^AWS::EKS$",

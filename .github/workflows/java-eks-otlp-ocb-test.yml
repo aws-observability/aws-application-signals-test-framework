@@ -265,9 +265,6 @@ jobs:
           max_retry: 3
           sleep_time: 30
 
-      - name: Sleep
-        run: sleep 30
-
       # Validation for app signals telemetry data
       - name: Call endpoint and validate generated EMF logs
         id: log-validation
