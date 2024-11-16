@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent      = true
   filter {
     name = "name"
-    values = ["al20*-ami-minimal-2023.6.20241031.0-*-${var.cpu_architecture}"]
+    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -85,6 +85,10 @@ resource "aws_instance" "main_service_instance" {
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
   associate_public_ip_address           = true
   instance_initiated_shutdown_behavior  = "terminate"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   metadata_options {
     http_tokens = "required"
@@ -128,6 +132,9 @@ resource "null_resource" "main_service_setup" {
         sudo yum install nodejs -y
         echo "Using the default Node.js version provided by the OS"
       fi
+
+      # enable ec2 instance connect for debug
+      sudo yum install ec2-instance-connect -y
 
       echo "Node version in use: $(node -v)"
 
@@ -211,6 +218,10 @@ resource "aws_instance" "remote_service_instance" {
     volume_size = 5
   }
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Name = "remote-service-${var.test_id}"
   }
@@ -245,6 +256,9 @@ resource "null_resource" "remote_service_setup" {
         sudo yum install nodejs -y
         echo "Using the default Node.js version provided by the OS"
       fi
+
+      # enable ec2 instance connect for debug
+      sudo yum install ec2-instance-connect -y
 
       echo "Node version in use: $(node -v)"
 
