@@ -10,7 +10,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
 
 -
   metricName: Latency
@@ -18,19 +18,19 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: UnmappedOperation
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Latency
@@ -38,7 +38,7 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: Operation
       value: GET /healthcheck
@@ -55,7 +55,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
 
 -
   metricName: Latency
@@ -66,7 +66,7 @@
       value: {{remoteServiceDeploymentName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
 
 -
   metricName: Latency
@@ -77,10 +77,10 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Latency
@@ -91,13 +91,13 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Latency
@@ -105,21 +105,7 @@
   dimensions:
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET /remote-service
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Error
@@ -133,13 +119,27 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: UnmappedOperation
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: generic:default
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Error
@@ -147,7 +147,7 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: Operation
       value: GET /healthcheck
@@ -164,7 +164,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
 
 -
   metricName: Error
@@ -175,7 +175,7 @@
       value: {{remoteServiceDeploymentName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
 
 -
   metricName: Error
@@ -186,10 +186,10 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Error
@@ -200,13 +200,13 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Error
@@ -214,7 +214,7 @@
   dimensions:
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Fault
@@ -228,7 +228,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
 
 -
   metricName: Fault
@@ -236,19 +236,19 @@
   dimensions:
     -
       name: Operation
-      value: GET /remote-service
+      value: UnmappedOperation
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Fault
@@ -256,7 +256,7 @@
   dimensions:
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: Operation
       value: GET /healthcheck
@@ -273,7 +273,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
 
 -
   metricName: Fault
@@ -284,7 +284,7 @@
       value: {{remoteServiceDeploymentName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
 
 -
   metricName: Fault
@@ -295,10 +295,10 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Fault
@@ -309,13 +309,13 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: eks:{{platformInfo}}/{{appNamespace}}
+      value: generic:default
     -
       name: RemoteOperation
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080
 
 -
   metricName: Fault
@@ -323,4 +323,4 @@
   dimensions:
     -
       name: RemoteService
-      value: {{remoteServiceDeploymentName}}
+      value: {{remoteServiceIp}}:8080

@@ -30,9 +30,9 @@ on:
         type: string
     outputs:
       job-started:
-        value: ${{ jobs.metric-limiter.outputs.job-started }}
+        value: ${{ jobs.java-eks-otlp-ocb.outputs.job-started }}
       validation-result:
-        value: ${{ jobs.metric-limiter.outputs.validation-result }}
+        value: ${{ jobs.java-eks-otlp-ocb.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -54,7 +54,7 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  test:
+  java-eks-otlp-ocb:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -65,12 +65,10 @@ jobs:
         id: job-started
         run: echo "job-started=true" >> $GITHUB_OUTPUT
 
-      # TODO: Put back namespace
       - name: Generate testing id and sample app namespace
         run: |
           echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
-          echo SAMPLE_APP_NAMESPACE="default" >> $GITHUB_ENV
-      # echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+          echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
 
       - uses: actions/checkout@v4
         with:
@@ -90,14 +88,6 @@ jobs:
           max_retry: 3
           sleep_time: 60
 
-      - name: Download enablement script
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          pre-command: "mkdir enablement-script && cd enablement-script"
-          command: "wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/refs/heads/ocb/scripts/eks/appsignals/enable-app-signals-ocb.sh"
-          cleanup: "rm -f enable-app-signals-ocb.sh"
-          post-command: "chmod +x enable-app-signals-ocb.sh"
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -108,7 +98,7 @@ jobs:
         uses: aws-actions/aws-secretsmanager-get-secrets@v2
         with:
           secret-ids: |
-            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+            ACCOUNT_ID, otlp-region-account/gamma-${{ env.E2E_TEST_AWS_REGION }}
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
             JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
 
@@ -149,12 +139,13 @@ jobs:
         run: kubectl get namespace | awk '/^ns-[0-9]+-[0-9]+/{print $1}' | xargs --no-run-if-empty kubectl delete namespace
 
       # Set up App Signals permissions and resources
+      # Renamed `service-account` to `sa` to get under 128 character limit for CFN stack names, which includes the namespace
       - name: Create role for AWS access from the sample app
         id: create_service_account
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "eksctl create iamserviceaccount \
-            --name service-account-${{ env.TESTING_ID }} \
+            --name sa-${{ env.TESTING_ID }} \
             --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
             --cluster ${{ env.CLUSTER_NAME }} \
             --role-name eks-s3-access-${{ env.TESTING_ID }} \
@@ -162,7 +153,7 @@ jobs:
             --region ${{ env.E2E_TEST_AWS_REGION }} \
             --approve"
           cleanup: "eksctl delete iamserviceaccount \
-            --name service-account-${{ env.TESTING_ID }} \
+            --name sa-${{ env.TESTING_ID }} \
             --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
             --cluster ${{ env.CLUSTER_NAME }} \
             --region ${{ env.E2E_TEST_AWS_REGION }}"
@@ -192,7 +183,7 @@ jobs:
       - name: Install OTel Operator using enablement script
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals-ocb.sh \
+          command: "${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks-otlp-ocb/util/enable-app-signals-ocb.sh \
             ${{ env.CLUSTER_NAME }} \
             ${{ env.E2E_TEST_AWS_REGION }} \
             ${{ env.SAMPLE_APP_NAMESPACE }}"
@@ -202,7 +193,10 @@ jobs:
       - name: Install OTel Collector
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks-otlp-ocb/util && kubectl apply -f ./appsignals-collector.yaml -n ${{ env.SAMPLE_APP_NAMESPACE }}"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks-otlp-ocb/util && \
+            sed -i -e 's/${E2E_TEST_AWS_REGION}/${{ env.E2E_TEST_AWS_REGION }}/g' ./appsignals-collector.yaml && \
+            sed -i -e 's/${SAMPLE_APP_NAMESPACE}/${{ env.SAMPLE_APP_NAMESPACE }}/g' ./appsignals-collector.yaml && \
+            kubectl apply -f ./appsignals-collector.yaml -n ${{ env.SAMPLE_APP_NAMESPACE }}"
           cleanup: "kubectl delete -f ./appsignals-collector.yaml -n ${{ env.SAMPLE_APP_NAMESPACE }} && \
             aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}"
           max_retry: 3
@@ -220,7 +214,7 @@ jobs:
               -var=\"eks_cluster_name=${{ env.CLUSTER_NAME }}\" \
               -var=\"eks_cluster_context_name=$(kubectl config current-context)\" \
               -var=\"test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}\" \
-              -var=\"service_account_aws_access=service-account-${{ env.TESTING_ID }}\" \
+              -var=\"service_account_aws_access=sa-${{ env.TESTING_ID }}\" \
               -var=\"sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}\" \
               -var=\"sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}\" \
               -var='account_id=${{ env.ACCOUNT_ID }}'"
@@ -230,7 +224,7 @@ jobs:
             -var=\"kube_directory_path=${{ github.workspace }}/.kube\" \
             -var=\"eks_cluster_name=${{ env.CLUSTER_NAME }}\" \
             -var=\"test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}\" \
-            -var=\"service_account_aws_access=service-account-${{ env.TESTING_ID }}\" \
+            -var=\"service_account_aws_access=sa-${{ env.TESTING_ID }}\" \
             -var=\"sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}\" \
             -var=\"sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}\""
           max_retry: 2
@@ -271,19 +265,17 @@ jobs:
         run: ./gradlew validator:run --args='-c java/eks-otlp-ocb/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
-          --region us-west-2
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info appsignals-ocb-demo
+          --platform-info ${{ env.CLUSTER_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
+          --remote-service-ip ${{ env.REMOTE_SERVICE_POD_IP }}
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
-        # TODO: Undo hardcode
-        # --platform-info ${{ env.CLUSTER_NAME }}
-        # --region ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Call endpoints and validate generated metrics
         id: metric-validation
@@ -291,20 +283,18 @@ jobs:
         run: ./gradlew validator:run --args='-c java/eks-otlp-ocb/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
-          --region us-west-2
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info appsignals-ocb-demo
+          --platform-info ${{ env.CLUSTER_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
+          --remote-service-ip ${{ env.REMOTE_SERVICE_POD_IP }}
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
-        # TODO: Undo hardcodes:
-        # --platform-info ${{ env.CLUSTER_NAME }}
-        # --region ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Call endpoints and validate generated traces
         id: trace-validation
@@ -312,19 +302,17 @@ jobs:
         run: ./gradlew validator:run --args='-c java/eks-otlp-ocb/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
-          --region us-west-2
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info appsignals-ocb-demo
+          --platform-info ${{ env.CLUSTER_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
+          --remote-service-ip ${{ env.REMOTE_SERVICE_POD_IP }}
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
-        # TODO: Undo hardcode
-        # --platform-info ${{ env.CLUSTER_NAME }}
-        # --region ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Refresh AWS Credentials
         if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
@@ -343,8 +331,6 @@ jobs:
             echo "validation-result=failure" >> $GITHUB_OUTPUT
           fi
 
-      # TODO: Simplify cleanup
-      # Can just use `kubectl delete ns -n ${{ env.SAMPLE_APP_NAMESPACE }}` once the namespace is no longer hardcoded
       - name: Clean up
         if: always()
         continue-on-error: true
@@ -354,13 +340,7 @@ jobs:
           aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
           eksctl delete iamserviceaccount --name cloudwatch-agent --namespace amazon-cloudwatch --cluster ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
           kubectl delete ns opentelemetry-operator-system
-          kubectl delete service appsignals-collector -n ${{ env.SAMPLE_APP_NAMESPACE }}
-          kubectl delete service appsignals-collector-headless -n ${{ env.SAMPLE_APP_NAMESPACE }}
-          kubectl delete service appsignals-collector-monitoring -n ${{ env.SAMPLE_APP_NAMESPACE }}
-          kubectl delete deploy --all -n ${{ env.SAMPLE_APP_NAMESPACE }}
-          kubectl delete service sample-remote-app-service -n ${{ env.SAMPLE_APP_NAMESPACE }}
-          kubectl delete service sample-app-service -n ${{ env.SAMPLE_APP_NAMESPACE }}
-          kubectl delete -f ./appsignals-collector.yaml -n ${{ env.SAMPLE_APP_NAMESPACE }}
+          kubectl delete ns -n ${{ env.SAMPLE_APP_NAMESPACE }}
           aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Terraform destroy
@@ -375,7 +355,7 @@ jobs:
             -var="kube_directory_path=${{ github.workspace }}/.kube" \
             -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-            -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+            -var="service_account_aws_access=sa-${{ env.TESTING_ID }}" \
             -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
             -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
 
@@ -384,7 +364,7 @@ jobs:
         continue-on-error: true
         run: |
           eksctl delete iamserviceaccount \
-          --name service-account-${{ env.TESTING_ID }} \
+          --name sa-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}

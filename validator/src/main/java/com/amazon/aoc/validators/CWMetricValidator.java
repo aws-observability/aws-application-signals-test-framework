@@ -102,6 +102,9 @@ public class CWMetricValidator implements IValidator {
           if (context.getRemoteServiceName() != null && !context.getRemoteServiceName().isEmpty()) {
             serviceNames.add(context.getRemoteServiceName());
           }
+          if (context.getRemoteServiceIp() != null && !context.getRemoteServiceIp().isEmpty()) {
+            remoteServiceNames.add(context.getRemoteServiceIp() + ":8080");
+          }
           if (context.getTestingId() != null && !context.getTestingId().isEmpty()) {
             remoteTargetNames.add("::s3:::e2e-test-bucket-name-" + context.getTestingId());
           }
