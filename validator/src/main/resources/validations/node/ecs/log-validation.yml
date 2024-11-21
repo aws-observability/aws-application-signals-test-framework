@@ -1,0 +1,4 @@
+-
+  validationType: "cw-log"
+  callingType: "none"
+  expectedLogStructureTemplate: "NODE_ECS_HC_CALL_LOG"

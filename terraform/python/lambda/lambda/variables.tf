@@ -1,7 +1,7 @@
 variable "function_name" {
   type        = string
   description = "Name of sample app function / API gateway"
-  default     = "aws-opentelemetry-distro-nodejs"
+  default     = "aws-opentelemetry-distro-python"
 }
 
 variable "sdk_layer_name" {
@@ -19,7 +19,7 @@ variable "tracing_mode" {
 variable "runtime" {
   type        = string
   description = "Python runtime version used for sample Lambda Function"
-  default     = "python3.12"
+  default     = "python3.13"
 }
 
 variable "architecture" {

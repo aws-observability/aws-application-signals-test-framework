@@ -5,7 +5,7 @@ resource "aws_lambda_layer_version" "sdk_layer" {
   count               = var.is_canary ? 0 : 1
   layer_name          = var.sdk_layer_name
   filename            = "${var.layer_artifacts_directory}/layer.zip"
-  compatible_runtimes = ["python3.10", "python3.11", "python3.12"]
+  compatible_runtimes = ["python3.10", "python3.11", "python3.12", "python3.13"]
   license_info        = "Apache-2.0"
   source_code_hash    = filebase64sha256("${var.layer_artifacts_directory}/layer.zip")
 #   filename = "${var.kube_directory_path}/config"
@@ -17,7 +17,7 @@ module "hello-lambda-function" {
 
   architectures = compact([var.architecture])
   function_name = var.function_name
-  handler       = "index.handler"
+  handler       = "lambda_function.lambda_handler"
   runtime       = var.runtime
 
   create_package         = false
@@ -30,9 +30,6 @@ module "hello-lambda-function" {
 
   environment_variables = {
     AWS_LAMBDA_EXEC_WRAPPER     = "/opt/otel-instrument"
-    OTEL_AWS_APPLICATION_SIGNALS_ENABLED = "true"
-    OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED = "false"
-    OTEL_METRICS_EXPORTER       = "none"
   }
 
   tracing_mode = var.tracing_mode

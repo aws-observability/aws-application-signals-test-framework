@@ -1,0 +1,6 @@
+-
+  validationType: "trace"
+  callingType: "none"
+  httpMethod: "get"
+  httpPath: "/client-call"
+  expectedTraceTemplate: "NODE_ECS_HC_CALL_TRACE"

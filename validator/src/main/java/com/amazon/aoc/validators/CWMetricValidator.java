@@ -41,7 +41,7 @@ import java.util.Set;
 
 @Log4j2
 public class CWMetricValidator implements IValidator {
-  private static final int DEFAULT_MAX_RETRY_COUNT = 80;
+  private static final int DEFAULT_MAX_RETRY_COUNT = 100;
   private static final String ANY_VALUE = "ANY_VALUE";
 
   private Context context;
