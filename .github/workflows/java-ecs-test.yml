@@ -132,8 +132,7 @@ jobs:
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
             echo CWAGENT_IMAGE_URI="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
           else
-            # echo CWAGENT_IMAGE_URI="public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest" >> $GITHUB_ENV
-            echo CWAGENT_IMAGE_URI="136146983976.dkr.ecr.us-east-1.amazonaws.com/cloudwatch-agent:1.300047.0b872" >> $GITHUB_ENV
+            echo CWAGENT_IMAGE_URI="public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest" >> $GITHUB_ENV
           fi
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
