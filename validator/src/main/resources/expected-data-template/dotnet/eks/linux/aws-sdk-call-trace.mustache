@@ -11,7 +11,7 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^GET /aws-sdk-call$",
+    "aws.local.operation": "^GET aws-sdk-call$",
     "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
   },
   "metadata": {
@@ -36,7 +36,7 @@
       },
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
-        "aws.local.operation": "^GET /aws-sdk-call$",
+        "aws.local.operation": "^GET aws-sdk-call$",
         "aws.remote.service": "^AWS::S3$",
         "aws.remote.operation": "^GetBucketLocation$",
         "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$",
