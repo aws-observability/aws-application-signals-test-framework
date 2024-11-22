@@ -61,6 +61,7 @@ jib {
   }
   container {
     mainClass = "com.amazon.sampleapp.FrontendService"
+    jvmFlags = listOf("-XX:+UseG1GC")
     ports = listOf("8080")
   }
 }
