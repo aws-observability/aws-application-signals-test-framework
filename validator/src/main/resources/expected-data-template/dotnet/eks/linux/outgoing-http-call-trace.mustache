@@ -11,7 +11,7 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^GET /outgoing-http-call$",
+    "aws.local.operation": "^GET outgoing-http-call$",
     "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
   },
   "metadata": {
@@ -38,7 +38,7 @@
       },
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
-        "aws.local.operation": "^GET /outgoing-http-call$",
+        "aws.local.operation": "^GET outgoing-http-call$",
         "aws.remote.service": "^aws.amazon.com:443$",
         "aws.remote.operation": "^GET /$",
         "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"

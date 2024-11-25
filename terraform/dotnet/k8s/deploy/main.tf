@@ -37,7 +37,7 @@ resource "null_resource" "deploy" {
       [ ! -e dotnet-remote-service-depl.yaml ] || rm dotnet-remote-service-depl.yaml
 
       echo "LOG: Getting latest helm chart release URL"
-      latest_version_url=$(curl -s https://api.github.com/repos/aws-observability/helm-charts/releases/182005608 | grep "tarball_url" | cut -d '"' -f 4)
+      latest_version_url=$(curl -s https://api.github.com/repos/aws-observability/helm-charts/releases/latest | grep "tarball_url" | cut -d '"' -f 4)
       echo "LOG: The latest helm chart version url is $latest_version_url"
       echo "LOG: Downloading and unpacking the helm chart repo"
       curl -L $latest_version_url -o aws-observability-helm-charts-latest.tar.gz

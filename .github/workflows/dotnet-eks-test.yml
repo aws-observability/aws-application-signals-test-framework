@@ -76,7 +76,7 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           pre-command: "mkdir enablement-script && cd enablement-script"
-          command: "wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/dotnet-sdk-1_3_2/scripts/eks/appsignals/enable-app-signals.sh
+          command: "wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/enable-app-signals.sh 
           && wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/clean-app-signals.sh"
           cleanup: "rm -f enable-app-signals.sh && rm -f clean-app-signals.sh"
           post-command: "chmod +x enable-app-signals.sh && chmod +x clean-app-signals.sh"
