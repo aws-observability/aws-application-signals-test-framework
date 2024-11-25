@@ -31,8 +31,9 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  ACCOUNT_ID: 633750930120
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/dotnet-sample-app.zip
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-zmengyi-${{ inputs.aws-region }}/dotnet-sample-app.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
@@ -75,12 +76,6 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
-      - name: Retrieve account
-        uses: aws-actions/aws-secretsmanager-get-secrets@v1
-        with:
-          secret-ids:
-            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -89,23 +84,11 @@ jobs:
 
       - name: Set Get ADOT Distro command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
-            # Get staging distro file from staging bucket
-            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
-          else
-            # After Release will switch to latest tag instead of hard code version for canary purpose
-            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/download/v1.3.2/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV
-          fi
+          echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-build/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip ./ && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV
 
       - name: Set Get CW Agent command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
-            # Get cloudwatch agent staging file if triggered by cw-a repo
-            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
-          else
-            # Otherwise get latest release version
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
-          fi
+          echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://amazon-cloudwatch-agent-build/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
