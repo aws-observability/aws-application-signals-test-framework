@@ -22,3 +22,7 @@
   httpMethod: "get"
   callingType: "http"
   expectedMetricTemplate: "DOTNET_EKS_LINUX_CLIENT_CALL_METRIC"
+-
+  validationType: "cw-metric"
+  callingType: "none"
+  expectedMetricTemplate: "DOTNET_RUNTIME_METRIC"

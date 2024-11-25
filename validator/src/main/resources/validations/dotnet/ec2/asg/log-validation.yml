@@ -22,4 +22,7 @@
   httpMethod: "get"
   callingType: "http"
   expectedLogStructureTemplate: "DOTNET_EC2_ASG_CLIENT_CALL_LOG"
-
+-
+  validationType: "cw-log"
+  callingType: "none"
+  expectedLogStructureTemplate: "DOTNET_RUNTIME_METRIC_LOG"

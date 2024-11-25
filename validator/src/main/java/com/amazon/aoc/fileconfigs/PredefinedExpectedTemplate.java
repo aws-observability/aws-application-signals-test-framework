@@ -283,6 +283,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EKS_LINUX_CLIENT_CALL_METRIC("/expected-data-template/dotnet/eks/linux/client-call-metric.mustache"),
   DOTNET_EKS_LINUX_CLIENT_CALL_TRACE("/expected-data-template/dotnet/eks/linux/client-call-trace.mustache"),
 
+  DOTNET_RUNTIME_METRIC_LOG("/expected-data-template/dotnet/runtime/runtime-log.mustache"),
+  DOTNET_RUNTIME_METRIC("/expected-data-template/dotnet/runtime/runtime-metric.mustache"),
+
   /** NODE EKS Test Case Validations */
   NODE_EKS_OUTGOING_HTTP_CALL_LOG("/expected-data-template/node/eks/outgoing-http-call-log.mustache"),
   NODE_EKS_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/node/eks/outgoing-http-call-metric.mustache"),
