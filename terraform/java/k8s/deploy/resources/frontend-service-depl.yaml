@@ -19,12 +19,11 @@ spec:
       containers:
         - name: frontend
           image: ${IMAGE}
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:
             - name: "OTEL_SERVICE_NAME"
               value: "sample-application-${TESTING_ID}"
-            - name: "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
-              value: "false"
       imagePullSecrets:
         - name: ecr-secret

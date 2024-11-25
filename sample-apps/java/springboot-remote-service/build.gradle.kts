@@ -56,6 +56,7 @@ jib {
   }
   container {
     mainClass = "com.amazon.sampleapp.RemoteService"
+    jvmFlags = listOf("-XX:+UseG1GC")
     ports = listOf("8080")
   }
 }

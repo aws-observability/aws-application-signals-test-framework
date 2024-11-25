@@ -19,10 +19,8 @@ spec:
       containers:
         - name: remote
           image: ${IMAGE}
+          imagePullPolicy: Always
           ports:
             - containerPort: 8081
-          env:
-            - name: OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED
-              value: "false"
       imagePullSecrets:
         - name: ecr-secret
