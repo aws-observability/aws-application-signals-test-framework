@@ -51,7 +51,7 @@ jobs:
       - name: Upload Main Service Image
         run: |
           docker tag dotnetsampleapp/frontend-service 890742580622.dkr.ecr.us-east-1.amazonaws.com/dotnet-sample-app:8.0
-          docker push 890742580622.dkr.ecr.us-east-1.amazonaws.com/dotnet-sample-app
+          docker push 890742580622.dkr.ecr.us-east-1.amazonaws.com/dotnet-sample-app:8.0
       # - name: Upload Remote Service Image
       #   run: |
       #     docker tag dotnetsampleapp/remote-service ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}
