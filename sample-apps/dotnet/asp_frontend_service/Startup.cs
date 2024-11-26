@@ -43,5 +43,7 @@ public class Startup
         {
             endpoints.MapControllers();
         });
+
+        GC.Collect();
     }
 }
