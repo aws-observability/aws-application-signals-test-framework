@@ -26,14 +26,3 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-dotnet-e2e-ec2-canary-test'
-
-  nuget:
-    strategy:
-      fail-fast: false
-      matrix:
-        aws-region: [ 'us-east-2']
-    uses: ./.github/workflows/dotnet-ec2-nuget-retry.yml
-    secrets: inherit
-    with:
-      aws-region: ${{ matrix.aws-region }}
-      caller-workflow-name: 'appsignals-dotnet-e2e-ec2-nuget-canary-test'
