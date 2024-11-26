@@ -50,11 +50,7 @@ jobs:
 
       - name: Upload Main Service Image
         run: |
-<<<<<<< HEAD
           docker tag dotnetsampleapp/frontend-service 890742580622.dkr.ecr.us-east-1.amazonaws.com/dotnet-sample-app:8.0
-=======
-          docker tag dotnetsampleapp/frontend-service 890742580622.dkr.ecr.us-east-1.amazonaws.com/dotnet-sample-app
->>>>>>> a47ec0781bf7668719687c8e04aafc358621ee94
           docker push 890742580622.dkr.ecr.us-east-1.amazonaws.com/dotnet-sample-app
       # - name: Upload Remote Service Image
       #   run: |
