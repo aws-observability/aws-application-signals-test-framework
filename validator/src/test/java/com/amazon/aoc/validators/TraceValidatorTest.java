@@ -49,7 +49,7 @@ public class TraceValidatorTest extends ValidatorBaseTest {
                 validationConfig.getExpectedTraceTemplate()
         );
         DOCUMENT = IOUtils.toString(new URL(TEMPLATE_ROOT + "trace/actual/example-trace-document.json"), Charset.defaultCharset());
-        traceFilter = "annotation.aws_local_service = \"serviceName\" AND annotation.aws_local_operation = \"GET /aws-sdk-call\"";
+        traceFilter = "annotation.aws_local_service = \"serviceName\" AND annotation.aws_local_operation = \"GET aws-sdk-call\"";
     }
 
     @Test

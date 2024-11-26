@@ -145,7 +145,7 @@ public class TraceValidator implements IValidator {
     } else {
       traceFilter += (String.format(" AND annotation.aws_local_operation = \"%s %s\"",
               validationConfig.getHttpMethod().toUpperCase(),
-              validationConfig.getHttpPath()));
+              validationConfig.getHttpPath().replaceFirst("^/", "")));
     }
     log.info("Trace Filter: {}", traceFilter);
     List<TraceSummary> retrieveTraceLists = xrayService.searchTraces(traceFilter);
