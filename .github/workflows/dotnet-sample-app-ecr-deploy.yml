@@ -54,7 +54,7 @@ jobs:
               if [ ! -f "$file" ]; then
                 echo "Error: File $file not found"
                 exit 1
-              }
+              fi
               
               # Update TargetFramework in csproj files
               if [[ $file == *.csproj ]]; then
@@ -71,7 +71,7 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "Error: Failed to update version in $file"
                 exit 1
-              }
+              fi
               echo "Successfully updated $file"
             }
 
