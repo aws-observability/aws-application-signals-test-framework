@@ -92,6 +92,10 @@ resource "aws_launch_configuration" "launch_configuration" {
   iam_instance_profile = "APP_SIGNALS_EC2_TEST_ROLE"
   security_groups = [aws_default_vpc.default.default_security_group_id]
 
+  root_block_device {
+    volume_size = 5
+  }
+
   user_data = <<-EOF
     #!/bin/bash
 
@@ -156,7 +160,6 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_METRICS_EXPORTER=none
     export OTEL_TRACES_EXPORTER=otlp
     export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
-    export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
     export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
     export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
     export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
@@ -206,8 +209,13 @@ resource "aws_instance" "remote_service_instance" {
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
   associate_public_ip_address           = true
   instance_initiated_shutdown_behavior  = "terminate"
+
   metadata_options {
     http_tokens = "required"
+  }
+
+  root_block_device {
+    volume_size = 5
   }
 
   tags = {
@@ -286,7 +294,6 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_METRICS_EXPORTER=none
       export OTEL_TRACES_EXPORTER=otlp
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
-      export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc

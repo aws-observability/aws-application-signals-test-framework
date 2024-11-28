@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent      = true
   filter {
     name = "name"
-    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
+    values = ["al20*-ami-minimal-2023.6.20241031.0-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -85,8 +85,13 @@ resource "aws_instance" "main_service_instance" {
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
   associate_public_ip_address           = true
   instance_initiated_shutdown_behavior  = "terminate"
+
   metadata_options {
     http_tokens = "required"
+  }
+
+  root_block_device {
+    volume_size = 5
   }
 
   tags = {
@@ -197,8 +202,13 @@ resource "aws_instance" "remote_service_instance" {
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
   associate_public_ip_address           = true
   instance_initiated_shutdown_behavior  = "terminate"
+
   metadata_options {
     http_tokens = "required"
+  }
+
+  root_block_device {
+    volume_size = 5
   }
 
   tags = {

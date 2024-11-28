@@ -60,10 +60,6 @@
         "value": "true"
       },
       {
-        "name": "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED",
-        "value": "false"
-      },
-      {
         "name": "OTEL_RESOURCE_ATTRIBUTES",
         "value": "service.name=${app_service_name}"
       },
