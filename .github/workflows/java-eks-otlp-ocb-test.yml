@@ -338,9 +338,9 @@ jobs:
         working-directory: terraform/java/eks-otlp-ocb/util
         run: |
           aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+          kubectl delete ns ${{ env.SAMPLE_APP_NAMESPACE }}
           eksctl delete iamserviceaccount --name cloudwatch-agent --namespace amazon-cloudwatch --cluster ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
           kubectl delete ns opentelemetry-operator-system
-          kubectl delete ns -n ${{ env.SAMPLE_APP_NAMESPACE }}
           aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Terraform destroy
