@@ -9,6 +9,9 @@ name: Python EC2 Enablement Canary Testing
 on:
   schedule:
     - cron: '16,41 * * * *' # run the workflow at 16th and 41th minute of every hour
+  push:
+    branches:
+      - 'test-ubuntu-24'
   workflow_dispatch: # be able to run the workflow on demand
 
 permissions:
