@@ -7,7 +7,7 @@
 ## including logs, metrics, and traces.
 name: Dotnet EKS Enablement Canary Testing
 on:
-  schedule:
+  #schedule:
     #- cron: '4,29 * * * *' # run the workflow at 4th and 29th minute of every hour
   workflow_dispatch: # be able to run the workflow on demand
   push: 
