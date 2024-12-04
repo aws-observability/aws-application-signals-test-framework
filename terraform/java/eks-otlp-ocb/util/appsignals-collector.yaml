@@ -46,7 +46,7 @@ metadata:
   name: appsignals
 spec:
   # mode: daemonset
-  image: public.ecr.aws/n7z4r8f9/otel-col-appsignals:fix-cluster2
+  image: ${E2E_OTEL_COLLECTOR_IMAGE}
   config: |
     extensions:
       sigv4auth:

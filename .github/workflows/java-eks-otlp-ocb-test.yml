@@ -28,6 +28,10 @@ on:
       cw-agent-operator-tag:
         required: false
         type: string
+      e2e-otel-collector-image-tag:
+        required: false
+        type: string
+        default: latest
     outputs:
       job-started:
         value: ${{ jobs.java-eks-otlp-ocb.outputs.job-started }}
@@ -52,6 +56,7 @@ env:
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  E2E_OTEL_COLLECTOR_IMAGE_TAG: ${{ inputs.e2e-otel-collector-image-tag }}
 
 jobs:
   java-eks-otlp-ocb:
@@ -102,9 +107,7 @@ jobs:
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
             JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
 
-      # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
       - name: Configure AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
@@ -194,8 +197,9 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks-otlp-ocb/util && \
-            sed -i -e 's/${E2E_TEST_AWS_REGION}/${{ env.E2E_TEST_AWS_REGION }}/g' ./appsignals-collector.yaml && \
-            sed -i -e 's/${SAMPLE_APP_NAMESPACE}/${{ env.SAMPLE_APP_NAMESPACE }}/g' ./appsignals-collector.yaml && \
+            sed -i -e 's#${E2E_TEST_AWS_REGION}#${{ env.E2E_TEST_AWS_REGION }}#g' ./appsignals-collector.yaml && \
+            sed -i -e 's#${SAMPLE_APP_NAMESPACE}#${{ env.SAMPLE_APP_NAMESPACE }}#g' ./appsignals-collector.yaml && \
+            sed -i -e 's#${E2E_OTEL_COLLECTOR_IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/ocb-release-test-collector:${{ env.E2E_OTEL_COLLECTOR_IMAGE_TAG }}#g' ./appsignals-collector.yaml && \
             kubectl apply -f ./appsignals-collector.yaml -n ${{ env.SAMPLE_APP_NAMESPACE }}"
           cleanup: "kubectl delete -f ./appsignals-collector.yaml -n ${{ env.SAMPLE_APP_NAMESPACE }} && \
             aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}"
@@ -315,7 +319,6 @@ jobs:
           --rollup'
 
       - name: Refresh AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
