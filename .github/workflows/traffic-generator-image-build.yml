@@ -5,10 +5,10 @@ name: Create and Push Traffic Generator
 on:
   workflow_dispatch:
   push:
-    # branches:
-    #   - main
-    # paths:
-    #   - 'sample-apps/traffic-generator/**'
+    branches:
+      - main
+    paths:
+      - 'sample-apps/traffic-generator/**'
 
 permissions:
   id-token: write
