@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 CLUSTER_NAME=$1
 REGION=$2
 NAMESPACE=${3:-default}
-echo "Enabling Application Signals for EKS Cluster ${CLUSTER_NAME} in ${REGION} for namespace ${NAMESPACE}"
+echo "Setting up EKS Cluster ${CLUSTER_NAME} in ${REGION} for namespace ${NAMESPACE} for Application Signals with OTel Collector"
 
 # Check if the current context points to the new cluster in the correct region
 kub_config=$(kubectl config current-context)

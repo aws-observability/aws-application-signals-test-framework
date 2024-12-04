@@ -186,7 +186,7 @@ jobs:
       - name: Install OTel Operator using enablement script
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks-otlp-ocb/util/enable-app-signals-ocb.sh \
+          command: "${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks-otlp-ocb/util/install-otel-operator.sh \
             ${{ env.CLUSTER_NAME }} \
             ${{ env.E2E_TEST_AWS_REGION }} \
             ${{ env.SAMPLE_APP_NAMESPACE }}"
