@@ -336,7 +336,7 @@ jobs:
         if: always()
         id: validation-result
         run: |
-          if [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> $GITHUB_OUTPUT
           else
             echo "validation-result=failure" >> $GITHUB_OUTPUT
