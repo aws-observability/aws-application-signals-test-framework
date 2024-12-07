@@ -27,17 +27,17 @@ jobs:
           role-to-assume: ${{ secrets.E2E_IAD_TEST_ACCOUNT_ARN }}
           aws-region: us-east-1
 
-      - name: Retrieve account
-        uses: aws-actions/aws-secretsmanager-get-secrets@v1
-        with:
-          secret-ids:
-            ACCOUNT_ID, region-account/${{ matrix.aws-region }}
+      # - name: Retrieve account
+      #   uses: aws-actions/aws-secretsmanager-get-secrets@v1
+      #   with:
+      #     secret-ids:
+      #       ACCOUNT_ID, region-account/${{ matrix.aws-region }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
-          aws-region: ${{ matrix.aws-region }}
+      # - name: Configure AWS Credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
+      #     aws-region: ${{ matrix.aws-region }}
 
       - name: Build Sample App Zip
         working-directory: sample-apps/dotnet
@@ -51,7 +51,7 @@ jobs:
         working-directory: sample-apps/dotnet
         run: |
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body ./dotnet-ec2-win-main-setup.ps1 --key dotnet-ec2-win-main-setup.ps1
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel} --body ./dotnet-ec2-win-remote-setup.ps1 --key dotnet-ec2-win-remote-setup.ps1
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body ./dotnet-ec2-win-remote-setup.ps1 --key dotnet-ec2-win-remote-setup.ps1
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body ./amazon-cloudwatch-agent.json --key amazon-cloudwatch-agent.json
           
 
