@@ -1,0 +1,54 @@
+[{
+  "name": "^{{serviceName}}$",
+  "http": {
+    "request": {
+      "method": "^GET$"
+    },
+    "response": {
+      "status": "^200$"
+    }
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET /outgoing-http-call$",
+    "aws.local.environment": "^generic:default$"
+  },
+  "metadata": {
+    "EC2.AutoScalingGroup": "^eks-.+",
+    "EKS.Cluster": "^{{platformInfo}}$",
+    "K8s.Namespace": "^{{appNamespace}}",
+    "PlatformType": "^Generic$"
+  },
+  "subsegments": [
+    {
+      "subsegments": [
+        {
+          "name": "^www.amazon.com$",
+          "http": {
+            "request": {
+              "url": "^https://www.amazon.com$",
+              "method": "^GET$"
+            }
+          },
+          "annotations": {
+            "aws.local.service": "^{{serviceName}}$",
+            "aws.local.operation": "^UnmappedOperation$",
+            "aws.remote.service": "^www.amazon.com$",
+            "aws.remote.operation": "^GET /$",
+            "aws.local.environment": "^generic:default$"
+          },
+          "metadata": {
+            "EC2.AutoScalingGroup": "^eks-.+",
+            "EKS.Cluster": "^{{platformInfo}}$",
+            "K8s.Namespace": "^{{appNamespace}}$",
+            "PlatformType": "^Generic$"
+          },
+          "namespace": "^remote$"
+        }
+      ]
+    }
+  ]
+},
+{
+  "name": "^www.amazon.com$"
+}]

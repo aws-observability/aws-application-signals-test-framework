@@ -75,6 +75,9 @@ public class App implements Callable<Integer> {
   @CommandLine.Option(names = {"--remote-service-deployment-name"})
   private String remoteServiceDeploymentName;
 
+  @CommandLine.Option(names = {"--remote-service-ip"})
+  private String remoteServiceIp;
+
   @CommandLine.Option(names = {"--remote-resource-identifier"})
   private String remoteResourceIdentifier;
 
@@ -176,6 +179,7 @@ public class App implements Callable<Integer> {
     context.setServiceName(this.serviceName);
     context.setRemoteServiceName(this.remoteServiceName);
     context.setRemoteServiceDeploymentName(this.remoteServiceDeploymentName);
+    context.setRemoteServiceIp(this.remoteServiceIp);
     context.setRemoteResourceIdentifier(this.remoteResourceIdentifier);
     context.setRemoteDbUser(this.remoteDbUser);
     context.setEndpoint(this.endpoint);

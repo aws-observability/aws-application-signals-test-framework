@@ -1,0 +1,81 @@
+[{
+  "name": "^{{serviceName}}$",
+  "http": {
+    "request": {
+      "method": "^GET$"
+    },
+    "response": {
+      "status": "^200$"
+    }
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET /remote-service$",
+    "aws.local.environment": "^generic:default$"
+  },
+  "metadata": {
+    "EC2.AutoScalingGroup": "^eks-.+",
+    "EKS.Cluster": "^{{platformInfo}}$",
+    "K8s.Namespace": "^{{appNamespace}}",
+    "PlatformType": "^Generic$"
+  },
+  "subsegments": [
+    {
+      "subsegments": [
+        {
+          "name": "^{{remoteServiceIp}}:8080$",
+          "http": {
+            "request": {
+              "url": "^http://{{remoteServiceIp}}:8080/healthcheck$",
+              "method": "^GET$"
+            }
+          },
+          "annotations": {
+            "aws.local.service": "^{{serviceName}}$",
+            "aws.local.operation": "^UnmappedOperation$",
+            "aws.remote.service": "^{{remoteServiceIp}}:8080$",
+            "aws.remote.operation": "^GET /healthcheck$",
+            "aws.local.environment": "^generic:default$"
+          },
+          "metadata": {
+            "EC2.AutoScalingGroup": "^eks-.+",
+            "EKS.Cluster": "^{{platformInfo}}$",
+            "K8s.Namespace": "^{{appNamespace}}$",
+            "PlatformType": "^Generic$"
+           },
+          "namespace": "^remote$"
+        }
+      ]
+    }
+  ]
+},
+{
+  "name": "^{{remoteServiceDeploymentName}}$",
+  "http": {
+    "request": {
+      "method": "^GET$"
+    }
+  },
+  "annotations": {
+    "aws.local.service": "^{{remoteServiceDeploymentName}}$",
+    "aws.local.operation": "^GET /healthcheck$",
+    "aws.local.environment": "^generic:default$"
+  },
+  "metadata": {
+    "EC2.AutoScalingGroup": "^eks-.+",
+    "EKS.Cluster": "^{{platformInfo}}$",
+    "K8s.Namespace": "^{{appNamespace}}",
+    "PlatformType": "^Generic$",
+    "K8s.Workload": "^{{remoteServiceDeploymentName}}$"
+  },
+  "subsegments": [
+    {
+      "name": "^RemoteServiceController.healthcheck$",
+      "annotations": {
+        "aws.local.environment": "^eks:{{platformInfo}}/{{appNamespace}}$"
+      }
+    }
+  ]
+}]
+
+

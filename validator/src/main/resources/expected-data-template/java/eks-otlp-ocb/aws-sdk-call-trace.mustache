@@ -1,0 +1,62 @@
+[{
+  "name": "^{{serviceName}}$",
+  "http": {
+    "request": {
+      "method": "^GET$"
+    },
+    "response": {
+      "status": "^200$"
+    }
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET /aws-sdk-call$",
+    "aws.local.environment": "^generic:default$"
+  },
+  "metadata": {
+    "EC2.AutoScalingGroup": "^eks-.+",
+    "EKS.Cluster": "^{{platformInfo}}$",
+    "K8s.Namespace": "^{{appNamespace}}",
+    "PlatformType": "^Generic$"
+  },
+  "subsegments": [
+    {
+      "subsegments": [
+        {
+          "name": "^S3$",
+          "http": {
+            "request": {
+              "url": "^https://e2e-test-bucket-name-{{testingId}}.s3.[a-z]+-[a-z]+-\\d.amazonaws.com\\?location$",
+              "method": "^GET$"
+            }
+          },
+          "annotations": {
+            "aws.local.service": "^{{serviceName}}$",
+            "aws.local.operation": "^UnmappedOperation$",
+            "aws.remote.service": "^AWS::S3$",
+            "aws.remote.operation": "^GetBucketLocation$",
+            "aws.remote.resource.type": "^AWS::S3::Bucket$",
+            "aws.remote.resource.identifier": "^e2e-test-bucket-name-{{testingId}}$",
+            "aws.local.environment": "^generic:default$"
+          },
+          "metadata": {
+            "EC2.AutoScalingGroup": "^eks-.+",
+            "EKS.Cluster": "^{{platformInfo}}$",
+            "K8s.Namespace": "^{{appNamespace}}$",
+            "PlatformType": "^Generic$"
+          },
+          "namespace": "^aws$"
+        }
+      ]
+    }
+  ]
+},
+{
+  "name": "^S3$",
+  "annotations": {
+    "aws.local.service": "^AWS::S3$",
+    "aws.local.operation": "^GetBucketLocation$",
+    "aws.local.resource.identifier": "^e2e-test-bucket-name-{{testingId}}$",
+    "aws.local.resource.type": "^AWS::S3::Bucket$"
+  }
+}]

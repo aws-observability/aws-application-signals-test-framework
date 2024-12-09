@@ -23,10 +23,6 @@
         "value": "true"
       },
       {
-        "name": "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED",
-        "value": "false"
-      },
-      {
         "name": "OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT",
         "value": "http://localhost:4316/v1/metrics"
       },
