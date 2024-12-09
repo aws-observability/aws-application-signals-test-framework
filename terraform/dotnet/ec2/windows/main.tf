@@ -123,7 +123,7 @@ resource "aws_instance" "remote_service_instance" {
   get_password_data = true
 
   root_block_device {
-    volume_size = 5
+    volume_size = 35
   }
 
   tags = {
