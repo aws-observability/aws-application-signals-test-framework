@@ -132,7 +132,7 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app.zip ./dotnet-sample-app.zip
       unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
