@@ -1,7 +1,7 @@
 variable "function_name" {
   type        = string
   description = "Name of sample app function / API gateway"
-  default     = "aws-opentelemetry-distro-nodejs"
+  default     = "SimpleLambdaFunction"
 }
 
 variable "sdk_layer_name" {
@@ -18,8 +18,8 @@ variable "tracing_mode" {
 
 variable "runtime" {
   type        = string
-  description = "NodeJS runtime version used for sample Lambda Function"
-  default     = "nodejs20.x"
+  description = "DotNet runtime version used for sample Lambda Function"
+  default     = "dotnet8"
 }
 
 variable "architecture" {

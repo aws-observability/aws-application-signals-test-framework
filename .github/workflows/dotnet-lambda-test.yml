@@ -33,7 +33,7 @@ env:
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
-  STAGING_S3_BUCKET: s3://adot-autoinstrumentation-dotnet-staging
+  STAGING_S3_BUCKET: adot-autoinstrumentation-dotnet-staging
   IS_CANARY: false
 
 jobs:

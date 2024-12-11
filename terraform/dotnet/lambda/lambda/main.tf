@@ -18,7 +18,7 @@ module "hello-lambda-function" {
 
   architectures = compact([var.architecture])
   function_name = var.function_name
-  handler       = "${var.function_name}::${var.function_name}.Function::FunctionHandler"
+  handler       = "SimpleLambdaFunction::SimpleLambdaFunction.Function::FunctionHandler"
   runtime       = var.runtime
 
   create_package         = false
@@ -31,6 +31,7 @@ module "hello-lambda-function" {
 
   environment_variables = {
     AWS_LAMBDA_EXEC_WRAPPER     = "/opt/otel-instrument"
+    OTEL_SERVICE_NAME           = "${var.function_name}"
   }
 
   tracing_mode = var.tracing_mode
