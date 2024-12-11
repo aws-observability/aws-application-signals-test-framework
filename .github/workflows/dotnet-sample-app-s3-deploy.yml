@@ -56,5 +56,22 @@ jobs:
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-main-setup.ps1 --key dotnet-ec2-win-main-setup.ps1
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-remote-setup.ps1 --key dotnet-ec2-win-remote-setup.ps1
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./amazon-cloudwatch-agent.json --key amazon-cloudwatch-agent.json
+
+      - name: Build Lambda Sample App
+        uses: actions/checkout@v4
+        with:
+          repository: 'aws-observability/aws-otel-dotnet-instrumentation'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build Lambda Sample App
+        shell: bash
+        run: dotnet lambda package -pl ./src/SimpleLambdaFunction
+        working-directory: sample-applications/lambda-test-apps/SimpleLambdaFunction
+
+      - name: Upload to Lambda Sample App to S3
+        working-directory: sample-applications/lambda-test-apps/SimpleLambdaFunction
+        run: aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./src/SimpleLambdaFunction/bin/Release/net8.0/SimpleLambdaFunction.zip --key dotnet-function.zip
           
 

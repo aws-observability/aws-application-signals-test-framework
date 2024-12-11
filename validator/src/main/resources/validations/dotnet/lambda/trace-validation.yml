@@ -1,0 +1,5 @@
+-
+  validationType: "trace"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedTraceTemplate: "DOTNET_LAMBDA_INVOKE_TRACE"

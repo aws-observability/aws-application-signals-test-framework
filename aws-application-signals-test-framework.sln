@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample-apps", "sample-apps", "{3D8DC523-7A58-4DC2-AA91-56355B4BB0F9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dotnet", "dotnet", "{703CA8BC-63D5-49E2-B2BB-8A6EB370F469}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "asp_remote_service", "sample-apps\dotnet\asp_remote_service\asp_remote_service.csproj", "{AB8F9937-6F19-482C-9E7F-E5E5D0735A7D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "asp_frontend_service", "sample-apps\dotnet\asp_frontend_service\asp_frontend_service.csproj", "{A050EF3C-1623-4C49-8D5F-3A5624A2FBA4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AB8F9937-6F19-482C-9E7F-E5E5D0735A7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB8F9937-6F19-482C-9E7F-E5E5D0735A7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB8F9937-6F19-482C-9E7F-E5E5D0735A7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB8F9937-6F19-482C-9E7F-E5E5D0735A7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A050EF3C-1623-4C49-8D5F-3A5624A2FBA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A050EF3C-1623-4C49-8D5F-3A5624A2FBA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A050EF3C-1623-4C49-8D5F-3A5624A2FBA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A050EF3C-1623-4C49-8D5F-3A5624A2FBA4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{703CA8BC-63D5-49E2-B2BB-8A6EB370F469} = {3D8DC523-7A58-4DC2-AA91-56355B4BB0F9}
+		{AB8F9937-6F19-482C-9E7F-E5E5D0735A7D} = {703CA8BC-63D5-49E2-B2BB-8A6EB370F469}
+		{A050EF3C-1623-4C49-8D5F-3A5624A2FBA4} = {703CA8BC-63D5-49E2-B2BB-8A6EB370F469}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {94384C76-11F5-41C4-9CF7-A0FF0B46C6B0}
+	EndGlobalSection
+EndGlobal
