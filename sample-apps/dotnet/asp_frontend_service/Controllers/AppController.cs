@@ -61,7 +61,6 @@ public class AppController : ControllerBase
     public string OutgoingHttp()
     {
         _ = this.httpClient.GetAsync("https://aws.amazon.com").Result;
-
         return this.GetTraceId();
     }
 

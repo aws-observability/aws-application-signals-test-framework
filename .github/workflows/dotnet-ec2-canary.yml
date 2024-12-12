@@ -7,7 +7,7 @@
 ## including logs, metrics, and traces.
 name: Dotnet EC2 Enablement Canary Testing
 on:
-  push:
+  #push:
   # workflow_dispatch: # be able to run the workflow on demand
   # schedule:
   #   - cron: '2,27 * * * *' # run the workflow at 2nd and 27th minute of every hour

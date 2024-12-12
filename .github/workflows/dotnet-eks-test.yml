@@ -58,7 +58,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          repository: 'aws-observability/aws-application-signals-test-framework'
+          repository: 'Jeel-mehta/aws-application-signals-test-framework'
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
@@ -180,8 +180,8 @@ jobs:
 
       - name: Set Sample App Image
         run: |
-          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_MAIN_SAMPLE_APP_IMAGE }}:8.0" >> $GITHUB_ENV
-          echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_REMOTE_SAMPLE_APP_IMAGE }}:8.0" >> $GITHUB_ENV
+          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_MAIN_SAMPLE_APP_IMAGE }}:6.0" >> $GITHUB_ENV
+          echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_REMOTE_SAMPLE_APP_IMAGE }}:6.0" >> $GITHUB_ENV
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-dotnet-app
