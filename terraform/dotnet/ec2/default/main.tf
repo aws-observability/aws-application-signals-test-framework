@@ -240,7 +240,7 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/traffic-generator.zip ./dotnet-sample-app.zip
+      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app.zip ./dotnet-sample-app.zip
       unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
