@@ -10,7 +10,7 @@ on:
   #schedule:
     #- cron: '4,29 * * * *' # run the workflow at 4th and 29th minute of every hour
   workflow_dispatch: # be able to run the workflow on demand
-  push: 
+  #push: 
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
