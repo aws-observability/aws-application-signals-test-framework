@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp8.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>asp_frontend_service</RootNamespace>
   </PropertyGroup>
 
