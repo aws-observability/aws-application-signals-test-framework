@@ -8,3 +8,6 @@ build
 
 # Ignore NodeJS build outputs
 node_modules/
+
+# Ignore Bin files from validator folder
+validator/bin

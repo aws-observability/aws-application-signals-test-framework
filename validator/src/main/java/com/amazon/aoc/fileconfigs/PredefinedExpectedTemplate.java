@@ -380,12 +380,19 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/node/lambda/aws-sdk-call-log.mustache"),
   NODE_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/node/lambda/aws-sdk-call-metric.mustache"),
 
-  /** Node Lambda Test Case Validations */
+  /** Python Lambda Test Case Validations */
   PYTHON_LAMBDA_INVOKE_LOG("/expected-data-template/python/lambda/lambda-invoke-log.mustache"),
   PYTHON_LAMBDA_INVOKE_METRIC("/expected-data-template/python/lambda/lambda-invoke-metric.mustache"),
   PYTHON_LAMBDA_INVOKE_TRACE("/expected-data-template/python/lambda/lambda-invoke-trace.mustache"),
   PYTHON_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/python/lambda/aws-sdk-call-log.mustache"),
   PYTHON_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/python/lambda/aws-sdk-call-metric.mustache"),
+
+  /** DotNet Lambda Test Case Validations */
+  DOTNET_LAMBDA_INVOKE_LOG("/expected-data-template/dotnet/lambda/lambda-invoke-log.mustache"),
+  DOTNET_LAMBDA_INVOKE_METRIC("/expected-data-template/dotnet/lambda/lambda-invoke-metric.mustache"),
+  DOTNET_LAMBDA_INVOKE_TRACE("/expected-data-template/dotnet/lambda/lambda-invoke-trace.mustache"),
+  DOTNET_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/lambda/aws-sdk-call-log.mustache"),
+  DOTNET_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/lambda/aws-sdk-call-metric.mustache"),
   ;
 
   private String path;

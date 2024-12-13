@@ -1,0 +1,9 @@
+[{
+  "Environment": "^lambda:default$",
+  "PlatformType": "^AWS::Lambda$",
+  "Operation": "{{serviceName}}/FunctionHandler",
+  "Service": "^{{serviceName}}$",
+  "RemoteService": "AWS::S3",
+  "RemoteOperation": "ListBuckets",
+  "Lambda.Function.Name": "^{{serviceName}}$"
+}]
