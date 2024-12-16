@@ -115,6 +115,10 @@ resource "kubernetes_deployment" "sample_app_deployment" {
             name = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
             value = "false"
           }
+          env {
+            name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
+            value = "true"
+          }
           port {
             container_port = 8080
           }
@@ -186,6 +190,10 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
           env {
             name = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
             value = "false"
+          }
+          env {
+            name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
+            value = "true"
           }
         }
       }

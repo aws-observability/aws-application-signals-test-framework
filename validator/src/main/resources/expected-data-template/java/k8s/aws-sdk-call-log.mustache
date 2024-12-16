@@ -12,7 +12,7 @@
   "Version": "^1$",
   "Telemetry.Source": "^LocalRootSpan$",
   "Telemetry.Agent": "^CWAgent\/([A-Za-z0-9.-]*)$",
-  "Telemetry.SDK": "^opentelemetry,([A-Za-z0-9-.]*),java,Auto$",
+  "Telemetry.SDK": "^(opentelemetry|opentelemetry-java-instrumentation),([A-Za-z0-9-.]*),java,Auto$",
   "Host": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
 },
 {
@@ -33,6 +33,6 @@
   "RemoteResourceType": "AWS::S3::Bucket",
   "Telemetry.Source": "^ClientSpan$",
   "Telemetry.Agent": "^CWAgent\/([A-Za-z0-9.-]*)$",
-  "Telemetry.SDK": "^opentelemetry,([A-Za-z0-9-.]*),java,Auto$",
+  "Telemetry.SDK": "^(opentelemetry|opentelemetry-java-instrumentation),([A-Za-z0-9-.]*),java,Auto$",
   "Host": "^ip(-[0-9]{1,3}){4}\\.ec2\\.internal$"
 }]

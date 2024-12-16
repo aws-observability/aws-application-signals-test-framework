@@ -8,7 +8,7 @@
     "PlatformType": "^AWS::ECS$",
     "Service": "^{{serviceName}}$",
     "Telemetry.Agent": "^CWAgent\/([A-Za-z0-9.-]*)$",
-    "Telemetry.SDK": "^opentelemetry,([A-Za-z0-9-.]*),nodejs,Auto$",
+    "Telemetry.SDK": "^(opentelemetry|opentelemetry-java-instrumentation),([A-Za-z0-9-.]*),nodejs,Auto$",
     "Telemetry.Source": "^LocalRootSpan$",
     "aws.log.group.names": "^/ecs/node-e2e-test$"
 }]
