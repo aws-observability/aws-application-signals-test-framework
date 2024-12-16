@@ -22,7 +22,7 @@ on:
         type: string
 
 concurrency:
-  group: 'java-eks-otlp-ocb-${{ inputs.aws-region }}-${{ github.ref_name }}'
+  group: 'java-eks-otlp-ocb-${{ inputs.aws-region }}-${{ inputs.test-cluster-name }}'
   cancel-in-progress: false
 
 permissions:
