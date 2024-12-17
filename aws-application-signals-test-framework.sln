@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample-apps", "sample-apps", "{098A9B07-F544-4CA2-BC82-B56CF600C57E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dotnet", "dotnet", "{D2D75C4C-45D6-4A71-A364-1B459D6388F3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "asp_remote_service", "sample-apps\dotnet\asp_remote_service\asp_remote_service.csproj", "{BABD026A-7DDC-41DD-A402-D66068623D44}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "asp_frontend_service", "sample-apps\dotnet\asp_frontend_service\asp_frontend_service.csproj", "{7C6BA88F-8615-4B70-BC20-462C48FA7837}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BABD026A-7DDC-41DD-A402-D66068623D44}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BABD026A-7DDC-41DD-A402-D66068623D44}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BABD026A-7DDC-41DD-A402-D66068623D44}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BABD026A-7DDC-41DD-A402-D66068623D44}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C6BA88F-8615-4B70-BC20-462C48FA7837}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C6BA88F-8615-4B70-BC20-462C48FA7837}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C6BA88F-8615-4B70-BC20-462C48FA7837}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C6BA88F-8615-4B70-BC20-462C48FA7837}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D2D75C4C-45D6-4A71-A364-1B459D6388F3} = {098A9B07-F544-4CA2-BC82-B56CF600C57E}
+		{BABD026A-7DDC-41DD-A402-D66068623D44} = {D2D75C4C-45D6-4A71-A364-1B459D6388F3}
+		{7C6BA88F-8615-4B70-BC20-462C48FA7837} = {D2D75C4C-45D6-4A71-A364-1B459D6388F3}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BDEC1B06-A848-4F62-9CB3-EF567858FBBE}
+	EndGlobalSection
+EndGlobal
