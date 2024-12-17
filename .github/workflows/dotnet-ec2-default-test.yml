@@ -247,16 +247,6 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
-      - name: Save test results
-        if: always()
-        id: validation-result
-        run: |
-          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "validation-result=success" >> $GITHUB_OUTPUT
-          else
-            echo "validation-result=failure" >> $GITHUB_OUTPUT
-          fi
-
       # Clean up Procedures
       - name: Terraform destroy
         if: always()
