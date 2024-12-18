@@ -15,7 +15,11 @@ jobs:
       fail-fast: false
       matrix:
         aws-region: [ 'us-east-1']
+        dotnet-version: [ '6.0', '8.0' ]
     runs-on: ubuntu-latest
+    env:
+      DEFAULT_VERSION: '8.0'
+      DOTNET_VERSION: ${{ matrix.dotnet-version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,6 +42,101 @@ jobs:
       #   with:
       #     role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
       #     aws-region: ${{ matrix.aws-region }}
+      - name: Update .NET version if not default
+        working-directory: sample-apps/dotnet
+        run: |
+          if [ "${DOTNET_VERSION}" != "${DEFAULT_VERSION}" ]; then
+            echo "Updating .NET version from ${DEFAULT_VERSION} to ${DOTNET_VERSION}"
+            
+            # Function to update version in files
+            update_version() {
+              local file=$1
+              if [ ! -f "$file" ]; then
+                echo "Error: File $file not found"
+                exit 1
+              fi
+              
+              # Update TargetFramework in csproj files
+              if [[ $file == *.csproj ]]; then
+                sed -i "s/<TargetFramework>netcoreapp${DEFAULT_VERSION}<\/TargetFramework>/<TargetFramework>netcoreapp${DOTNET_VERSION}<\/TargetFramework>/g" "$file"
+              # Update version in Dockerfiles
+              elif [[ $file == */Dockerfile ]]; then
+                # Update SDK version
+                sed -i "s/mcr.microsoft.com\/dotnet\/sdk:${DEFAULT_VERSION}/mcr.microsoft.com\/dotnet\/sdk:${DOTNET_VERSION}/g" "$file"
+    
+                # Update ASP.NET runtime version
+                sed -i "s/mcr.microsoft.com\/dotnet\/aspnet:${DEFAULT_VERSION}/mcr.microsoft.com\/dotnet\/aspnet:${DOTNET_VERSION}/g" "$file"
+              
+              if [ $? -ne 0 ]; then
+                echo "Error: Failed to update version in $file"
+                exit 1
+              fi
+              echo "Successfully updated $file"
+            }
+
+            # Update all relevant files
+            update_version "asp_frontend_service/Dockerfile"
+            update_version "asp_remote_service/Dockerfile"
+            update_version "asp_frontend_service/asp_frontend_service.csproj"
+            update_version "asp_remote_service/asp_remote_service.csproj"
+            
+
+            # Verify changes
+            echo "Verifying changes..."
+            echo "=== Frontend Dockerfile ==="
+            grep -n "FROM.*${DOTNET_VERSION}" asp_frontend_service/Dockerfile
+            echo "=== Remote Dockerfile ==="
+            grep -n "FROM.*${DOTNET_VERSION}" asp_remote_service/Dockerfile
+            echo "=== Frontend csproj ==="
+            grep -n "TargetFramework" asp_frontend_service/asp_frontend_service.csproj
+            echo "=== Remote csproj ==="
+            grep -n "TargetFramework" asp_remote_service/asp_remote_service.csproj
+            
+          else
+            echo "Using default version ${DEFAULT_VERSION}, no changes needed"
+          fi
+
+      -  name: Update .NET version if not default
+          working-directory: terraform/dotnet/ec2/default
+          run: |
+            if [ "${DOTNET_VERSION}" != "${DEFAULT_VERSION}" ]; then
+              echo "Updating .NET version from ${DEFAULT_VERSION} to ${DOTNET_VERSION}"
+              
+              # Function to update version in files
+              update_version() {
+                local file=$1
+                if [ ! -f "$file" ]; then
+                  echo "Error: File $file not found"
+                  exit 1
+                fi      
+
+              # Update version in main.tf files
+                if [[ $file == main.tf ]]; then
+                  # Update dnf install command
+                  sed -i "s/dotnet-sdk-${DEFAULT_VERSION}/dotnet-sdk-${DOTNET_VERSION}/g" "$file"
+                  # Update nohup dotnet command
+                  sed -i "s/netcoreapp${DEFAULT_VERSION}/netcoreapp${DOTNET_VERSION}/g" "$file"
+                fi
+
+                if [ $? -ne 0 ]; then
+                  echo "Error: Failed to update version in $file"
+                  exit 1
+                fi
+                echo "Successfully updated $file"
+              }
+
+              # Update all relevant files
+              update_version "main.tf"
+
+              # Verify changes
+              echo "Verifying changes..."
+              echo "=== main.tf ==="
+              grep -n "dotnet-sdk-${DOTNET_VERSION}" main.tf
+              echo "=== main.tf ==="
+              grep -n "netcoreapp${DOTNET_VERSION}" main.tf
+          else
+            echo "Using default version ${DEFAULT_VERSION}, no changes needed"
+          fi
 
       - name: Build Sample App Zip
         working-directory: sample-apps/dotnet
