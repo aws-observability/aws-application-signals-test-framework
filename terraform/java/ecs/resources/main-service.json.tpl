@@ -53,7 +53,11 @@
       {
         "name": "OTEL_PROPAGATORS",
         "value": "tracecontext,baggage,b3,xray"
-      }
+      },
+     {
+       "name": "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED",
+       "value": "true"
+     }
     ],
     "mountPoints": [
       {

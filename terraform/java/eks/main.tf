@@ -123,6 +123,10 @@ resource "kubernetes_deployment" "sample_app_deployment" {
             name = "RDS_MYSQL_CLUSTER_PASSWORD"
             value = var.rds_mysql_cluster_password
           }
+          env {
+            name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
+            value = "true"
+          }
           port {
             container_port = 8080
           }
@@ -188,6 +192,10 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
           name = "back-end"
           image = var.sample_remote_app_image
           image_pull_policy = "Always"
+          env {
+            name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
+            value = "true"
+          }
           port {
             container_port = 8080
           }

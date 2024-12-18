@@ -13,7 +13,7 @@
         "aws": {
             "account_id": "^{{accountId}}$",
             "xray": {
-                "auto_instrumentation": true,
+                "auto_instrumentation": "^(true|false)$",
                 "sdk": "^opentelemetry for"
             }
         },
@@ -42,7 +42,7 @@
                 "aws": {
                     "account_id": "^{{accountId}}$",
                     "xray": {
-                        "auto_instrumentation": true,
+                        "auto_instrumentation": "^(true|false)$",
                         "sdk": "^opentelemetry for"
                     }
                 },
