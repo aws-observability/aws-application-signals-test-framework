@@ -19,7 +19,7 @@ on:
         type: string
 
 concurrency:
-  group: 'node-eks-${{ inputs.aws-region }}-${{ github.ref_name }}'
+  group: 'node-eks-${{ inputs.aws-region }}-${{ inputs.test-cluster-name }}'
   cancel-in-progress: false
 
 permissions:
