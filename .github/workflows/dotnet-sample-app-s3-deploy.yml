@@ -4,7 +4,7 @@
 name: Sample App Deployment - Dotnet S3
 on:
   workflow_dispatch: # be able to run the workflow on demand
-  push:
+  #push:
 permissions:
   id-token: write
   contents: read
