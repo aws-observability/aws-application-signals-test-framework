@@ -18,6 +18,11 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      dotnet-version:
+        description: "Currently support version 6.0, 8.0"
+        required: false
+        type: string
+        default: '8.0'
     outputs:
       job-started:
         value: ${{ jobs.dotnet-ec2-default.outputs.job-started }}
@@ -32,7 +37,8 @@ env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app.zip
+  DOTNET_VERSION: ${{ inputs.dotnet-version }}
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${{ inputs.dotnet-version }}.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
@@ -141,6 +147,7 @@ jobs:
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
+              -var="language_version=${{ env.DOTNET_VERSION }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then

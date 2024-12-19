@@ -116,7 +116,11 @@ resource "null_resource" "main_service_setup" {
       sudo yum install -y wget
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-8.0
+      if [[ "${var.language_version}" == "8.0" ]]; then
+        sudo dnf install -y dotnet-sdk-8.0
+      else
+        sudo dnf install -y dotnet-sdk-6.0
+      fi
       sudo yum install unzip -y
 
       # Copy in CW Agent configuration
@@ -132,8 +136,8 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app.zip ./dotnet-sample-app.zip
-      unzip -o dotnet-sample-app.zip
+      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app:${var.language_version}.zip
+      unzip -o dotnet-sample-app:${var.language_version}.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -159,7 +163,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
       export ASPNETCORE_URLS=http://0.0.0.0:8080
-      nohup dotnet bin/Debug/netcoreapp8.0/asp_frontend_service.dll &
+      nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_frontend_service.dll &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -224,7 +228,11 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install -y wget
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-8.0
+      if [[ "${var.language_version}" == "8.0" ]]; then
+        sudo dnf install -y dotnet-sdk-8.0
+      else
+        sudo dnf install -y dotnet-sdk-6.0
+      fi
       sudo yum install unzip -y
 
       # Copy in CW Agent configuration
@@ -240,8 +248,8 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app.zip ./dotnet-sample-app.zip
-      unzip -o dotnet-sample-app.zip
+      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app:${var.language_version}.zip
+      unzip -o dotnet-sample-app:${var.language_version}.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -267,7 +275,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
       export ASPNETCORE_URLS=http://0.0.0.0:8081
-      nohup dotnet bin/Debug/netcoreapp8.0/asp_remote_service.dll &
+      nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_remote_service.dll &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
