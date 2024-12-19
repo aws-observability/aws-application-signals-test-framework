@@ -135,6 +135,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
     OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \
+    OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
     nohup java -jar -XX:+UseG1GC main-service.jar &> nohup.out &
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
@@ -236,6 +237,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \
+      OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       nohup java -XX:+UseG1GC -jar remote-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds

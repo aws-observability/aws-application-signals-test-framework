@@ -57,6 +57,6 @@ public class Entity {
   private Map<String, Object> sql;
   private Map<String, Object> service;
 
-  private Map<String, Map<String, Object>> metadata;
+  private Map<String, Object> metadata;
   private Map<String, Object> annotations;
 }

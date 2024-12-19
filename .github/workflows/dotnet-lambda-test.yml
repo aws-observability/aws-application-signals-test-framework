@@ -1,0 +1,219 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# This is a reusable workflow for running the Enablement test for App Signals.
+# It is meant to be called from another workflow.
+# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
+name: DotNet Lambda Use Case
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        required: true
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.dotnet-lambda-default.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.dotnet-lambda-default.outputs.validation-result }}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/dotnet-function.zip
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  STAGING_S3_BUCKET: adot-autoinstrumentation-dotnet-staging
+  IS_CANARY: false
+
+jobs:
+  dotnet-lambda-default:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
+    steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+
+      - uses: actions/checkout@v4
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
+      # fails due to transient issues. If it fails here, then we will try again later before the validators
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+
+      # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
+      - name: Configure AWS Credentials
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Set Lambda Layer artifact directory path
+        run: echo ARTIFACTS_DIR="${{ github.workspace }}/lambda_artifacts" >> $GITHUB_ENV
+
+      - name: Download Lambda Layer and Function artifacts for E2E Test
+        if: ${{ env.CALLER_WORKFLOW_NAME != 'appsignals-dotnet-e2e-lambda-canary-test' }}
+        run: |
+          aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip ${{ env.ARTIFACTS_DIR }}/layer.zip |
+          aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/function-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/dotnet-function.zip
+
+      - name: Set Canary Environment Variable
+        if: ${{ env.CALLER_WORKFLOW_NAME == 'appsignals-dotnet-e2e-lambda-canary-test' }}
+        run: | 
+          echo IS_CANARY=true >> $GITHUB_ENV |
+          aws s3 cp ${{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/dotnet-function.zip
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Get terraform Lambda function name
+        shell: bash
+        run: |
+          echo TERRAFORM_LAMBDA_FUNCTION_NAME="AdotLambdaDotNetSampleApp-${{ github.run_id }}"|
+          tee --append $GITHUB_ENV
+      - name: Apply terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && terraform apply -auto-approve 
+          -var="sdk_layer_name=AWSOpenTelemetryDistroDotNet-${{ github.run_id }}" 
+          -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" 
+          -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
+          -var="region=${{ env.E2E_TEST_AWS_REGION }}"
+          -var="is_canary=${{ env.IS_CANARY }}"'
+          max_retry: 6
+          sleep_time: 60
+      - name: Extract endpoint
+        id: extract-endpoint
+        shell: bash
+        run: cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && echo API_GATEWAY_URL=$(terraform output -raw api-gateway-url) >> $GITHUB_ENV
+      - name: Send request to endpoint
+        shell: bash
+        run: sleep 30s; curl -sS ${{ env.API_GATEWAY_URL }}
+
+      # Validation for pulse telemetry data
+      - name: Validate generated EMF logs
+        id: log-validation
+        # will be removed after data quality bug fixed
+        continue-on-error: true
+        run: ./gradlew validator:run --args='-c dotnet/lambda/log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.API_GATEWAY_URL }}
+          --region ${{ inputs.aws-region }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
+          --rollup'
+
+      - name: Validate generated metrics
+        id: metric-validation
+        if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
+        # will be removed after data quality bug fixed
+        continue-on-error: true
+        run: ./gradlew validator:run --args='-c dotnet/lambda/metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.API_GATEWAY_URL }}
+          --region ${{ inputs.aws-region }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
+          --rollup'
+
+      - name: Validate generated traces
+        id: trace-validation
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
+        # will be removed after data quality bug fixed
+        continue-on-error: true
+        run: ./gradlew validator:run --args='-c dotnet/lambda/trace-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.API_GATEWAY_URL }}
+          --region ${{ inputs.aws-region }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
+          --rollup'
+
+      - name: Refresh AWS Credentials
+        if: ${{ always() && github.event.repository.name == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Save test results
+        if: always()
+        id: validation-result
+        run: |
+          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+            echo "validation-result=success" >> $GITHUB_OUTPUT
+          else
+            echo "validation-result=failure" >> $GITHUB_OUTPUT
+          fi
+
+      # Clean up Procedures
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        run: |
+          cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && terraform destroy -auto-approve \
+          -var="sdk_layer_name=AWSOpenTelemetryDistroDotNet-${{ github.run_id }}" \
+          -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" \
+          -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}" \
+          -var="region=${{ env.E2E_TEST_AWS_REGION }}" \
+          -var="is_canary=${{ env.IS_CANARY }}"

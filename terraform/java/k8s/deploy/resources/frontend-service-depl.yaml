@@ -25,5 +25,7 @@ spec:
           env:
             - name: "OTEL_SERVICE_NAME"
               value: "sample-application-${TESTING_ID}"
+            - name: "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
+              value: "true"
       imagePullSecrets:
         - name: ecr-secret

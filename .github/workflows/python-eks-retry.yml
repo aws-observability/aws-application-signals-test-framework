@@ -22,7 +22,7 @@ on:
         type: string
 
 concurrency:
-  group: 'python-eks-${{ inputs.aws-region }}-${{ github.ref_name }}'
+  group: 'python-eks-${{ inputs.aws-region }}-${{ inputs.test-cluster-name }}'
   cancel-in-progress: false
 
 permissions:

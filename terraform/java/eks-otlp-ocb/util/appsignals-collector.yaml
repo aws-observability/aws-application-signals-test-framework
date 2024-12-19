@@ -1,0 +1,177 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes", "namespaces", "endpoints"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets", "daemonsets", "deployments", "statefulsets"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/proxy"]
+    verbs: ["get"]
+  - apiGroups: [""]
+    resources: ["nodes/stats", "configmaps", "events"]
+    verbs: ["create", "get"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["update"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: otel-collector-role-binding
+subjects:
+  - kind: ServiceAccount
+    name: appsignals-collector
+    namespace: ${SAMPLE_APP_NAMESPACE}
+roleRef:
+  kind: ClusterRole
+  name: otel-collector-role
+  apiGroup: rbac.authorization.k8s.io
+---
+
+apiVersion: opentelemetry.io/v1alpha1
+kind: OpenTelemetryCollector
+metadata:
+  name: appsignals
+spec:
+  # mode: daemonset
+  image: ${E2E_OTEL_COLLECTOR_IMAGE}
+  config: |
+    extensions:
+      sigv4auth:
+        region: "${E2E_TEST_AWS_REGION}"
+        service: "xray"     
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      awsapplicationsignals:
+        resolvers:
+          - platform: eks
+            name: appsignals-ocb-demo
+      resourcedetection:
+        detectors:
+          - eks
+          - env
+          - ec2
+        ec2:
+          resource_attributes:
+            cloud.account.id:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+            cloud.platform:
+              enabled: true
+            cloud.provider:
+              enabled: true
+            cloud.region:
+              enabled: true
+            host.id:
+              enabled: true
+            host.image.id:
+              enabled: true
+            host.name:
+              enabled: true
+            host.type:
+              enabled: true
+          tags:
+            - ^kubernetes.io/cluster/.*$
+            - ^aws:autoscaling:groupName
+        ecs:
+          resource_attributes:
+            aws.ecs.cluster.arn:
+              enabled: true
+            aws.ecs.launchtype:
+              enabled: true
+            aws.ecs.task.arn:
+              enabled: true
+            aws.ecs.task.family:
+              enabled: true
+            aws.ecs.task.id:
+              enabled: true
+            aws.ecs.task.revision:
+              enabled: true
+            aws.log.group.arns:
+              enabled: true
+            aws.log.group.names:
+              enabled: true
+            aws.log.stream.arns:
+              enabled: true
+            aws.log.stream.names:
+              enabled: true
+            cloud.account.id:
+              enabled: true
+            cloud.availability_zone:
+              enabled: true
+            cloud.platform:
+              enabled: true
+            cloud.provider:
+              enabled: true
+            cloud.region:
+              enabled: true
+        eks:
+          resource_attributes:
+            cloud.platform:
+              enabled: true
+            cloud.provider:
+              enabled: true
+            k8s.cluster.name:
+              enabled: true
+
+    exporters:
+      otlphttp:
+        traces_endpoint: https://xray.${E2E_TEST_AWS_REGION}.amazonaws.com/v1/traces
+        auth:
+          authenticator: sigv4auth
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [resourcedetection, awsapplicationsignals]
+          exporters: [otlphttp]
+      extensions: [sigv4auth]
+      telemetry:
+        logs:
+          level: debug
+---
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: my-instrumentation
+spec:
+  # OTEL_EXPORTER_OTLP_ENDPOINT
+  exporter: 
+    endpoint: http://appsignals-collector:4318
+  java:
+    image: public.ecr.aws/aws-observability/adot-autoinstrumentation-java:v1.32.5
+    env:
+      - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+        value: http://appsignals-collector:4318/v1/traces
+      # - name: OTEL_AWS_APPLICATION_SIGNALS_ENABLED
+      #   value: "true"
+      # - name: OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT
+      #   value: http://appsignals-collector:4316/v1/metrics
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "http/protobuf"  
+      # - name: OTEL_JMX_ENABLE
+      #   value: "true"
+      # - name: OTEL_JMX_TARGET_SYSTEM
+      #   value: "jvm"
