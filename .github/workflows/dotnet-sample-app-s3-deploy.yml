@@ -67,7 +67,7 @@ jobs:
                 # Update ASP.NET runtime version
                 sed -i "s/mcr.microsoft.com\/dotnet\/aspnet:${DEFAULT_VERSION}/mcr.microsoft.com\/dotnet\/aspnet:${DOTNET_VERSION}/g" "$file"
               fi
-              
+
               if [ $? -ne 0 ]; then
                 echo "Error: Failed to update version in $file"
                 exit 1
@@ -97,55 +97,55 @@ jobs:
             echo "Using default version ${DEFAULT_VERSION}, no changes needed"
           fi
 
-      - name: Update .NET version if not default
-        working-directory: terraform/dotnet/ec2/default
-        run: |
-          if [ "${DOTNET_VERSION}" != "${DEFAULT_VERSION}" ]; then
-            echo "Updating .NET version from ${DEFAULT_VERSION} to ${DOTNET_VERSION}"
+      # - name: Update .NET version if not default
+      #   working-directory: terraform/dotnet/ec2/default
+      #   run: |
+      #     if [ "${DOTNET_VERSION}" != "${DEFAULT_VERSION}" ]; then
+      #       echo "Updating .NET version from ${DEFAULT_VERSION} to ${DOTNET_VERSION}"
             
-            # Function to update version in files
-            update_version() {
-              local file=$1
-              if [ ! -f "$file" ]; then
-                echo "Error: File $file not found"
-                exit 1
-              fi      
+      #       # Function to update version in files
+      #       update_version() {
+      #         local file=$1
+      #         if [ ! -f "$file" ]; then
+      #           echo "Error: File $file not found"
+      #           exit 1
+      #         fi      
 
-            # Update version in main.tf files
-              if [[ $file == main.tf ]]; then
-                # Update dnf install command
-                sed -i "s/dotnet-sdk-${DEFAULT_VERSION}/dotnet-sdk-${DOTNET_VERSION}/g" "$file"
-                # Update nohup dotnet command
-                sed -i "s/netcoreapp${DEFAULT_VERSION}/netcoreapp${DOTNET_VERSION}/g" "$file"
-              fi
+      #       # Update version in main.tf files
+      #         if [[ $file == main.tf ]]; then
+      #           # Update dnf install command
+      #           sed -i "s/dotnet-sdk-${DEFAULT_VERSION}/dotnet-sdk-${DOTNET_VERSION}/g" "$file"
+      #           # Update nohup dotnet command
+      #           sed -i "s/netcoreapp${DEFAULT_VERSION}/netcoreapp${DOTNET_VERSION}/g" "$file"
+      #         fi
 
-              if [ $? -ne 0 ]; then
-                echo "Error: Failed to update version in $file"
-                exit 1
-              fi
-              echo "Successfully updated $file"
-            }
+      #         if [ $? -ne 0 ]; then
+      #           echo "Error: Failed to update version in $file"
+      #           exit 1
+      #         fi
+      #         echo "Successfully updated $file"
+      #       }
 
-            # Update all relevant files
-            update_version "main.tf"
+      #       # Update all relevant files
+      #       update_version "main.tf"
 
-            # Verify changes
-            echo "Verifying changes..."
-            echo "=== main.tf ==="
-            grep -n "dotnet-sdk-${DOTNET_VERSION}" main.tf
-            echo "=== main.tf ==="
-            grep -n "netcoreapp${DOTNET_VERSION}" main.tf
-          else
-            echo "Using default version ${DEFAULT_VERSION}, no changes needed"
-          fi
+      #       # Verify changes
+      #       echo "Verifying changes..."
+      #       echo "=== main.tf ==="
+      #       grep -n "dotnet-sdk-${DOTNET_VERSION}" main.tf
+      #       echo "=== main.tf ==="
+      #       grep -n "netcoreapp${DOTNET_VERSION}" main.tf
+      #     else
+      #       echo "Using default version ${DEFAULT_VERSION}, no changes needed"
+      #     fi
 
       - name: Build Sample App Zip
         working-directory: sample-apps/dotnet
-        run: zip -r dotnet-sample-app.zip .
+        run: zip -r dotnet-sample-app:${DOTNET_VERSION}.zip .
 
       - name: Upload to S3
         working-directory: sample-apps/dotnet
-        run: aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body ./dotnet-sample-app.zip --key dotnet-sample-app.zip
+        run: aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body ./dotnet-sample-app:${DOTNET_VERSION}.zip --key dotnet-sample-app:${DOTNET_VERSION}.zip
 
       - name: Upload Windows Script to S3
         working-directory: sample-apps/dotnet
