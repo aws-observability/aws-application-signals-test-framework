@@ -11,7 +11,8 @@ def delete_api_with_retries(client, api_id, retries=5):
     for attempt in range(retries):
         try:
             client.delete_rest_api(restApiId=api_id)
-            print(f"API {api_id} deleted successfully.")
+            print(f"API {api_id} deleted successfully. Sleeping for 32 seconds...")
+            time.sleep(32)
             return
         except ClientError as e:
             if e.response['Error']['Code'] == 'TooManyRequestsException':
@@ -40,9 +41,9 @@ def delete_old_api_gateways(hours_old=3, batch_size=5):
             # Ensure `created_date` is timezone-aware
             created_date = created_date.astimezone(timezone.utc)
 
-            if created_date < cutoff_time:
-                api_id = api['id']
-                api_name = api.get('name', 'Unnamed API')
+            api_id = api['id']
+            api_name = api.get('name', 'Unnamed API')
+            if "AdotLambda" in api_name and "SampleApp" in api_name and created_date < cutoff_time:
                 print(f"Preparing to delete API: {api_name} (ID: {api_id}), created at {created_date}")
 
                 # Attempt to delete the API with retries
