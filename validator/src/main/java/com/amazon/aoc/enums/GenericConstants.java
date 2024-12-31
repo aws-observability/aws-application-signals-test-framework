@@ -20,7 +20,7 @@ import lombok.Getter;
 @Getter
 public enum GenericConstants {
   // retry
-  SLEEP_IN_MILLISECONDS("10000"), // ms
+  SLEEP_IN_MILLISECONDS("30000"), // ms
   SLEEP_IN_SECONDS("30"),
   MAX_RETRIES("10"),
 
