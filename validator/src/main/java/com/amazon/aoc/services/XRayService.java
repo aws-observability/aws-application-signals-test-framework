@@ -25,11 +25,13 @@ import com.amazonaws.services.xray.model.Trace;
 import com.amazonaws.services.xray.model.TraceSummary;
 import java.util.Date;
 import java.util.List;
+import lombok.extern.log4j.Log4j2;
 import org.joda.time.DateTime;
 
+@Log4j2
 public class XRayService {
   private AWSXRay awsxRay;
-  private final int SEARCH_PERIOD = 600;
+  private final int SEARCH_PERIOD = 600 * 3;
   public static String DEFAULT_TRACE_ID = "1-00000000-000000000000000000000000";
 
   public XRayService(String region) {
@@ -53,6 +55,7 @@ public class XRayService {
   public List<TraceSummary> searchTraces(String traceFilter) {
     Date currentDate = new Date();
     Date pastDate = new DateTime(currentDate).minusSeconds(SEARCH_PERIOD).toDate();
+    log.info("--start-time: " + pastDate + ", --end-time: " + currentDate + ", traceFilter: " + traceFilter);
     GetTraceSummariesResult traceSummaryResult =
             awsxRay.getTraceSummaries(
                     new GetTraceSummariesRequest()
