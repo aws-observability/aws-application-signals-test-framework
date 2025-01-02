@@ -1,10 +1,5 @@
 version: 0.2
 
-env:
-  variables:
-    ECR_REPOSITORY_NAME: "appsignals-dotnet-windows-main-service"
-    AWS_DEFAULT_REGION: "us-east-1"
-
 phases:
   pre_build:
     commands:
