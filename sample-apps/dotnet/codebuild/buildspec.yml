@@ -14,14 +14,16 @@ phases:
       - echo "Build phase -- Building Docker image via docker-compose..."
       - docker-compose -f sample-apps/dotnet/docker-compose-windows.yaml build
       - echo "Tagging the Docker image..."
-      - docker images
-      - $ecrImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-main-service:autobuild-latest"
-      - docker tag asp_frontend_service:latest $ecrImageUrl
+      - $ecrMainImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-main-service:autobuild-latest"
+      - $ecrRemoteImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-remote-service:autobuild-latest"
+      - docker tag dotnetsampleapp/asp_frontend_service:latest $ecrMainImageUrl
+      - docker tag dotnetsampleapp/asp_remote_service:latest $ecrRemoteImageUrl
 
   post_build:
     commands:
       - echo "Post-build phase -- Pushing Docker image to ECR..."
-      - docker push $ecrImageUrl
+      - docker push $ecrMainImageUrl
+      - docker push $ecrRemoteImageUrl
       - echo "Build completed successfully."
 
 artifacts:
