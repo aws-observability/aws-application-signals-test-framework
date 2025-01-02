@@ -8,28 +8,28 @@ env:
 phases:
   install:
     commands:
-      - echo "Install phase: Checking for changes in the 'app/' folder."
+      - echo "Install phase - Checking for changes in the 'app/' folder."
       # 获取上一次提交与当前提交的 diff
       - CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD || true)
-      - echo "Changed files: $CHANGED_FILES"
+      - echo "Changed files - $CHANGED_FILES"
       - if echo "$CHANGED_FILES" | findstr /i "sample-apps/dotnet"; then (echo "Detected changes in Dotnet Sample APP") else (echo "No changes in Dotnet Sample App. Exiting..." & exit 0)  fi
 
   pre_build:
     commands:
-      - echo "Pre-build phase: Logging into Amazon ECR..."
+      - echo "Pre-build phase - Logging into Amazon ECR..."
       - aws ecr get-login-password --region %AWS_DEFAULT_REGION% | docker login --username AWS --password-stdin %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com
       - echo "Pre-build phase completed."
 
   build:
     commands:
-      - echo "Build phase: Building Docker image via docker-compose..."
+      - echo "Build phase - Building Docker image via docker-compose..."
       - docker-compose -f docker-compose.windows.yml build
       - echo "Tagging the Docker image..."
       - docker tag asp_frontend_service:latest %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com/%ECR_REPOSITORY_NAME%:autobuild-latest
 
   post_build:
     commands:
-      - echo "Post-build phase: Pushing Docker image to ECR..."
+      - echo "Post-build phase - Pushing Docker image to ECR..."
       - docker push %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com/%ECR_REPOSITORY_NAME%:autobuild-latest
       - echo "Build completed successfully."
 
