@@ -3,13 +3,13 @@ version: 0.2
 phases:
   pre_build:
     commands:
+      - echo "$PSVersionTable"
       - echo "Pre-build phase -- Logging into Amazon ECR..."
-      - aws ecr get-login-password --region %AWS_DEFAULT_REGION% | docker login --username AWS --password-stdin %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com
+      - aws ecr get-login-password --region $env:AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com
       - echo "Pre-build phase completed."
 
   build:
     commands:
-      - echo "$PSVersionTable"
       - echo "Build phase -- Building Docker image via docker-compose..."
       - docker-compose -f docker-compose.windows.yml build
       - echo "Tagging the Docker image..."
