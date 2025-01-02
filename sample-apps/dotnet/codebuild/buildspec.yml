@@ -16,8 +16,8 @@ phases:
       - echo "Tagging the Docker image..."
       - $ecrMainImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-main-service:autobuild-latest"
       - $ecrRemoteImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-remote-service:autobuild-latest"
-      - docker tag dotnetsampleapp/asp_frontend_service:latest $ecrMainImageUrl
-      - docker tag dotnetsampleapp/asp_remote_service:latest $ecrRemoteImageUrl
+      - docker tag dotnetsampleapp/frontend_service:latest $ecrMainImageUrl
+      - docker tag dotnetsampleapp/remote_service:latest $ecrRemoteImageUrl
 
   post_build:
     commands:
