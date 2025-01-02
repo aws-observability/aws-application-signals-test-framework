@@ -8,20 +8,20 @@ env:
 phases:
   pre_build:
     commands:
-      - echo "Pre-build phase - Logging into Amazon ECR..."
+      - echo "Pre-build phase -- Logging into Amazon ECR..."
       - aws ecr get-login-password --region %AWS_DEFAULT_REGION% | docker login --username AWS --password-stdin %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com
       - echo "Pre-build phase completed."
 
   build:
     commands:
-      - echo "Build phase - Building Docker image via docker-compose..."
+      - echo "Build phase -- Building Docker image via docker-compose..."
       - docker-compose -f docker-compose.windows.yml build
       - echo "Tagging the Docker image..."
       - docker tag asp_frontend_service:latest %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com/%ECR_REPOSITORY_NAME%:autobuild-latest
 
   post_build:
     commands:
-      - echo "Post-build phase - Pushing Docker image to ECR..."
+      - echo "Post-build phase -- Pushing Docker image to ECR..."
       - docker push %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com/%ECR_REPOSITORY_NAME%:autobuild-latest
       - echo "Build completed successfully."
 
