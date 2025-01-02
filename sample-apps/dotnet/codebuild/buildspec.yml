@@ -4,10 +4,10 @@ phases:
   pre_build:
     commands:
       - echo "Pre-build phase -- Logging into Amazon ECR..."
-      - Write-Host "$env:AWS_DEFAULT_REGION"
-      - Write-Host "$env:ACCOUNT_ID"
+      - $ecrUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com"
+      - Write-Host "$ecrUrl"
 #      - (Get-ECRLoginCommand).Password | docker login --username AWS --password-stdin $env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com
-      - (Get-ECRLoginCommand).Password | docker login --username AWS --password-stdin $env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com
+      - (Get-ECRLoginCommand).Password | docker login --username AWS --password-stdin $ecrUrl
       - echo "Pre-build phase completed."
 
   build:
