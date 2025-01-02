@@ -4,6 +4,8 @@ phases:
   pre_build:
     commands:
       - echo "Pre-build phase -- Logging into Amazon ECR..."
+      - Write-Host "$env:AWS_DEFAULT_REGION"
+      - Write-Host "$env:ACCOUNT_ID"
 #      - (Get-ECRLoginCommand).Password | docker login --username AWS --password-stdin $env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com
       - (Get-ECRLoginCommand).Password | docker login --username AWS --password-stdin 654654176582.dkr.ecr.us-east-1.amazonaws.com
       - echo "Pre-build phase completed."
@@ -11,14 +13,14 @@ phases:
   build:
     commands:
       - echo "Build phase -- Building Docker image via docker-compose..."
-      - docker-compose -f docker-compose.windows.yml build
+      - docker-compose -f docker-compose-windows.yml build
       - echo "Tagging the Docker image..."
       - docker tag asp_frontend_service:latest $env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/$env:ECR_REPOSITORY_NAME:autobuild-latest
 
   post_build:
     commands:
       - echo "Post-build phase -- Pushing Docker image to ECR..."
-      - docker push %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com/%ECR_REPOSITORY_NAME%:autobuild-latest
+      - docker push %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com/$env:ECR_REPOSITORY_NAME:autobuild-latest
       - echo "Build completed successfully."
 
 artifacts:
