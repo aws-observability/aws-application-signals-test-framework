@@ -9,7 +9,7 @@ services:
       - "8.8.6.6"
     build:
       context: .
-      dockerfile: asp_frontend_service/Dockerfile
+      dockerfile: asp_frontend_service/Dockerfile_Windows
     container_name: asp_frontend_service
     restart: always
     ports:
@@ -22,7 +22,7 @@ services:
       - "8.8.6.6"
     build:
       context: .
-      dockerfile: asp_remote_service/Dockerfile
+      dockerfile: asp_remote_service/Dockerfile_Windows
     container_name: asp_remote_service
     restart: always
     ports:
