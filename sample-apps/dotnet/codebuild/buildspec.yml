@@ -14,7 +14,8 @@ phases:
       - echo "Build phase -- Building Docker image via docker-compose..."
       - docker-compose -f sample-apps/dotnet/docker-compose-windows.yaml build
       - echo "Tagging the Docker image..."
-      - $ecrImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/$env:ECR_REPOSITORY_NAME:autobuild-latest"
+      - docker images
+      - $ecrImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-main-service:autobuild-latest"
       - docker tag asp_frontend_service:latest $ecrImageUrl
 
   post_build:
