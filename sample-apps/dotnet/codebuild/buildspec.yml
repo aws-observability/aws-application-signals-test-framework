@@ -9,6 +9,8 @@ phases:
 
   build:
     commands:
+      - $PSVersionTable
+      - ver
       - echo "Build phase -- Building Docker image via docker-compose..."
       - docker-compose -f docker-compose.windows.yml build
       - echo "Tagging the Docker image..."
