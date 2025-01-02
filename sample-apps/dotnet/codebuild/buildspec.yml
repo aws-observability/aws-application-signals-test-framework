@@ -9,12 +9,11 @@ phases:
 
   build:
     commands:
-      - $PSVersionTable
-      - ver
+      - echo "$PSVersionTable"
       - echo "Build phase -- Building Docker image via docker-compose..."
       - docker-compose -f docker-compose.windows.yml build
       - echo "Tagging the Docker image..."
-      - docker tag asp_frontend_service:latest %ACCOUNT_ID%.dkr.ecr.%AWS_DEFAULT_REGION%.amazonaws.com/%ECR_REPOSITORY_NAME%:autobuild-latest
+      - docker tag asp_frontend_service:latest $env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/$env:ECR_REPOSITORY_NAME:autobuild-latest
 
   post_build:
     commands:
