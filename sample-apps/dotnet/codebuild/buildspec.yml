@@ -3,7 +3,9 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - echo "$PSVersionTable"
+      - echo $env:AWS_DEFAULT_REGION
+      - echo $env:ACCOUNT_ID
+      - aws ecr get-login-password --region us-east-1
       - echo "Pre-build phase -- Logging into Amazon ECR..."
       - aws ecr get-login-password --region $env:AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com
       - echo "Pre-build phase completed."
