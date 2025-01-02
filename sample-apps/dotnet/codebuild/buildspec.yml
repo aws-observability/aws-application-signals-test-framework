@@ -6,14 +6,6 @@ env:
     AWS_DEFAULT_REGION: "us-east-1"
 
 phases:
-  install:
-    commands:
-      - echo "Install phase - Checking for changes in the 'app/' folder."
-      # 获取上一次提交与当前提交的 diff
-      - CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD || true)
-      - echo "Changed files - $CHANGED_FILES"
-      - if echo "$CHANGED_FILES" | findstr /i "sample-apps/dotnet"; then (echo "Detected changes in Dotnet Sample APP") else (echo "No changes in Dotnet Sample App. Exiting..." & exit 0)  fi
-
   pre_build:
     commands:
       - echo "Pre-build phase - Logging into Amazon ECR..."
