@@ -23,6 +23,7 @@ import com.amazonaws.services.xray.model.GetTraceSummariesRequest;
 import com.amazonaws.services.xray.model.GetTraceSummariesResult;
 import com.amazonaws.services.xray.model.Trace;
 import com.amazonaws.services.xray.model.TraceSummary;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.joda.time.DateTime;
@@ -53,12 +54,21 @@ public class XRayService {
   public List<TraceSummary> searchTraces(String traceFilter) {
     Date currentDate = new Date();
     Date pastDate = new DateTime(currentDate).minusSeconds(SEARCH_PERIOD).toDate();
-    GetTraceSummariesResult traceSummaryResult =
-            awsxRay.getTraceSummaries(
-                    new GetTraceSummariesRequest()
-                            .withStartTime(pastDate)
-                            .withEndTime(currentDate)
-                            .withFilterExpression(traceFilter));
-    return traceSummaryResult.getTraceSummaries();
+    List<TraceSummary> allSummaries = new ArrayList<>();
+    String nextToken = null;
+    do {
+      GetTraceSummariesResult traceSummaryResult =
+              awsxRay.getTraceSummaries(
+                      new GetTraceSummariesRequest()
+                              .withStartTime(pastDate)
+                              .withEndTime(currentDate)
+                              .withFilterExpression(traceFilter)
+                              .withNextToken(nextToken));
+
+      allSummaries.addAll(traceSummaryResult.getTraceSummaries());
+      nextToken = traceSummaryResult.getNextToken();
+    } while(nextToken != null);
+
+    return allSummaries;
   }
 }
