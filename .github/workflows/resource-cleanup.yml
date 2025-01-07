@@ -126,7 +126,7 @@ jobs:
           python cleaner.py
 
   publish-metric:
-    needs: [ cleanup-ec2-instances, cleanup-k8s-cluster ]
+    needs: [ cleanup-ec2-instances, cleanup-k8s-cluster, cleanup-lambda-layer ]
     if: always()
     uses: ./.github/workflows/enablement-test-publish-result.yml
     secrets: inherit
