@@ -29,6 +29,7 @@ jobs:
     with:
       aws-region: ${{ matrix.aws-region }}
       caller-workflow-name: 'appsignals-dotnet-e2e-ec2-canary-test'
+      dotnet-version: '8.0'
 
   nuget:
     strategy:

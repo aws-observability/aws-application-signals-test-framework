@@ -40,3 +40,7 @@ variable "get_cw_agent_rpm_command" {
 variable "canary_type" {
   default = "dotnet-ec2-default"
 }
+
+variable "language_version" {
+  default = "8.0"
+}

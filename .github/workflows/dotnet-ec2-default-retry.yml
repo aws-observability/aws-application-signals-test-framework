@@ -14,6 +14,9 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      dotnet-version:
+        required: true
+        type: string
 
 permissions:
   id-token: write
@@ -26,6 +29,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      dotnet-version: ${{ inputs.dotnet-version }}
 
   dotnet-ec2-default-attempt-2:
     needs: [ dotnet-ec2-default-attempt-1 ]
@@ -35,6 +39,7 @@ jobs:
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
+      dotnet-version: ${{ inputs.dotnet-version }}
 
   publish-metric-attempt-1:
     needs: [ dotnet-ec2-default-attempt-1, dotnet-ec2-default-attempt-2 ]
