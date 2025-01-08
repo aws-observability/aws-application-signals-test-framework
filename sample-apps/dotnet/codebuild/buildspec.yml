@@ -14,8 +14,8 @@ phases:
       - echo "Build phase -- Building Docker image via docker-compose..."
       - docker-compose -f sample-apps/dotnet/docker-compose-windows.yaml build
       - echo "Tagging the Docker image..."
-      - $ecrMainImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-main-service:autobuild-latest"
-      - $ecrRemoteImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-remote-service:autobuild-latest"
+      - $ecrMainImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-main-service:latest"
+      - $ecrRemoteImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-remote-service:latest"
       - docker tag dotnetsampleapp/frontend-service:latest $ecrMainImageUrl
       - docker tag dotnetsampleapp/remote-service:latest $ecrRemoteImageUrl
 
