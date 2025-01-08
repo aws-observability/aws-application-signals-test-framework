@@ -116,11 +116,7 @@ resource "null_resource" "main_service_setup" {
       sudo yum install -y wget
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      if [[ "${var.language_version}" == "8.0" ]]; then
-        sudo dnf install -y dotnet-sdk-8.0
-      else
-        sudo dnf install -y dotnet-sdk-6.0
-      fi
+      sudo dnf install -y dotnet-sdk-${var.language_version}
       sudo yum install unzip -y
 
       # Copy in CW Agent configuration
@@ -228,11 +224,7 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install -y wget
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      if [[ "${var.language_version}" == "8.0" ]]; then
-        sudo dnf install -y dotnet-sdk-8.0
-      else
-        sudo dnf install -y dotnet-sdk-6.0
-      fi
+      sudo dnf install -y dotnet-sdk-${var.language_version}
       sudo yum install unzip -y
 
       # Copy in CW Agent configuration
