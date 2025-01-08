@@ -34,7 +34,8 @@ permissions:
   contents: read
 
 env:
-  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.XZH_APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  ACCOUNT_ID: ${{ secrets.XZH_APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CLUSTER_NAME: ${{ inputs.test-cluster-name }}
@@ -101,11 +102,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
-      - name: Retrieve account
-        uses: aws-actions/aws-secretsmanager-get-secrets@v1
-        with:
-          secret-ids: |
-            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+#      - name: Retrieve account
+#        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+#        with:
+#          secret-ids: |
+#            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
 
       # ADOT_E2E_TEST_ROLE_ARN is used to access main build e2e test cluster
       # E2E_TEST_ROLE_ARN is used to access canary e2e test cluster
