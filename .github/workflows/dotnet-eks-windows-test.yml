@@ -34,8 +34,7 @@ permissions:
   contents: read
 
 env:
-  E2E_TEST_ACCOUNT_ID: ${{ secrets.XZH_APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
-  ACCOUNT_ID: ${{ secrets.XZH_APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CLUSTER_NAME: ${{ inputs.test-cluster-name }}
@@ -102,11 +101,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-east-1
 
-#      - name: Retrieve account
-#        uses: aws-actions/aws-secretsmanager-get-secrets@v1
-#        with:
-#          secret-ids: |
-#            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
 
       # ADOT_E2E_TEST_ROLE_ARN is used to access main build e2e test cluster
       # E2E_TEST_ROLE_ARN is used to access canary e2e test cluster
@@ -429,8 +428,8 @@ jobs:
             -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
             -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
-            -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}" \
-            -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"
+            -var="dotnet_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+            -var="dotnet_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
 
       - name: Remove aws access service account
         if: always()

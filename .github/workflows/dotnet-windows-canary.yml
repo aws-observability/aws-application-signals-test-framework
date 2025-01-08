@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        aws-region: ['us-east-1']
+        aws-region: ['eu-west-1']
     uses: ./.github/workflows/dotnet-eks-windows-test.yml
     secrets: inherit
     with:
