@@ -393,6 +393,13 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_LAMBDA_INVOKE_TRACE("/expected-data-template/dotnet/lambda/lambda-invoke-trace.mustache"),
   DOTNET_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/lambda/aws-sdk-call-log.mustache"),
   DOTNET_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/lambda/aws-sdk-call-metric.mustache"),
+
+  /** Java Lambda Test Case Validations */
+  JAVA_LAMBDA_INVOKE_LOG("/expected-data-template/java/lambda/lambda-invoke-log.mustache"),
+  JAVA_LAMBDA_INVOKE_METRIC("/expected-data-template/java/lambda/lambda-invoke-metric.mustache"),
+  JAVA_LAMBDA_INVOKE_TRACE("/expected-data-template/java/lambda/lambda-invoke-trace.mustache"),
+  JAVA_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/java/lambda/aws-sdk-call-log.mustache"),
+  JAVA_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/java/lambda/aws-sdk-call-metric.mustache"),
   ;
 
   private String path;

@@ -125,7 +125,7 @@ jobs:
           echo TERRAFORM_LAMBDA_FUNCTION_NAME="AdotLambdaJavaSampleApp-${{ github.run_id }}"|
           tee --append $GITHUB_ENV
           
-      - name: Apply terraform #TODO: implement terraform for Java lambda
+      - name: Apply terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/lambda/lambda && terraform apply -auto-approve 
@@ -137,7 +137,7 @@ jobs:
           max_retry: 6
           sleep_time: 60
 
-      - name: Extract endpoint #TODO: modify the command if needed
+      - name: Extract endpoint
         id: extract-endpoint
         shell: bash
         run: cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/lambda/lambda && echo API_GATEWAY_URL=$(terraform output -raw api-gateway-url) >> $GITHUB_ENV
@@ -156,7 +156,7 @@ jobs:
           max_retry: 3
           sleep_time: 60
 
-      - name: Validate generated traces #TODO: implement java trace validation template
+      - name: Validate generated traces
         id: trace-validation
         # will be removed after data quality bug fixed
         continue-on-error: true
@@ -171,7 +171,7 @@ jobs:
           --rollup'
 
       # Validation for pulse telemetry data
-      - name: Validate generated EMF logs #TODO: implement emf log validation template
+      - name: Validate generated EMF logs
         id: log-validation
         if: (success() || steps.trace-validation.outcome == 'failure') && !cancelled()
         # will be removed after data quality bug fixed
@@ -186,7 +186,7 @@ jobs:
           --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
           --rollup'
 
-      - name: Validate generated metrics #TODO: implement metric validation template
+      - name: Validate generated metrics
         id: metric-validation
         # will be removed after data quality bug fixed
         continue-on-error: true
