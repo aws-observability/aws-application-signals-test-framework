@@ -29,6 +29,19 @@ jobs:
       dotnet-version: '8.0'
       cpu-architecture: 'x86_64'
 
+  default_arm64:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: ['us-east-1']
+    uses: ./.github/workflows/dotnet-ec2-default-retry.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      caller-workflow-name: 'appsignals-dotnet-e2e-ec2-canary-test'
+      dotnet-version: '8.0'
+      cpu-architecture: 'arm64'
+
   nuget:
     strategy:
       fail-fast: false
