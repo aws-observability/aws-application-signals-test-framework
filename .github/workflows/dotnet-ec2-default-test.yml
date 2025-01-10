@@ -23,6 +23,11 @@ on:
         required: false
         type: string
         default: '8.0'
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
+        required: false
+        type: string
+        default: "x86_64"
     outputs:
       job-started:
         value: ${{ jobs.dotnet-ec2-default.outputs.job-started }}
@@ -38,7 +43,8 @@ env:
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   DOTNET_VERSION: ${{ inputs.dotnet-version }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/dotnet-sample-app-${{ inputs.dotnet-version }}.zip
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app-${{ inputs.dotnet-version }}.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
@@ -58,7 +64,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          repository: 'aws-observability/aws-application-signals-test-framework'
+          repository: 'Jeel-mehta/aws-application-signals-test-framework'
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
@@ -109,8 +115,11 @@ jobs:
             # Get cloudwatch agent staging file if triggered by cw-a repo
             echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
           else
-            # Otherwise get latest release version
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            fi
           fi
 
       - name: Set up terraform
@@ -148,6 +157,7 @@ jobs:
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
               -var="language_version=${{ env.DOTNET_VERSION }}" \
+              -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then

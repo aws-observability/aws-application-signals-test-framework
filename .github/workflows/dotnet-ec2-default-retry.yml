@@ -17,6 +17,10 @@ on:
       dotnet-version:
         required: true
         type: string
+      cpu-architecture:
+        required: false
+        type: string
+        default: "x86_64"
 
 permissions:
   id-token: write
@@ -30,6 +34,7 @@ jobs:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       dotnet-version: ${{ inputs.dotnet-version }}
+      cpu-architecture: ${{ inputs.cpu-architecture }}
 
   dotnet-ec2-default-attempt-2:
     needs: [ dotnet-ec2-default-attempt-1 ]
@@ -40,6 +45,7 @@ jobs:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       dotnet-version: ${{ inputs.dotnet-version }}
+      cpu-architecture: ${{ inputs.cpu-architecture }}
 
   publish-metric-attempt-1:
     needs: [ dotnet-ec2-default-attempt-1, dotnet-ec2-default-attempt-2 ]

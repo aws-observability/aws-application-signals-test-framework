@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -54,7 +54,7 @@ data "aws_ami" "ami" {
   }
   filter {
     name   = "architecture"
-    values = ["x86_64"]
+    values = [var.cpu_architecture]
   }
   filter {
     name   = "image-type"
@@ -79,7 +79,7 @@ data "aws_ami" "ami" {
 
 resource "aws_instance" "main_service_instance" {
   ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                        = "t3.small"
+  instance_type                        = var.cpu_architecture == "x86_64" ? "t3.small" : "t4g.micro"
   key_name                             = local.ssh_key_name
   iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
@@ -132,7 +132,7 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app.zip
       unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
@@ -187,7 +187,7 @@ resource "null_resource" "main_service_setup" {
 
 resource "aws_instance" "remote_service_instance" {
   ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                        = "t3.small"
+  instance_type                        = var.cpu_architecture == "x86_64" ? "t3.small" : "t4g.micro"
   key_name                             = local.ssh_key_name
   iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
@@ -240,7 +240,7 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app.zip
       unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
@@ -307,7 +307,7 @@ resource "null_resource" "traffic_generator_setup" {
         sudo yum install nodejs aws-cli unzip tmux -y
 
         # Bring in the traffic generator files to EC2 Instance
-        aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
+        aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/traffic-generator.zip ./traffic-generator.zip
         unzip ./traffic-generator.zip -d ./
 
         # Install the traffic generator dependencies
