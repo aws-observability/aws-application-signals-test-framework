@@ -132,8 +132,8 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app.zip
-      unzip -o dotnet-sample-app.zip
+      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app:${var.language_version}.zip
+      unzip -o dotnet-sample-app:${var.language_version}.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -240,8 +240,8 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app.zip
-      unzip -o dotnet-sample-app.zip
+      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app:${var.language_version}.zip
+      unzip -o dotnet-sample-app:${var.language_version}.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
