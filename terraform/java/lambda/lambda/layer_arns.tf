@@ -1,5 +1,5 @@
 locals {
-  sdk_layer_arns_amd64 = {
+  sdk_layer_arns = {
     "af-south-1"     = "arn:aws:lambda:af-south-1:904233096616:layer:AWSOpenTelemetryDistroJava:1"
     "ap-east-1"      = "arn:aws:lambda:ap-east-1:888577020596:layer:AWSOpenTelemetryDistroJava:1"
     "ap-northeast-1" = "arn:aws:lambda:ap-northeast-1:615299751070:layer:AWSOpenTelemetryDistroJava:1"
