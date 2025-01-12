@@ -73,7 +73,7 @@ jobs:
           sleep_time: 60
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
