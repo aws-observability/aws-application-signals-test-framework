@@ -10,9 +10,6 @@ on:
   schedule:
     - cron: '30 9 * * *' # run the workflow every day at 2:30am
   workflow_dispatch: # be able to run the workflow on demand
-  push:
-    branches:
-      - 'test-eks-created-xzh'
 
 concurrency:
   group: ${{ github.workflow }}
@@ -35,14 +32,14 @@ jobs:
       aws-region: ${{ matrix.aws-region }}
       test-cluster-name: 'e2e-dotnet-windows-canary-test'
       caller-workflow-name: 'appsignals-dotnet-windows-e2e-eks-canary-test'
-#
-#  ec2-windows:
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        aws-region: [ 'us-east-1']
-#    uses: ./.github/workflows/dotnet-ec2-windows-retry.yml
-#    secrets: inherit
-#    with:
-#      aws-region: ${{ matrix.aws-region }}
-#      caller-workflow-name: 'appsignals-dotnet-e2e-ec2-windows-canary-test'
+
+  ec2-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        aws-region: [ 'us-east-1']
+    uses: ./.github/workflows/dotnet-ec2-windows-retry.yml
+    secrets: inherit
+    with:
+      aws-region: ${{ matrix.aws-region }}
+      caller-workflow-name: 'appsignals-dotnet-e2e-ec2-windows-canary-test'
