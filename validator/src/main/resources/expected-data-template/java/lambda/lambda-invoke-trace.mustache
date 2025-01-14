@@ -1,0 +1,12 @@
+[{
+  "name": "^{{serviceName}}/default$",
+  "subsegments": [
+    {
+      "name": "^Lambda$",
+      "aws": {
+        "function_name": "^{{serviceName}}$"
+      },
+      "namespace": "^aws$"
+    }
+  ]
+}]
