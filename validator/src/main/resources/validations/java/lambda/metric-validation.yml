@@ -1,0 +1,11 @@
+-
+  validationType: "cw-metric"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedMetricTemplate: "JAVA_LAMBDA_INVOKE_METRIC"
+
+-
+  validationType: "cw-metric"
+  httpPath: "/lambda-aws-sdk"
+  callingType: "lambda-aws-sdk"
+  expectedMetricTemplate: "JAVA_LAMBDA_AWS_SDK_CALL_METRIC"
