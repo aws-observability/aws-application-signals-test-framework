@@ -132,8 +132,8 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app:${var.language_version}.zip
-      unzip -o dotnet-sample-app:${var.language_version}.zip
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -144,7 +144,11 @@ resource "null_resource" "main_service_setup" {
       dotnet build
       export CORECLR_ENABLE_PROFILING=1
       export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
-      export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      if [ "${var.cpu_architecture}" == "arm64" ]; then
+        export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-arm64/OpenTelemetry.AutoInstrumentation.Native.so
+      else
+        export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      fi
       export DOTNET_ADDITIONAL_DEPS=$current_dir/dotnet-distro/AdditionalDeps
       export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
       export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
@@ -240,8 +244,8 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app:${var.language_version}.zip
-      unzip -o dotnet-sample-app:${var.language_version}.zip
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -252,7 +256,11 @@ resource "null_resource" "remote_service_setup" {
       dotnet build
       export CORECLR_ENABLE_PROFILING=1
       export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
-      export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      if [ "${var.cpu_architecture}" == "arm64" ]; then
+        export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-arm64/OpenTelemetry.AutoInstrumentation.Native.so
+      else
+        export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      fi
       export DOTNET_ADDITIONAL_DEPS=$current_dir/dotnet-distro/AdditionalDeps
       export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
       export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
@@ -307,7 +315,7 @@ resource "null_resource" "traffic_generator_setup" {
         sudo yum install nodejs aws-cli unzip tmux -y
 
         # Bring in the traffic generator files to EC2 Instance
-        aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/traffic-generator.zip ./traffic-generator.zip
+        aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
         unzip ./traffic-generator.zip -d ./
 
         # Install the traffic generator dependencies
