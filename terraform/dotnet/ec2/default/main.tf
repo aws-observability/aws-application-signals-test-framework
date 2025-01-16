@@ -132,8 +132,8 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app:${var.language_version}.zip
-      unzip -o dotnet-sample-app:${var.language_version}.zip
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -240,8 +240,8 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/dotnet-sample-app:${var.language_version}.zip ./dotnet-sample-app:${var.language_version}.zip
-      unzip -o dotnet-sample-app:${var.language_version}.zip
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -307,7 +307,7 @@ resource "null_resource" "traffic_generator_setup" {
         sudo yum install nodejs aws-cli unzip tmux -y
 
         # Bring in the traffic generator files to EC2 Instance
-        aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/traffic-generator.zip ./traffic-generator.zip
+        aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
         unzip ./traffic-generator.zip -d ./
 
         # Install the traffic generator dependencies
