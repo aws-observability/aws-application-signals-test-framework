@@ -79,6 +79,16 @@
         "readOnly": false
       }
     ],
+    "dependsOn": [
+      {
+        "containerName": "init",
+        "condition": "SUCCESS"
+      },
+      {
+        "containerName": "ecs-cwagent",
+        "condition": "START"
+      }
+    ],
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {

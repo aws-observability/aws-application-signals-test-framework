@@ -54,16 +54,26 @@
         "name": "OTEL_PROPAGATORS",
         "value": "tracecontext,baggage,b3,xray"
       },
-     {
-       "name": "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED",
-       "value": "true"
-     }
+      {
+        "name": "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED",
+        "value": "true"
+      }
     ],
     "mountPoints": [
       {
         "sourceVolume": "opentelemetry-auto-instrumentation",
         "containerPath": "/otel-auto-instrumentation",
         "readOnly": false
+      }
+    ],
+    "dependsOn": [
+      {
+        "containerName": "init",
+        "condition": "SUCCESS"
+      },
+      {
+        "containerName": "ecs-cwagent",
+        "condition": "START"
       }
     ],
     "logConfiguration": {
