@@ -30,7 +30,7 @@ jobs:
     secrets: inherit
     with:
       aws-region: ${{ matrix.aws-region }}
-      test-cluster-name: 'eks-windows-manual'
+      test-cluster-name: 'e2e-dotnet-windows-canary-test'
       caller-workflow-name: 'appsignals-dotnet-windows-e2e-eks-canary-test'
 
   ec2-windows:
