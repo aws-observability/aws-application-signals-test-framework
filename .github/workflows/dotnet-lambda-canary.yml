@@ -5,8 +5,8 @@
 ## test the artifacts for App Signals enablement.
 name: DotNet Lambda Enablement Canary Testing
 on:
-  #schedule:
-    #- cron: '14,39 * * * *' # run the workflow at 14th and 39th minute of every hour
+  schedule:
+    - cron: '14,39 * * * *' # run the workflow at 14th and 39th minute of every hour
   workflow_dispatch: # be able to run the workflow on demand
 
 permissions:
