@@ -7,7 +7,7 @@ variable "function_name" {
 variable "sdk_layer_name" {
   type        = string
   description = "Name of published SDK layer"
-  default     = "AWSOpenTelemetryDistroJs"
+  default     = "AWSOpenTelemetryDistroDotNet"
 }
 
 variable "tracing_mode" {
