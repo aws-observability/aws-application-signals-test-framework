@@ -91,17 +91,18 @@ jobs:
       - name: Set Lambda Layer artifact directory path
         run: echo ARTIFACTS_DIR="${{ github.workspace }}/lambda_artifacts" >> $GITHUB_ENV
 
-      - name: Download Lambda Layer and Function artifacts for E2E Test
+      - name: Download Lambda Layer artifact for E2E Test
         if: ${{ env.CALLER_WORKFLOW_NAME != 'appsignals-java-e2e-lambda-canary-test' }}
         run: |
           aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/adot-java-lambda-layer-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/layer.zip
-          aws s3 cp ${{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/java-function.zip
+
+      - name: Download the lambda function artifact for E2E test
+        run: aws s3 cp ${{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/java-function.zip
 
       - name: Set Canary Environment Variable
         if: ${{ env.CALLER_WORKFLOW_NAME == 'appsignals-java-e2e-lambda-canary-test' }}
         run: |
-          echo IS_CANARY=true >> $GITHUB_ENV |
-          aws s3 cp ${{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/javafunction.zip
+          echo IS_CANARY=true >> $GITHUB_ENV
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
