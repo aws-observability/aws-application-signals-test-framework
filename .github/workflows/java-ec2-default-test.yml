@@ -128,11 +128,13 @@ jobs:
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
             echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
-          elif [ "${{ env.OPERATING_SYSTEM }}" = "ubuntu" ]; then
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.deb https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb" >> $GITHUB_ENV
           else
             if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
-              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+              if [ "${{ env.OPERATING_SYSTEM }}" = "ubuntu" ]; then
+                echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.deb https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb" >> $GITHUB_ENV
+              else
+                echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+              fi
             elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
               echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
             fi

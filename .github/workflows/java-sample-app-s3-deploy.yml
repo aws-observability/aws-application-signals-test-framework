@@ -20,10 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
-                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
-                      'us-east-1','us-east-2','us-west-1','us-west-2' ]
+        aws-region: [ 'us-east-1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,16 +49,13 @@ jobs:
         working-directory: sample-apps/java/springboot-main-service
         run: |
           gradle build -P javaVersion=11
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v11.jar
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v11.jar
 
   java-v11-remote:
     strategy:
       fail-fast: false
       matrix:
-        aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
-                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
-                      'us-east-1','us-east-2','us-west-1','us-west-2' ]
+        aws-region: [ 'us-east-1' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,7 +84,7 @@ jobs:
         working-directory: sample-apps/java/springboot-remote-service
         run: |
           gradle build -P javaVersion=11
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v11.jar
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v11.jar
 
   java-main:
     strategy:
@@ -124,7 +118,7 @@ jobs:
           fi
           
           gradle build -P javaVersion=${{ matrix.java-version }}
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-us-east-1 --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v${{ matrix.java-version }}.jar
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v${{ matrix.java-version }}.jar
 
   java-remote:
     strategy:
@@ -158,16 +152,13 @@ jobs:
           fi
           
           gradle build -P javaVersion=${{ matrix.java-version }}
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-us-east-1 --body ./build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v${{ matrix.java-version }}.jar
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body ./build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v${{ matrix.java-version }}.jar
 
   java-lambda:
     strategy:
       fail-fast: false
       matrix:
-        aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
-                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
-                      'us-east-1','us-east-2','us-west-1','us-west-2' ]
+        aws-region: [ 'us-east-1' ]
     runs-on: ubuntu-latest
     steps:
       - name: Check out ADOT Java repo
@@ -205,4 +196,4 @@ jobs:
         run: |
           gradle build
           gradle createLambdaZip
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./build/distributions/lambda-function.zip --key java-lambda-function.zip
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-jeel --body ./build/distributions/lambda-function.zip --key java-lambda-function.zip

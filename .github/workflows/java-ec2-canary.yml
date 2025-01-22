@@ -9,7 +9,6 @@ name: Java EC2 Enablement Canary Testing
 on:
   # schedule:
   #   - cron: '6,31 * * * *' # run the workflow at 6th and 31th minute of every hour
-  push:
   workflow_dispatch: # be able to run the workflow on demand
 
 permissions:
