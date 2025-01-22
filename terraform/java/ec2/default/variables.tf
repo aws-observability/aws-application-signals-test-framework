@@ -52,3 +52,7 @@ variable "language_version" {
 variable "cpu_architecture" {
   default = "x86_64"
 }
+
+variable "operating_system" {
+  default = "al2"
+}

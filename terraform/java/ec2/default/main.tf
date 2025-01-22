@@ -39,6 +39,10 @@ resource "aws_key_pair" "aws_ssh_key" {
 locals {
   ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
   private_key_content = tls_private_key.ssh_key.private_key_pem
+  os_configs={
+    "ubuntu" = "ubuntu/images/hvm-ssd/ubuntu-22.04-*-${var.cpu_architecture}-server-*"
+    "al2"    = "al20*-ami-minimal-*-${var.cpu_architecture}"
+  }
 }
 
 data "aws_ami" "ami" {
@@ -46,7 +50,7 @@ data "aws_ami" "ami" {
   most_recent      = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
+    values = [local.os_configs[var.operating_system]]
   }
   filter {
     name   = "state"
@@ -102,7 +106,7 @@ resource "aws_instance" "main_service_instance" {
 resource "null_resource" "main_service_setup" {
   connection {
     type = "ssh"
-    user = var.user
+    user = var.operating_system=="ubuntu"?"ubuntu":var.user
     private_key = local.private_key_content
     host = aws_instance.main_service_instance.public_ip
   }
@@ -112,23 +116,37 @@ resource "null_resource" "main_service_setup" {
       <<-EOF
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      # Install wget
-      sudo yum install wget -y
-      # Install Java
-      echo
-      if [[ "${var.language_version}" == "8" ]]; then
-        sudo yum install java-1.8.0-amazon-corretto -y
+      # Install wget and Java based on OS
+      if [ "${var.operating_system}" == "ubuntu" ]; then
+        # Ubuntu commands
+        sudo apt-get update
+        sudo apt-get install wget -y
+        if [[ "${var.language_version}" == "8" ]]; then
+          sudo apt-get install openjdk-8-jdk -y
+        else
+          sudo apt-get install openjdk-${var.language_version}-jdk -y
+        fi
       else
-        sudo yum install java-${var.language_version}-amazon-corretto -y
+        # Amazon Linux 2 commands
+        sudo yum install wget -y
+        if [[ "${var.language_version}" == "8" ]]; then
+          sudo yum install java-1.8.0-amazon-corretto -y
+        else
+          sudo yum install java-${var.language_version}-amazon-corretto -y
+        fi
       fi
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
-      # Get and run CW agent rpm
+      # Get and run CW agent rpm/ubuntu
       ${var.get_cw_agent_rpm_command}
-      sudo rpm -U ./cw-agent.rpm
+      if [ "${var.operating_system}" == "ubuntu" ]; then
+        sudo dpkg -i -E ./cw-agent.deb
+      else
+        sudo rpm -U ./cw-agent.rpm
+      fi
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
       # Get ADOT
@@ -137,7 +155,7 @@ resource "null_resource" "main_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_app_jar} ./main-service.jar
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
+      JAVA_TOOL_OPTIONS=' -javaagent:/home/${var.operating_system == "ubuntu" ? "ubuntu" : "ec2-user"}/adot.jar' \
       OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
@@ -198,7 +216,7 @@ resource "aws_instance" "remote_service_instance" {
 resource "null_resource" "remote_service_setup" {
   connection {
     type = "ssh"
-    user = var.user
+    user = var.operating_system=="ubuntu"?"ubuntu":var.user
     private_key = local.private_key_content
     host = aws_instance.remote_service_instance.public_ip
   }
@@ -208,25 +226,41 @@ resource "null_resource" "remote_service_setup" {
       <<-EOF
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      # Install wget
-      sudo yum install wget -y
-      # Install Java
-      if [[ "${var.language_version}" == "8" ]]; then
-        sudo yum install java-1.8.0-amazon-corretto -y
+      # Install wget and Java based on OS
+      if [ "${var.operating_system}" == "ubuntu" ]; then
+        # Ubuntu commands
+        sudo apt-get update
+        sudo apt-get install wget -y
+        if [[ "${var.language_version}" == "8" ]]; then
+          sudo apt-get install openjdk-8-jdk -y
+        else
+          sudo apt-get install openjdk-${var.language_version}-jdk -y
+        fi
+        sudo apt-get update
+        sudo apt-get install ec2-instance-connect -y
       else
-        sudo yum install java-${var.language_version}-amazon-corretto -y
+        # Amazon Linux 2 commands
+        sudo yum install wget -y
+        if [[ "${var.language_version}" == "8" ]]; then
+          sudo yum install java-1.8.0-amazon-corretto -y
+        else
+          sudo yum install java-${var.language_version}-amazon-corretto -y
+        fi
+        # enable ec2 instance connect for debug
+        sudo yum install ec2-instance-connect -y
       fi
-
-      # enable ec2 instance connect for debug
-      sudo yum install ec2-instance-connect -y
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
-      # Get and run CW agent rpm
+      # Get and run CW agent rpm/ubuntu
       ${var.get_cw_agent_rpm_command}
-      sudo rpm -U ./cw-agent.rpm
+      if [ "${var.operating_system}" == "ubuntu" ]; then
+        sudo dpkg -i -E ./cw-agent.deb
+      else
+        sudo rpm -U ./cw-agent.rpm
+      fi
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
       # Get ADOT
@@ -235,7 +269,7 @@ resource "null_resource" "remote_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_remote_app_jar} ./remote-service.jar
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
+      JAVA_TOOL_OPTIONS=' -javaagent:/home/${var.operating_system == "ubuntu" ? "ubuntu" : "ec2-user"}/adot.jar' \
       OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
@@ -274,7 +308,7 @@ resource "null_resource" "remote_service_setup" {
 resource "null_resource" "traffic_generator_setup" {
   connection {
     type = "ssh"
-    user = var.user
+    user = var.operating_system=="ubuntu"?"ubuntu":var.user
     private_key = local.private_key_content
     host = aws_instance.main_service_instance.public_ip
   }
@@ -282,10 +316,14 @@ resource "null_resource" "traffic_generator_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-        sudo yum install nodejs aws-cli unzip tmux -y
+        if [ "${var.operating_system}" == "ubuntu" ]; then
+          sudo apt update && sudo apt install -y nodejs awscli unzip tmux
+        else
+          sudo yum install nodejs aws-cli unzip tmux -y
+        fi
 
         # Bring in the traffic generator files to EC2 Instance
-        aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
+        aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/traffic-generator.zip ./traffic-generator.zip
         unzip ./traffic-generator.zip -d ./
 
         # Install the traffic generator dependencies
