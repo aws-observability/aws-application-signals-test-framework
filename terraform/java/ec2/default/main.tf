@@ -141,6 +141,7 @@ resource "null_resource" "main_service_setup" {
         else
           sudo apt-get install -y openjdk-${var.language_version}-jdk
         fi
+        sudo apt-get install -y awscli
       else
         # Amazon Linux 2 commands
         sudo yum install wget -y
@@ -260,6 +261,7 @@ resource "null_resource" "remote_service_setup" {
         else
           sudo apt-get install -y openjdk-${var.language_version}-jdk
         fi
+        sudo apt-get install -y awscli
         sudo apt-get update
         sudo apt-get install ec2-instance-connect -y
       else
