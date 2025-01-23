@@ -342,8 +342,17 @@ resource "null_resource" "traffic_generator_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-        if [ "${var.operating_system}" == "ubuntu" ]; then
-          sudo apt update && sudo apt install -y nodejs awscli unzip tmux
+      #!/bin/bash
+        if [[ "${var.operating_system}" == "ubuntu" ]]; then
+          # Ubuntu commands
+          sudo apt-get update
+          # Install curl first if not already installed
+          sudo apt-get install -y curl
+          # Install Node.js and npm using NodeSource
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          # Install other required packages
+          sudo apt-get install -y awscli unzip tmux
         else
           sudo yum install nodejs aws-cli unzip tmux -y
         fi
