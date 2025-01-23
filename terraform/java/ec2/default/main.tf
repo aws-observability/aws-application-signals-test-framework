@@ -41,7 +41,7 @@ locals {
   private_key_content = tls_private_key.ssh_key.private_key_pem
   os_configs = {
     "ubuntu" = {
-      name_pattern    = "ubuntu-minimal/images/hvm-ssd/ubuntu-jammy-22.04-amd64-minimal-*"
+      name_pattern    = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
       root_device     = "/dev/sda1"
     }
     "al2" = {
@@ -101,7 +101,7 @@ resource "aws_instance" "main_service_instance" {
   }
 
   root_block_device {
-    volume_size = 5
+    volume_size = 8
   }
 
   tags = {
@@ -123,7 +123,7 @@ resource "null_resource" "main_service_setup" {
       # Make the Terraform fail if any step throws an error
       set -o errexit
       # Install wget and Java based on OS
-      if [ "${var.operating_system}" == "ubuntu" ]; then
+      if [[ "${var.operating_system}" == "ubuntu" ]]; then
         # Ubuntu commands
         sudo apt-get update
         sudo apt-get install wget -y
@@ -148,7 +148,7 @@ resource "null_resource" "main_service_setup" {
 
       # Get and run CW agent rpm/ubuntu
       ${var.get_cw_agent_rpm_command}
-      if [ "${var.operating_system}" == "ubuntu" ]; then
+      if [[ "${var.operating_system}" == "ubuntu" ]]; then
         sudo dpkg -i -E ./cw-agent.deb
       else
         sudo rpm -U ./cw-agent.rpm
@@ -211,7 +211,7 @@ resource "aws_instance" "remote_service_instance" {
   }
 
   root_block_device {
-    volume_size = 5
+    volume_size = 8
   }
 
   tags = {
@@ -233,7 +233,7 @@ resource "null_resource" "remote_service_setup" {
       # Make the Terraform fail if any step throws an error
       set -o errexit
       # Install wget and Java based on OS
-      if [ "${var.operating_system}" == "ubuntu" ]; then
+      if [[ "${var.operating_system}" == "ubuntu" ]]; then
         # Ubuntu commands
         sudo apt-get update
         sudo apt-get install wget -y
@@ -262,7 +262,7 @@ resource "null_resource" "remote_service_setup" {
 
       # Get and run CW agent rpm/ubuntu
       ${var.get_cw_agent_rpm_command}
-      if [ "${var.operating_system}" == "ubuntu" ]; then
+      if [[ "${var.operating_system}" == "ubuntu" ]]; then
         sudo dpkg -i -E ./cw-agent.deb
       else
         sudo rpm -U ./cw-agent.rpm
