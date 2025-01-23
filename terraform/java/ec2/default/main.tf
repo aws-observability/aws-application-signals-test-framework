@@ -120,6 +120,7 @@ resource "null_resource" "main_service_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
+      #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
       # Install wget and Java based on OS
@@ -230,6 +231,7 @@ resource "null_resource" "remote_service_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
+      #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
       # Install wget and Java based on OS
