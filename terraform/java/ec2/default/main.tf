@@ -40,7 +40,7 @@ locals {
   ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
   private_key_content = tls_private_key.ssh_key.private_key_pem
   os_configs={
-    "ubuntu" = "ubuntu/images/hvm-ssd/ubuntu-22.04-*-${var.cpu_architecture}-server-*"
+    "ubuntu" = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20250112"
     "al2"    = "al20*-ami-minimal-*-${var.cpu_architecture}"
   }
 }
