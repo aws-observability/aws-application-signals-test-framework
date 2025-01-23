@@ -28,7 +28,7 @@ jobs:
       caller-workflow-name: 'appsignals-e2e-ec2-canary-test'
       java-version: '11'
       cpu-architecture: 'x86_64'
-      operating-system: 'al2'
+      operating-system: 'ubuntu'
 
   maven:
     uses: ./.github/workflows/java-ec2-default-retry.yml
