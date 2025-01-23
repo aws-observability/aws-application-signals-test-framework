@@ -127,11 +127,19 @@ resource "null_resource" "main_service_setup" {
       if [[ "${var.operating_system}" == "ubuntu" ]]; then
         # Ubuntu commands
         sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository -y ppa:openjdk-r/ppa
+        sudo apt-get update
         sudo apt-get install wget -y
+        # Try to fix broken packages if any
+        sudo apt-get install -y -f
+        # Clean apt cache
+        sudo apt-get clean
+        sudo apt-get autoremove -y
         if [[ "${var.language_version}" == "8" ]]; then
-          sudo apt-get install openjdk-8-jdk -y
+          sudo apt-get install -y openjdk-8-jdk 
         else
-          sudo apt-get install openjdk-${var.language_version}-jdk -y
+          sudo apt-get install -y openjdk-${var.language_version}-jdk
         fi
       else
         # Amazon Linux 2 commands
@@ -238,11 +246,19 @@ resource "null_resource" "remote_service_setup" {
       if [[ "${var.operating_system}" == "ubuntu" ]]; then
         # Ubuntu commands
         sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository -y ppa:openjdk-r/ppa
+        sudo apt-get update
         sudo apt-get install wget -y
+        # Try to fix broken packages if any
+        sudo apt-get install -y -f
+        # Clean apt cache
+        sudo apt-get clean
+        sudo apt-get autoremove -y
         if [[ "${var.language_version}" == "8" ]]; then
-          sudo apt-get install openjdk-8-jdk -y
+          sudo apt-get install -y openjdk-8-jdk 
         else
-          sudo apt-get install openjdk-${var.language_version}-jdk -y
+          sudo apt-get install -y openjdk-${var.language_version}-jdk
         fi
         sudo apt-get update
         sudo apt-get install ec2-instance-connect -y
