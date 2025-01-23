@@ -39,9 +39,15 @@ resource "aws_key_pair" "aws_ssh_key" {
 locals {
   ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
   private_key_content = tls_private_key.ssh_key.private_key_pem
-  os_configs={
-    "ubuntu" = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20250112"
-    "al2"    = "al20*-ami-minimal-*-${var.cpu_architecture}"
+  os_configs = {
+    "ubuntu" = {
+      name_pattern    = "ubuntu-minimal/images/hvm-ssd/ubuntu-jammy-22.04-amd64-minimal-*"
+      root_device     = "/dev/sda1"
+    }
+    "al2" = {
+      name_pattern    = "al20*-ami-minimal-*-${var.cpu_architecture}"
+      root_device     = "/dev/xvda"
+    }
   }
 }
 
@@ -50,7 +56,7 @@ data "aws_ami" "ami" {
   most_recent      = true
   filter {
     name   = "name"
-    values = [local.os_configs[var.operating_system]]
+    values = [local.os_configs[var.operating_system].name_pattern]
   }
   filter {
     name   = "state"
@@ -67,7 +73,7 @@ data "aws_ami" "ami" {
 
   filter {
     name   = "root-device-name"
-    values = ["/dev/xvda"]
+    values = [local.os_configs[var.operating_system].root_device]
   }
 
   filter {
