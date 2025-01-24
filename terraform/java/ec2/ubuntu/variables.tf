@@ -22,7 +22,7 @@ variable "aws_region" {
 }
 
 variable "user" {
-  default = "ec2-user"
+  default = "ubuntu"
 }
 
 variable "sample_app_jar" {
@@ -33,7 +33,7 @@ variable "sample_remote_app_jar" {
   default = "s3://<bucket-name>/<jar>"
 }
 
-variable "get_cw_agent_rpm_command" {
+variable "get_cw_agent_deb_command" {
   default = "<command> s3://<bucket-name>/<jar>"
 }
 
@@ -42,7 +42,7 @@ variable "get_adot_jar_command" {
 }
 
 variable "canary_type" {
-  default = "java-ec2-default"
+  default = "java-ec2-ubuntu"
 }
 
 variable "language_version" {

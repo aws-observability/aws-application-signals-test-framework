@@ -25,10 +25,6 @@ on:
         required: false
         type: string
         default: 'github'
-      operating-system:
-        required: false
-        type: string
-        default: 'al2'
 
 permissions:
   id-token: write
@@ -44,7 +40,6 @@ jobs:
       java-version: ${{ inputs.java-version }}
       otel-source: ${{ inputs.otel-source }}
       cpu-architecture: ${{ inputs.cpu-architecture }}
-      operating-system: ${{ inputs.operating-system }}
 
   java-ec2-default-attempt-2:
     needs: [ java-ec2-default-attempt-1 ]
@@ -57,7 +52,6 @@ jobs:
       java-version: ${{ inputs.java-version }}
       otel-source: ${{ inputs.otel-source }}
       cpu-architecture: ${{ inputs.cpu-architecture }}
-      operating-system: ${{ inputs.operating-system }}
 
   publish-metric-attempt-1:
     needs: [ java-ec2-default-attempt-1, java-ec2-default-attempt-2 ]

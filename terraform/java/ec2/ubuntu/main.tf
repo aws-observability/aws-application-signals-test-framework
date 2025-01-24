@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent      = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
   filter {
     name   = "state"
@@ -63,7 +63,7 @@ data "aws_ami" "ami" {
 
   filter {
     name   = "root-device-name"
-    values = ["/dev/xvda"]
+    values = ["/dev/sda1"]
   }
 
   filter {
@@ -91,7 +91,7 @@ resource "aws_instance" "main_service_instance" {
   }
 
   root_block_device {
-    volume_size = 5
+    volume_size = 8
   }
 
   tags = {
@@ -113,23 +113,32 @@ resource "null_resource" "main_service_setup" {
       #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      # Install wget
-      sudo yum install wget -y
-      # Install Java
-      echo
+      # Install wget and Java based on OS
+      # Ubuntu commands
+      sudo apt-get update
+      sudo apt-get install -y software-properties-common
+      sudo add-apt-repository -y ppa:openjdk-r/ppa
+      sudo apt-get update
+      sudo apt-get install wget -y
+      # Try to fix broken packages if any
+      sudo apt-get install -y -f
+      # Clean apt cache
+      sudo apt-get clean
+      sudo apt-get autoremove -y
       if [[ "${var.language_version}" == "8" ]]; then
-        sudo yum install java-1.8.0-amazon-corretto -y
+        sudo apt-get install -y openjdk-8-jdk 
       else
-        sudo yum install java-${var.language_version}-amazon-corretto -y
+        sudo apt-get install -y openjdk-${var.language_version}-jdk
       fi
-
+      sudo apt-get install -y awscli
+      
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
-      # Get and run CW agent rpm
-      ${var.get_cw_agent_rpm_command}
-      sudo rpm -U ./cw-agent.rpm
+      # Get and run CW agent rpm/ubuntu
+      ${var.get_cw_agent_deb_command}
+      sudo dpkg -i -E ./cw-agent.deb
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
       # Get ADOT
@@ -138,7 +147,7 @@ resource "null_resource" "main_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_app_jar} ./main-service.jar
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
+      JAVA_TOOL_OPTIONS=' -javaagent:/home/ubuntu/adot.jar' \
       OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
@@ -188,7 +197,7 @@ resource "aws_instance" "remote_service_instance" {
   }
 
   root_block_device {
-    volume_size = 5
+    volume_size = 8
   }
 
   tags = {
@@ -210,26 +219,34 @@ resource "null_resource" "remote_service_setup" {
       #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      # Install wget
-      sudo yum install wget -y
-      # Install Java
-      echo
+      # Install wget and Java based on OS
+      # Ubuntu commands
+      sudo apt-get update
+      sudo apt-get install -y software-properties-common
+      sudo add-apt-repository -y ppa:openjdk-r/ppa
+      sudo apt-get update
+      sudo apt-get install wget -y
+      # Try to fix broken packages if any
+      sudo apt-get install -y -f
+      # Clean apt cache
+      sudo apt-get clean
+      sudo apt-get autoremove -y
       if [[ "${var.language_version}" == "8" ]]; then
-        sudo yum install java-1.8.0-amazon-corretto -y
+        sudo apt-get install -y openjdk-8-jdk 
       else
-        sudo yum install java-${var.language_version}-amazon-corretto -y
+        sudo apt-get install -y openjdk-${var.language_version}-jdk
       fi
-
-      # enable ec2 instance connect for debug
-      sudo yum install ec2-instance-connect -y
-
+      sudo apt-get install -y awscli
+      sudo apt-get update
+      sudo apt-get install ec2-instance-connect -y
+      
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
-      # Get and run CW agent rpm
-      ${var.get_cw_agent_rpm_command}
-      sudo rpm -U ./cw-agent.rpm
+      # Get and run CW agent rpm/ubuntu
+      ${var.get_cw_agent_deb_command}
+      sudo dpkg -i -E ./cw-agent.deb
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
       # Get ADOT
@@ -238,7 +255,7 @@ resource "null_resource" "remote_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_remote_app_jar} ./remote-service.jar
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
+      JAVA_TOOL_OPTIONS=' -javaagent:/home/ubuntu/adot.jar' \
       OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
@@ -286,7 +303,15 @@ resource "null_resource" "traffic_generator_setup" {
     inline = [
       <<-EOF
       #!/bin/bash
-        sudo yum install nodejs aws-cli unzip tmux -y
+        # Ubuntu commands
+        sudo apt-get update
+        # Install curl first if not already installed
+        sudo apt-get install -y curl
+        # Install Node.js and npm using NodeSource
+        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+        # Install other required packages
+        sudo apt-get install -y awscli unzip tmux
 
         # Bring in the traffic generator files to EC2 Instance
         aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
