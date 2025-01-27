@@ -1,0 +1,56 @@
+[{
+  "name": "^{{serviceName}}$",
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^InternalOperation$",
+    "aws.local.environment": "^ec2:default$"
+  },
+  "metadata": {
+    "default": {
+      "otel.resource.host.image.id": "^{{instanceAmi}}$",
+      "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$"
+    }
+  },
+  "subsegments": [
+    {
+      "name": "^local-root-client-call$",
+      "http": {
+          "request": {
+              "url": "^http://local-root-client-call$",
+              "method": "^GET$"
+          }
+      },
+      "annotations": {
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^InternalOperation$",
+        "aws.remote.service": "^local-root-client-call$",
+        "aws.remote.operation": "GET /",
+        "aws.local.environment": "^ec2:default$"
+      },
+      "metadata": {
+        "default": {
+          "EC2.InstanceId": "^{{instanceId}}$",
+          "PlatformType": "^AWS::EC2$",
+          "aws.span.kind": "^LOCAL_ROOT$"
+        }
+      },
+      "namespace": "^remote$"
+    }
+  ]
+},
+{
+    "name": "^local-root-client-call$",
+    "http": {
+        "request": {
+            "url": "^http://local-root-client-call$",
+            "method": "^GET$"
+        },
+        "response": {
+            "content_length": 0
+        }
+    },
+    "annotations": {
+        "aws.local.service": "^local-root-client-call$",
+        "aws.local.operation": "^GET /$"
+    }
+}]

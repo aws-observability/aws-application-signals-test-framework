@@ -110,7 +110,6 @@ resource "null_resource" "main_service_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-      #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
       # Install wget
@@ -207,13 +206,11 @@ resource "null_resource" "remote_service_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-      #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
       # Install wget
       sudo yum install wget -y
       # Install Java
-      echo
       if [[ "${var.language_version}" == "8" ]]; then
         sudo yum install java-1.8.0-amazon-corretto -y
       else
@@ -285,7 +282,6 @@ resource "null_resource" "traffic_generator_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-      #!/bin/bash
         sudo yum install nodejs aws-cli unzip tmux -y
 
         # Bring in the traffic generator files to EC2 Instance

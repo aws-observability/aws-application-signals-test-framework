@@ -52,10 +52,7 @@ data "aws_ami" "ami" {
     name   = "state"
     values = ["available"]
   }
-  filter {
-    name   = "architecture"
-    values = [var.cpu_architecture]
-  }
+  
   filter {
     name   = "image-type"
     values = ["machine"]
@@ -79,7 +76,7 @@ data "aws_ami" "ami" {
 
 resource "aws_instance" "main_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
+  instance_type                         = "t3.micro" 
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -125,11 +122,7 @@ resource "null_resource" "main_service_setup" {
       # Clean apt cache
       sudo apt-get clean
       sudo apt-get autoremove -y
-      if [[ "${var.language_version}" == "8" ]]; then
-        sudo apt-get install -y openjdk-8-jdk 
-      else
-        sudo apt-get install -y openjdk-${var.language_version}-jdk
-      fi
+      sudo apt-get install -y openjdk-11-jdk 
       sudo apt-get install -y awscli
       
       # Copy in CW Agent configuration
@@ -185,7 +178,7 @@ resource "null_resource" "main_service_setup" {
 
 resource "aws_instance" "remote_service_instance" {
   ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
+  instance_type                         = "t3.micro"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
@@ -219,7 +212,7 @@ resource "null_resource" "remote_service_setup" {
       #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      # Install wget and Java based on OS
+      # Install wget and Java 
       # Ubuntu commands
       sudo apt-get update
       sudo apt-get install -y software-properties-common
@@ -231,11 +224,7 @@ resource "null_resource" "remote_service_setup" {
       # Clean apt cache
       sudo apt-get clean
       sudo apt-get autoremove -y
-      if [[ "${var.language_version}" == "8" ]]; then
-        sudo apt-get install -y openjdk-8-jdk 
-      else
-        sudo apt-get install -y openjdk-${var.language_version}-jdk
-      fi
+      sudo apt-get install -y openjdk-11-jdk
       sudo apt-get install -y awscli
       sudo apt-get update
       sudo apt-get install ec2-instance-connect -y
