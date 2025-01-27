@@ -75,7 +75,7 @@ data "aws_ami" "ami" {
 }
 
 resource "aws_instance" "main_service_instance" {
-  ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
+  ami                                   = data.aws_ami.ami.id 
   instance_type                         = "t3.micro" 
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
@@ -140,7 +140,7 @@ resource "null_resource" "main_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_app_jar} ./main-service.jar
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ubuntu/adot.jar' \
+      JAVA_TOOL_OPTIONS=' -javaagent:./adot.jar' \
       OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
@@ -177,7 +177,7 @@ resource "null_resource" "main_service_setup" {
 }
 
 resource "aws_instance" "remote_service_instance" {
-  ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
+  ami                                   = data.aws_ami.ami.id 
   instance_type                         = "t3.micro"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
@@ -244,7 +244,7 @@ resource "null_resource" "remote_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_remote_app_jar} ./remote-service.jar
 
-      JAVA_TOOL_OPTIONS=' -javaagent:/home/ubuntu/adot.jar' \
+      JAVA_TOOL_OPTIONS=' -javaagent:./adot.jar' \
       OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
@@ -303,7 +303,7 @@ resource "null_resource" "traffic_generator_setup" {
         sudo apt-get install -y awscli unzip tmux
 
         # Bring in the traffic generator files to EC2 Instance
-        aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
+        aws s3 cp s3://aws-appsignals-sample-app-prod-jeel/traffic-generator.zip ./traffic-generator.zip
         unzip ./traffic-generator.zip -d ./
 
         # Install the traffic generator dependencies

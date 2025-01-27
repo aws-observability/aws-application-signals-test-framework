@@ -96,6 +96,25 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_ASG_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/asg/client-call-metric.mustache"),
   JAVA_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/asg/client-call-trace.mustache"),
 
+  /** Java EC2 Ubuntu Test Case Validations */
+  JAVA_EC2_UBUNTU_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/ubuntu/outgoing-http-call-log.mustache"),
+  JAVA_EC2_UBUNTU_DEFAULT_OUTGOING_HTTP_CALL_METRIC(
+      "/expected-data-template/java/ec2/ubuntu/outgoing-http-call-metric.mustache"),
+  JAVA_EC2_UBUNTU_DEFAULT_OUTGOING_HTTP_CALL_TRACE(
+      "/expected-data-template/java/ec2/ubuntu/outgoing-http-call-trace.mustache"),
+
+  JAVA_EC2_UBUNTU_DEFAULT_AWS_SDK_CALL_LOG("/expected-data-template/java/ec2/ubuntu/aws-sdk-call-log.mustache"),
+  JAVA_EC2_UBUNTU_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/java/ec2/ubuntu/aws-sdk-call-metric.mustache"),
+  JAVA_EC2_UBUNTU_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/java/ec2/ubuntu/aws-sdk-call-trace.mustache"),
+
+  JAVA_EC2_UBUNTU_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/java/ec2/ubuntu/remote-service-log.mustache"),
+  JAVA_EC2_UBUNTU_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/java/ec2/ubuntu/remote-service-metric.mustache"),
+  JAVA_EC2_UBUNTU_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/java/ec2/ubuntu/remote-service-trace.mustache"),
+
+  JAVA_EC2_UBUNTU_DEFAULT_CLIENT_CALL_LOG("/expected-data-template/java/ec2/ubuntu/client-call-log.mustache"),
+  JAVA_EC2_UBUNTU_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/ubuntu/client-call-metric.mustache"),
+  JAVA_EC2_UBUNTU_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/ubuntu/client-call-trace.mustache"),
+
   /** Java EC2 K8s Test Case Validations */
   JAVA_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/k8s/outgoing-http-call-log.mustache"),
   JAVA_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/k8s/outgoing-http-call-metric.mustache"),
