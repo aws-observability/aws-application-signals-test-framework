@@ -17,9 +17,9 @@ on:
 
     outputs:
       job-started:
-        value: ${{ jobs.java-ec2-default.outputs.job-started }}
+        value: ${{ jobs.java-ec2-ubuntu.outputs.job-started }}
       validation-result:
-        value: ${{ jobs.java-ec2-default.outputs.validation-result }}
+        value: ${{ jobs.java-ec2-ubuntu.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -117,7 +117,7 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/ec2/default && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/ec2/ubuntu && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
@@ -263,7 +263,7 @@ jobs:
       - name: Terraform destroy
         if: always()
         continue-on-error: true
-        working-directory: terraform/java/ec2/default
+        working-directory: terraform/java/ec2/ubuntu
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
