@@ -14,17 +14,17 @@ on:
       caller-workflow-name:
         required: true
         type: string
-      java-version:
-        required: true
-        type: string
-      cpu-architecture:
-        required: false
-        type: string
-        default: "x86_64"
-      otel-source:
-        required: false
-        type: string
-        default: 'github'
+      # java-version:
+      #   required: true
+      #   type: string
+      # cpu-architecture:
+      #   required: false
+      #   type: string
+      #   default: "x86_64"
+      # otel-source:
+      #   required: false
+      #   type: string
+      #   default: 'github'
 
 permissions:
   id-token: write
@@ -32,26 +32,26 @@ permissions:
 
 jobs:
   java-ec2-default-attempt-1:
-    uses: ./.github/workflows/java-ec2-default-test.yml
+    uses: ./.github/workflows/java-ec2-ubuntu-test.yml
     secrets: inherit
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      java-version: ${{ inputs.java-version }}
-      otel-source: ${{ inputs.otel-source }}
-      cpu-architecture: ${{ inputs.cpu-architecture }}
+      # java-version: ${{ inputs.java-version }}
+      # otel-source: ${{ inputs.otel-source }}
+      # cpu-architecture: ${{ inputs.cpu-architecture }}
 
   java-ec2-default-attempt-2:
     needs: [ java-ec2-default-attempt-1 ]
     if: ${{ needs.java-ec2-default-attempt-1.outputs.job-started != 'true' }}
-    uses: ./.github/workflows/java-ec2-default-test.yml
+    uses: ./.github/workflows/java-ec2-ubuntu-test.yml
     secrets: inherit
     with:
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
-      java-version: ${{ inputs.java-version }}
-      otel-source: ${{ inputs.otel-source }}
-      cpu-architecture: ${{ inputs.cpu-architecture }}
+      # java-version: ${{ inputs.java-version }}
+      # otel-source: ${{ inputs.otel-source }}
+      # cpu-architecture: ${{ inputs.cpu-architecture }}
 
   publish-metric-attempt-1:
     needs: [ java-ec2-default-attempt-1, java-ec2-default-attempt-2 ]
