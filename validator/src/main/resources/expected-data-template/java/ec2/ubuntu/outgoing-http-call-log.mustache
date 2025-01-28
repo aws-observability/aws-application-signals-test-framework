@@ -1,0 +1,21 @@
+[{
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:default$",
+  "PlatformType": "^AWS::EC2$",
+  "Operation": "GET /outgoing-http-call",
+  "Version": "^1$",
+  "Telemetry.Source": "^LocalRootSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}.*$"
+},
+{
+  "EC2.InstanceId": "^{{instanceId}}$",
+  "Environment": "^ec2:default$",
+  "PlatformType": "^AWS::EC2$",
+  "Operation": "GET /outgoing-http-call",
+  "Version": "^1$",
+  "RemoteService": "www.amazon.com",
+  "RemoteOperation": "GET /",
+  "Telemetry.Source": "^ClientSpan$",
+  "Host": "^ip(-[0-9]{1,3}){4}.*$"
+}]
+
