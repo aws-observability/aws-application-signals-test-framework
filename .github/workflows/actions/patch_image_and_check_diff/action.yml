@@ -262,3 +262,10 @@ runs:
           echo "Operator image did not change"
           exit 1
         fi
+
+    - name: List all pods once done
+      if: always()
+      shell: bash
+      run: |
+        echo "Running kubectl get pods -A"
+        kubectl get pods -A
