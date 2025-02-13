@@ -140,6 +140,8 @@ runs:
       if: ${{ inputs.repository == 'amazon-cloudwatch-agent' }}
       shell: bash
       run: |
+        kubectl patch clusterrole cloudwatch-agent-role --type=json \
+        -p='[{"op": "add", "path": "/rules/-", "value": {"apiGroups": ["discovery.k8s.io"], "resources": ["endpointslices"], "verbs": ["list", "watch", "get"]}}]'
         kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": ${{ inputs.patch-image-arn }}}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
