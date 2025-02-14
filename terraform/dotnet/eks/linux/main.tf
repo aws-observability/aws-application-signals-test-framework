@@ -153,7 +153,7 @@ resource "kubernetes_service" "dotnet_app_service" {
 resource "kubernetes_deployment" "dotnet_r_app_deployment" {
 
   metadata {
-    name      = "dotnet-r-app-deployment-${var.test_id}"
+    name      = "dotnet-remote-${var.test_id}"
     namespace = var.test_namespace
     labels    = {
       app = "remote-app"
