@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sample-r-app-deployment-${TESTING_ID}
-  namespace: sample-app-namespace
+  name: node-remote-${TESTING_ID}
+  namespace: node-sample-app-namespace
 spec:
   replicas: 1
   selector:
@@ -28,3 +28,18 @@ spec:
               value: "fs,dns,express"
       imagePullSecrets:
         - name: ecr-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-remote-service
+  namespace: node-sample-app-namespace
+spec:
+  selector:
+    app: remote-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8001
+  type: ClusterIP
