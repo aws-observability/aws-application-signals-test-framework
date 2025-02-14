@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dotnet-sample-r-app-deployment-${TESTING_ID}
+  name: dotnet-remote-${TESTING_ID}
   namespace: dotnet-sample-app-namespace
 spec:
   replicas: 1
@@ -30,3 +30,18 @@ spec:
             - containerPort: 8081
       imagePullSecrets:
         - name: ecr-secret
+      
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dotnet-remote-service
+  namespace: dotnet-sample-app-namespace
+spec:
+  selector:
+    app: dotnet-remote-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8081
+  type: ClusterIP

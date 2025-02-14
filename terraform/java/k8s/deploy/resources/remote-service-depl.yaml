@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sample-r-app-deployment-${TESTING_ID}
-  namespace: sample-app-namespace
+  name: java-remote-${TESTING_ID}
+  namespace: java-sample-app-namespace
 spec:
   replicas: 1
   selector:
@@ -27,3 +27,18 @@ spec:
               value: "true"
       imagePullSecrets:
         - name: ecr-secret
+      
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-remote-service
+  namespace: java-sample-app-namespace
+spec:
+  selector:
+    app: remote-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8081
+  type: ClusterIP
