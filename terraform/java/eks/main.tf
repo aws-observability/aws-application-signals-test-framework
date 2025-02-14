@@ -205,11 +205,14 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
   }
 }
 
-resource "kubernetes_service" "sample_remote_app_service" {
+resource "kubernetes_service" "sample_remote_app_deployment" {
   depends_on = [ kubernetes_deployment.sample_remote_app_deployment ]
 
   metadata {
-    name = "sample-remote-app-service"
+    # use the same name as the deployment to handle the edge case when the deployment name is longer than 47 characters
+    # in this edge case, we just use the service name (rather than deployment name) as RemoteService
+    # see https://github.com/aws/amazon-cloudwatch-agent/pull/1553
+    name      = "sample-r-app-deployment-${var.test_id}"
     namespace = var.test_namespace
   }
   spec {

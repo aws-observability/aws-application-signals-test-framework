@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dotnet-sample-r-app-deployment-${TESTING_ID}
+  name: remote-${TESTING_ID}
   namespace: dotnet-sample-app-namespace
 spec:
   replicas: 1

@@ -170,7 +170,7 @@ resource "kubernetes_service" "python_app_service" {
 resource "kubernetes_deployment" "python_r_app_deployment" {
 
   metadata {
-    name      = "python-r-app-deployment-${var.test_id}"
+    name      = "python-remote-${var.test_id}"
     namespace = var.test_namespace
     labels    = {
       app = "remote-app"

@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sample-r-app-deployment-${TESTING_ID}
+  name: sample-remote-${TESTING_ID}
   namespace: sample-app-namespace
 spec:
   replicas: 1
