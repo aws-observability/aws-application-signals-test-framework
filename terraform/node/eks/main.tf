@@ -165,7 +165,7 @@ resource "kubernetes_service" "sample_app_service" {
 resource "kubernetes_deployment" "sample_remote_app_deployment" {
 
   metadata {
-    name      = "sample-r-app-deployment-${var.test_id}"
+    name      = "sample-remote-${var.test_id}"
     namespace = var.test_namespace
     labels    = {
       app = "remote-app"
