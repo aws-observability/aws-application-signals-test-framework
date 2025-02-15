@@ -186,8 +186,8 @@ jobs:
           --platform-info k8s-cluster-${{ env.TESTING_ID }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
           --service-name dotnet-sample-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-deployment-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-remote-${{ env.TESTING_ID }}
+          --remote-service-deployment-name dotnet-remote-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -204,8 +204,8 @@ jobs:
           --platform-info k8s-cluster-${{ env.TESTING_ID }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
           --service-name dotnet-sample-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-deployment-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-remote-${{ env.TESTING_ID }}
+          --remote-service-deployment-name dotnet-remote-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -222,8 +222,8 @@ jobs:
           --platform-info k8s-cluster-${{ env.TESTING_ID }}
           --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
           --service-name dotnet-sample-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
-          --remote-service-deployment-name dotnet-sample-r-app-deployment-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-remote-${{ env.TESTING_ID }}
+          --remote-service-deployment-name dotnet-remote-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
