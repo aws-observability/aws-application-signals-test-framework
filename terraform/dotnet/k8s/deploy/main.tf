@@ -83,6 +83,9 @@ resource "null_resource" "deploy" {
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
       elif [ "${var.repository}" = "amazon-cloudwatch-agent" ]; then
+        # tempory fix for missing permissions that will be added by next release of cloudwatch agent operator
+        kubectl patch clusterrole cloudwatch-agent-role --type=json \
+        -p='[{"op": "add", "path": "/rules/-", "value": {"apiGroups": ["discovery.k8s.io"], "resources": ["endpointslices"], "verbs": ["list", "watch", "get"]}}]'
         kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": ${var.patch_image_arn}}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
