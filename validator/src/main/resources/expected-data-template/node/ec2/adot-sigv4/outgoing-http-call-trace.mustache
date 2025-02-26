@@ -1,0 +1,57 @@
+[{
+  "name": "^{{serviceName}}$",
+  "http": {
+    "request": {
+      "url": "^{{endpoint}}/outgoing-http-call$",
+      "method": "^GET$"
+    }
+  },
+  "aws": {
+    "ec2": {
+      "instance_id": "^{{instanceId}}$"
+    },
+    "span.kind": "^LOCAL_ROOT$"
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET outgoing-http-call$",
+    "aws.local.environment": "^ec2:default$",
+    "span.name": "^GET outgoing-http-call$",
+    "span.kind": "^SERVER$"
+  },
+  "metadata": {
+    "http.url": "^{{endpoint}}/outgoing-http-call$",
+    "http.method": "^GET$",
+    "http.route": "^outgoing-http-call$",
+    "service.name": "^{{serviceName}}$",
+    "cloud.provider": "^aws$",
+    "cloud.account.id": "^{{accountId}}$",
+    "cloud.region": "^{{region}}$",
+    "cloud.platform": "^aws_ec2$",
+    "PlatformType": "^AWS::EC2$"
+  },
+  "subsegments": [
+    {
+      "name": "^www.amazon.com$",
+      "http": {
+        "request": {
+          "url": "^https://www.amazon.com/$",
+          "method": "^GET$"
+        }
+      },
+      "annotations": {
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^UnmappedOperation$",
+        "aws.remote.service": "^www.amazon.com$",
+        "aws.remote.operation": "^GET /$",
+        "aws.local.environment": "^ec2:default$",
+        "span.name": "^GET$",
+        "span.kind": "^CLIENT$"
+      },
+      "namespace": "^remote$"
+    }
+  ]
+},
+{
+  "name": "^www.amazon.com$"
+}]
