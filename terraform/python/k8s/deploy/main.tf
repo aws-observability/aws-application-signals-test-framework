@@ -136,7 +136,10 @@ resource "null_resource" "deploy" {
           --docker-password="$${TOKEN}"
 
         yq eval '.spec.template.spec.imagePullSecrets += [{"name": "release-testing-ecr-secret"}]' -i python-frontend-service-depl.yaml
-        yq eval '.spec.template.spec.imagePullSecrets += [{"name": "release-testing-ecr-secret"}]' -i python-remote-service-depl.yaml
+
+        service_part=$(yq eval 'select(.kind == "Service")' python-remote-service-depl.yaml)
+        yq eval 'select(.kind == "Deployment") | .spec.template.spec.imagePullSecrets += {"name": "release-testing-ecr-secret"}' -i python-rremote-service-depl.yaml
+        echo "$service_part" >> python-rremote-service-depl.yaml
       fi
 
       echo "LOG: Applying sample app deployment files"
