@@ -1,0 +1,65 @@
+[{
+  "name": "^{{serviceName}}$",
+  "http": {
+    "request": {
+      "url": "^{{endpoint}}/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
+      "method": "^GET$"
+    }
+  },
+  "aws": {
+    "ec2": {
+      "instance_id": "^{{instanceId}}$"
+    },
+    "span.kind": "^LOCAL_ROOT$"
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^GET aws-sdk-call$",
+    "aws.local.environment": "^ec2:default$",
+    "span.name": "^GET aws-sdk-call$",
+    "span.kind": "^SERVER$"
+  },
+  "metadata": {
+    "http.url": "^{{endpoint}}/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
+    "http.method": "^GET$",
+    "http.route": "^aws-sdk-call$",
+    "service.name": "^{{serviceName}}$",
+    "cloud.provider": "^aws$",
+    "cloud.account.id": "^{{accountId}}$",
+    "cloud.region": "^{{region}}$",
+    "cloud.platform": "^aws_ec2$",
+    "PlatformType": "^AWS::EC2$"
+  },
+  "subsegments": [
+    {
+      "name": "^S3$",
+      "aws": {
+        "bucket_name": "^e2e-test-bucket-name-{{testingId}}$",
+        "s3.bucket": "^e2e-test-bucket-name-{{testingId}}$",
+        "span.kind": "^CLIENT$"
+      },
+      "annotations": {
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^UnmappedOperation$",
+        "aws.remote.service": "^AWS::S3$",
+        "aws.remote.operation": "^GetBucketLocation$",
+        "aws.local.environment": "^ec2:default$",
+        "span.name": "^S3.GetBucketLocation$",
+        "span.kind": "^CLIENT$"
+      },
+      "namespace": "^aws$"
+    }
+  ]
+},
+{
+  "name": "^S3$",
+  "aws": {
+    "bucket_name": "^e2e-test-bucket-name-{{testingId}}$",
+    "s3.bucket": "^e2e-test-bucket-name-{{testingId}}$",
+    "span.kind": "^CLIENT$"
+  },
+  "annotations": {
+    "aws.local.service": "^AWS::S3$",
+    "aws.local.operation": "^GetBucketLocation$"
+  }
+}]

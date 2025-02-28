@@ -71,8 +71,26 @@ public class CWLogValidator implements IValidator {
           String remoteResourceType = (String) expectedAttributes.get("RemoteResourceType");
           String remoteResourceIdentifier = (String) expectedAttributes.get("RemoteResourceIdentifier");
 
-          Map<String, Object> actualLog =
-                  this.getActualLog(operation, remoteService, remoteOperation, remoteResourceType, remoteResourceIdentifier);
+          Map<String, Object> actualLog;
+
+          // Parsing unique identifiers in OTLP spans
+          if (operation == null) {
+            operation = (String) expectedAttributes.get("attributes[\\\"aws.local.operation\\\"]");
+            remoteService = (String) expectedAttributes.get("attributes[\\\"aws.remote.service\\\"]");
+            remoteOperation = (String) expectedAttributes.get("attributes[\\\"aws.remote.operation\\\"]");
+            // Runtime metrics have no operation at all, we must ensure we are in the proper use case
+            if (operation != null) {
+              actualLog = this.getActualOtelSpanLog(operation, remoteService, remoteOperation);
+            } else {
+              // No operation at all -> Runtime metric
+              actualLog =
+                this.getActualLog(operation, remoteService, remoteOperation, remoteResourceType, remoteResourceIdentifier);
+            }
+          }
+          else {
+            actualLog =
+              this.getActualLog(operation, remoteService, remoteOperation, remoteResourceType, remoteResourceIdentifier);
+          }
           log.info("Value of an actual log: {}", actualLog);
 
           if (actualLog == null) throw new BaseException(ExceptionCode.EXPECTED_LOG_NOT_FOUND);
@@ -140,7 +158,7 @@ public class CWLogValidator implements IValidator {
     if (remoteService == null && remoteOperation == null) {
       dependencyFilter = "&& ($.RemoteService NOT EXISTS) && ($.RemoteOperation NOT EXISTS)";
     } else {
-      dependencyFilter = String.format("&& ($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")", remoteService, remoteOperation);
+      dependencyFilter = String.format(" && ($.RemoteService = \"%s\") && ($.RemoteOperation = \"%s\")", remoteService, remoteOperation);
     }
 
     if (remoteResourceType != null && remoteResourceIdentifier != null) {
@@ -155,6 +173,40 @@ public class CWLogValidator implements IValidator {
     }
 
     String filterPattern = String.format("{ ($.Service = %s) %s }", context.getServiceName(), dependencyFilter);
+    log.info("Filter Pattern for Log Search: " + filterPattern);
+
+    List<FilteredLogEvent> retrievedLogs =
+      this.cloudWatchService.filterLogs(
+        context.getLogGroup(),
+        filterPattern,
+        System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
+        10);
+
+    if (retrievedLogs == null || retrievedLogs.isEmpty()) {
+      throw new BaseException(ExceptionCode.EMPTY_LIST);
+    }
+
+    return JsonFlattener.flattenAsMap(retrievedLogs.get(0).getMessage());
+  }
+
+  private Map<String, Object> getActualOtelSpanLog(String operation, String remoteService, String remoteOperation) throws Exception {
+    String dependencyFilter = null;
+
+    if (operation != null) {
+      dependencyFilter = String.format("&& ($.attributes.['aws.local.operation'] = \"%s\")", operation);
+    }
+    if (remoteService != null) {
+      dependencyFilter += String.format("&& ($.attributes.['aws.remote.service'] = \"%s\")", remoteService);
+    } else {
+      dependencyFilter += "&& ($.attributes.['aws.remote.service'] NOT EXISTS)";
+    }
+    if (remoteOperation != null) {
+      dependencyFilter += String.format("&& ($.attributes.['aws.remote.operation'] = \"%s\")", remoteOperation);
+    } else {
+      dependencyFilter += "&& ($.attributes.['aws.remote.operation'] NOT EXISTS)";
+    }
+
+    String filterPattern = String.format("{ ($.attributes.['aws.local.service'] = %s) %s }", context.getServiceName(), dependencyFilter);
     log.info("Filter Pattern for Log Search: " + filterPattern);
 
     List<FilteredLogEvent> retrievedLogs =

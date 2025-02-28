@@ -1,0 +1,49 @@
+[{
+  "name": "GET outgoing-http-call",
+  "kind": "SERVER",
+  "resource": {
+    "attributes": {
+      "aws.local.service": "{{serviceName}}",
+      "service.name": "{{serviceName}}",
+      "cloud.provider": "aws",
+      "cloud.region": "{{region}}",
+      "cloud.account.id": "{{accountId}}",
+      "cloud.platform": "aws_ec2"
+    }
+  },
+  "attributes": {
+    "aws.local.service": "{{serviceName}}",
+    "aws.local.environment": "ec2:default",
+    "aws.local.operation": "GET outgoing-http-call",
+    "aws.span.kind": "LOCAL_ROOT",
+    "http.url": "{{endpoint}}/outgoing-http-call",
+    "http.route": "outgoing-http-call",
+    "http.method": "GET",
+    "PlatformType": "AWS::EC2"
+  }
+},
+{
+  "name": "GET",
+  "kind": "CLIENT",
+  "resource": {
+    "attributes": {
+      "aws.local.service": "{{serviceName}}",
+      "service.name": "{{serviceName}}",
+      "cloud.provider": "aws",
+      "cloud.region": "{{region}}",
+      "cloud.account.id": "{{accountId}}",
+      "cloud.platform": "aws_ec2"
+    }
+  },
+  "attributes": {
+    "aws.local.service": "{{serviceName}}",
+    "aws.local.operation": "UnmappedOperation",
+    "aws.remote.service": "www.amazon.com",
+    "aws.remote.operation": "GET /",
+    "aws.local.environment": "ec2:default",
+    "aws.span.kind": "CLIENT",
+    "http.url": "https://www.amazon.com/",
+    "http.method": "GET",
+    "PlatformType": "AWS::EC2"
+  }
+}]
