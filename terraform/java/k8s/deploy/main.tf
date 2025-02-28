@@ -138,7 +138,7 @@ resource "null_resource" "deploy" {
 
         service_part=$(yq eval 'select(.kind == "Service")' remote-service-depl.yaml)
         yq eval 'select(.kind == "Deployment") | .spec.template.spec.imagePullSecrets += {"name": "release-testing-ecr-secret"}' -i remote-service-depl.yaml
-        echo "$service_part" >> remote-service-depl.yaml
+        echo -e "\n---\n$service_part" >> remote-service-depl.yaml
       fi
 
       echo "LOG: Applying sample app deployment files"
