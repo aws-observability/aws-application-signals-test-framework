@@ -138,7 +138,7 @@ resource "null_resource" "deploy" {
         yq eval '.spec.template.spec.imagePullSecrets += [{"name": "release-testing-ecr-secret"}]' -i python-frontend-service-depl.yaml
 
         service_part=$(yq eval 'select(.kind == "Service")' python-remote-service-depl.yaml)
-        yq eval 'select(.kind == "Deployment") | .spec.template.spec.imagePullSecrets += {"name": "release-testing-ecr-secret"}' -i python-rremote-service-depl.yaml
+        yq eval 'select(.kind == "Deployment") | .spec.template.spec.imagePullSecrets += {"name": "release-testing-ecr-secret"}' -i python-remote-service-depl.yaml
         echo -e "\n---\n$service_part" >> python-remote-service-depl.yaml
       fi
 
