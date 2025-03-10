@@ -304,6 +304,26 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_ASG_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/asg/client-call-metric.mustache"),
   DOTNET_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/asg/client-call-trace.mustache"),
 
+  /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
+      "/expected-data-template/dotnet/ec2/adot-sigv4/outgoing-http-call-log.mustache"),
+  DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
+      "/expected-data-template/dotnet/ec2/adot-sigv4/outgoing-http-call-metric.mustache"),
+  DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_TRACE(
+      "/expected-data-template/dotnet/ec2/adot-sigv4/outgoing-http-call-trace.mustache"),
+
+  DOTNET_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/ec2/adot-sigv4/aws-sdk-call-log.mustache"),
+  DOTNET_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/ec2/adot-sigv4/aws-sdk-call-metric.mustache"),
+  DOTNET_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/ec2/adot-sigv4/aws-sdk-call-trace.mustache"),
+
+  DOTNET_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/ec2/adot-sigv4/remote-service-log.mustache"),
+  DOTNET_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/ec2/adot-sigv4/remote-service-metric.mustache"),
+  DOTNET_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/ec2/adot-sigv4/remote-service-trace.mustache"),
+
+  DOTNET_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/dotnet/ec2/adot-sigv4/client-call-log.mustache"),
+  DOTNET_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/adot-sigv4/client-call-metric.mustache"),
+  DOTNET_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/adot-sigv4/client-call-trace.mustache"),
+
   /** DotNet K8s Test Case Validations */
   DOTNET_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/dotnet/k8s/outgoing-http-call-log.mustache"),
   DOTNET_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/dotnet/k8s/outgoing-http-call-metric.mustache"),
