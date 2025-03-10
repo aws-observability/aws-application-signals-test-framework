@@ -1,0 +1,51 @@
+[{
+  "name": "GET aws-sdk-call",
+  "kind": "SERVER",
+  "resource": {
+    "attributes": {
+      "aws.local.service": "{{serviceName}}",
+      "service.name": "{{serviceName}}",
+      "cloud.provider": "aws",
+      "cloud.region": "{{region}}",
+      "cloud.account.id": "{{accountId}}",
+      "cloud.platform": "aws_ec2"
+    }
+  },
+  "attributes": {
+    "aws.local.service": "{{serviceName}}",
+    "aws.local.environment": "ec2:default",
+    "aws.local.operation": "GET aws-sdk-call",
+    "aws.span.kind": "LOCAL_ROOT",
+    "url.query": "^\\?ip=Redacted&testingId=Redacted$",
+    "http.route": "aws-sdk-call",
+    "http.request.method": "GET",
+    "PlatformType": "AWS::EC2"
+  }
+},
+{
+  "name": "S3.GetBucketLocation",
+  "kind": "CLIENT",
+  "resource": {
+    "attributes": {
+      "aws.local.service": "{{serviceName}}",
+      "service.name": "{{serviceName}}",
+      "cloud.provider": "aws",
+      "cloud.region": "{{region}}",
+      "cloud.account.id": "{{accountId}}",
+      "cloud.platform": "aws_ec2"
+    }
+  },
+  "attributes": {
+    "aws.local.service": "{{serviceName}}",
+    "aws.local.operation": "UnmappedOperation",
+    "aws.remote.service": "AWS::S3",
+    "aws.remote.operation": "GetBucketLocation",
+    "aws.local.environment": "ec2:default",
+    "aws.service": "S3",
+    "aws.operation": "GetBucketLocation",
+    "aws.s3.bucket": "{{testingId}}",
+    "aws.span.kind": "CLIENT",
+    "aws.region": "{{region}}",
+    "PlatformType": "AWS::EC2"
+  }
+}]
