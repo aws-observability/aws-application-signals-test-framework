@@ -2,7 +2,6 @@
   "name": "^{{serviceName}}$",
   "http": {
     "request": {
-      "url": "^{{endpoint}}/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
       "method": "^GET$"
     }
   },
@@ -20,8 +19,8 @@
     "span.kind": "^SERVER$"
   },
   "metadata": {
-    "http.url": "^{{endpoint}}/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
-    "http.method": "^GET$",
+    "url.query": "^\\?ip=Redacted&testingId=Redacted$",
+    "http.request.method": "^GET$",
     "http.route": "^aws-sdk-call$",
     "service.name": "^{{serviceName}}$",
     "cloud.provider": "^aws$",
@@ -34,8 +33,8 @@
     {
       "name": "^S3$",
       "aws": {
-        "bucket_name": "^e2e-test-bucket-name-{{testingId}}$",
-        "s3.bucket": "^e2e-test-bucket-name-{{testingId}}$",
+        "bucket_name": "^{{testingId}}$",
+        "s3.bucket": "^{{testingId}}$",
         "span.kind": "^CLIENT$"
       },
       "annotations": {
@@ -54,8 +53,8 @@
 {
   "name": "^S3$",
   "aws": {
-    "bucket_name": "^e2e-test-bucket-name-{{testingId}}$",
-    "s3.bucket": "^e2e-test-bucket-name-{{testingId}}$",
+    "bucket_name": "^{{testingId}}$",
+    "s3.bucket": "^{{testingId}}$",
     "span.kind": "^CLIENT$"
   },
   "annotations": {

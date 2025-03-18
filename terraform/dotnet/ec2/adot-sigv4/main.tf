@@ -150,7 +150,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_TRACES_EXPORTER=none \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
       OTEL_AWS_SIG_V4_ENABLED=true \
-      OTEL_TRACES_SAMPLER=xray \
+      OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8080 \
       nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_frontend_service.dll &> nohup.out &
@@ -252,7 +252,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_TRACES_EXPORTER=none \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
       OTEL_AWS_SIG_V4_ENABLED=true \
-      OTEL_TRACES_SAMPLER=xray \
+      OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8081 \
       nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_remote_service.dll &> nohup.out &
