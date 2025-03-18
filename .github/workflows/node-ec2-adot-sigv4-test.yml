@@ -80,11 +80,12 @@ jobs:
 
       - name: Set Get ADOT Instrumentation command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
-            echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-          else
-            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-          fi
+          echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+        # if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
+        #   echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+        # else
+        #   echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+        # fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry

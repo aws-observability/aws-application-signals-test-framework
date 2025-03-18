@@ -156,9 +156,7 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false' C-m
       tmux send-keys -t frontend 'export OTEL_LOGS_EXPORTER=none' C-m
       tmux send-keys -t frontend 'export OTEL_METRICS_EXPORTER=none' C-m
-      tmux send-keys -t frontend 'export OTEL_TRACES_EXPORTER=otlp' C-m
-      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf' C-m
-      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces' C-m
+      tmux send-keys -t frontend 'export OTEL_TRACES_EXPORTER=console' C-m
       tmux send-keys -t frontend 'export OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express' C-m
       tmux send-keys -t frontend 'export OTEL_SERVICE_NAME=node-sample-application-${var.test_id}' C-m
       tmux send-keys -t frontend 'export OTEL_TRACES_SAMPLER=always_on' C-m
