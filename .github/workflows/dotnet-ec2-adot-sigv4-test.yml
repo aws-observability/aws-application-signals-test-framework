@@ -71,14 +71,13 @@ jobs:
 
       - name: Set Get ADOT Distro command environment variable
         run: |
-          echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
-      # if [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
-      #   # Get staging distro file from staging bucket
-      #   echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
-      # else
-      #   # After Release will switch to latest tag instead of hard code version for canary purpose
-      #   echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV
-      # fi
+          if [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
+            # Get staging distro file from staging bucket
+            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
+          else
+            # After Release will switch to latest tag instead of hard code version for canary purpose
+            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV
+          fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
