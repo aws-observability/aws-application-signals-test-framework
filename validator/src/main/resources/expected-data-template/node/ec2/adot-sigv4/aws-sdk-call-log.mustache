@@ -1,0 +1,46 @@
+[{
+  "name": "GET",
+  "kind": "SERVER",
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "cloud.provider": "aws",
+      "cloud.region": "{{region}}",
+      "cloud.account.id": "{{accountId}}",
+      "cloud.platform": "aws_ec2"
+    }
+  },
+  "attributes": {
+    "aws.local.service": "{{serviceName}}",
+    "aws.local.environment": "ec2:default",
+    "aws.local.operation": "GET /aws-sdk-call",
+    "aws.span.kind": "LOCAL_ROOT",
+    "http.url": "^{{endpoint}}/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
+    "http.target": "^/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
+    "http.method": "GET",
+    "PlatformType": "AWS::EC2"
+  }
+},
+{
+  "name": "S3.GetBucketLocation",
+  "kind": "CLIENT",
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "cloud.provider": "aws",
+      "cloud.region": "{{region}}",
+      "cloud.account.id": "{{accountId}}",
+      "cloud.platform": "aws_ec2"
+    }
+  },
+  "attributes": {
+    "aws.local.service": "{{serviceName}}",
+    "aws.local.operation": "UnmappedOperation",
+    "aws.remote.service": "AWS::S3",
+    "aws.remote.operation": "GetBucketLocation",
+    "aws.local.environment": "ec2:default",
+    "aws.s3.bucket": "e2e-test-bucket-name-{{testingId}}",
+    "aws.span.kind": "CLIENT",
+    "PlatformType": "AWS::EC2"
+  }
+}]
