@@ -133,6 +133,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_LOGS_EXPORT=none
       export OTEL_METRICS_EXPORTER=none
       export OTEL_TRACES_EXPORTER=otlp
+      export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces
       export OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id}
       nohup java -jar main-service.jar &> nohup.out &
