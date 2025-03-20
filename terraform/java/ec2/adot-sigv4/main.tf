@@ -277,10 +277,6 @@ resource "null_resource" "traffic_generator_setup" {
         tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
         tmux send-keys -t traffic-generator "npm start" C-m
 
-        sleep 60
-
-        cat nohup.out
-
       EOF
     ]
   }

@@ -4,13 +4,13 @@
   dimensions:
     -
       name: Operation
-      value: GET /outgoing-http-call
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
 
 -
   metricName: Latency
@@ -18,41 +18,13 @@
   dimensions:
     -
       name: Operation
-      value: GET /outgoing-http-call
+      value: UnmappedOperation
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
-    -
-      name: RemoteOperation
-      value: GET /
-    -
-      name: RemoteService
-      value: www.amazon.com
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: generic:default
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: generic:default
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -69,7 +41,35 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /
+    -
+      name: RemoteService
+      value: www.amazon.com
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
     -
       name: RemoteService
       value: www.amazon.com
@@ -80,13 +80,13 @@
   dimensions:
     -
       name: Operation
-      value: GET /outgoing-http-call
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
 
 -
   metricName: Error
@@ -94,13 +94,13 @@
   dimensions:
     -
       name: Operation
-      value: GET /outgoing-http-call
+      value: UnmappedOperation
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -117,7 +117,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
 
 -
   metricName: Error
@@ -128,7 +128,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -145,7 +145,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
     -
       name: RemoteService
       value: www.amazon.com
@@ -156,13 +156,13 @@
   dimensions:
     -
       name: Operation
-      value: GET /outgoing-http-call
+      value: GET outgoing-http-call
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
 
 -
   metricName: Fault
@@ -170,13 +170,13 @@
   dimensions:
     -
       name: Operation
-      value: GET /outgoing-http-call
+      value: UnmappedOperation
     -
       name: Service
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -193,7 +193,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
 
 -
   metricName: Fault
@@ -204,7 +204,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
     -
       name: RemoteOperation
       value: GET /
@@ -221,7 +221,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ec2:default
     -
       name: RemoteService
       value: www.amazon.com

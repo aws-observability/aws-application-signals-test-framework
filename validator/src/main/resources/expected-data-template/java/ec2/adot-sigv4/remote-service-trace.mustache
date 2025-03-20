@@ -2,7 +2,7 @@
   "name": "^{{serviceName}}$",
   "http": {
     "request": {
-      "url": "^{{endpoint}}/remote-service(?:\\?ip=(([0-9]{1,3}\\.){3}[0-9]{1,3})&testingId={{testingId}})?$",
+      "url": "^{{endpoint}}/remote-service\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
       "method": "^GET$"
     },
     "response": {
@@ -10,50 +10,48 @@
     }
   },
   "aws": {
-    "account_id": "^{{accountId}}$"
+    "ec2": {
+      "instance_id": "^{{instanceId}}$"
+    },
+    "span.kind": "^LOCAL_ROOT$"
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^GET /remote-service$",
-    "aws.local.environment": "^ec2:default$"
+    "aws.local.operation": "^GET remote-service$",
+    "aws.local.environment": "^ec2:default$",
+    "span.name": "^GET remote-service$",
+    "span.kind": "^SERVER$"
   },
   "metadata": {
-    "default": {
-      "EC2.InstanceId": "^{{instanceId}}$",
-      "PlatformType": "^AWS::EC2$",
-      "otel.resource.host.image.id": "^{{instanceAmi}}$",
-      "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$",
-      "aws.span.kind": "^LOCAL_ROOT$"
-    }
+    "http.url": "^{{endpoint}}/remote-service\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
+    "http.method": "^GET$",
+    "http.route": "^remote-service$",
+    "service.name": "^{{serviceName}}$",
+    "cloud.provider": "^aws$",
+    "cloud.account.id": "^{{accountId}}$",
+    "cloud.region": "^{{region}}$",
+    "cloud.platform": "^aws_ec2$",
+    "PlatformType": "^AWS::EC2$"
   },
   "subsegments": [
     {
-      "subsegments": [
-        {
-          "name": "^{{remoteServiceDeploymentName}}$",
-          "http": {
-            "request": {
-              "url": "^http://(([0-9]{1,3}.){3}[0-9]{1,3}):8080/healthcheck$",
-              "method": "^GET$"
-            }
-          },
-          "annotations": {
-            "aws.local.service": "^{{serviceName}}$",
-            "aws.local.operation": "^GET /remote-service$",
-            "aws.remote.service": "^{{remoteServiceDeploymentName}}$",
-            "aws.remote.operation": "^GET /healthcheck$",
-            "aws.local.environment": "^ec2:default$"
-          },
-          "metadata": {
-            "default": {
-              "EC2.InstanceId": "^{{instanceId}}$",
-              "PlatformType": "^AWS::EC2$",
-              "aws.span.kind": "^CLIENT$"
-            }
-           },
-          "namespace": "^remote$"
+      "name": "^{{remoteServiceDeploymentName}}$",
+      "http": {
+        "request": {
+          "url": "^http://{{remoteServiceDeploymentName}}/healthcheck$",
+          "method": "^GET$"
         }
-      ]
+      },
+      "annotations": {
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^UnmappedOperation$",
+        "aws.remote.service": "^{{remoteServiceDeploymentName}}$",
+        "aws.remote.operation": "^GET /healthcheck$",
+        "aws.local.environment": "^ec2:default$",
+        "span.name": "^GET$",
+        "span.kind": "^CLIENT$"
+      },
+      "namespace": "^remote$"
     }
   ]
 },
@@ -61,37 +59,14 @@
   "name": "^{{remoteServiceName}}$",
   "http": {
     "request": {
-      "url": "^http://(([0-9]{1,3}.){3}[0-9]{1,3}):8080/healthcheck$",
+      "url": "^http://{{remoteServiceDeploymentName}}/healthcheck$",
       "method": "^GET$"
     }
   },
   "annotations": {
     "aws.local.service": "^{{remoteServiceName}}$",
-    "aws.local.operation": "^GET /healthcheck$",
-    "aws.local.environment": "^ec2:default$"
-  },
-  "metadata": {
-    "default": {
-      "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
-      "PlatformType": "^AWS::EC2$",
-      "otel.resource.host.image.id": "^{{instanceAmi}}$",
-      "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$",
-      "aws.span.kind": "^LOCAL_ROOT$"
-    }
-  },
-  "subsegments": [
-    {
-      "name": "^RemoteServiceController.healthcheck$",
-      "annotations": {
-        "aws.local.operation": "^GET /healthcheck$",
-        "aws.local.environment": "^ec2:default$"
-      },
-      "metadata": {
-        "default": {
-          "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
-          "PlatformType": "^AWS::EC2$"
-        }
-      }
-    }
-  ]
+    "aws.local.operation": "^GET healthcheck$"
+  }
 }]
+
+
