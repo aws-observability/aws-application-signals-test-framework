@@ -10,15 +10,15 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^GET outgoing-http-call$",
-    "aws.local.environment": "^ec2:default$",
-    "span.name": "^GET outgoing-http-call$",
+    "aws.local.operation": "^GET /outgoing-http-call$",
+    "aws.local.environment": "^generic:default$",
+    "span.name": "^GET /outgoing-http-call$",
     "span.kind": "^SERVER$"
   },
   "metadata": {
     "http.url": "^{{endpoint}}/outgoing-http-call$",
-    "http.method": "^GET$",
-    "http.route": "^outgoing-http-call$",
+    "http.request.method": "^GET$",
+    "http.route": "^/outgoing-http-call$",
     "service.name": "^{{serviceName}}$",
     "cloud.provider": "^aws$",
     "cloud.account.id": "^{{accountId}}$",
@@ -40,7 +40,7 @@
         "aws.local.operation": "^UnmappedOperation$",
         "aws.remote.service": "^www.amazon.com$",
         "aws.remote.operation": "^GET /$",
-        "aws.local.environment": "^ec2:default$",
+        "aws.local.environment": "^generic:default$",
         "span.name": "^GET$",
         "span.kind": "^CLIENT$"
       },
