@@ -2,14 +2,10 @@
   "name": "^{{serviceName}}$",
   "http": {
     "request": {
-      "url": "^{{endpoint}}/outgoing-http-call$",
       "method": "^GET$"
     }
   },
   "aws": {
-    "ec2": {
-      "instance_id": "^{{instanceId}}$"
-    },
     "span.kind": "^LOCAL_ROOT$"
   },
   "annotations": {
