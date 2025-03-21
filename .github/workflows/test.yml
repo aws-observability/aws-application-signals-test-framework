@@ -8,7 +8,7 @@ name: Test
 on:
   push:
     branches:
-      - java-sigv4
+      - java-test-sigv4
 
 permissions:
   id-token: write
