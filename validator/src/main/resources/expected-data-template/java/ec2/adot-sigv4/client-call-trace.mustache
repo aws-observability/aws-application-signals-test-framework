@@ -1,23 +1,14 @@
 [{
   "name": "^{{serviceName}}$",
-  "aws": {
-    "ec2": {
-      "instance_id": "^{{instanceId}}$"
-    }
-  },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
     "aws.local.operation": "^InternalOperation$",
-    "aws.local.environment": "^ec2:default$",
+    "aws.local.environment": "^generic:default$",
     "span.name": "^InternalOperation$",
     "span.kind": "^SERVER$"
   },
   "metadata": {
     "service.name": "^{{serviceName}}$",
-    "cloud.provider": "^aws$",
-    "cloud.account.id": "^{{accountId}}$",
-    "cloud.region": "^{{region}}$",
-    "cloud.platform": "^aws_ec2$"
   },
   "subsegments": [
     {
@@ -39,18 +30,14 @@
         "aws.local.operation": "^InternalOperation$",
         "aws.remote.service": "^local-root-client-call$",
         "aws.remote.operation": "GET /",
-        "aws.local.environment": "^ec2:default$",
+        "aws.local.environment": "^generic:default$",
         "span.name": "^GET$",
         "span.kind": "^CLIENT$"
       },
       "metadata": {
         "service.name": "^{{serviceName}}$",
-        "http.url": "^http://local-root-client-call/$",
-        "http.method": "^GET$",
-        "cloud.provider": "^aws$",
-        "cloud.account.id": "^{{accountId}}$",
-        "cloud.region": "^{{region}}$",
-        "cloud.platform": "^aws_ec2$"
+        "url.full": "^http://local-root-client-call/$",
+        "http.request.method": "^GET$",
       },
       "namespace": "^remote$"
     }
