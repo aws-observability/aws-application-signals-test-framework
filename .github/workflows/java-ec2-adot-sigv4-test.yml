@@ -34,7 +34,8 @@ permissions:
   contents: read
 
 env:
-  E2E_TEST_AWS_REGION: 'us-west-2' # Test uses us-west-2 in the us-east-1 account
+  E2E_TEST_AWS_REGION: 'us-west-2' # Test uses us-west-2 in the us-east-1 accoun
+  MAIN_SERVICE_ADDRESS: 'localhost'
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   METRIC_NAMESPACE: ApplicationSignals
   JAVA_VERSION: ${{ inputs.java-version }}
@@ -162,7 +163,8 @@ jobs:
       - name: Get the sample app and EC2 instance information
         working-directory: terraform/java/ec2/adot-sigv4
         run: |
-          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_ADDRESS=${{env.MAIN_SERVICE_ADDRESS}}" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_ENDPOINT=${{env.MAIN_SERVICE_ADDRESS}}:8080" >> $GITHUB_ENV
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
 
@@ -182,6 +184,7 @@ jobs:
         run: ./gradlew validator:run --args='-c java/ec2/adot-sigv4/log-validation.yml
               --testing-id ${{ env.TESTING_ID }}
               --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+              --address ${{ env.MAIN_SERVICE_ADDRESS }}
               --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
               --region ${{ env.E2E_TEST_AWS_REGION }}
               --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
@@ -218,6 +221,7 @@ jobs:
         run: ./gradlew validator:run --args='-c java/ec2/adot-sigv4/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --address ${{ env.MAIN_SERVICE_ADDRESS }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
