@@ -184,7 +184,6 @@ jobs:
         run: ./gradlew validator:run --args='-c java/ec2/adot-sigv4/log-validation.yml
               --testing-id ${{ env.TESTING_ID }}
               --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
-              --address ${{ env.MAIN_SERVICE_ADDRESS }}
               --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
               --region ${{ env.E2E_TEST_AWS_REGION }}
               --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
@@ -221,7 +220,6 @@ jobs:
         run: ./gradlew validator:run --args='-c java/ec2/adot-sigv4/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
-          --address ${{ env.MAIN_SERVICE_ADDRESS }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
