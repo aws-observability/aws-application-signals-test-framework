@@ -11,7 +11,10 @@
     "aws.local.environment": "generic:default",
     "aws.local.operation": "GET /aws-sdk-call",
     "aws.span.kind": "LOCAL_ROOT",
-    "http.url": "^{{endpoint}}/aws-sdk-call\\?ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
+    "url.scheme": "^http$",
+    "server.address": "^localhost$",
+    "url.path": "^/aws-sdk-call$",
+    "url.query": "^ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
     "http.route": "/aws-sdk-call",
     "http.method": "GET",
     "PlatformType": "Generic"
