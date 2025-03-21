@@ -23,14 +23,11 @@
     "url.scheme": "^http$",
     "url.path": "^/remote-service$",
     "server.address": "^localhost$",
+    "server.port": "^8080$",
     "http.request.method": "^GET$",
     "http.route": "^/remote-service$",
     "service.name": "^{{serviceName}}$",
-    "cloud.provider": "^aws$",
-    "cloud.account.id": "^{{accountId}}$",
-    "cloud.region": "^{{region}}$",
-    "cloud.platform": "^aws_ec2$",
-    "PlatformType": "^AWS::EC2$"
+    "PlatformType": "^Generic$"
   },
   "subsegments": [
     {
@@ -46,7 +43,7 @@
         "aws.local.operation": "^UnmappedOperation$",
         "aws.remote.service": "^{{remoteServiceDeploymentName}}$",
         "aws.remote.operation": "^GET /healthcheck$",
-        "aws.local.environment": "^ec2:default$",
+        "aws.local.environment": "^generic:default$",
         "span.name": "^GET$",
         "span.kind": "^CLIENT$"
       },
