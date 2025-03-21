@@ -25,12 +25,7 @@
   "kind": "CLIENT",
   "resource": {
     "attributes": {
-      "aws.local.service": "{{serviceName}}",
       "service.name": "{{serviceName}}",
-      "cloud.provider": "aws",
-      "cloud.region": "{{region}}",
-      "cloud.account.id": "{{accountId}}",
-      "cloud.platform": "aws_ec2"
     }
   },
   "attributes": {
@@ -39,7 +34,7 @@
     "aws.remote.service": "AWS::S3",
     "aws.remote.operation": "GetBucketLocation",
     "aws.local.environment": "ec2:default",
-    "aws.s3.bucket": "e2e-test-bucket-name-{{testingId}}",
+    "aws.bucket.name": "e2e-test-bucket-name-{{testingId}}",
     "aws.span.kind": "CLIENT",
     "aws.region": "us-east-1",
     "PlatformType": "Generic"
