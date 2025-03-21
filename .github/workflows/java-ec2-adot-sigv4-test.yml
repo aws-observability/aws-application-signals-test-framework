@@ -8,6 +8,7 @@
 # This test case validates ADOT used on its own to send traces to the X-Ray OTLP endpoint with SigV4 authentication
 name: Java EC2 ADOT SigV4 (Stand-Alone ADOT) Use Case
 on:
+  
   workflow_call:
     inputs:
       caller-workflow-name:
