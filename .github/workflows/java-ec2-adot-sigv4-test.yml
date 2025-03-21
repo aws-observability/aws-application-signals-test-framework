@@ -194,6 +194,7 @@ jobs:
               --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
               --instance-ami ${{ env.EC2_INSTANCE_AMI }}
               --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+              --address ${{ env.MAIN_SERVICE_ADDRESS }}
               --rollup'
 
       # - name: Validate generated metrics
@@ -230,6 +231,7 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --address ${{ env.MAIN_SERVICE_ADDRESS }}
           --rollup'
 
       - name: Refresh AWS Credentials
