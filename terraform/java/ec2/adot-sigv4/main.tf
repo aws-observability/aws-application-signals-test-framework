@@ -122,6 +122,8 @@ resource "null_resource" "main_service_setup" {
         sudo yum install java-${var.language_version}-amazon-corretto -y
       fi
 
+      sudo yum install ec2-instance-connect -y
+
       # Get ADOT
       ${var.get_adot_jar_command}
 
