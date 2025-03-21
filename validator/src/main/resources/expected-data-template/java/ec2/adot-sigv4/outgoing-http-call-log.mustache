@@ -13,7 +13,7 @@
     "aws.span.kind": "LOCAL_ROOT",
     "url.scheme": "^http$",
     "url.path": "^/outgoing-http-call$",
-    "server.address": "^{{address}}$",
+    "server.address": "^{{endpoint:(?<=\/\/).*?(?=:)}}$",
     "http.route": "/outgoing-http-call",
     "http.method": "GET",
     "PlatformType": "Generic"
