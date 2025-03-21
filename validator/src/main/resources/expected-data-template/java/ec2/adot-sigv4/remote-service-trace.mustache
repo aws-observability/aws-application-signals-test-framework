@@ -55,14 +55,14 @@
   "name": "^{{remoteServiceName}}$",
   "http": {
     "request": {
-      "url": "^http://{{remoteServiceDeploymentName}}/healthcheck$",
       "method": "^GET$"
     }
   },
   "annotations": {
     "aws.local.service": "^{{remoteServiceName}}$",
     "aws.local.operation": "^GET healthcheck$"
-  }
+  },
+  
 }]
 
 
