@@ -1,25 +1,20 @@
 [{
-  "name": "GET remote-service",
+  "name": "GET /remote-service",
   "kind": "SERVER",
   "resource": {
     "attributes": {
-      "aws.local.service": "{{serviceName}}",
       "service.name": "{{serviceName}}",
-      "cloud.provider": "aws",
-      "cloud.region": "{{region}}",
-      "cloud.account.id": "{{accountId}}",
-      "cloud.platform": "aws_ec2"
     }
   },
   "attributes": {
     "aws.local.service": "{{serviceName}}",
-    "aws.local.environment": "ec2:default",
-    "aws.local.operation": "GET remote-service",
+    "aws.local.environment": "generic:default",
+    "aws.local.operation": "GET /remote-service",
     "aws.span.kind": "LOCAL_ROOT",
     "http.url": "{{endpoint}}/remote-service",
     "http.route": "remote-service",
-    "http.method": "GET",
-    "PlatformType": "AWS::EC2"
+    "http.request.method": "GET",
+    "PlatformType": "Generic"
   }
 },
 {
@@ -40,10 +35,10 @@
     "aws.local.operation": "UnmappedOperation",
     "aws.remote.service": "{{remoteServiceDeploymentName}}",
     "aws.remote.operation": "GET /healthcheck",
-    "aws.local.environment": "ec2:default",
+    "aws.local.environment": "generic:default",
     "aws.span.kind": "CLIENT",
     "http.url": "http://{{remoteServiceDeploymentName}}/healthcheck",
     "http.method": "GET",
-    "PlatformType": "AWS::EC2"
+    "PlatformType": "Generic"
   }
 }]
