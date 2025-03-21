@@ -11,8 +11,10 @@
     "aws.local.environment": "generic:default",
     "aws.local.operation": "GET /outgoing-http-call",
     "aws.span.kind": "LOCAL_ROOT",
-    "http.url": "{{endpoint}}/outgoing-http-call",
-    "http.route": "outgoing-http-call",
+    "url.scheme": "^http$",
+    "url.path": "^/outgoing-http-call$",
+    "server.address": "^{{endpoint}}$",
+    "http.route": "/outgoing-http-call",
     "http.method": "GET",
     "PlatformType": "Generic"
   }
