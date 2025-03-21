@@ -1,23 +1,18 @@
 [{
-  "name": "GET client-call",
+  "name": "GET /client-call",
   "kind": "SERVER",
   "resource": {
     "attributes": {
-      "aws.local.service": "{{serviceName}}",
       "service.name": "{{serviceName}}",
-      "cloud.provider": "aws",
-      "cloud.region": "{{region}}",
-      "cloud.account.id": "{{accountId}}",
-      "cloud.platform": "aws_ec2"
     }
   },
   "attributes": {
     "aws.local.service": "{{serviceName}}",
     "aws.local.environment": "ec2:default",
-    "aws.local.operation": "GET client-call",
+    "aws.local.operation": "GET /client-call",
     "aws.span.kind": "LOCAL_ROOT",
     "http.url": "{{endpoint}}/client-call",
-    "http.route": "client-call",
+    "http.route": "/client-call",
     "http.method": "GET",
     "PlatformType": "AWS::EC2"
   }
