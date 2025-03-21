@@ -15,14 +15,11 @@
       "name": "^local-root-client-call$",
       "http": {
         "request": {
-          "url": "^http://local-root-client-call/$",
+          "url": "^http://local-root-client-call$",
           "method": "^GET$"
         }
       },
       "aws": {
-        "ec2": {
-          "instance_id": "^{{instanceId}}$"
-        },
         "span.kind": "^LOCAL_ROOT$"
       },
       "annotations": {
@@ -36,7 +33,7 @@
       },
       "metadata": {
         "service.name": "^{{serviceName}}$",
-        "url.full": "^http://local-root-client-call/$",
+        "url.full": "^http://local-root-client-call$",
         "http.request.method": "^GET$"
       },
       "namespace": "^remote$"
@@ -47,7 +44,7 @@
   "name": "^local-root-client-call$",
   "http": {
     "request": {
-      "url": "^http://local-root-client-call/$",
+      "url": "^http://local-root-client-call$",
       "method": "^GET$"
     }
   },
