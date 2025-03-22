@@ -8,13 +8,15 @@
   },
   "attributes": {
     "aws.local.service": "{{serviceName}}",
-    "aws.local.environment": "ec2:default",
+    "aws.local.environment": "generic:default",
     "aws.local.operation": "GET /client-call",
     "aws.span.kind": "LOCAL_ROOT",
-    "http.url": "{{endpoint}}/client-call",
+    "url.scheme": "http",
+    "server.address": "localhost",
+    "url.path": "/client-call",
     "http.route": "/client-call",
-    "http.method": "GET",
-    "PlatformType": "AWS::EC2"
+    "http.request.method": "GET",
+    "PlatformType": "Generic"
   }
 },
 {
@@ -35,10 +37,10 @@
     "aws.local.operation": "InternalOperation",
     "aws.remote.service": "local-root-client-call",
     "aws.remote.operation": "GET /",
-    "aws.local.environment": "ec2:default",
+    "aws.local.environment": "generic:default",
     "aws.span.kind": "LOCAL_ROOT",
     "http.url": "http://local-root-client-call/",
     "http.method": "GET",
-    "PlatformType": "AWS::EC2"
+    "PlatformType": "Generic"
   }
 }]
