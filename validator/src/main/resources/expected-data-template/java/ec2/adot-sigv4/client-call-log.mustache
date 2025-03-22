@@ -24,12 +24,7 @@
   "kind": "CLIENT",
   "resource": {
     "attributes": {
-      "aws.local.service": "{{serviceName}}",
       "service.name": "{{serviceName}}",
-      "cloud.provider": "aws",
-      "cloud.region": "{{region}}",
-      "cloud.account.id": "{{accountId}}",
-      "cloud.platform": "aws_ec2"
     }
   },
   "attributes": {
@@ -39,7 +34,7 @@
     "aws.remote.operation": "GET /",
     "aws.local.environment": "generic:default",
     "aws.span.kind": "LOCAL_ROOT",
-    "http.url": "http://local-root-client-call/",
+    "url.full": "http://local-root-client-call/",
     "http.method": "GET",
     "PlatformType": "Generic"
   }
