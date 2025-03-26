@@ -1,9 +1,8 @@
 [{
-  "name": "GET remote-service",
+  "name": "GET /remote-service",
   "kind": "SERVER",
   "resource": {
     "attributes": {
-      "aws.local.service": "{{serviceName}}",
       "service.name": "{{serviceName}}",
       "cloud.provider": "aws",
       "cloud.region": "{{region}}",
@@ -14,11 +13,14 @@
   "attributes": {
     "aws.local.service": "{{serviceName}}",
     "aws.local.environment": "ec2:default",
-    "aws.local.operation": "GET remote-service",
+    "aws.local.operation": "GET /remote-service",
     "aws.span.kind": "LOCAL_ROOT",
-    "http.url": "{{endpoint}}/remote-service",
+    "url.scheme": "http",
+    "server.address": "^localhost$",
+    "url.path": "^/remote-service$",
+    "url.query": "^ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
     "http.route": "remote-service",
-    "http.method": "GET",
+    "http.request.method": "GET",
     "PlatformType": "AWS::EC2"
   }
 },
@@ -27,7 +29,6 @@
   "kind": "CLIENT",
   "resource": {
     "attributes": {
-      "aws.local.service": "{{serviceName}}",
       "service.name": "{{serviceName}}",
       "cloud.provider": "aws",
       "cloud.region": "{{region}}",
@@ -42,8 +43,8 @@
     "aws.remote.operation": "GET /healthcheck",
     "aws.local.environment": "ec2:default",
     "aws.span.kind": "CLIENT",
-    "http.url": "http://{{remoteServiceDeploymentName}}/healthcheck",
-    "http.method": "GET",
+    "url.full": "http://{{remoteServiceDeploymentName}}/healthcheck",
+    "http.request.method": "GET",
     "PlatformType": "AWS::EC2"
   }
 }]

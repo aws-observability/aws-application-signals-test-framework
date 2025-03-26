@@ -1,9 +1,8 @@
 [{
-  "name": "GET client-call",
+  "name": "GET /client-call",
   "kind": "SERVER",
   "resource": {
     "attributes": {
-      "aws.local.service": "{{serviceName}}",
       "service.name": "{{serviceName}}",
       "cloud.provider": "aws",
       "cloud.region": "{{region}}",
@@ -14,11 +13,13 @@
   "attributes": {
     "aws.local.service": "{{serviceName}}",
     "aws.local.environment": "ec2:default",
-    "aws.local.operation": "GET client-call",
+    "aws.local.operation": "GET /client-call",
     "aws.span.kind": "LOCAL_ROOT",
-    "http.url": "{{endpoint}}/client-call",
-    "http.route": "client-call",
-    "http.method": "GET",
+    "url.scheme": "http",
+    "server.address": "localhost",
+    "url.path": "/client-call",
+    "http.route": "/client-call",
+    "http.request.method": "GET",
     "PlatformType": "AWS::EC2"
   }
 },
@@ -27,7 +28,6 @@
   "kind": "CLIENT",
   "resource": {
     "attributes": {
-      "aws.local.service": "{{serviceName}}",
       "service.name": "{{serviceName}}",
       "cloud.provider": "aws",
       "cloud.region": "{{region}}",
@@ -42,8 +42,8 @@
     "aws.remote.operation": "GET /",
     "aws.local.environment": "ec2:default",
     "aws.span.kind": "LOCAL_ROOT",
-    "http.url": "http://local-root-client-call/",
-    "http.method": "GET",
+    "url.full": "http://local-root-client-call",
+    "http.request.method": "GET",
     "PlatformType": "AWS::EC2"
   }
 }]

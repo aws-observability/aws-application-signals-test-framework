@@ -1,0 +1,224 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# This is a reusable workflow for running the DotNet E2E Canary test for Application Signals.
+# It is meant to be called from another workflow.
+# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
+name: DotNet EC2 ADOT SigV4 (Stand-Alone ADOT) Use Case
+on:
+  workflow_call:
+    inputs:
+      caller-workflow-name:
+        required: true
+        type: string
+      dotnet-version:
+        description: "Currently support version 6.0, 8.0"
+        required: false
+        type: string
+        default: '8.0'
+      staging_distro_name:
+        required: false
+        default: 'aws-opentelemetry-distro'
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: 'us-west-2'
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  DOTNET_VERSION: ${{ inputs.dotnet-version }}
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-us-east-1/dotnet-sample-app-${{ inputs.dotnet-version }}.zip
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: aws/spans
+  ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+
+jobs:
+  dotnet-ec2-adot-sigv4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> $GITHUB_ENV
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Set Get ADOT Distro command environment variable
+        run: |
+          if [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
+            # Get staging distro file from staging bucket
+            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
+          else
+            # After Release will switch to latest tag instead of hard code version for canary purpose
+            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV
+          fi
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/ec2/adot-sigv4 && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Deploy sample app via terraform and wait for endpoint to come online
+        working-directory: terraform/dotnet/ec2/adot-sigv4
+        run: |
+          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online. 
+          # There may be occasional failures due to transitivity issues, so try up to 2 times. 
+          # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
+          # that it failed at some point
+          retry_counter=0
+          max_retry=2
+          while [ $retry_counter -lt $max_retry ]; do
+            echo "Attempt $retry_counter"
+            deployment_failed=0
+            terraform apply -auto-approve \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
+              -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
+              -var="language_version=${{ env.DOTNET_VERSION }}" \
+            || deployment_failed=$?
+          
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
+            fi
+          
+            # If the success is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
+            # resources created from terraform and try again.
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Destroying terraform"
+              terraform destroy -auto-approve \
+                -var="test_id=${{ env.TESTING_ID }}" 
+          
+              retry_counter=$(($retry_counter+1))
+            else
+              # If deployment succeeded, then exit the loop
+              break
+            fi
+          
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
+              exit 1
+            fi
+          done
+
+      - name: Get the sample app endpoint
+        working-directory: terraform/dotnet/ec2/adot-sigv4
+        run: |
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
+          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
+
+      - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew == 'failure'
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      # Validation for pulse telemetry data
+      - name: Validate generated EMF logs
+        id: log-validation
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8080
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+
+      - name: Validate generated metrics
+        id: metric-validation
+        if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8080
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+
+      - name: Validate generated traces
+        id: trace-validation
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/trace-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8080
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+
+      - name: Refresh AWS Credentials
+        if: always()
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      # Clean up Procedures
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        working-directory: terraform/dotnet/ec2/adot-sigv4
+        run: |
+          terraform destroy -auto-approve \
+            -var="test_id=${{ env.TESTING_ID }}"

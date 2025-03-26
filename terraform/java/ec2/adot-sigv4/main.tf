@@ -122,6 +122,8 @@ resource "null_resource" "main_service_setup" {
         sudo yum install java-${var.language_version}-amazon-corretto -y
       fi
 
+      sudo yum install ec2-instance-connect -y
+
       # Get ADOT
       ${var.get_adot_jar_command}
 
@@ -130,6 +132,8 @@ resource "null_resource" "main_service_setup" {
 
       # OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       export JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar'
+      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false
+      export OTEL_RESOURCE_PROVIDERS_AWS_ENABLED=true
       export OTEL_LOGS_EXPORT=none
       export OTEL_METRICS_EXPORTER=none
       export OTEL_TRACES_EXPORTER=otlp
@@ -218,6 +222,8 @@ resource "null_resource" "remote_service_setup" {
 
       # OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       export JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar'
+      export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false
+      export OTEL_RESOURCE_PROVIDERS_AWS_ENABLED=true
       export OTEL_LOGS_EXPORT=none
       export OTEL_METRICS_EXPORTER=none
       export OTEL_TRACES_EXPORTER=otlp

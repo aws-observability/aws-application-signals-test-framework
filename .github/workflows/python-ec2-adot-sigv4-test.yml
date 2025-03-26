@@ -220,6 +220,7 @@ jobs:
           --rollup'
 
       - name: Refresh AWS Credentials
+        if: always()
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}

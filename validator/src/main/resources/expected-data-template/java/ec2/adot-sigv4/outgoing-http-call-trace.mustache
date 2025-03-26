@@ -2,7 +2,6 @@
   "name": "^{{serviceName}}$",
   "http": {
     "request": {
-      "url": "^{{endpoint}}/outgoing-http-call$",
       "method": "^GET$"
     }
   },
@@ -14,15 +13,16 @@
   },
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
-    "aws.local.operation": "^GET outgoing-http-call$",
+    "aws.local.operation": "^GET /outgoing-http-call$",
     "aws.local.environment": "^ec2:default$",
-    "span.name": "^GET outgoing-http-call$",
+    "span.name": "^GET /outgoing-http-call$",
     "span.kind": "^SERVER$"
   },
   "metadata": {
-    "http.url": "^{{endpoint}}/outgoing-http-call$",
-    "http.method": "^GET$",
-    "http.route": "^outgoing-http-call$",
+    "server.address": "localhost",
+    "url.path": "^/outgoing-http-call$",
+    "http.request.method": "^GET$",
+    "http.route": "^/outgoing-http-call$",
     "service.name": "^{{serviceName}}$",
     "cloud.provider": "^aws$",
     "cloud.account.id": "^{{accountId}}$",
@@ -35,7 +35,7 @@
       "name": "^www.amazon.com$",
       "http": {
         "request": {
-          "url": "^https://www.amazon.com/$",
+          "url": "^https://www.amazon.com$",
           "method": "^GET$"
         }
       },
