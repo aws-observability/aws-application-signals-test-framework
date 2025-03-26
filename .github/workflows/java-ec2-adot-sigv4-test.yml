@@ -86,13 +86,13 @@ jobs:
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       # TODO: Reintroduce ability to test latest public release
-      # if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
-      #   echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
-      # else
-      #   echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
-      # fi
       - name: Set ADOT getter command environment variable
-        run: echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar --region us-east-1" >> $GITHUB_ENV
+        run: 
+          if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
+          echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
+          else
+            echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
+          fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
