@@ -35,7 +35,6 @@ permissions:
 
 env:
   E2E_TEST_AWS_REGION: 'us-west-2' # Test uses us-west-2 in the us-east-1 accoun
-  MAIN_SERVICE_ADDRESS: 'localhost'
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   METRIC_NAMESPACE: ApplicationSignals
   JAVA_VERSION: ${{ inputs.java-version }}
@@ -85,7 +84,6 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
-      # TODO: Reintroduce ability to test latest public release
       - name: Set ADOT getter command environment variable
         run: 
           if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
