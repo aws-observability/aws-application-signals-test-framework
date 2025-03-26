@@ -1,0 +1,50 @@
+[{
+  "name": "GET /remote-service",
+  "kind": "SERVER",
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "cloud.provider": "aws",
+      "cloud.region": "{{region}}",
+      "cloud.account.id": "{{accountId}}",
+      "cloud.platform": "aws_ec2"
+    }
+  },
+  "attributes": {
+    "aws.local.service": "{{serviceName}}",
+    "aws.local.environment": "ec2:default",
+    "aws.local.operation": "GET /remote-service",
+    "aws.span.kind": "LOCAL_ROOT",
+    "url.scheme": "http",
+    "server.address": "^localhost$",
+    "url.path": "^/remote-service$",
+    "url.query": "^ip=(([0-9]{1,3}.){3}[0-9]{1,3})&testingId={{testingId}}$",
+    "http.route": "remote-service",
+    "http.request.method": "GET",
+    "PlatformType": "AWS::EC2"
+  }
+},
+{
+  "name": "GET",
+  "kind": "CLIENT",
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "cloud.provider": "aws",
+      "cloud.region": "{{region}}",
+      "cloud.account.id": "{{accountId}}",
+      "cloud.platform": "aws_ec2"
+    }
+  },
+  "attributes": {
+    "aws.local.service": "{{serviceName}}",
+    "aws.local.operation": "UnmappedOperation",
+    "aws.remote.service": "{{remoteServiceDeploymentName}}",
+    "aws.remote.operation": "GET /healthcheck",
+    "aws.local.environment": "ec2:default",
+    "aws.span.kind": "CLIENT",
+    "url.full": "http://{{remoteServiceDeploymentName}}/healthcheck",
+    "http.request.method": "GET",
+    "PlatformType": "AWS::EC2"
+  }
+}]
