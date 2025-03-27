@@ -85,7 +85,7 @@ jobs:
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Set ADOT getter command environment variable
-        run: 
+        run: |
           if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
             echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
           else
