@@ -1,0 +1,37 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+name: Python Lambda Layer Performance Test
+on:
+  push:
+    branches: [ "perf_testing_lambda_layer" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout aws-otel-python-instrumentation
+      uses: actions/checkout@v4
+      with:
+        repository: aws-observability/aws-otel-python-instrumentation
+        path: aws-otel-python-instrumentation
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Build Lambda Layer
+      run: |
+        cd aws-otel-python-instrumentation/lambda-layer
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Checkout current repository
+      uses: actions/checkout@v4
+      with:
+        path: current-repo
+
+    # Add your subsequent steps here
+
+
