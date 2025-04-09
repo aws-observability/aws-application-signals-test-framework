@@ -85,18 +85,13 @@ jobs:
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
         ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-python
 
-    - name: Upload no layer results
+    - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
-        name: no-layer-results
-        path: no_layer_results.txt
-        retention-days: 90
-          
-    - name: Upload layer results
-      uses: actions/upload-artifact@v4
-      with:
-        name: layer-results
-        path: layer_results.txt
+        name: performance-test-results
+        path: |
+          no_layer_results.txt
+          layer_results.txt
         retention-days: 90
 
     - name: Cleanup Terraform Resources
