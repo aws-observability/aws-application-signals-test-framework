@@ -2,14 +2,30 @@
 ## SPDX-License-Identifier: Apache-2.0
 name: Python Lambda Layer Performance Test
 on:
-  push:
-    branches: [ "perf_testing_lambda_layer" ]
-
+  workflow_dispatch:
+    inputs:
+      test_runs:
+        description: 'Number of test runs to perform'
+        required: true
+        default: 23
+        type: number
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    
+  python-lambda-layer-performance-test:
+    runs-on: ubuntu-latest 
+    permissions:
+        id-token: write
+        contents: read   
+
+    env:
+      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
+  
     steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+        aws-region: us-east-1     
+
     - name: Checkout aws-otel-python-instrumentation
       uses: actions/checkout@v4
       with:
@@ -17,9 +33,12 @@ jobs:
         path: aws-otel-python-instrumentation
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.13'
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
 
     - name: Build Lambda Layer
       run: |
@@ -31,7 +50,59 @@ jobs:
       uses: actions/checkout@v4
       with:
         path: current-repo
+    
+    - name: Run Cold Start Iterations for Base Lambda + Lambda Layer
+      run: |
+        cd current-repo
+        chmod +x lambda-layer-perf-test/lambda-layer-run.sh
+        ./lambda-layer-perf-test/lambda-layer-run.sh false aws-opentelemetry-distro-python
 
-    # Add your subsequent steps here
+    - name: Remove Application Signals Lambda Layer
+      run: |
+          echo "Removing Lambda layer..."
+          
+          OUTPUT=$(aws lambda update-function-configuration \
+              --function-name aws-opentelemetry-distro-python \
+              --layers [])
+  
+          echo "Lambda configuration:"
+          echo "$OUTPUT"
+  
+          LAYERS=$(echo "$OUTPUT" | jq -r '.Layers | length')
+  
+          if [ "$LAYERS" -ne 0 ]; then
+              echo "::error::Found $LAYERS layer(s) still attached to the function"
+              echo "::error::Layer details:"
+              echo "$OUTPUT" | jq -r '.Layers'
+              exit 1
+          else
+              echo "✅ Layers successfully removed"
+          fi
+ 
+    - name: Run Cold Start Iterations for Base Lambda
+      run: |
+        cd current-repo
+        chmod +x lambda-layer-perf-test/lambda-layer-run.sh
+        ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-python
 
+    - name: Upload no layer results
+      uses: actions/upload-artifact@v4
+      with:
+        name: no-layer-results
+        path: no_layer_results.txt
+        retention-days: 90
+          
+    - name: Upload layer results
+      uses: actions/upload-artifact@v4
+      with:
+        name: layer-results
+        path: layer_results.txt
+        retention-days: 90
 
+    - name: Cleanup Terraform Resources
+      if: success() || failure() || cancelled()
+      run: |
+        cd aws-otel-python-instrumentation/lambda-layer/terraform/lambda
+        echo "Starting Terraform cleanup..."
+        terraform init
+        terraform destroy -auto-approve
