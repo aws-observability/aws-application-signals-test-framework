@@ -9,7 +9,7 @@ on:
         required: true
         default: 20
         type: number
-        
+
       python_version:
         description: 'The Python version to run the test'
         required: true
@@ -95,7 +95,7 @@ jobs:
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
-        name: performance-test-results
+        name: python-performance-test-results
         path: |
           no_layer_results.txt
           layer_results.txt
