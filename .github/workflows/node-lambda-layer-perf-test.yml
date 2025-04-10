@@ -9,7 +9,6 @@ on:
         required: true
         default: 20
         type: number
-      
       node_version:
         description: 'The Node.js version to run the test'
         required: true
