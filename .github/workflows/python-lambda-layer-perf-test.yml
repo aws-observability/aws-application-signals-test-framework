@@ -9,6 +9,7 @@ on:
         required: true
         default: 20
         type: number
+        
       python_version:
         description: 'The Python version to run the test'
         required: true
