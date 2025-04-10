@@ -9,13 +9,12 @@ on:
         required: true
         default: 20
         type: number
-          
       python_version:
         description: 'The Python version to run the test'
         required: true
         default: '3.13'
         type: string  
-        
+
 jobs:
   python-lambda-layer-performance-test:
     runs-on: ubuntu-latest 
