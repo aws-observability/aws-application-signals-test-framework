@@ -1,6 +1,6 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
-name: Python Lambda Layer Performance Test
+name: Node Lambda Layer Performance Test
 on:
   workflow_dispatch:
     inputs:
@@ -10,14 +10,14 @@ on:
         default: 20
         type: number
         
-      python_version:
-        description: 'The Python version to run the test'
+      node_version:
+        description: 'The Node.js version to run the test'
         required: true
-        default: '3.13'
+        default: '22'
         type: string  
-
+    
 jobs:
-  python-lambda-layer-performance-test:
+  node-lambda-layer-performance-test:
     runs-on: ubuntu-latest 
     permissions:
         id-token: write
@@ -33,25 +33,34 @@ jobs:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1     
 
-    - name: Checkout aws-otel-python-instrumentation
+    - name: Checkout aws-otel-js-instrumentation
       uses: actions/checkout@v4
       with:
-        repository: aws-observability/aws-otel-python-instrumentation
-        path: aws-otel-python-instrumentation
+        repository: aws-observability/aws-otel-js-instrumentation
+        path: aws-otel-js-instrumentation
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
       with:
-        python-version: ${{ github.event.inputs.python_version }}
+        node-version: ${{ github.event.inputs.node_version }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
 
     - name: Build Lambda Layer
       run: |
-        cd aws-otel-python-instrumentation/lambda-layer
+        cd aws-otel-js-instrumentation/lambda-layer
         chmod +x build.sh
         ./build.sh
+
+    - name: Deploy Node.js Sample App and Lambda Layer
+      run: |
+        cd aws-otel-js-instrumentation/lambda-layer/sample-apps/aws-sdk
+        npm install
+        
+        cd ../../terraform/lambda
+        terraform init
+        terraform apply -auto-approve
 
     - name: Checkout current repository
       uses: actions/checkout@v4
@@ -62,14 +71,14 @@ jobs:
       run: |
         cd current-repo
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh false aws-opentelemetry-distro-python
+        ./lambda-layer-perf-test/lambda-layer-run.sh false aws-opentelemetry-distro-nodejs
 
     - name: Remove Application Signals Lambda Layer
       run: |
           echo "Removing Lambda layer..."
           
           OUTPUT=$(aws lambda update-function-configuration \
-              --function-name aws-opentelemetry-distro-python \
+              --function-name aws-opentelemetry-distro-nodejs \
               --layers [])
   
           echo "Lambda configuration:"
@@ -90,21 +99,21 @@ jobs:
       run: |
         cd current-repo
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-python
+        ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-nodejs
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
         name: performance-test-results
         path: |
-          no_layer_results.txt
-          layer_results.txt
+            no_layer_results.txt
+            layer_results.txt
         retention-days: 90
 
     - name: Cleanup Terraform Resources
       if: success() || failure() || cancelled()
       run: |
-        cd aws-otel-python-instrumentation/lambda-layer/terraform/lambda
+        cd aws-otel-js-instrumentation/lambda-layer/terraform/lambda
         echo "Starting Terraform cleanup..."
         terraform init
         terraform destroy -auto-approve
