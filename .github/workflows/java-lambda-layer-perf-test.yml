@@ -3,6 +3,9 @@
 
 name: Java Lambda Layer Performance Test
 on:
+  push:
+    branches:
+      - perf_testing_lambda_layer_java
   workflow_dispatch:
     inputs:
       test_runs:
@@ -58,7 +61,8 @@ jobs:
           --query 'LayerVersionArn' \
           --output text)
         
-        echo Published layer ARN $LAYER_VERSION_ARN
+        echo "LAYER_VERSION_ARN=$LAYER_VERSION_ARN" >> $GITHUB_ENV
+        echo "Published layer ARN $LAYER_VERSION_ARN"
 
     - name: Build and Deploy Sample Application with Lambda Layer
       run: |
@@ -68,7 +72,7 @@ jobs:
         
         cd terraform
         terraform init
-        terraform apply -auto-approve -var "adot_layer_arn=$LAYER_VERSION_ARN"
+        terraform apply -auto-approve -var "adot_layer_arn=${{ env.LAYER_VERSION_ARN }}
 
     - name: Checkout current repository
       uses: actions/checkout@v4
