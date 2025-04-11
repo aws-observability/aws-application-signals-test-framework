@@ -3,6 +3,9 @@
 
 name: Java Lambda Layer Performance Test
 on:
+  push:
+    branches:
+      - perf_testing_lambda_layer_java
   workflow_dispatch:
     inputs:
       test_runs:
