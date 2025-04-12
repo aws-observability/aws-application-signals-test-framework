@@ -3,6 +3,9 @@
 
 name: Java Lambda Layer Performance Test
 on:
+  push:
+    branches:
+      - perf_testing_lambda_layer_java
   workflow_dispatch:
     inputs:
       test_runs:
@@ -69,7 +72,7 @@ jobs:
         
         cd terraform
         terraform init
-        terraform apply -auto-approve -var "adot_layer_arn=${{ env.LAYER_VERSION_ARN }}
+        terraform apply -auto-approve -var "adot_layer_arn=${{ env.LAYER_VERSION_ARN }}"
 
     - name: Checkout current repository
       uses: actions/checkout@v4
