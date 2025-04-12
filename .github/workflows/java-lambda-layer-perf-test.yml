@@ -1,6 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
-name: Python Lambda Layer Performance Test
+
+name: Java Lambda Layer Performance Test
 on:
   workflow_dispatch:
     inputs:
@@ -9,15 +10,15 @@ on:
         required: true
         default: 20
         type: number
-
-      python_version:
-        description: 'The Python version to run the test'
+        
+      java_version:
+        description: 'The Java version to run the test'
         required: true
-        default: '3.13'
+        default: '17'
         type: string  
-
+    
 jobs:
-  python-lambda-layer-performance-test:
+  java-lambda-layer-performance-test:
     runs-on: ubuntu-latest 
     permissions:
         id-token: write
@@ -33,25 +34,42 @@ jobs:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1     
 
-    - name: Checkout aws-otel-python-instrumentation
+    - name: Checkout aws-otel-java-instrumentation
       uses: actions/checkout@v4
       with:
-        repository: aws-observability/aws-otel-python-instrumentation
-        path: aws-otel-python-instrumentation
-
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ github.event.inputs.python_version }}
+        repository: aws-observability/aws-otel-java-instrumentation
+        ref: release/v1.33.x
+        path: aws-otel-java-instrumentation
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
-
-    - name: Build Lambda Layer
+    
+    - name: Build and Deploy Lambda Layer
       run: |
-        cd aws-otel-python-instrumentation/lambda-layer
-        chmod +x build.sh
-        ./build.sh
+        cd aws-otel-java-instrumentation/lambda-layer
+        chmod +x build-layer.sh
+        ./build-layer.sh
+                
+        LAYER_VERSION_ARN=$(aws lambda publish-layer-version \
+          --layer-name AWSOpenTelemetryDistroJava \
+          --zip-file fileb://build/distributions/aws-opentelemetry-java-layer.zip \
+          --compatible-runtimes "java11" "java17" "java21" \
+          --compatible-architectures "x86_64" "arm64" \
+          --query 'LayerVersionArn' \
+          --output text)
+        
+        echo "LAYER_VERSION_ARN=$LAYER_VERSION_ARN" >> $GITHUB_ENV
+        echo "Published layer ARN $LAYER_VERSION_ARN"
+
+    - name: Build and Deploy Sample Application with Lambda Layer
+      run: |
+        cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda
+        gradle clean build
+        gradle createLambdaZip
+        
+        cd terraform
+        terraform init
+        terraform apply -auto-approve -var "adot_layer_arn=${{ env.LAYER_VERSION_ARN }}"
 
     - name: Checkout current repository
       uses: actions/checkout@v4
@@ -62,14 +80,14 @@ jobs:
       run: |
         cd current-repo
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh false aws-opentelemetry-distro-python
+        ./lambda-layer-perf-test/lambda-layer-run.sh false aws-opentelemetry-distro-java
 
     - name: Remove Application Signals Lambda Layer
       run: |
           echo "Removing Lambda layer..."
           
           OUTPUT=$(aws lambda update-function-configuration \
-              --function-name aws-opentelemetry-distro-python \
+              --function-name aws-opentelemetry-distro-java \
               --layers [])
   
           echo "Lambda configuration:"
@@ -90,21 +108,21 @@ jobs:
       run: |
         cd current-repo
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-python
+        ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-java
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
       with:
-        name: python-performance-test-results
+        name: java-performance-test-results
         path: |
-          no_layer_results.txt
-          layer_results.txt
+            no_layer_results.txt
+            layer_results.txt
         retention-days: 90
 
     - name: Cleanup Terraform Resources
       if: success() || failure() || cancelled()
       run: |
-        cd aws-otel-python-instrumentation/lambda-layer/terraform/lambda
+        cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda/terraform
         echo "Starting Terraform cleanup..."
         terraform init
         terraform destroy -auto-approve
