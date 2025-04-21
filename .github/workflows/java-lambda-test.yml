@@ -7,9 +7,6 @@
 name: Java Lambda Default Use Case
 on:
   workflow_call:
-    push:
-      branches:
-        - lambda-layer/v2-test
     inputs:
       aws-region:
         required: true
@@ -22,6 +19,9 @@ on:
         value: ${{ jobs.java-lambda-default.outputs.job-started }}
       validation-result:
         value: ${{ jobs.java-lambda-default.outputs.validation-result }}
+  push:
+    branches:
+      - lambda-layer/v2-test
 
 permissions:
   id-token: write
@@ -93,7 +93,7 @@ jobs:
 
       - name: Set Lambda Layer artifact directory path
         run: echo ARTIFACTS_DIR="${{ github.workspace }}/lambda_artifacts" >> $GITHUB_ENV
-        
+
 
       - name: Download Lambda Layer artifact for E2E Test
         if: ${{ env.CALLER_WORKFLOW_NAME != 'appsignals-java-e2e-lambda-canary-test' }}
