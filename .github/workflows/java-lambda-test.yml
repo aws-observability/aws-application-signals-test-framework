@@ -137,7 +137,7 @@ jobs:
           -var="sdk_layer_name=AWSOpenTelemetryDistroJava-${{ github.run_id }}" 
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
-          -var="region=us-east-1"
+          -var="region=${{ env.E2E_TEST_AWS_REGION }}\"
           -var="is_canary=${{ env.IS_CANARY }}"'
           max_retry: 6
           sleep_time: 60
@@ -168,7 +168,7 @@ jobs:
         run: ./gradlew validator:run --args='-c java/lambda/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
-          --region ${{ inputs.aws-region }}
+          --region us-east-1
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -184,7 +184,7 @@ jobs:
         run: ./gradlew validator:run --args='-c java/lambda/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
-          --region ${{ inputs.aws-region }}
+          --region us-east-1
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -199,7 +199,7 @@ jobs:
         run: ./gradlew validator:run --args='-c java/lambda/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
-          --region ${{ inputs.aws-region }}
+          --region us-east-1
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
