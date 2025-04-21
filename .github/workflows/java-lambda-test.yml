@@ -168,7 +168,7 @@ jobs:
         run: ./gradlew validator:run --args='-c java/lambda/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
-          --region us-east-1
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -184,7 +184,7 @@ jobs:
         run: ./gradlew validator:run --args='-c java/lambda/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
-          --region us-east-1
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -199,7 +199,7 @@ jobs:
         run: ./gradlew validator:run --args='-c java/lambda/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
-          --region us-east-1
+          --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
