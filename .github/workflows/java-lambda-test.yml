@@ -98,7 +98,7 @@ jobs:
       - name: Download Lambda Layer artifact for E2E Test
         if: ${{ env.CALLER_WORKFLOW_NAME != 'appsignals-java-e2e-lambda-canary-test' }}
         run: |
-          aws s3 cp s3://lambdav2-test/aws-opentelemetry-java-layer.zip
+          aws s3 cp s3://lambdav2-test/aws-opentelemetry-java-layer.zip ${{ env.ARTIFACTS_DIR }}/layer.zip
 
       - name: Download the lambda function artifact for E2E test
         run: aws s3 cp ${{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/java-function.zip
