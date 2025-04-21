@@ -7,6 +7,9 @@
 name: Java Lambda Default Use Case
 on:
   workflow_call:
+    push:
+      branches:
+        - lambda-layer/v2-test
     inputs:
       aws-region:
         required: true
@@ -25,7 +28,7 @@ permissions:
   contents: read
 
 env:
-  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  E2E_TEST_AWS_REGION: us-west-2
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
@@ -94,7 +97,7 @@ jobs:
       - name: Download Lambda Layer artifact for E2E Test
         if: ${{ env.CALLER_WORKFLOW_NAME != 'appsignals-java-e2e-lambda-canary-test' }}
         run: |
-          aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/adot-java-lambda-layer-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/layer.zip
+          aws s3 cp s3://lambdav2-test/aws-opentelemetry-java-layer.zip
 
       - name: Download the lambda function artifact for E2E test
         run: aws s3 cp ${{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/java-function.zip
