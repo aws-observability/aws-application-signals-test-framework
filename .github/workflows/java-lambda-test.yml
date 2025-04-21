@@ -34,7 +34,7 @@ env:
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/java-lambda-function.zip
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-us-east-1/java-lambda-function.zip
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   STAGING_S3_BUCKET: ${{ secrets.STAGING_BUCKET_NAME }}
   IS_CANARY: false
