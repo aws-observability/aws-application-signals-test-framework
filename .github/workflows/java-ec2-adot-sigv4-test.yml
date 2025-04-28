@@ -58,6 +58,9 @@ jobs:
         id: job-started
         run: echo "job-started=true" >> $GITHUB_OUTPUT
 
+      - name: Print all environment variables
+        run: env
+
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> $GITHUB_ENV
 
@@ -89,11 +92,11 @@ jobs:
 
       - name: Set ADOT getter command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
-            echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
-          else
-            echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
-          fi
+          # if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
+          echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
+          # else
+          #   echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
+          # fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
