@@ -40,8 +40,8 @@ env:
   E2E_TEST_AWS_REGION: 'us-west-2' # Test uses us-west-2 in the us-east-1 accoun
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   METRIC_NAMESPACE: ApplicationSignals
-  JAVA_VERSION: ${{ inputs.java-version }}
-  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  JAVA_VERSION: ${{ inputs.java-version || '11' }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture  || 'x86_64' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }} # us-east-1 test account
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   LOG_GROUP_NAME: aws/spans
