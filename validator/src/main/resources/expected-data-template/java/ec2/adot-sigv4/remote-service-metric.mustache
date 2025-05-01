@@ -248,7 +248,7 @@
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
@@ -298,7 +298,7 @@
       value: ec2:default
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
@@ -315,7 +315,7 @@
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
@@ -323,4 +323,4 @@
   dimensions:
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
