@@ -30,7 +30,7 @@
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Latency
@@ -80,7 +80,7 @@
       value: ec2:default
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Latency
@@ -97,7 +97,7 @@
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Latency
@@ -105,7 +105,7 @@
   dimensions:
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Error
@@ -139,7 +139,7 @@
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Error
@@ -189,7 +189,7 @@
       value: ec2:default
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Error
@@ -206,7 +206,7 @@
       value: GET /healthcheck
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Error
@@ -214,7 +214,7 @@
   dimensions:
     -
       name: RemoteService
-      value: {{remoteServiceName}}
+      value: {{remoteServiceDeploymentName}}
 
 -
   metricName: Fault
