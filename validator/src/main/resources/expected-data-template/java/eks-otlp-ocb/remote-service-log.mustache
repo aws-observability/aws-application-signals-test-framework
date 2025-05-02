@@ -13,8 +13,8 @@
   "Environment": "^generic:default$",
   "PlatformType": "^Generic$",
   "Service": "^{{serviceName}}$",
-  "Operation": "UnmappedOperation",
-  "RemoteService": "{{remoteServiceIp}}:8080",
+  "Operation": "GET /remote-service",
+  "RemoteService": "{{remoteServiceDeploymentName}}",
   "RemoteOperation": "GET /healthcheck",
   "Host": "^ip(-[0-9]{1,3}){4}.*$"
 }]
