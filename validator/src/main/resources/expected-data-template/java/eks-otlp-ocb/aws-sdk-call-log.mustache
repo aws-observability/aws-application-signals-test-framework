@@ -13,7 +13,7 @@
   "Environment": "^generic:default$",
   "PlatformType": "^Generic$",
   "Service": "^{{serviceName}}$",
-  "Operation": "UnmappedOperation",
+  "Operation": "GET /aws-sdk-call",
   "RemoteService": "AWS::S3",
   "RemoteOperation": "GetBucketLocation",
   "RemoteResourceIdentifier": "^e2e-test-bucket-name-{{testingId}}$",
