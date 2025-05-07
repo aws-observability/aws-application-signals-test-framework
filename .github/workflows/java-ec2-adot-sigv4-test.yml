@@ -8,6 +8,9 @@
 # This test case validates ADOT used on its own to send traces to the X-Ray OTLP endpoint with SigV4 authentication
 name: Java EC2 ADOT SigV4 (Stand-Alone ADOT) Use Case
 on:
+  push:
+    branches:
+      - Java_SigV4_logs_release_testing
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -37,11 +40,12 @@ env:
   E2E_TEST_AWS_REGION: 'us-west-2' # Test uses us-west-2 in the us-east-1 accoun
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   METRIC_NAMESPACE: ApplicationSignals
-  JAVA_VERSION: ${{ inputs.java-version }}
-  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  JAVA_VERSION: ${{ inputs.java-version || '11' }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }} # us-east-1 test account
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   LOG_GROUP_NAME: aws/spans
+  TEST_LOG_GROUP_NAME: otlp_sigv4_logs
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
@@ -186,6 +190,23 @@ jobs:
               --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
               --metric-namespace ${{ env.METRIC_NAMESPACE }}
               --log-group ${{ env.LOG_GROUP_NAME }}
+              --service-name sample-application-${{ env.TESTING_ID }}
+              --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
+              --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+              --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+              --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+              --rollup'
+
+      - name: Validate generated SigV4 logs
+        id: log-validation-1
+        run: ./gradlew validator:run --args='-c java/ec2/adot-sigv4/log-validation.yml
+              --testing-id ${{ env.TESTING_ID }}
+              --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+              --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
+              --region ${{ env.E2E_TEST_AWS_REGION }}
+              --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
+              --metric-namespace ${{ env.METRIC_NAMESPACE }}
+              --log-group ${{ env.TEST_LOG_GROUP_NAME }}
               --service-name sample-application-${{ env.TESTING_ID }}
               --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
               --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}

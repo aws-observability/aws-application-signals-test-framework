@@ -134,11 +134,14 @@ resource "null_resource" "main_service_setup" {
       export JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar'
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false
       export OTEL_RESOURCE_PROVIDERS_AWS_ENABLED=true
-      export OTEL_LOGS_EXPORT=none
+      export OTEL_LOGS_EXPORTER=otlp
       export OTEL_METRICS_EXPORTER=none
       export OTEL_TRACES_EXPORTER=otlp
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces
+      export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs
+      export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=otlp_sigv4_logs,x-aws-log-stream=default
       export OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id}
       nohup java -jar main-service.jar &> nohup.out &
 
