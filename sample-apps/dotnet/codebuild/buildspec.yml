@@ -1,0 +1,32 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Pre-build phase -- Logging into Amazon ECR..."
+      - $ecrUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com"
+#      - (Get-ECRLoginCommand).Password | docker login --username AWS --password-stdin $env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com
+      - (Get-ECRLoginCommand).Password | docker login --username AWS --password-stdin $ecrUrl
+      - echo "Pre-build phase completed."
+
+  build:
+    commands:
+      - echo "Build phase -- Building Docker image via docker-compose..."
+      - docker-compose -f sample-apps/dotnet/docker-compose-windows.yaml build
+      - echo "Tagging the Docker image..."
+      - $ecrMainImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-main-service:latest"
+      - $ecrRemoteImageUrl = "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-remote-service:latest"
+      - docker tag dotnetsampleapp/frontend-service:latest $ecrMainImageUrl
+      - docker tag dotnetsampleapp/remote-service:latest $ecrRemoteImageUrl
+
+  post_build:
+    commands:
+      - echo "Post-build phase -- Pushing Docker image to ECR..."
+      - docker push $ecrMainImageUrl
+      - docker push $ecrRemoteImageUrl
+      - echo "Build completed successfully."
+
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: yes
