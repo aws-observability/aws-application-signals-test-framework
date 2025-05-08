@@ -33,7 +33,7 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: 'us-west-2'
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
-  E2E_TEST_ROLE_NAME: ${{ inputs.sample-app-bucket-prefix }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   DOTNET_VERSION: ${{ inputs.dotnet-version }}
   SAMPLE_APP_ZIP: s3://${{ inputs.sample-app-bucket-prefix }}-us-east-1/dotnet-sample-app-${{ inputs.dotnet-version }}.zip
   TRAFFIC_GENERATOR_ZIP: s3://${{ inputs.sample-app-bucket-prefix }}-us-east-1/traffic-generator.zip
