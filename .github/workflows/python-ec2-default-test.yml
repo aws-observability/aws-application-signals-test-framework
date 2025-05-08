@@ -32,6 +32,11 @@ on:
         required: false
         type: string
         default: 'github'
+      sample-app-bucket-prefix:
+        description: "Prefix for S3 bucket holding sample app files"
+        required: false
+        default: 'aws-appsignals-sample-app-prod'
+        type: string
     outputs:
       job-started:
         value: ${{ jobs.python-ec2-default.outputs.job-started }}
@@ -49,7 +54,8 @@ env:
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app.zip
+  SAMPLE_APP_ZIP: s3://${{ inputs.sample-app-bucket-prefix }}-${{ inputs.aws-region }}/python-sample-app.zip
+  TRAFFIC_GENERATOR_ZIP: s3://${{ inputs.sample-app-bucket-prefix }}-${{ inputs.aws-region }}/traffic-generator.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
@@ -171,6 +177,7 @@ jobs:
               -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
               -var="language_version=${{ env.PYTHON_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="traffic_generator_zip=s3://${{ env.TRAFFIC_GENERATOR_ZIP }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then

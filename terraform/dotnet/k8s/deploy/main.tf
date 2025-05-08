@@ -121,8 +121,8 @@ resource "null_resource" "deploy" {
       echo "LOG: Pulling sample app deployment files"
       # cd to ensure everything is downloaded into root directory so cleanup is each
       cd ~
-      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key dotnet-frontend-service-depl-${var.test_id}.yaml dotnet-frontend-service-depl.yaml
-      aws s3api get-object --bucket aws-appsignals-sample-app-prod-us-east-1 --key dotnet-remote-service-depl-${var.test_id}.yaml dotnet-remote-service-depl.yaml
+      aws s3api get-object --bucket ${var.sample_app_bucket_prefix}-us-east-1 --key dotnet-frontend-service-depl-${var.test_id}.yaml dotnet-frontend-service-depl.yaml
+      aws s3api get-object --bucket ${var.sample_app_bucket_prefix}-us-east-1 --key dotnet-remote-service-depl-${var.test_id}.yaml dotnet-remote-service-depl.yaml
 
       # Patch the staging image if this is running as part of release testing
       if [ "${var.repository}" = "aws-otel-dotnet-instrumentation" ]; then

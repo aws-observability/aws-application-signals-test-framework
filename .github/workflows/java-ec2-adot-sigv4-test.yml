@@ -23,6 +23,11 @@ on:
         required: false
         type: string
         default: "x86_64"
+      sample-app-bucket-prefix:
+        description: "Prefix for S3 bucket holding sample app files"
+        required: false
+        default: 'aws-appsignals-sample-app-prod'
+        type: string
     outputs:
       job-started:
         value: ${{ jobs.java-ec2-adot-sigv4.outputs.job-started }}
@@ -123,11 +128,12 @@ jobs:
             terraform apply -auto-approve \
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
-              -var="sample_app_jar=s3://aws-appsignals-sample-app-prod-us-east-1/java-main-service-v${{ env.JAVA_VERSION }}.jar" \
-              -var="sample_remote_app_jar=s3://aws-appsignals-sample-app-prod-us-east-1/java-remote-service-v${{ env.JAVA_VERSION }}.jar" \
+              -var="sample_app_jar=s3://${{ inputs.sample-app-bucket-prefix }}-us-east-1/java-main-service-v${{ env.JAVA_VERSION }}.jar" \
+              -var="sample_remote_app_jar=s3://${{ inputs.sample-app-bucket-prefix }}-us-east-1/java-remote-service-v${{ env.JAVA_VERSION }}.jar" \
               -var="get_adot_jar_command=${{ env.GET_ADOT_JAR_COMMAND }}" \
               -var="language_version=${{ env.JAVA_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="traffic_generator_zip=s3://${{ inputs.sample-app-bucket-prefix }}-us-east-1/traffic-generator.zip" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then

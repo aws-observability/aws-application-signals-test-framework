@@ -18,6 +18,11 @@ on:
         required: false
         default: '@aws/aws-distro-opentelemetry-node-autoinstrumentation'
         type: string
+      sample-app-bucket-prefix:
+        description: "Prefix for S3 bucket holding sample app files"
+        required: false
+        default: 'aws-appsignals-sample-app-prod'
+        type: string
     outputs:
       job-started:
         value: ${{ jobs.node-lambda-default.outputs.job-started }}
@@ -33,7 +38,7 @@ env:
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/jsfunction.zip
+  SAMPLE_APP_ZIP: s3://${{ inputs.sample-app-bucket-prefix }}-${{ inputs.aws-region }}/jsfunction.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}

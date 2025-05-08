@@ -6,6 +6,12 @@
 name: Sample App Deployment - Java S3
 on:
   workflow_dispatch: # be able to run the workflow on demand
+    inputs:
+      sample-app-bucket-prefix:
+        description: "Prefix for S3 bucket holding sample app files"
+        required: false
+        default: 'aws-appsignals-sample-app-prod'
+        type: string
 
 permissions:
   id-token: write
@@ -52,8 +58,8 @@ jobs:
         working-directory: sample-apps/java/springboot-main-service
         run: |
           gradle build -P javaVersion=11
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v11.jar
 
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v11.jar
   java-v11-remote:
     strategy:
       fail-fast: false
@@ -90,8 +96,8 @@ jobs:
         working-directory: sample-apps/java/springboot-remote-service
         run: |
           gradle build -P javaVersion=11
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v11.jar
 
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v11.jar
   java-main:
     strategy:
       fail-fast: false
@@ -124,8 +130,8 @@ jobs:
           fi
           
           gradle build -P javaVersion=${{ matrix.java-version }}
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-us-east-1 --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v${{ matrix.java-version }}.jar
 
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-us-east-1 --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v${{ matrix.java-version }}.jar
   java-remote:
     strategy:
       fail-fast: false
@@ -158,8 +164,8 @@ jobs:
           fi
           
           gradle build -P javaVersion=${{ matrix.java-version }}
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-us-east-1 --body ./build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v${{ matrix.java-version }}.jar
 
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-us-east-1 --body ./build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v${{ matrix.java-version }}.jar
   java-lambda:
     strategy:
       fail-fast: false
@@ -205,4 +211,4 @@ jobs:
         run: |
           gradle build
           gradle createLambdaZip
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./build/distributions/lambda-function.zip --key java-lambda-function.zip
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./build/distributions/lambda-function.zip --key java-lambda-function.zip

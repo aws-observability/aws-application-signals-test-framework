@@ -4,7 +4,8 @@ param (
     [string]$GetSampleAppCommand,
     [string]$TestId,
     [string]$RemoteServicePrivateEndpoint,
-    [string]$AWSRegion
+    [string]$AWSRegion,
+    [string]$SampleAppBucketPrefix
 )
 
 # This file is used to deploy and instrumentation main sample app for Dotnet E2E Canary test
@@ -103,7 +104,7 @@ Write-Host $currentdir | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 $env:Path += ";$currentdir" + "\nodejs\node-v20.16.0-win-x64"
 
 # Bring in the traffic generator files to EC2 Instance
-aws s3 cp "s3://aws-appsignals-sample-app-prod-$AWSRegion/traffic-generator.zip" "./traffic-generator.zip"
+aws s3 cp "s3://$SampleAppBucketPrefix-$AWSRegion/traffic-generator.zip" "./traffic-generator.zip"
 Expand-Archive -Path "./traffic-generator.zip" -DestinationPath "./" -Force | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 
 # Install the traffic generator dependencies
