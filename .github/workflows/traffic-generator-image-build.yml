@@ -4,6 +4,12 @@ name: Create and Push Traffic Generator
 
 on:
   workflow_dispatch:
+    inputs:
+      sample-app-bucket-prefix:
+        description: "Prefix for S3 bucket holding sample app files"
+        required: false
+        default: 'aws-appsignals-sample-app-prod'
+        type: string
   push:
     branches:
       - main
@@ -22,6 +28,7 @@ jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         aws-region: ['af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
@@ -66,6 +73,7 @@ jobs:
   upload-files-to-s3:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         aws-region: ['af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
@@ -97,4 +105,4 @@ jobs:
         working-directory: sample-apps/traffic-generator
         run: |
           zip traffic-generator.zip ./index.js ./package.json
-          aws s3 cp traffic-generator.zip s3://aws-appsignals-sample-app-prod-${{ matrix.aws-region }}/traffic-generator.zip
+          aws s3 cp traffic-generator.zip s3://${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }}/traffic-generator.zip

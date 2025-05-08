@@ -4,6 +4,12 @@
 name: Sample App Deployment - Dotnet S3
 on:
   workflow_dispatch: # be able to run the workflow on demand
+    inputs:
+      sample-app-bucket-prefix:
+        description: "Prefix for S3 bucket holding sample app files"
+        required: false
+        default: 'aws-appsignals-sample-app-prod'
+        type: string
 
 permissions:
   id-token: write
@@ -94,14 +100,14 @@ jobs:
 
       - name: Upload to S3
         working-directory: sample-apps/dotnet
-        run: aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-sample-app-${DOTNET_VERSION}.zip --key dotnet-sample-app-${DOTNET_VERSION}.zip
+        run: aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./dotnet-sample-app-${DOTNET_VERSION}.zip --key dotnet-sample-app-${DOTNET_VERSION}.zip
 
       - name: Upload Windows Script to S3
-        working-directory: sample-apps/dotnet
+        working-directory: sample-apps/dotnet`
         run: |
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-main-setup.ps1 --key dotnet-ec2-win-main-setup.ps1
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-ec2-win-remote-setup.ps1 --key dotnet-ec2-win-remote-setup.ps1
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./amazon-cloudwatch-agent.json --key amazon-cloudwatch-agent.json
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./dotnet-ec2-win-main-setup.ps1 --key dotnet-ec2-win-main-setup.ps1
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./dotnet-ec2-win-remote-setup.ps1 --key dotnet-ec2-win-remote-setup.ps1
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./amazon-cloudwatch-agent.json --key amazon-cloudwatch-agent.json
 
   build-and-upload-lambda-sample-app:
     strategy:
@@ -153,4 +159,4 @@ jobs:
       
       - name: Upload Lambda Sample App to S3
         working-directory: sample-applications/lambda-test-apps/SimpleLambdaFunction
-        run: aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./src/SimpleLambdaFunction/bin/Release/net8.0/SimpleLambdaFunction.zip --key dotnet-function.zip
+        run: aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./src/SimpleLambdaFunction/bin/Release/net8.0/SimpleLambdaFunction.zip --key dotnet-function.zip

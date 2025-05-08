@@ -28,6 +28,11 @@ on:
       cw-agent-operator-tag:
         required: false
         type: string
+      sample-app-bucket-prefix:
+        description: "Prefix for S3 bucket holding sample app files"
+        required: false
+        default: 'aws-appsignals-sample-app-prod'
+        type: string
     outputs:
       job-started:
         value: ${{ jobs.java-k8s.outputs.job-started }}
@@ -123,8 +128,8 @@ jobs:
           sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}#' frontend-service-depl.yaml
           sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' remote-service-depl.yaml
           sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}#' remote-service-depl.yaml
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key frontend-service-depl-${{ env.TESTING_ID }}.yaml --body frontend-service-depl.yaml
-          aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key remote-service-depl-${{ env.TESTING_ID }}.yaml --body remote-service-depl.yaml
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ env.E2E_TEST_AWS_REGION }} --key frontend-service-depl-${{ env.TESTING_ID }}.yaml --body frontend-service-depl.yaml
+          aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ env.E2E_TEST_AWS_REGION }} --key remote-service-depl-${{ env.TESTING_ID }}.yaml --body remote-service-depl.yaml
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -162,7 +167,8 @@ jobs:
             -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}" \
             -var="repository=${{ github.event.repository.name }}" \
             -var="patch_image_arn=${{ env.PATCH_IMAGE_ARN }}" \
-            -var="release_testing_ecr_account=${{ env.RELEASE_TESTING_ECR_ACCOUNT }}"
+            -var="release_testing_ecr_account=${{ env.RELEASE_TESTING_ECR_ACCOUNT }}" \
+            -var="sample_app_bucket_prefix=${{ inputs.sample-app-bucket-prefix }}" \
 
       - name: Get Main and Remote Service IP
         run: |

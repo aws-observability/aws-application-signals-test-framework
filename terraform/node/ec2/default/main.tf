@@ -326,7 +326,7 @@ resource "null_resource" "traffic_generator_setup" {
     inline = [
       <<-EOF
         # Bring in the traffic generator files to EC2 Instance
-        aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
+        aws s3 cp ${var.traffic_generator_zip} ./traffic-generator.zip
         unzip ./traffic-generator.zip -d ./
 
         # Install the traffic generator dependencies
