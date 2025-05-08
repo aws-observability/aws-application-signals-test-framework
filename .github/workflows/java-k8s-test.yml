@@ -168,7 +168,7 @@ jobs:
             -var="repository=${{ github.event.repository.name }}" \
             -var="patch_image_arn=${{ env.PATCH_IMAGE_ARN }}" \
             -var="release_testing_ecr_account=${{ env.RELEASE_TESTING_ECR_ACCOUNT }}" \
-            -var="sample_app_bucket_prefix=${{ inputs.sample-app-bucket-prefix }}" \
+            -var="sample_app_bucket_prefix=${{ inputs.sample-app-bucket-prefix }}"
 
       - name: Get Main and Remote Service IP
         run: |
