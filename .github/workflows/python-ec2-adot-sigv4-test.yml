@@ -6,9 +6,6 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Python EC2 ADOT SigV4 (Stand-Alone ADOT) Use Case
 on:
-  push:
-    branches:
-      - Python_SigV4_test
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -36,9 +33,9 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: 'us-west-2'
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
-  PYTHON_VERSION: ${{ inputs.python-version || '3.9' }}
-  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
-  ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name || 'aws-opentelemetry-distro' }}
+  PYTHON_VERSION: ${{ inputs.python-version }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
