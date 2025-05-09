@@ -5,7 +5,9 @@
   "Operation": "GET /aws-sdk-call",
   "Version": "^1$",
   "Telemetry.Source": "^LocalRootSpan$",
-  "Host": "^ip(-[0-9]{1,3}){4}.*$"
+  "Host": "^ip(-[0-9]{1,3}){4}.*$",
+  "otel.resource.key1": "value1",
+  "otel.resource.key3": "value3"
 },
 {
   "EC2.InstanceId": "^{{instanceId}}$",
@@ -18,5 +20,7 @@
   "RemoteResourceIdentifier": "^e2e-test-bucket-name-{{testingId}}$",
   "RemoteResourceType": "^AWS::S3::Bucket$",
   "Telemetry.Source": "^ClientSpan$",
-  "Host": "^ip(-[0-9]{1,3}){4}.*$"
+  "Host": "^ip(-[0-9]{1,3}){4}.*$",
+  "otel.resource.key1": "value1",
+  "otel.resource.key3": "value3"
 }]

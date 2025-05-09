@@ -134,7 +134,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
     OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
-    OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \
+    OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id},aws.application_signals.metric_resource_keys=all_attributes \
     OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
     nohup java -jar -XX:+UseG1GC main-service.jar &> nohup.out &
 
