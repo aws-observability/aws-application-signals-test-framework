@@ -195,7 +195,7 @@ jobs:
         run: ./gradlew validator:run --args='-c node/ec2/adot-sigv4/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
+          --remote-service-deployment-name node-sample-remote-application-${{ env.TESTING_ID }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
