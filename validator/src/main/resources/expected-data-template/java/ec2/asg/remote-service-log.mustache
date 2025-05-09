@@ -22,7 +22,7 @@
   "RemoteOperation": "GET /healthcheck",
   "Telemetry.Source": "^ClientSpan$",
   "Host": "^{{privateDnsName}}$",
-  "otel.aws.application_signals.metric_resource_keys=all_attributes",
+  "otel.aws.application_signals.metric_resource_keys": "all_attributes",
   "otel.resource.host.image.id": "^{{instanceAmi}}$",
   "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$"
 }]
