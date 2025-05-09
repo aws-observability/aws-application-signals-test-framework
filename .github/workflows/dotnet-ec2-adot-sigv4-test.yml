@@ -6,6 +6,9 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: DotNet EC2 ADOT SigV4 (Stand-Alone ADOT) Use Case
 on:
+  push:
+    branches:
+      - Dotnet_SigV4_Test
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -29,11 +32,11 @@ env:
   E2E_TEST_AWS_REGION: 'us-west-2'
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  DOTNET_VERSION: ${{ inputs.dotnet-version }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-us-east-1/dotnet-sample-app-${{ inputs.dotnet-version }}.zip
+  DOTNET_VERSION: ${{ inputs.dotnet-version || '8.0' }}
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-us-east-1/dotnet-sample-app-${{ inputs.dotnet-version || '8.0' }}.zip
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: aws/spans
-  ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
+  ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name || 'aws-opentelemetry-distro' }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
