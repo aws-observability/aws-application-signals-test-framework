@@ -40,3 +40,7 @@ variable "get_cw_agent_rpm_command" {
 variable "canary_type" {
   default = "dotnet-ec2-asg"
 }
+
+variable traffic_generator_zip {
+    default = "s3://aws-appsignals-sample-app-prod-<aws-region>/traffic-generator.zip"
+}

@@ -47,3 +47,7 @@ variable "release_testing_ecr_account" {
   default = "<aws-account-id>"
   description = "This variable is to give the k8s cluster ecr secret to pull image from the staging image ecr"
 }
+
+variable "sample_app_bucket_prefix" {
+    default = "aws-appsignals-sample-app-prod"
+}

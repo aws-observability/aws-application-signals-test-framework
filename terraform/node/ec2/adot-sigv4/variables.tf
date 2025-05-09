@@ -46,3 +46,7 @@ variable "get_adot_instrumentation_command" {
 variable "canary_type" {
   default = "node-ec2-default"
 }
+
+variable traffic_generator_zip {
+    default = "s3://aws-appsignals-sample-app-prod-us-east-1/traffic-generator.zip"
+}

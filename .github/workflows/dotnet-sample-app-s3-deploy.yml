@@ -103,7 +103,7 @@ jobs:
         run: aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./dotnet-sample-app-${DOTNET_VERSION}.zip --key dotnet-sample-app-${DOTNET_VERSION}.zip
 
       - name: Upload Windows Script to S3
-        working-directory: sample-apps/dotnet`
+        working-directory: sample-apps/dotnet
         run: |
           aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./dotnet-ec2-win-main-setup.ps1 --key dotnet-ec2-win-main-setup.ps1
           aws s3api put-object --bucket ${{ inputs.sample-app-bucket-prefix }}-${{ matrix.aws-region }} --body ./dotnet-ec2-win-remote-setup.ps1 --key dotnet-ec2-win-remote-setup.ps1
