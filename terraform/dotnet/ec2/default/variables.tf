@@ -44,3 +44,7 @@ variable "canary_type" {
 variable "language_version" {
   default = "8.0"
 }
+
+variable traffic_generator_zip {
+    default = "s3://aws-appsignals-sample-app-prod-<aws-region>/traffic-generator.zip"
+}

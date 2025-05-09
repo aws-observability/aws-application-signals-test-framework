@@ -44,3 +44,7 @@ variable "get_adot_jar_command" {
 variable "canary_type" {
   default = "java-ec2-ubuntu"
 }
+
+variable traffic_generator_zip {
+    default = "s3://aws-appsignals-sample-app-prod-<aws-region>/traffic-generator.zip"
+}

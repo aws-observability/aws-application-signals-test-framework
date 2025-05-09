@@ -36,3 +36,7 @@ variable "get_adot_distro_command" {
 variable "get_cw_agent_msi_command" {
   default = "wget -O ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi"
 }
+
+variable "sample_app_bucket_prefix" {
+    default = "aws-appsignals-sample-app-prod"
+}

@@ -1,11 +1,5 @@
 # How to Test E2E Resource Changes
-This guide will give a step by step instruction on how to test changes made to Java/Python E2E testing resources before pushing a PR.
-The guide will include the following:
-- Setting up IAM roles and an EKS cluster
-- Setting up VPC settings and IAM role for EC2 instances
-- Buliding sample app images/files and putting them into ECRs/S3 buckets
-- Forking a repository and setting up necessary secrets
-
+This guide will give a step by step instruction on how to test changes made to E2E testing resources in us-east-1 from a forked repo before pushing a PR.
 
 ### 1. Create an IAM Role with OIDC Identity Provider
 This step is needed to allow Github Action to have access to resources in the AWS account
@@ -16,6 +10,13 @@ This step is needed to allow Github Action to have access to resources in the AW
 - Next, an IAM role needs to be created using the OIDC Identity Provider. Go to the Roles tab and click Create role.
 - Choose Web Identity, and choose `token.actions.githubusercontent.com` as the Identity provider, Audience as `sts.amazonaws.com`, and for Github organizations put your github username down. Click next.
 - Add the AdministratorAccess policy. Click next.
+- Name the role `GitHubTesting`.
+- Edit the trust policy and remove the following:
+`"StringEquals": {
+  "token.actions.githubusercontent.com:aud": [
+  "sts.amazonaws.com"
+  ]
+  },`
 - Enter your Role name. Click "Create role".
 #### Add Additional Permission
 - After the role is created, search the role name in the roles tab, click on the role, and go to the Trust relationships tab. Click on "Edit trust policy".
@@ -31,6 +32,38 @@ This step is needed to allow Github Action to have access to resources in the AW
 
 Additional Resource: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services
 
+### 2. Set up account & repo
+Several AWS resources need to be manually created, and repo secrets need to be set for tests to be run successfully.
+#### Secret Manager
+- Go to Secrets Manager in the AWS console
+- Create new Secret:
+  - Type: `Other type of secret`
+  - Plaintext: `<accountId>`
+  - Name: `region-account/us-east-1`
+#### S3 bucket
+- Go to S3 in the AWS console
+- Create Bucket:
+  - Name: `<s3BucketName>-us-east-1`
+### ECR Repo
+- Go to ECR in the AWS console
+- Create repository:
+  - Name: `e2e-test-resource`
+#### Repo secrets
+- Go to your forked repo's settings
+- Secrets and variables -> Actions 
+- Add the following secrets:
+  - `APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID` - `<accountId>`
+  - `APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME` - `GitHubTesting`
+  
+### 3. Setup EC2/ECR resources
+- Go to your forked repo's actions
+- Enable actions
+- Find `Sample App Deployment - <language> <S3/ECR>`
+- Run relevant action, passing in `<s3BucketName>` (NOT with us-east-1)
+- Note that it will attempt to run in all regions, but will only pass in us-east-1, this is expected.
+
+
+**Callout: Below sections out of date as of 05/08. TODO: Audit remaining sections and update to align with above steps**
 ### 2. Create EKS Clusters
 The E2E EKS test uses an EKS cluster to deploy the sample apps.
 #### Setup Environment with the Appropriate Roles and Permissions.
@@ -100,7 +133,7 @@ Follow the instructions to build the sample app .jar and upload it to the bucket
     - APP_SIGNALS_PYTHON_E2E_RE_SA_IMG: `<AccountID>.dkr.ecr.us-east-1.amazonaws.com/<Path to Python Remote Sample App Image>`
     - APP_SIGNALS_E2E_FE_SA_IMG: `<AccountID>.dkr.ecr.us-east-1.amazonaws.com/<Path to Java Sample App Image>`
     - APP_SIGNALS_E2E_RE_SA_IMG: `<AccountID>.dkr.ecr.us-east-1.amazonaws.com/<Path to Java Remote Sample App Image>`
-    - APP_SIGNALS_E2E_EC2_JAR: <JarBucketNamePrefix>
+    - APP_SIGNALS_E2E_EC2_JAR: `<JarBucketNamePrefix>`
 
 
 ### 7. Running the tests

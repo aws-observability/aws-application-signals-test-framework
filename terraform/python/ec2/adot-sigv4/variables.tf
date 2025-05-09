@@ -44,3 +44,7 @@ variable "language_version" {
 variable "cpu_architecture" {
   default = "x86_64"
 }
+
+variable traffic_generator_zip {
+    default = "s3://aws-appsignals-sample-app-prod-us-east-1/traffic-generator.zip"
+}
