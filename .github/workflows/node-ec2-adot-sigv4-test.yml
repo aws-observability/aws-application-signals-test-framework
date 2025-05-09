@@ -6,6 +6,9 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Node EC2 ADOT SigV4 Use Case
 on:
+  push:
+    branches:
+      - Node_SigV4_test
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -34,9 +37,9 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: 'us-west-2'
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
-  NODE_VERSION: ${{ inputs.node-version }}
-  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
-  ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name }}
+  NODE_VERSION: ${{ inputs.node-version || 'none' }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
+  ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name || '@aws/aws-distro-opentelemetry-node-autoinstrumentation' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
