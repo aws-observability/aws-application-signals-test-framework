@@ -188,22 +188,6 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
-      - name: Validate generated SigV4 logs
-        id: log-validation-1
-        run: ./gradlew validator:run --args='-c python/ec2/adot-sigv4/log-validation.yml
-          --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://localhost:8000
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
-          --region ${{ env.E2E_TEST_AWS_REGION }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.TEST_LOG_GROUP_NAME }}
-          --service-name python-sample-application-${{ env.TESTING_ID }}
-          --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
-          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
-          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
-          --rollup'
-
       - name: Validate generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
@@ -232,6 +216,22 @@ jobs:
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+      
+      - name: Validate generated SigV4 logs
+        id: log-validation-1
+        run: ./gradlew validator:run --args='-c python/ec2/adot-sigv4/log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8000
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.TEST_LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
