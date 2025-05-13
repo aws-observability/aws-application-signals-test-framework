@@ -225,7 +225,7 @@ jobs:
       
       - name: Validate generated SigV4 logs
         id: log-validation-1
-        run: ./gradlew validator:run --args='-c python/ec2/adot-sigv4/log-validation.yml
+        run: ./gradlew validator:run --args='-c python/ec2/adot-sigv4/logs/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
