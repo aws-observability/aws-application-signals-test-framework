@@ -166,7 +166,8 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
       export OTEL_LOGS_EXPORTER=otlp \
       export OTEL_METRICS_EXPORTER=none \
-      export OTEL_TRACES_EXPORTER=otlp
+      export OTEL_TRACES_EXPORTER=otlp \
+      export OTEL_LOG_LEVEL=CRITICAL \
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
       export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
       export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=otlp_sigv4_logs,x-aws-log-stream=default \
@@ -291,7 +292,8 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
       export OTEL_LOGS_EXPORTER=otlp \
       export OTEL_METRICS_EXPORTER=none \
-      export OTEL_TRACES_EXPORTER=otlp
+      export OTEL_TRACES_EXPORTER=otlp \
+      export OTEL_LOG_LEVEL=CRITICAL \
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
       export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
       export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=otlp_sigv4_logs,x-aws-log-stream=default \
