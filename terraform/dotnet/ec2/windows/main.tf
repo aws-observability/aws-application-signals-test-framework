@@ -165,7 +165,7 @@ resource "aws_ssm_document" "main_service_setup" {
     "schemaVersion": "2.2",
     "description": "Setup main service instance",
     "inputs": {
-      "cloudWatchLogGroupName": "pulse-dotnet-windows-e2e-run",
+      "cloudWatchLogGroupName": "pulse-dotnet-windows-e2e-run"
     },
     "mainSteps": [
       {
@@ -195,7 +195,7 @@ resource "aws_ssm_document" "remote_service_setup" {
     "schemaVersion": "2.2",
     "description": "Setup remote service instance",
     "inputs": {
-      "cloudWatchLogGroupName": "pulse-dotnet-windows-e2e-run",
+      "cloudWatchLogGroupName": "pulse-dotnet-windows-e2e-run"
     },
     "mainSteps": [
       {
