@@ -237,7 +237,7 @@ public class CWLogValidator implements IValidator {
   private Map<String, Object> getActualOtlpSigV4Log() throws Exception {
     // Filter pattern to match OTLP SigV4 logs
     String filterPattern = String.format(
-        "{ ($.resource.attributes.[\"service.name\"] = \"%s\") && $.body EXISTS && $.severityNumber EXISTS && $.severityText EXISTS }", 
+        "{ ($.attributes.[\'service.name\'] = \"%s\") && $.body EXISTS && $.severityNumber EXISTS && $.severityText EXISTS }", 
         context.getServiceName()
     );
     log.info("Filter Pattern for OTLP SigV4 Log Search: " + filterPattern);
