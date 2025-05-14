@@ -10,6 +10,9 @@ on:
   schedule:
     - cron: '30 9 * * *' # run the workflow every day at 2:30am
   workflow_dispatch: # be able to run the workflow on demand
+  push:
+    branches:
+      - xinranzh-test
 
 concurrency:
   group: ${{ github.workflow }}
