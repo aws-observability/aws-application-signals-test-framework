@@ -164,14 +164,12 @@ resource "aws_ssm_document" "main_service_setup" {
   {
     "schemaVersion": "2.2",
     "description": "Setup main service instance",
-    "inputs": {
-      "cloudWatchLogGroupName": "pulse-dotnet-windows-e2e-run"
-    },
     "mainSteps": [
       {
         "action": "aws:runPowerShellScript",
         "name": "setupMainService",
         "inputs": {
+          "cloudWatchLogGroupName": "pulse-dotnet-windows-e2e-run",
           "runCommand": [
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/amazon-cloudwatch-agent.json ./amazon-cloudwatch-agent.json",
             "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
@@ -194,14 +192,12 @@ resource "aws_ssm_document" "remote_service_setup" {
   {
     "schemaVersion": "2.2",
     "description": "Setup remote service instance",
-    "inputs": {
-      "cloudWatchLogGroupName": "pulse-dotnet-windows-e2e-run"
-    },
     "mainSteps": [
       {
         "action": "aws:runPowerShellScript",
         "name": "setupRemoteService",
         "inputs": {
+          "cloudWatchLogGroupName": "pulse-dotnet-windows-e2e-run",
           "runCommand": [
             "aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/amazon-cloudwatch-agent.json ./amazon-cloudwatch-agent.json",
             "powershell -Command \"(Get-Content -Path 'amazon-cloudwatch-agent.json') -replace 'REGION', 'us-east-1' | Set-Content -Path 'amazon-cloudwatch-agent.json'\"",
