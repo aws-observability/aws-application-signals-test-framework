@@ -47,7 +47,6 @@ def run_local_root_client_call_recurring_service():
 run_local_root_client_call_recurring_service()
 
 def healthcheck(request):
-    logger.warn("This is a custom log for validation testing")
     return HttpResponse("healthcheck")
 
 def aws_sdk_call(request):
@@ -57,6 +56,9 @@ def aws_sdk_call(request):
     testing_id = request.GET.get('testingId', None)
     if testing_id is not None:
         bucket_name += "-" + testing_id
+
+    logger.warning("This is a custom log for validation testing")
+
     s3_client = boto3.client("s3")
     try:
         s3_client.get_bucket_location(
