@@ -103,7 +103,7 @@ jobs:
             # Get cloudwatch agent staging file if triggered by cw-a repo
             echo GET_CW_AGENT_MSI_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/packaging/${{ github.sha }}/amazon-cloudwatch-agent.msi ./amazon-cloudwatch-agent.msi" >> $GITHUB_ENV
           else
-            echo GET_CW_AGENT_MSI_COMMAND= "curl.exe -L -o ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi --retry 5 --retry-all-errors --retry-delay 5" >> $GITHUB_ENV
+            echo GET_CW_AGENT_MSI_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/packaging/9a7a1eb68294d5b11fef1cef172ae7d29c7ae4d8/amazon-cloudwatch-agent.msi ./amazon-cloudwatch-agent.msi" >> $GITHUB_ENV
           fi
 
       - name: Set up terraform
