@@ -47,6 +47,7 @@ def run_local_root_client_call_recurring_service():
 run_local_root_client_call_recurring_service()
 
 def healthcheck(request):
+    logger.warn("This is a custom log for validation testing")
     return HttpResponse("healthcheck")
 
 def aws_sdk_call(request):

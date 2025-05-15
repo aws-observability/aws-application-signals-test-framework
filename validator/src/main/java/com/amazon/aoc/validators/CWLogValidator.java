@@ -68,7 +68,8 @@ public class CWLogValidator implements IValidator {
           Map<String, Object> actualLog;
 
           if (isOtlpSigV4Log(expectedAttributes)) {
-                    actualLog = this.getActualOtlpSigV4Log();
+                    String traceId = (String) expectedAttributes.get("traceId");
+                    actualLog = this.getActualOtlpSigV4Log(traceId);
           } else {
             String operation = (String) expectedAttributes.get("Operation");
             String remoteService = (String) expectedAttributes.get("RemoteService");
@@ -234,12 +235,20 @@ public class CWLogValidator implements IValidator {
     return JsonFlattener.flattenAsMap(retrievedLogs.get(0).getMessage());
   }
 
-  private Map<String, Object> getActualOtlpSigV4Log() throws Exception {
-    // Filter pattern to match OTLP SigV4 logs
-    String filterPattern = String.format(
-        "{ ($.attributes.otelServiceName = \"%s\") }", 
-        context.getServiceName()
-    );
+  private Map<String, Object> getActualOtlpSigV4Log(String traceId) throws Exception {
+    String filterPattern;
+    if (traceId != null && !traceId.isEmpty()) {
+        filterPattern = String.format(
+            "{ ($.attributes.otelServiceName = \"%s\") && ($.traceId = \"%s\") && ($.body = \"This is a custom log for validation testing\") }",
+            context.getServiceName(),
+            traceId
+        );
+    } else {
+        filterPattern = String.format(
+            "{ ($.attributes.otelServiceName = \"%s\") && ($.body = \"This is a custom log for validation testing\") }",
+            context.getServiceName()
+        );
+    }
     log.info("Filter Pattern for OTLP SigV4 Log Search: " + filterPattern);
 
     List<FilteredLogEvent> retrievedLogs =
