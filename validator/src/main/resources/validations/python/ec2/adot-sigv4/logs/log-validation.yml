@@ -1,3 +1,0 @@
--
-  validationType: "cw-log"
-  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_SIGV4_LOG"

@@ -67,8 +67,8 @@ public class CWLogValidator implements IValidator {
           log.info("Searching for expected log: {}", expectedAttributes);
           Map<String, Object> actualLog;
 
-          if (isOtlpSigV4Log(expectedAttributes)) {
-                    actualLog = this.getActualOtlpSigV4Log();
+          if (isAwsOtlpLog(expectedAttributes)) {
+                    actualLog = this.getActualAwsOtlpLog();
           } else {
             String operation = (String) expectedAttributes.get("Operation");
             String remoteService = (String) expectedAttributes.get("RemoteService");
@@ -151,7 +151,7 @@ public class CWLogValidator implements IValidator {
     return flattenedJsonMapForExpectedLogArray;
   }
 
-  private boolean isOtlpSigV4Log(Map<String, Object> expectedAttributes) {
+  private boolean isAwsOtlpLog(Map<String, Object> expectedAttributes) {
     // OTLP SigV4 logs have 'body' as a top-level attribute
     return expectedAttributes.containsKey("body") &&
            expectedAttributes.containsKey("severityNumber") &&
@@ -234,12 +234,12 @@ public class CWLogValidator implements IValidator {
     return JsonFlattener.flattenAsMap(retrievedLogs.get(0).getMessage());
   }
 
-  private Map<String, Object> getActualOtlpSigV4Log() throws Exception {
+  private Map<String, Object> getActualAwsOtlpLog() throws Exception {
     String filterPattern= String.format(
             "{ ($.attributes.otelServiceName = \"%s\") && ($.body = \"This is a custom log for validation testing\") }",
             context.getServiceName()
         );
-    log.info("Filter Pattern for OTLP SigV4 Log Search: " + filterPattern);
+    log.info("Filter Pattern for OTLP Log Search: " + filterPattern);
 
     List<FilteredLogEvent> retrievedLogs =
         this.cloudWatchService.filterLogs(
