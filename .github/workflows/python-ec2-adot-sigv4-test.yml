@@ -6,9 +6,6 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Python EC2 ADOT SigV4 (Stand-Alone ADOT) Use Case
 on:
-  push:
-    branches:
-      - Python_SigV4_logs_release_testing
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -36,9 +33,9 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: 'us-west-2'
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
-  PYTHON_VERSION: ${{ inputs.python-version || '3.9' }}
-  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
-  ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name || 'aws_opentelemetry_distro-0.9.0.dev0-0cb3a1b0-py3-none-any.whl' }}
+  PYTHON_VERSION: ${{ inputs.python-version }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
@@ -80,15 +77,15 @@ jobs:
 
       - name: Set Get ADOT Wheel command environment variable
         run: |
-          # if [ "${{ github.event.repository.name }}" = "aws-otel-python-instrumentation" ]; then
+          if [ "${{ github.event.repository.name }}" = "aws-otel-python-instrumentation" ]; then
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
-          echo GET_ADOT_WHEEL_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/${{ env.ADOT_WHEEL_NAME }} ./${{ env.ADOT_WHEEL_NAME }} && sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> $GITHUB_ENV
-          # else
-          #   latest_release_version=$(curl -sL https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest | grep -oP '/releases/tag/v\K[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
-          #   echo "The latest version is $latest_release_version"
-          #   echo GET_ADOT_WHEEL_COMMAND="wget -O ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-$latest_release_version-py3-none-any.whl \
-          #   && sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> $GITHUB_ENV
-          # fi
+            echo GET_ADOT_WHEEL_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/${{ env.ADOT_WHEEL_NAME }} ./${{ env.ADOT_WHEEL_NAME }} && sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> $GITHUB_ENV
+          else
+            latest_release_version=$(curl -sL https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest | grep -oP '/releases/tag/v\K[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+            echo "The latest version is $latest_release_version"
+            echo GET_ADOT_WHEEL_COMMAND="wget -O ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-$latest_release_version-py3-none-any.whl \
+            && sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> $GITHUB_ENV
+          fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
