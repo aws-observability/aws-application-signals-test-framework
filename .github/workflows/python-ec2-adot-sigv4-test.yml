@@ -40,6 +40,7 @@ env:
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: aws/spans
+  TEST_LOG_GROUP_NAME: otlp_logs
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
@@ -121,6 +122,7 @@ jobs:
               -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
               -var="language_version=${{ env.PYTHON_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="test_log_group=${{ env.TEST_LOG_GROUP_NAME }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
@@ -170,7 +172,7 @@ jobs:
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
         id: log-validation
-        run: ./gradlew validator:run --args='-c python/ec2/adot-sigv4/log-validation.yml
+        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
@@ -187,10 +189,10 @@ jobs:
       - name: Validate generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c python/ec2/adot-sigv4/metric-validation.yml
+        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
+          --remote-service-deployment-name python-sample-remote-application-${{ env.TESTING_ID }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
@@ -204,7 +206,7 @@ jobs:
       - name: Validate generated traces
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c python/ec2/adot-sigv4/trace-validation.yml
+        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
@@ -212,6 +214,23 @@ jobs:
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+      
+      - name: Validate generated otlp logs
+        id: log-validation-1
+        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/logs/log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8000
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.TEST_LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}

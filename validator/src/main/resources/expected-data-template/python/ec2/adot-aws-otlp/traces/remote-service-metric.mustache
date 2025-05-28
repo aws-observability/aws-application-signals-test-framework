@@ -4,7 +4,7 @@
   dimensions:
     -
       name: Operation
-      value: GET outgoing-http-call
+      value: GET remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -18,7 +18,7 @@
   dimensions:
     -
       name: Operation
-      value: UnmappedOperation
+      value: GET remote-service
     -
       name: Service
       value: {{serviceName}}
@@ -27,10 +27,24 @@
       value: ec2:default
     -
       name: RemoteOperation
-      value: GET /
+      value: GET healthcheck
     -
       name: RemoteService
-      value: www.amazon.com
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
 
 -
   metricName: Latency
@@ -49,16 +63,10 @@
   dimensions:
     -
       name: Service
-      value: {{serviceName}}
+      value: {{remoteServiceName}}
     -
       name: Environment
       value: ec2:default
-    -
-      name: RemoteOperation
-      value: GET /
-    -
-      name: RemoteService
-      value: www.amazon.com
 
 -
   metricName: Latency
@@ -72,55 +80,10 @@
       value: ec2:default
     -
       name: RemoteService
-      value: www.amazon.com
+      value: {{remoteServiceDeploymentName}}
 
 -
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET outgoing-http-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: UnmappedOperation
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: RemoteOperation
-      value: GET /
-    -
-      name: RemoteService
-      value: www.amazon.com
-
--
-  metricName: Error
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Error
+  metricName: Latency
   namespace: {{metricNamespace}}
   dimensions:
     -
@@ -131,10 +94,88 @@
       value: ec2:default
     -
       name: RemoteOperation
-      value: GET /
+      value: GET healthcheck
     -
       name: RemoteService
-      value: www.amazon.com
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: Environment
+      value: ec2:default
 
 -
   metricName: Error
@@ -148,55 +189,10 @@
       value: ec2:default
     -
       name: RemoteService
-      value: www.amazon.com
+      value: {{remoteServiceDeploymentName}}
 
 -
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: GET outgoing-http-call
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Operation
-      value: UnmappedOperation
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: RemoteOperation
-      value: GET /
-    -
-      name: RemoteService
-      value: www.amazon.com
-
--
-  metricName: Fault
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ec2:default
-
--
-  metricName: Fault
+  metricName: Error
   namespace: {{metricNamespace}}
   dimensions:
     -
@@ -207,10 +203,88 @@
       value: ec2:default
     -
       name: RemoteOperation
-      value: GET /
+      value: GET healthcheck
     -
       name: RemoteService
-      value: www.amazon.com
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: Environment
+      value: ec2:default
 
 -
   metricName: Fault
@@ -224,4 +298,29 @@
       value: ec2:default
     -
       name: RemoteService
-      value: www.amazon.com
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
