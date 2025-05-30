@@ -1,7 +1,6 @@
 [{
   "resource": {
     "attributes": {
-      "aws.local.service": "{{serviceName}}",
       "service.name": "{{serviceName}}",
       "cloud.provider": "aws",
       "cloud.region": "{{region}}",
@@ -14,7 +13,4 @@
   "body": "This is a custom log for validation testing",
   "traceId": "{{traceId}}",
   "spanId": "{{spanId}}",
-  "attributes": {
-    "otelServiceName": "{{serviceName}}"
-  }
 }]

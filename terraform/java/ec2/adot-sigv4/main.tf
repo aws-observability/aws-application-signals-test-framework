@@ -139,7 +139,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces
       export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs
-      export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=otlp_sigv4_logs,x-aws-log-stream=default
+      export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.test_log_group},x-aws-log-stream=default
       export OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id}
       nohup java -jar main-service.jar &> nohup.out &
 
@@ -230,8 +230,8 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces
       export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs
-      export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=otlp_sigv4_logs,x-aws-log-stream=default
-      export OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id}
+      export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.test_log_group},x-aws-log-stream=default
+      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \
       nohup java -jar remote-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
