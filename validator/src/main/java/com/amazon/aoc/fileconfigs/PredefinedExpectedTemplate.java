@@ -135,7 +135,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/traces/client-call-trace.mustache"),
 
   /** Java EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  JAVA_EC2_ADOT_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/logs/log.mustache"),
+  JAVA_EC2_ADOT_OTLP_LOG("/expected-data-template/java/ec2/adot-aws-otlp/logs/log.mustache"),
 
   /** Java EC2 K8s Test Case Validations */
   JAVA_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/k8s/outgoing-http-call-log.mustache"),
