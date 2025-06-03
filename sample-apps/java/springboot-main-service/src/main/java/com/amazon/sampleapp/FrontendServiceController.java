@@ -94,6 +94,7 @@ public class FrontendServiceController {
     if (testingId != null) {
       bucketName += "-" + testingId;
     }
+    logger.warn("This is a custom log for validation testing");
     GetBucketLocationRequest bucketLocationRequest =
             GetBucketLocationRequest.builder().bucket(bucketName).build();
     try {
