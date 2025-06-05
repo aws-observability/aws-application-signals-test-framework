@@ -144,7 +144,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
       OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id} \
+      OTEL_RESOURCE_ATTRIBUTES="service.name=sample-application-${var.test_id},Internal_Org=Financial,Business Unit=Payments,Region=us-east-1,aws.application_signals.metric_resource_keys=Business Unit&Region&Organization" \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       nohup java -XX:+UseG1GC -jar main-service.jar &> nohup.out &
 

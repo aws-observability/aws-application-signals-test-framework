@@ -21,6 +21,10 @@
     "default": {
       "EC2.InstanceId": "^{{instanceId}}$",
       "PlatformType": "^AWS::EC2$",
+      "otel.resource.Internal_Org": "Financial",
+      "otel.resource.Business Unit": "Payments",
+      "otel.resource.Region": "us-east-1",
+      "otel.resource.aws.application_signals.metric_resource_keys": "Business Unit&Region&Organization",
       "otel.resource.host.image.id": "^{{instanceAmi}}$",
       "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$",
       "aws.span.kind": "^LOCAL_ROOT$"
