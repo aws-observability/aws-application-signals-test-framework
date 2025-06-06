@@ -232,8 +232,8 @@ jobs:
           --rollup'
       
       - name: Validate generated otlp logs
-        id: log-validation-1
-        run: ./gradlew validator:run --args='-c java/ec2/adot-aws-otlp/logs/log-validation.yml
+        id: application-log-validation
+        run: ./gradlew validator:run --args='-c java/ec2/adot-aws-otlp/logs/application-log-validation.yml
               --testing-id ${{ env.TESTING_ID }}
               --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
               --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080

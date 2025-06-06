@@ -116,26 +116,26 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_UBUNTU_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/ubuntu/client-call-trace.mustache"),
 
   /** Java EC2 ADOT SigV4 (ADOT Stand-Alone) Test Case Validations */
-  JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/traces/outgoing-http-call-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
-      "/expected-data-template/java/ec2/adot-aws-otlp/traces/outgoing-http-call-metric.mustache"),
+      "/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-metric.mustache"),
   JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_TRACE(
-      "/expected-data-template/java/ec2/adot-aws-otlp/traces/outgoing-http-call-trace.mustache"),
+      "/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-trace.mustache"),
 
-  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/traces/aws-sdk-call-log.mustache"),
-  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/java/ec2/adot-aws-otlp/traces/aws-sdk-call-metric.mustache"),
-  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/traces/aws-sdk-call-trace.mustache"),
+  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/aws-sdk-call-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/java/ec2/adot-aws-otlp/aws-sdk-call-metric.mustache"),
+  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/aws-sdk-call-trace.mustache"),
 
-  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/java/ec2/adot-aws-otlp/traces/remote-service-log.mustache"),
-  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/java/ec2/adot-aws-otlp/traces/remote-service-metric.mustache"),
-  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/traces/remote-service-trace.mustache"),
+  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/java/ec2/adot-aws-otlp/remote-service-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/java/ec2/adot-aws-otlp/remote-service-metric.mustache"),
+  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/remote-service-trace.mustache"),
 
-  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/traces/client-call-log.mustache"),
-  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/adot-aws-otlp/traces/client-call-metric.mustache"),
-  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/traces/client-call-trace.mustache"),
+  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/client-call-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/adot-aws-otlp/client-call-metric.mustache"),
+  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/client-call-trace.mustache"),
 
   /** Java EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  JAVA_EC2_ADOT_OTLP_LOG("/expected-data-template/java/ec2/adot-aws-otlp/logs/log.mustache"),
+  JAVA_EC2_ADOT_OTLP_LOG("/expected-data-template/java/ec2/adot-aws-otlp/logs/application-log.mustache"),
 
   /** Java EC2 K8s Test Case Validations */
   JAVA_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/k8s/outgoing-http-call-log.mustache"),
