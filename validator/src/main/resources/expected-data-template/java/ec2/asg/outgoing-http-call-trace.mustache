@@ -21,6 +21,7 @@
     "default": {
       "EC2.AutoScalingGroup": "^{{platformInfo}}$",
       "EC2.InstanceId": "^{{instanceId}}$",
+      "otel.resource.aws.application_signals.metric_resource_keys": "all_attributes",
       "otel.resource.ec2.tag.aws:autoscaling:groupName": "^{{platformInfo}}$",
       "otel.resource.host.id": "^{{instanceId}}$",
       "otel.resource.host.image.id": "^{{instanceAmi}}$",
