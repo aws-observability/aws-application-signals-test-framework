@@ -48,3 +48,7 @@ variable "language_version" {
 variable "cpu_architecture" {
   default = "x86_64"
 }
+
+variable "test_log_group" {
+  default = "otlp_logs"
+}

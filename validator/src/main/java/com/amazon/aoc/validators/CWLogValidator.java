@@ -236,7 +236,7 @@ public class CWLogValidator implements IValidator {
 
   private Map<String, Object> getActualAwsOtlpLog() throws Exception {
     String filterPattern= String.format(
-            "{ ($.attributes.otelServiceName = \"%s\") && ($.body = \"This is a custom log for validation testing\") }",
+            "{ ($.resource.attributes.['service.name'] = \"%s\") && ($.body = \"This is a custom log for validation testing\") }",
             context.getServiceName()
         );
     log.info("Filter Pattern for OTLP Log Search: " + filterPattern);
