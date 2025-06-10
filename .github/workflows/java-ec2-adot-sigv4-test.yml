@@ -8,6 +8,9 @@
 # This test case validates ADOT used on its own to send traces to the X-Ray OTLP endpoint with SigV4 authentication
 name: Java EC2 ADOT SigV4 (Stand-Alone ADOT) Use Case
 on:
+  push:
+    branches:
+      - Java_SigV4_logs_release_testing
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -37,12 +40,12 @@ env:
   E2E_TEST_AWS_REGION: 'us-west-2' # Test uses us-west-2 in the us-east-1 accoun
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   METRIC_NAMESPACE: ApplicationSignals
-  JAVA_VERSION: ${{ inputs.java-version }}
-  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  JAVA_VERSION: ${{ inputs.java-version || '11' }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }} # us-east-1 test account
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  LOG_GROUP_NAME: aws/spans
-  TEST_LOG_GROUP_NAME: otlp_logs
+  SPANS_LOG_GROUP_NAME: aws/spans 
+  APPLICATION_LOGS_LOG_GROUP_NAME: otlp_logs # This log group was created manually to store application logs
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
@@ -87,11 +90,11 @@ jobs:
 
       - name: Set ADOT getter command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
-            echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
-          else
-            echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
-          fi
+          # if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
+          echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
+          # else
+          #   echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
+          # fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -129,7 +132,7 @@ jobs:
               -var="get_adot_jar_command=${{ env.GET_ADOT_JAR_COMMAND }}" \
               -var="language_version=${{ env.JAVA_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
-              -var="test_log_group=${{ env.TEST_LOG_GROUP_NAME }}" \
+              -var="application_logs_log_group=${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then
@@ -187,7 +190,7 @@ jobs:
               --region ${{ env.E2E_TEST_AWS_REGION }}
               --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
               --metric-namespace ${{ env.METRIC_NAMESPACE }}
-              --log-group ${{ env.LOG_GROUP_NAME }}
+              --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
               --service-name sample-application-${{ env.TESTING_ID }}
               --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
               --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
@@ -205,7 +208,7 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
@@ -223,7 +226,7 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
@@ -233,14 +236,14 @@ jobs:
       
       - name: Validate generated otlp logs
         id: application-log-validation
-        run: ./gradlew validator:run --args='-c java/ec2/adot-aws-otlp/logs/application-log-validation.yml
+        run: ./gradlew validator:run --args='-c java/ec2/adot-aws-otlp/application-log-validation.yml
               --testing-id ${{ env.TESTING_ID }}
               --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
               --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
               --region ${{ env.E2E_TEST_AWS_REGION }}
               --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
               --metric-namespace ${{ env.METRIC_NAMESPACE }}
-              --log-group ${{ env.TEST_LOG_GROUP_NAME }}
+              --log-group ${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}
               --service-name sample-application-${{ env.TESTING_ID }}
               --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
               --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
