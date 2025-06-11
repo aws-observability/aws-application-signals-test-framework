@@ -225,26 +225,26 @@ public enum PredefinedExpectedTemplate implements FileConfig {
 
   /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
-      "/expected-data-template/python/ec2/adot-aws-otlp/traces/outgoing-http-call-log.mustache"),
+      "/expected-data-template/python/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
-      "/expected-data-template/python/ec2/adot-aws-otlp/traces/outgoing-http-call-metric.mustache"),
+      "/expected-data-template/python/ec2/adot-aws-otlp/outgoing-http-call-metric.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_TRACE(
-      "/expected-data-template/python/ec2/adot-aws-otlp/traces/outgoing-http-call-trace.mustache"),
+      "/expected-data-template/python/ec2/adot-aws-otlp/outgoing-http-call-trace.mustache"),
 
-  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/python/ec2/adot-aws-otlp/traces/aws-sdk-call-log.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/traces/aws-sdk-call-metric.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/traces/aws-sdk-call-trace.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/python/ec2/adot-aws-otlp/aws-sdk-call-log.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/aws-sdk-call-metric.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/aws-sdk-call-trace.mustache"),
 
-  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/python/ec2/adot-aws-otlp/traces/remote-service-log.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/traces/remote-service-metric.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/traces/remote-service-trace.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/python/ec2/adot-aws-otlp/remote-service-log.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/remote-service-metric.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/remote-service-trace.mustache"),
 
-  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/python/ec2/adot-aws-otlp/traces/client-call-log.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/traces/client-call-metric.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/traces/client-call-trace.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/python/ec2/adot-aws-otlp/client-call-log.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/client-call-metric.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/client-call-trace.mustache"),
 
   /** Python EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  PYTHON_EC2_ADOT_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/logs/log.mustache"),
+  PYTHON_EC2_ADOT_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/application-log.mustache"),
 
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
@@ -329,7 +329,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_ASG_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/asg/client-call-metric.mustache"),
   DOTNET_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/asg/client-call-trace.mustache"),
 
-  /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  /** DotNet EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
   DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/dotnet/ec2/adot-sigv4/outgoing-http-call-log.mustache"),
   DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
@@ -452,7 +452,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_K8S_CLIENT_CALL_METRIC("/expected-data-template/node/k8s/client-call-metric.mustache"),
   NODE_K8S_CLIENT_CALL_TRACE("/expected-data-template/node/k8s/client-call-trace.mustache"),
 
-  /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  /** Node EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
   NODE_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/node/ec2/adot-sigv4/outgoing-http-call-log.mustache"),
   NODE_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(

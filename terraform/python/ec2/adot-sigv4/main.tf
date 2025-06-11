@@ -168,7 +168,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_TRACES_EXPORTER=otlp \
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
       export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
-      export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.test_log_group},x-aws-log-stream=default \
+      export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
       export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true \
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
@@ -292,7 +292,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_TRACES_EXPORTER=otlp \
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
       export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
-      export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.test_log_group},x-aws-log-stream=default \
+      export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
       export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true \
       export OTEL_SERVICE_NAME=python-sample-remote-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
