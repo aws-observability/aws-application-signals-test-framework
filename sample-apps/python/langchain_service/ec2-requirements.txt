@@ -1,0 +1,13 @@
+langchain
+langchain-community
+opentelemetry-sdk
+opentelemetry-api
+opentelemetry-semantic-conventions
+python-dotenv
+openlit
+botocore
+setuptools
+boto3
+./aws_opentelemetry_distro_genai_beta-0.1.0b8-py3-none-any.whl
+fastapi
+uvicorn[standard]
