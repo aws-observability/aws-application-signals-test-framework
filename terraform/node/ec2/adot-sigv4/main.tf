@@ -154,11 +154,14 @@ resource "null_resource" "main_service_setup" {
       # Note: We use OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express to avoid
       # having to validate around the telemetry generated for middleware
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false' C-m
-      tmux send-keys -t frontend 'export OTEL_LOGS_EXPORTER=none' C-m
+      tmux send-keys -t frontend 'export OTEL_LOGS_EXPORTER=otlp' C-m
       tmux send-keys -t frontend 'export OTEL_METRICS_EXPORTER=none' C-m
       tmux send-keys -t frontend 'export OTEL_TRACES_EXPORTER=otlp' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default' C-m
       tmux send-keys -t frontend 'export OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express' C-m
       tmux send-keys -t frontend 'export OTEL_SERVICE_NAME=node-sample-application-${var.test_id}' C-m
       tmux send-keys -t frontend 'export OTEL_TRACES_SAMPLER=always_on' C-m
@@ -263,11 +266,14 @@ resource "null_resource" "remote_service_setup" {
       # Note: We use OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express to avoid
       # having to validate around the telemetry generated for middleware
       tmux send-keys -t remote 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false' C-m
-      tmux send-keys -t remote 'export OTEL_LOGS_EXPORTER=none' C-m
+      tmux send-keys -t remote 'export OTEL_LOGS_EXPORTER=otlp' C-m
       tmux send-keys -t remote 'export OTEL_METRICS_EXPORTER=none' C-m
       tmux send-keys -t remote 'export OTEL_TRACES_EXPORTER=otlp' C-m
       tmux send-keys -t remote 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf' C-m
+      tmux send-keys -t remote 'export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t remote 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces' C-m
+      tmux send-keys -t remote 'export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs' C-m
+      tmux send-keys -t remote 'export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default' C-m
       tmux send-keys -t remote 'export OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express' C-m
       tmux send-keys -t remote 'export OTEL_SERVICE_NAME=node-sample-remote-application-${var.test_id}' C-m
       tmux send-keys -t remote 'export OTEL_TRACES_SAMPLER=always_on' C-m

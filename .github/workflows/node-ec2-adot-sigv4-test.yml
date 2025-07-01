@@ -6,6 +6,9 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Node EC2 ADOT SigV4 Use Case
 on:
+  push:
+    branches:
+      - Node_SigV4_logs_release_testing
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -34,13 +37,14 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: 'us-west-2'
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
-  NODE_VERSION: ${{ inputs.node-version }}
-  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
-  ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name }}
+  NODE_VERSION: ${{ inputs.node-version || 'none' }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
+  ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name || 'aws-aws-distro-opentelemetry-node-autoinstrumentation-0.6.0-dev0.tgz' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
-  LOG_GROUP_NAME: aws/spans
+  SPANS_LOG_GROUP_NAME: aws/spans
+  APPLICATION_LOGS_LOG_GROUP_NAME: otlp_logs # This log group was created manually to store application logs
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
@@ -80,11 +84,11 @@ jobs:
 
       - name: Set Get ADOT Instrumentation command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
-            echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-          else
-            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-          fi
+          # if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
+          echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+          # else
+          #   echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+          # fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -121,6 +125,7 @@ jobs:
               -var="get_adot_instrumentation_command=${{ env.GET_ADOT_INSTRUMENTATION_COMMAND }}" \
               -var="language_version=${{ env.NODE_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="application_logs_log_group=${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then
@@ -171,14 +176,14 @@ jobs:
       # Validation for pulse telemetry data
       - name: Validate generated EMF logs
         id: log-validation
-        run: ./gradlew validator:run --args='-c node/ec2/adot-sigv4/log-validation.yml
+        run: ./gradlew validator:run --args='-c node/ec2/adot-aws-otlp/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name node-sample-application-${{ env.TESTING_ID }}
           --remote-service-name node-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
@@ -189,14 +194,14 @@ jobs:
       - name: Validate generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c node/ec2/adot-sigv4/metric-validation.yml
+        run: ./gradlew validator:run --args='-c node/ec2/adot-aws-otlp/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name node-sample-remote-application-${{ env.TESTING_ID }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name node-sample-application-${{ env.TESTING_ID }}
           --remote-service-name node-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
@@ -207,14 +212,31 @@ jobs:
       - name: Validate generated traces
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c node/ec2/adot-sigv4/trace-validation.yml
+        run: ./gradlew validator:run --args='-c node/ec2/adot-aws-otlp/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
+          --service-name node-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name node-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+
+      - name: Validate generated otlp logs
+        id: application-log-validation
+        run: ./gradlew validator:run --args='-c node/ec2/adot-aws-otlp/application-log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}
           --service-name node-sample-application-${{ env.TESTING_ID }}
           --remote-service-name node-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
