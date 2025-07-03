@@ -3,14 +3,18 @@
 const http = require('http');
 const express = require('express');
 const mysql = require('mysql2');
+const bunyan = require('bunyan');
 const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
 
 const PORT = parseInt(process.env.SAMPLE_APP_PORT || '8000', 10);
 
 const app = express();
 
+// Create bunyan logger
+const logger = bunyan.createLogger({name: 'express-app', level: 'info'});
+
 app.get('/healthcheck', (req, res) => {
-  console.log(`/healthcheck called successfully`)
+  logger.info('/healthcheck called successfully');
   res.send('healthcheck');
 });
 
@@ -23,12 +27,14 @@ app.get('/outgoing-http-call', (req, res) => {
   const httpRequest = http.request(options, (rs) => {
     rs.setEncoding('utf8');
     rs.on('data', (result) => {
-      console.log(`/outgoing-http-call called successfully`)
-      res.send(`/outgoing-http-call called successfully`);
+      const msg = '/outgoing-http-call called successfully';
+      logger.info(msg);
+      res.send(msg);
     });
     rs.on('error', (err) => {
-      console.log(`/outgoing-http-call called with error: ${err}`)
-      res.send(`/outgoing-http-call called with error: ${err}`);
+      const msg = `/outgoing-http-call called with error: ${err}`;
+      logger.error(msg);
+      res.send(msg);
     });
   });
   httpRequest.end();
@@ -43,13 +49,15 @@ app.get('/aws-sdk-call', async (req, res) => {
         Bucket: bucketName,
       }),
     ).then((data) => {
-      console.log('/aws-sdk-call called successfully; UNEXPECTEDLY RETURNED DATA: ' + data);
-      res.send('/aws-sdk-call called successfully; UNEXPECTEDLY RETURNED DATA: ' + data);
+      const msg = '/aws-sdk-call called successfully; UNEXPECTEDLY RETURNED DATA: ' + data;
+      logger.info(msg);
+      res.send(msg);
     });
   } catch (e) {
     if (e instanceof Error) {
-      console.log('/aws-sdk-call called successfully')
-      res.send('/aws-sdk-call called successfully');
+      const msg = '/aws-sdk-call called successfully';
+      logger.info(msg);
+      res.send(msg);
     }
   }
 });
@@ -66,14 +74,16 @@ app.get('/remote-service', (req, res) => {
   const request = http.request(options, (rs) => {
     rs.setEncoding('utf8');
     rs.on('data', (result) => {
-      console.log(`/remote-service called successfully: ${result}`);
-      res.send(`/remote-service called successfully: ${result}`);
+      const msg = `/remote-service called successfully: ${result}`;
+      logger.info(msg);
+      res.send(msg);
     });
   });
   request.on('error', (err) => {
-    console.log('/remote-service called with errors: ' + err.errors);
-    res.send('/remote-service called with errors: ' + err.errors);
-  })
+    const msg = '/remote-service called with errors: ' + err.errors;
+    logger.error(msg);
+    res.send(msg);
+  });
   request.end();
 });
 
@@ -82,12 +92,14 @@ let makeAsyncCall = false;
 setInterval(() => {
   if (makeAsyncCall) {
     makeAsyncCall = false;
-    console.log('Async call triggered by /client-call API');
+    logger.info('Async call triggered by /client-call API');
 
     const request = http.get('http://local-root-client-call', (rs) => {
       rs.setEncoding('utf8');
       rs.on('data', (result) => {
-        res.send(`GET local-root-client-call response: ${result}`);
+        const msg = `GET local-root-client-call response: ${result}`;
+        logger.info(msg);
+        res.send(msg);
       });
     });
     request.on('error', (err) => {}); // Expected
@@ -96,9 +108,9 @@ setInterval(() => {
 }, 5000); // Check every 5 seconds
 
 app.get('/client-call', (req, res) => {
-  res.send('/client-call called successfully');
-  console.log('/client-call called successfully');
-
+  const msg = '/client-call called successfully';
+  logger.info(msg);
+  res.send(msg);
   // Trigger async call to generate telemetry for InternalOperation use case
   makeAsyncCall = true;
 });
@@ -115,8 +127,9 @@ app.get('/mysql', (req, res) => {
   // Connect to the database
   connection.connect((err) => {
     if (err) {
-      console.log('/mysql called with an error: ', err.errors);
-      return res.status(500).send('/mysql called with an error: ' + err.errors);
+      const msg = '/mysql called with an error: ' + err.errors;
+      logger.error(msg);
+      return res.status(500).send(msg);
     }
 
     // Perform a simple query
@@ -125,15 +138,19 @@ app.get('/mysql', (req, res) => {
       connection.end();
 
       if (queryErr) {
-        return res.status(500).send('Could not complete http request to RDS database:' + queryErr.message);
+        const msg = 'Could not complete http request to RDS database:' + queryErr.message;
+        logger.error(msg);
+        return res.status(500).send(msg);
       }
 
       // Send the query results as the response
-      res.send(`/outgoing-http-call response: ${results}`);
+      const msg = `/outgoing-http-call response: ${results}`;
+      logger.info(msg);
+      res.send(msg);
     });
   });
 });
 
 app.listen(PORT, () => {
-  console.log(`Listening for requests on http://localhost:${PORT}`);
+  logger.info(`Listening for requests on http://localhost:${PORT}`);
 });
