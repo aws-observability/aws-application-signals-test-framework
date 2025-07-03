@@ -6,9 +6,6 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Node EC2 ADOT SigV4 Use Case
 on:
-  push:
-    branches:
-      - Node_SigV4_logs_release_testing
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -37,9 +34,9 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: 'us-west-2'
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
-  NODE_VERSION: ${{ inputs.node-version || 'none' }}
-  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
-  ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name || 'aws-aws-distro-opentelemetry-node-autoinstrumentation-0.6.0-dev0.tgz' }}
+  NODE_VERSION: ${{ inputs.node-version }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
@@ -84,11 +81,11 @@ jobs:
 
       - name: Set Get ADOT Instrumentation command environment variable
         run: |
-          # if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
-          echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-          # else
-          #   echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-          # fi
+          if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+          else
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+          fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -259,4 +256,3 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="test_id=${{ env.TESTING_ID }}"
-            
