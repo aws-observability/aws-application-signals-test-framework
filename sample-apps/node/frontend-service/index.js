@@ -43,6 +43,11 @@ app.get('/outgoing-http-call', (req, res) => {
 app.get('/aws-sdk-call', async (req, res) => {
   const s3Client = new S3Client({ region: 'us-east-1' });
   const bucketName = 'e2e-test-bucket-name-' + (req.query.testingId || 'MISSING_ID');
+
+  // Add custom warning log for validation testing
+  const warningMsg = "This is a custom log for validation testing";
+  logger.warn(warningMsg);
+  
   try {
     await s3Client.send(
       new GetBucketLocationCommand({
