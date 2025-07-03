@@ -63,7 +63,7 @@ app.get('/aws-sdk-call', async (req, res) => {
 });
 
 app.get('/remote-service', (req, res) => {
-  const endpoint = req.query.ip || '*********';
+  const endpoint = req.query.ip || 'localhost';
   const options = {
     hostname: endpoint,
     port: 8001,
@@ -87,6 +87,7 @@ app.get('/remote-service', (req, res) => {
   request.end();
 });
 
+// The following logic serves as the async call made by the /client-call API
 let makeAsyncCall = false;
 setInterval(() => {
   if (makeAsyncCall) {
@@ -104,16 +105,18 @@ setInterval(() => {
     request.on('error', (err) => {}); // Expected
     request.end();
   }
-}, 5000);
+}, 5000); // Check every 5 seconds
 
 app.get('/client-call', (req, res) => {
   const msg = '/client-call called successfully';
   logger.info(msg);
   res.send(msg);
+  // Trigger async call to generate telemetry for InternalOperation use case
   makeAsyncCall = true;
 });
 
 app.get('/mysql', (req, res) => {
+  // Create a connection to the MySQL database
   const connection = mysql.createConnection({
     host: process.env.RDS_MYSQL_CLUSTER_ENDPOINT,
     user: process.env.RDS_MYSQL_CLUSTER_USERNAME,
@@ -121,6 +124,7 @@ app.get('/mysql', (req, res) => {
     database: process.env.RDS_MYSQL_CLUSTER_DATABASE,
   });
 
+  // Connect to the database
   connection.connect((err) => {
     if (err) {
       const msg = '/mysql called with an error: ' + err.errors;
@@ -128,7 +132,9 @@ app.get('/mysql', (req, res) => {
       return res.status(500).send(msg);
     }
 
+    // Perform a simple query
     connection.query('SELECT * FROM tables LIMIT 1;', (queryErr, results) => {
+      // Close the connection
       connection.end();
 
       if (queryErr) {
@@ -137,6 +143,7 @@ app.get('/mysql', (req, res) => {
         return res.status(500).send(msg);
       }
 
+      // Send the query results as the response
       const msg = `/outgoing-http-call response: ${results}`;
       logger.info(msg);
       res.send(msg);
