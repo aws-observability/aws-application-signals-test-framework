@@ -77,8 +77,8 @@ yum install -y python3.12 python3.12-pip unzip bc
 
 mkdir -p /app
 cd /app
-aws s3 cp ${var.service_zip_url} langchain-service.zip
-unzip langchain-service.zip
+aws s3 cp ${var.service_zip_url} genai-service.zip
+unzip genai-service.zip
 
 # Having issues installing dependencies from ec2-requirements.txt as these dependencies are quite large and cause timeouts/memory issues on EC2, manually installing instead
 python3.12 -m pip install fastapi uvicorn[standard] --no-cache-dir
@@ -97,6 +97,20 @@ export OTEL_RESOURCE_ATTRIBUTES="service.name=langchain-traceloop-app"
 export AGENT_OBSERVABILITY_ENABLED="true"
 
 nohup opentelemetry-instrument python3.12 server.py > /var/log/langchain-service.log 2>&1 &
+
+# Create log upload script
+cat > /app/upload_logs.sh << 'LOG_EOF'
+#!/bin/bash
+while true; do
+    sleep 10
+    if [ -f /var/log/langchain-service.log ]; then
+        aws s3 cp /var/log/langchain-service.log s3://appsignals-genai-test/logs/${var.test_id}/langchain-service-$(date +%%Y%%m%%d-%%H%%M%%S).log
+    fi
+done
+LOG_EOF
+
+chmod +x /app/upload_logs.sh
+nohup /app/upload_logs.sh > /var/log/log-uploader.log 2>&1 &
 
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
@@ -121,11 +135,14 @@ for i in $$(seq 1 $$NUM_REQUESTS); do
     message="$${MESSAGES[$$((RANDOM % $${#MESSAGES[@]}))]}"
     echo "Request $$i: $$message"
     curl -X POST http://localhost:8000/ai-chat -H "Content-Type: application/json" -d "{\"message\": \"$$message\"}" -m $$TIMEOUT
+    aws s3 cp /var/log/langchain-service.log s3://appsignals-genai-test/logs/${var.test_id}/langchain-service-request-$$i.log
     sleep $$DELAY_SECONDS
 done
 TRAFFIC_EOF
 
 chmod +x /app/generate_traffic.sh
+
+
 
 # Start traffic generator in background
 echo "Starting traffic generator..."
