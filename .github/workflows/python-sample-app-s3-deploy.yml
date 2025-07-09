@@ -4,6 +4,9 @@
 name: Sample App Deployment - Python S3
 on:
   workflow_dispatch: # be able to run the workflow on demand
+  push:
+    branches:
+      - genesis-release-test
 
 permissions:
   id-token: write
