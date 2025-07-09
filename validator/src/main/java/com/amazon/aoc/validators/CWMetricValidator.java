@@ -91,7 +91,6 @@ public class CWMetricValidator implements IValidator {
     RetryHelper.retry(
         maxRetryCount,
         () -> {
-
           String httpPath = validationConfig.getHttpPath();
 
           // Special handling for Genesis path - just check if any metrics exists in namespace
