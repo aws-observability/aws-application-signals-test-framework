@@ -6,6 +6,9 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Node EC2 ADOT SigV4 Use Case
 on:
+  push:
+    branches:
+      - genesis-release-test-p2
   workflow_call:
     inputs:
       caller-workflow-name:
