@@ -67,7 +67,7 @@ resource "aws_instance" "main_service_instance" {
   }
 
   root_block_device {
-    volume_size = 5
+    volume_size = 30
   }
   
   user_data = base64encode(<<-EOF
