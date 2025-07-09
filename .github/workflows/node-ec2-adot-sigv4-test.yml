@@ -8,7 +8,7 @@ name: Node EC2 ADOT SigV4 Use Case
 on:
   push:
     branches:
-      - genesis-release-test-p2
+      - genesis-release-test-p1
   workflow_call:
     inputs:
       caller-workflow-name:
