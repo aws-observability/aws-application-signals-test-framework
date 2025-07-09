@@ -116,7 +116,7 @@ jobs:
           echo "INSTANCE_ID=$(terraform output langchain_service_instance_id)" >> $GITHUB_ENV
 
       - name: Wait for Gen AI Chatbot service to be ready
-        run: sleep 120
+        run: sleep 500
 
       - name: Validate generated logs
         run: ./gradlew validator:run --args='-c python/ec2/adot-genai/log-validation.yml
