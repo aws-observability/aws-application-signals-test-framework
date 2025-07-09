@@ -117,7 +117,7 @@ cat > /app/generate_traffic.sh << 'TRAFFIC_EOF'
 SERVER_URL="$${SERVER_URL:-http://localhost:8000}"
 ENDPOINT="$$SERVER_URL/ai-chat"
 DELAY_SECONDS="$${DELAY_SECONDS:-3600}"
-NUM_REQUESTS="$${NUM_REQUESTS:-0}"
+NUM_REQUESTS="$${NUM_REQUESTS:-5}"
 TIMEOUT="$${TIMEOUT:-30}"
 
 
