@@ -106,7 +106,8 @@ jobs:
           terraform apply -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
-            -var="service_zip_url=${{ env.SAMPLE_APP_ZIP }}"
+            -var="service_zip_url=${{ env.SAMPLE_APP_ZIP }}" \
+            -var="trace_id=Root=${{ env.XRAY_TRACE_ID }};Sampled=1"
 
       - name: Get deployment info
         working-directory: terraform/python/ec2/adot-genai
@@ -164,4 +165,5 @@ jobs:
           terraform destroy -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
-            -var="service_zip_url=${{ env.SAMPLE_APP_ZIP }}"
+            -var="service_zip_url=${{ env.SAMPLE_APP_ZIP }}" \
+            -var="trace_id=Root=${{ env.XRAY_TRACE_ID }};Sampled=1"

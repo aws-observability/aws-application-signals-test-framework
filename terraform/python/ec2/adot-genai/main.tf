@@ -34,10 +34,10 @@ locals {
 
 data "aws_ami" "ami" {
   owners = ["amazon"]
-  most_recent      = true
+  most_recent = true
   filter {
     name = "name"
-    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
+    values = ["al2023-ami-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -47,21 +47,6 @@ data "aws_ami" "ami" {
     name   = "architecture"
     values = [var.cpu_architecture]
   }
-  filter {
-    name   = "image-type"
-    values = ["machine"]
-  }
-
-  filter {
-    name   = "root-device-name"
-    values = ["/dev/xvda"]
-  }
-
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
-
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
@@ -129,17 +114,12 @@ cat > /app/generate_traffic.sh << 'TRAFFIC_EOF'
 #!/bin/bash
 
 # Configuration
-SERVER_URL="${SERVER_URL:-http://localhost:8000}"
-ENDPOINT="${SERVER_URL}/ai-chat"
-DELAY_SECONDS="${DELAY_SECONDS:-3600}"
-NUM_REQUESTS="${NUM_REQUESTS:-0}"
-TIMEOUT="${TIMEOUT:-30}"
+SERVER_URL="$${SERVER_URL:-http://localhost:8000}"
+ENDPOINT="$$SERVER_URL/ai-chat"
+DELAY_SECONDS="$${DELAY_SECONDS:-3600}"
+NUM_REQUESTS="$${NUM_REQUESTS:-0}"
+TIMEOUT="$${TIMEOUT:-30}"
 
-# Color codes for output
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
 
 # Array of sample messages
 MESSAGES=(
@@ -162,78 +142,74 @@ MESSAGES=(
 
 # Function to send a request
 send_request() {
-    local message="$1"
-    local request_num="$2"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local message="$$1"
+    local request_num="$$2"
+    local timestamp=$$(date '+%Y-%m-%d %H:%M:%S')
     
-    echo -e "${YELLOW}[$timestamp] Request #$request_num${NC}"
-    echo "Message: \"$message\""
+    echo "[$$timestamp] Request #$$request_num"
+    echo "Message: \"$$message\""
     
-    local trace_id_header="${TRACE_ID:-Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1}"
+    local trace_id_header="$${TRACE_ID:-${var.trace_id}}"
     
-    echo "Using Trace ID: $trace_id_header"
+    echo "Using Trace ID: $$trace_id_header"
     
-    response=$(curl -s -X POST "$ENDPOINT" \
+    response=$$(curl -s -X POST "$$ENDPOINT" \
         -H "Content-Type: application/json" \
-        -H "X-Amzn-Trace-Id: $trace_id_header" \
-        -d "{\"message\": \"$message\"}" \
-        -m "$TIMEOUT" \
+        -H "X-Amzn-Trace-Id: $$trace_id_header" \
+        -d "{\"message\": \"$$message\"}" \
+        -m "$$TIMEOUT" \
         -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}")
     
-    http_status=$(echo "$response" | grep "HTTP_STATUS:" | cut -d: -f2)
-    time_total=$(echo "$response" | grep "TIME_TOTAL:" | cut -d: -f2)
-    body=$(echo "$response" | sed '/HTTP_STATUS:/d' | sed '/TIME_TOTAL:/d')
+    http_status=$$(echo "$$response" | grep "HTTP_STATUS:" | cut -d: -f2)
+    time_total=$$(echo "$$response" | grep "TIME_TOTAL:" | cut -d: -f2)
+    body=$$(echo "$$response" | sed '/HTTP_STATUS:/d' | sed '/TIME_TOTAL:/d')
     
-    if [ "$http_status" = "200" ]; then
-        echo -e "${GREEN}✓ Success${NC} (${time_total}s)"
-        echo "Response: $body"
+    if [ "$$http_status" = "200" ]; then
+        echo "Success ($${time_total}s)"
+        echo "Response: $$body"
     else
-        echo -e "${RED}✗ Error: HTTP $http_status${NC}"
-        if [ -n "$body" ]; then
-            echo "Response: $body"
+        echo "Error: HTTP $$http_status"
+        if [ -n "$$body" ]; then
+            echo "Response: $$body"
         fi
     fi
     echo "---"
 }
 
-# Trap Ctrl+C to exit gracefully
-trap 'echo -e "\n${YELLOW}Traffic generation stopped by user${NC}"; exit 0' INT
-
-echo -e "${GREEN}Starting traffic generation to $ENDPOINT${NC}"
+echo "Starting traffic generation to $$ENDPOINT"
 echo "Configuration:"
-echo "  - Delay between requests: ${DELAY_SECONDS}s"
-echo "  - Request timeout: ${TIMEOUT}s"
-echo "  - Number of requests: ${NUM_REQUESTS} (0 = infinite)"
-echo "  - Requests per minute: ~$((60 / DELAY_SECONDS))"
-echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
+echo "  - Delay between requests: $${DELAY_SECONDS}s"
+echo "  - Request timeout: $${TIMEOUT}s"
+echo "  - Number of requests: $${NUM_REQUESTS} (0 = infinite)"
+echo "  - Requests per minute: ~$$((60 / DELAY_SECONDS))"
 echo "=================================="
 
 count=0
-start_time=$(date +%s)
+start_time=$$(date +%s)
 
 while true; do
-    random_index=$((RANDOM % ${#MESSAGES[@]}))
-    message="${MESSAGES[$random_index]}"
+    random_index=$$((RANDOM % $${#MESSAGES[@]}))
+    message="$${MESSAGES[$$random_index]}"
     
-    count=$((count + 1))
+    count=$$((count + 1))
     
-    send_request "$message" "$count"
+    send_request "$$message" "$$count"
     
-    if [ "$NUM_REQUESTS" -gt 0 ] && [ "$count" -ge "$NUM_REQUESTS" ]; then
-        end_time=$(date +%s)
-        duration=$((end_time - start_time))
-        echo -e "${GREEN}Completed $count requests in ${duration}s${NC}"
+    if [ "$$NUM_REQUESTS" -gt 0 ] && [ "$$count" -ge "$$NUM_REQUESTS" ]; then
+        end_time=$$(date +%s)
+        duration=$$((end_time - start_time))
+        echo "Completed $$count requests in $${duration}s"
         break
     fi
     
-    if [ $((count % 10)) -eq 0 ]; then
-        current_time=$(date +%s)
-        elapsed=$((current_time - start_time))
-        rate=$(echo "scale=2; $count / $elapsed * 60" | bc 2>/dev/null || echo "N/A")
-        echo -e "${YELLOW}Progress: $count requests sent, Rate: ${rate} req/min${NC}"
+    if [ $$((count % 10)) -eq 0 ]; then
+        current_time=$$(date +%s)
+        elapsed=$$((current_time - start_time))
+        rate=$$(echo "scale=2; $$count / $$elapsed * 60" | bc 2>/dev/null || echo "N/A")
+        echo "Progress: $$count requests sent, Rate: $${rate} req/min"
     fi
     
-    sleep "$DELAY_SECONDS"
+    sleep "$$DELAY_SECONDS"
 done
 TRAFFIC_EOF
 
