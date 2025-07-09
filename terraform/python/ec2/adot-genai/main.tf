@@ -158,7 +158,7 @@ send_request() {
         -H "X-Amzn-Trace-Id: $$trace_id_header" \
         -d "{\"message\": \"$$message\"}" \
         -m "$$TIMEOUT" \
-        -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}")
+        -w "\nHTTP_STATUS:%%{http_code}\nTIME_TOTAL:%%{time_total}")
     
     http_status=$$(echo "$$response" | grep "HTTP_STATUS:" | cut -d: -f2)
     time_total=$$(echo "$$response" | grep "TIME_TOTAL:" | cut -d: -f2)
