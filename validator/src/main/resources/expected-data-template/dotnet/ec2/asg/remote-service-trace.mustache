@@ -2,7 +2,7 @@
   "name": "^{{serviceName}}$",
   "http": {
     "request": {
-      "url": "^{{endpoint}}/remote-service$",
+      "url": "^{{endpoint}}/remote-service(?:\\?{1,2}ip=Redacted&testingId=Redacted)?$",
       "method": "^GET$"
     }
   },
