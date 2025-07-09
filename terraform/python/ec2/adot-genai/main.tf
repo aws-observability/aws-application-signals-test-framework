@@ -98,20 +98,6 @@ export AGENT_OBSERVABILITY_ENABLED="true"
 
 nohup opentelemetry-instrument python3.12 server.py > /var/log/langchain-service.log 2>&1 &
 
-# Create log upload script
-cat > /app/upload_logs.sh << 'LOG_EOF'
-#!/bin/bash
-while true; do
-    sleep 10
-    if [ -f /var/log/langchain-service.log ]; then
-        aws s3 cp /var/log/langchain-service.log s3://appsignals-genai-test/logs/${var.test_id}/langchain-service-$(date +%%Y%%m%%d-%%H%%M%%S).log
-    fi
-done
-LOG_EOF
-
-chmod +x /app/upload_logs.sh
-nohup /app/upload_logs.sh > /var/log/log-uploader.log 2>&1 &
-
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
 for i in {1..60}; do
@@ -131,7 +117,6 @@ for i in {1..5}; do
     echo "[$(date)] Request $i: $message"
     curl -v -X POST http://localhost:8000/ai-chat -H "Content-Type: application/json" -d "{\"message\": \"$message\"}" -m 30
     echo "Request $i completed"
-    aws s3 cp /var/log/langchain-service.log s3://appsignals-genai-test/logs/${var.test_id}/langchain-service-request-$i.log
     sleep 10
 done
 echo "Traffic generator completed"
