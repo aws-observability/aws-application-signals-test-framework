@@ -3,9 +3,20 @@
 
 name: Python EC2 LangChain Service Deployment
 on:
-  push:
-    branches:
-      - origin/gen-ai-sample-app
+  workflow_call:
+    inputs:
+      caller-workflow-name:
+        required: true
+        type: string
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
+        required: false
+        type: string
+        default: "x86_64"
+      staging-wheel-name:
+        required: false
+        default: 'aws-opentelemetry-distro'
+        type: string
 
 permissions:
   id-token: write
@@ -16,6 +27,7 @@ env:
   # E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   # E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   E2E_TEST_ACCOUNT_ID: 571600841604
+  ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   E2E_TEST_ROLE_NAME: github
   METRIC_NAMESPACE: genesis
   LOG_GROUP_NAME: test/genesis
