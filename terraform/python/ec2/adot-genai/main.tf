@@ -138,7 +138,6 @@ echo "Traffic generator completed"
 ' > /var/log/traffic-generator.log 2>&1 &
 EOF
   )
-  
 
   tags = {
     Name = "langchain-service-${var.test_id}"
