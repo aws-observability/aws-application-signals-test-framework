@@ -112,104 +112,16 @@ done
 # Create traffic generator script
 cat > /app/generate_traffic.sh << 'TRAFFIC_EOF'
 #!/bin/bash
-
-# Configuration
-SERVER_URL="$${SERVER_URL:-http://localhost:8000}"
-ENDPOINT="$$SERVER_URL/ai-chat"
-DELAY_SECONDS="$${DELAY_SECONDS:-3600}"
+DELAY_SECONDS="$${DELAY_SECONDS:-60}"
 NUM_REQUESTS="$${NUM_REQUESTS:-5}"
 TIMEOUT="$${TIMEOUT:-30}"
+MESSAGES=("What is the weather like today?" "Tell me a joke" "How do I make a cup of coffee?" "What are the benefits of exercise?" "Explain quantum computing in simple terms")
 
-
-# Array of sample messages
-MESSAGES=(
-    "What is the weather like today?"
-    "Tell me a joke"
-    "How do I make a cup of coffee?"
-    "What are the benefits of exercise?"
-    "Explain quantum computing in simple terms"
-    "What's the capital of France?"
-    "How do I learn programming?"
-    "What are some healthy breakfast ideas?"
-    "Tell me about artificial intelligence"
-    "How can I improve my productivity?"
-    "What's the difference between a list and a tuple in Python?"
-    "Explain the concept of microservices"
-    "What are some best practices for API design?"
-    "How does machine learning work?"
-    "What's the purpose of unit testing?"
-)
-
-# Function to send a request
-send_request() {
-    local message="$$1"
-    local request_num="$$2"
-    local timestamp=$$(date '+%Y-%m-%d %H:%M:%S')
-    
-    echo "[$$timestamp] Request #$$request_num"
-    echo "Message: \"$$message\""
-    
-    local trace_id_header="$${TRACE_ID:-${var.trace_id}}"
-    
-    echo "Using Trace ID: $$trace_id_header"
-    
-    response=$$(curl -s -X POST "$$ENDPOINT" \
-        -H "Content-Type: application/json" \
-        -H "X-Amzn-Trace-Id: $$trace_id_header" \
-        -d "{\"message\": \"$$message\"}" \
-        -m "$$TIMEOUT" \
-        -w "\nHTTP_STATUS:%%{http_code}\nTIME_TOTAL:%%{time_total}")
-    
-    http_status=$$(echo "$$response" | grep "HTTP_STATUS:" | cut -d: -f2)
-    time_total=$$(echo "$$response" | grep "TIME_TOTAL:" | cut -d: -f2)
-    body=$$(echo "$$response" | sed '/HTTP_STATUS:/d' | sed '/TIME_TOTAL:/d')
-    
-    if [ "$$http_status" = "200" ]; then
-        echo "Success ($${time_total}s)"
-        echo "Response: $$body"
-    else
-        echo "Error: HTTP $$http_status"
-        if [ -n "$$body" ]; then
-            echo "Response: $$body"
-        fi
-    fi
-    echo "---"
-}
-
-echo "Starting traffic generation to $$ENDPOINT"
-echo "Configuration:"
-echo "  - Delay between requests: $${DELAY_SECONDS}s"
-echo "  - Request timeout: $${TIMEOUT}s"
-echo "  - Number of requests: $${NUM_REQUESTS} (0 = infinite)"
-echo "  - Requests per minute: ~$$((60 / DELAY_SECONDS))"
-echo "=================================="
-
-count=0
-start_time=$$(date +%s)
-
-while true; do
-    random_index=$$((RANDOM % $${#MESSAGES[@]}))
-    message="$${MESSAGES[$$random_index]}"
-    
-    count=$$((count + 1))
-    
-    send_request "$$message" "$$count"
-    
-    if [ "$$NUM_REQUESTS" -gt 0 ] && [ "$$count" -ge "$$NUM_REQUESTS" ]; then
-        end_time=$$(date +%s)
-        duration=$$((end_time - start_time))
-        echo "Completed $$count requests in $${duration}s"
-        break
-    fi
-    
-    if [ $$((count % 10)) -eq 0 ]; then
-        current_time=$$(date +%s)
-        elapsed=$$((current_time - start_time))
-        rate=$$(echo "scale=2; $$count / $$elapsed * 60" | bc 2>/dev/null || echo "N/A")
-        echo "Progress: $$count requests sent, Rate: $${rate} req/min"
-    fi
-    
-    sleep "$$DELAY_SECONDS"
+for i in $$(seq 1 $$NUM_REQUESTS); do
+    message="$${MESSAGES[$$((RANDOM % $${#MESSAGES[@]}))]}"
+    echo "Request $$i: $$message"
+    curl -X POST http://localhost:8000/ai-chat -H "Content-Type: application/json" -d "{\"message\": \"$$message\"}" -m $$TIMEOUT
+    sleep $$DELAY_SECONDS
 done
 TRAFFIC_EOF
 
