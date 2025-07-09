@@ -6,7 +6,6 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Node EC2 ADOT SigV4 Use Case
 on:
-
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -17,7 +16,7 @@ on:
         required: false
         type: string
         # 'none' means to use the node version come with the OS
-        default: '20'
+        default: 'none'
       cpu-architecture:
         description: "Permitted values: x86_64 or arm64"
         required: false
