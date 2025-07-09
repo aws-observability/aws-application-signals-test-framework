@@ -6,9 +6,6 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Python EC2 ADOT SigV4 (Stand-Alone ADOT) Use Case
 on:
-  push:
-    branches:
-      - genesis-release-test-p1
   workflow_call:
     inputs:
       caller-workflow-name:
