@@ -1,0 +1,6 @@
+-
+  validationType: "trace"
+  httpPath: "ai-chat"
+  httpMethod: "post"
+  callingType: "http"
+  expectedTraceTemplate: "PYTHON_EC2_ADOT_GENAI_TRACE"

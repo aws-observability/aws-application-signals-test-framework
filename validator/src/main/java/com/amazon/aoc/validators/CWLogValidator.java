@@ -27,6 +27,8 @@ import com.amazonaws.services.logs.model.FilteredLogEvent;
 import com.github.wnameless.json.flattener.FlattenMode;
 import com.github.wnameless.json.flattener.JsonFlattener;
 import com.github.wnameless.json.flattener.JsonifyArrayList;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +70,23 @@ public class CWLogValidator implements IValidator {
           Map<String, Object> actualLog;
 
           if (isAwsOtlpLog(expectedAttributes)) {
-                    actualLog = this.getActualAwsOtlpLog();
+            String otlpLogFilterPattern = String.format(
+                "{ ($.resource.attributes.['service.name'] = \"%s\") && ($.body = \"This is a custom log for validation testing\") }",
+                context.getServiceName()
+            );
+            String addTraceIdFilter = (context.getTraceId() != null ? "&& ($.traceId = \"" + context.getTraceId() + "\") " : "");
+            String genAILogFilterPattern = String.format(
+                "{ ($.resource.attributes.['service.name'] = \"%s\") " +
+                "&& ($.body.output.messages[0].role = \"assistant\") " +
+                "&& ($.body.input.messages[0].role = \"user\") " +
+                "&& ($.body.output.messages[1] NOT EXISTS) " +
+                "&& ($.body.input.messages[1] NOT EXISTS) " +
+                "%s" +
+                "}",
+                context.getServiceName(),
+                addTraceIdFilter
+            );
+            actualLog = this.getActualAwsOtlpLog(Arrays.asList(otlpLogFilterPattern, genAILogFilterPattern));            
           } else {
             String operation = (String) expectedAttributes.get("Operation");
             String remoteService = (String) expectedAttributes.get("RemoteService");
@@ -153,9 +171,12 @@ public class CWLogValidator implements IValidator {
 
   private boolean isAwsOtlpLog(Map<String, Object> expectedAttributes) {
     // OTLP SigV4 logs have 'body' as a top-level attribute
-    return expectedAttributes.containsKey("body") &&
-           expectedAttributes.containsKey("severityNumber") &&
-           expectedAttributes.containsKey("severityText");
+    boolean hasBodyKey = expectedAttributes.keySet().stream()
+        .anyMatch(key -> key.startsWith("body"));
+
+    return expectedAttributes.containsKey("severityNumber") && 
+           expectedAttributes.containsKey("severityText") &&
+           hasBodyKey;
   }
 
   private Map<String, Object> getActualLog(
@@ -234,25 +255,33 @@ public class CWLogValidator implements IValidator {
     return JsonFlattener.flattenAsMap(retrievedLogs.get(0).getMessage());
   }
 
-  private Map<String, Object> getActualAwsOtlpLog() throws Exception {
-    String filterPattern= String.format(
-            "{ ($.resource.attributes.['service.name'] = \"%s\") && ($.body = \"This is a custom log for validation testing\") }",
-            context.getServiceName()
-        );
-    log.info("Filter Pattern for OTLP Log Search: " + filterPattern);
+  private Map<String, Object> getActualAwsOtlpLog(List<String> filterPatterns) throws Exception {
+    log.info("Filter patterns {}", filterPatterns);
 
-    List<FilteredLogEvent> retrievedLogs =
-        this.cloudWatchService.filterLogs(
-            context.getLogGroup(),
-            filterPattern,
-            System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
-            10);
+    List<FilteredLogEvent> retrievedLogs = null;
 
-    if (retrievedLogs == null || retrievedLogs.isEmpty()) {
-        throw new BaseException(ExceptionCode.EMPTY_LIST);
+    for (String pattern : filterPatterns) {
+      log.info("Attempting filter Pattern for OTLP Log Search: {}", pattern);
+
+      retrievedLogs = this.cloudWatchService.filterLogs(
+          context.getLogGroup(),
+          pattern,
+          System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
+          10);
+          
+      if (retrievedLogs != null && !retrievedLogs.isEmpty()) {
+        log.info("Found logs for filter pattern {}", pattern);
+        break;
+      }
     }
 
-    return JsonFlattener.flattenAsMap(retrievedLogs.get(0).getMessage());
+    if (retrievedLogs == null || retrievedLogs.isEmpty()) {
+      throw new BaseException(ExceptionCode.EMPTY_LIST);
+    }
+
+    return new JsonFlattener(retrievedLogs.get(0).getMessage())
+             .withFlattenMode(FlattenMode.KEEP_ARRAYS)
+             .flattenAsMap();
   }
 
   @Override

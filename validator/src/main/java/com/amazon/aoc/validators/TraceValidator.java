@@ -147,15 +147,15 @@ public class TraceValidator implements IValidator {
               validationConfig.getHttpMethod().toUpperCase(),
               validationConfig.getHttpPath()));
     }
+
+    if (validationConfig.getHttpPath().contains("ai-chat")) {
+      return this.getTraceById(Collections.singletonList(context.getTraceId()));
+    }
+
     log.info("Trace Filter: {}", traceFilter);
     List<TraceSummary> retrieveTraceLists = xrayService.searchTraces(traceFilter);
     List<String> traceIdLists = Collections.singletonList(retrieveTraceLists.get(0).getId());
-    List<Trace> retrievedTraceList = xrayService.listTraceByIds(traceIdLists);
-
-    if (retrievedTraceList == null || retrievedTraceList.isEmpty()) {
-      throw new BaseException(ExceptionCode.EMPTY_LIST);
-    }
-    return this.flattenDocument(retrievedTraceList.get(0).getSegments());
+    return getTraceById(traceIdLists);
   }
 
   private Map<String, Object> flattenDocument(List<Segment> segmentList) {
@@ -188,6 +188,14 @@ public class TraceValidator implements IValidator {
 
     segmentsJson.replace(segmentsJson.length() - 1, segmentsJson.length(), "]");
     return JsonFlattener.flattenAsMap(segmentsJson.toString());
+  }
+
+  private Map<String, Object> getTraceById(List<String> traceIdLists) throws Exception {
+    List<Trace> retrievedTraceList = xrayService.listTraceByIds(traceIdLists);
+    if (retrievedTraceList == null || retrievedTraceList.isEmpty()) {
+      throw new BaseException(ExceptionCode.EMPTY_LIST);
+    }
+    return this.flattenDocument(retrievedTraceList.get(0).getSegments());
   }
 
   // This method will get the stored traces

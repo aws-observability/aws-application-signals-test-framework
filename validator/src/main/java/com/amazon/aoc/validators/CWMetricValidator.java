@@ -91,6 +91,14 @@ public class CWMetricValidator implements IValidator {
     RetryHelper.retry(
         maxRetryCount,
         () -> {
+
+          // Special handling for Genesis path - just check if any metrics exists in namespace
+          // since ADOT will just capture any OTel Metrics emitted from the instrumentation library used
+          // and convert them into EMF metrics, it's impossible to create a validation template for this.
+          if (validationConfig.getHttpPath().contains("ai-chat")) {
+            validateAnyMetricExists();
+            return;
+          }
           // We will query the Service, RemoteService, and RemoteTarget dimensions to ensure we
           // get all metrics from all aggregations, specifically the [RemoteService] aggregation.
           List<String> serviceNames =
@@ -209,6 +217,17 @@ public class CWMetricValidator implements IValidator {
                          "metric in %ntoBeCheckedMetricList: %s is not found in %nbaseMetricList: %s %n",
                          matchAny.stream().findAny().get(), actualMetricSnapshot));
      }
+  }
+  
+  private void validateAnyMetricExists() throws Exception {
+    // This will grab all metrics from last 3 hours
+    // See: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_ListMetrics.html
+    List<Metric> allMetricsInNamespace = cloudWatchService.listMetrics(context.getMetricNamespace(), null, null, null);
+    log.info("Found {} metrics in namespace {}", allMetricsInNamespace.size(), context.getMetricNamespace());
+    if (allMetricsInNamespace.isEmpty()) {
+      throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND, "No metrics found in namespace: " + context.getMetricNamespace());
+    }
+    log.info("validation is passed for path {}", validationConfig.getHttpPath());
   }
 
   private List<Metric> listMetricFromCloudWatch(
