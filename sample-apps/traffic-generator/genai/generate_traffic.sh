@@ -2,7 +2,7 @@
 
 # Configuration
 SERVER_URL="${SERVER_URL:-http://localhost:8000}"
-ENDPOINT="${SERVER_URL}/chat"
+ENDPOINT="${SERVER_URL}/ai-chat"
 DELAY_SECONDS="${DELAY_SECONDS:-3600}"  # Default 1 hour (3600 seconds) between requests
 NUM_REQUESTS="${NUM_REQUESTS:-0}"    # 0 means infinite
 TIMEOUT="${TIMEOUT:-30}"              # Request timeout in seconds
@@ -41,9 +41,15 @@ send_request() {
     echo -e "${YELLOW}[$timestamp] Request #$request_num${NC}"
     echo "Message: \"$message\""
     
+    # Use environment variables or defaults for headers
+    local trace_id_header="${TRACE_ID:-Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1}"
+    
+    echo "Using Trace ID: $trace_id_header"
+    
     # Send request with timeout
     response=$(curl -s -X POST "$ENDPOINT" \
         -H "Content-Type: application/json" \
+        -H "X-Amzn-Trace-Id: $trace_id_header" \
         -d "{\"message\": \"$message\"}" \
         -m "$TIMEOUT" \
         -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}")

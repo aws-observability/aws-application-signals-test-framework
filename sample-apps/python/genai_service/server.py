@@ -82,13 +82,12 @@ async def root():
     return {
         "message": "LangChain Bedrock OpenInference API is running!",
         "endpoints": {
-            "/chat": "Single message chat endpoint",
-            "/batch": "Batch message processing endpoint",
-            "/sample": "Run sample prompts"
+            "/ai-chat": "Single message chat endpoint",
+            "/hello": "Simple hello endpoint"
         }
     }
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/ai-chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
     Chat endpoint that processes a single user message through AWS Bedrock
@@ -97,40 +96,6 @@ async def chat(request: ChatRequest):
         # Process the input through the chain
         result = await chain.ainvoke({"input": request.message})
         return ChatResponse(response=result["text"])
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.post("/batch", response_model=BatchChatResponse)
-async def batch_chat(request: BatchChatRequest):
-    """
-    Batch endpoint that processes multiple messages
-    """
-    try:
-        responses = []
-        for message in request.messages:
-            result = await chain.ainvoke({"input": message})
-            responses.append({
-                "message": message,
-                "response": result["text"]
-            })
-        return BatchChatResponse(responses=responses)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/sample", response_model=BatchChatResponse)
-async def run_samples():
-    """
-    Run the predefined sample prompts
-    """
-    try:
-        responses = []
-        for prompt in SAMPLE_PROMPTS:
-            result = await chain.ainvoke({"input": prompt})
-            responses.append({
-                "message": prompt,
-                "response": result["text"]
-            })
-        return BatchChatResponse(responses=responses)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -145,4 +110,5 @@ if __name__ == "__main__":
     print("Make sure AWS credentials are configured")
     print("Server will run on http://localhost:8000")
     print("API docs available at http://localhost:8000/docs")
+    
     uvicorn.run(app, host="0.0.0.0", port=8000)

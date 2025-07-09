@@ -1,6 +1,8 @@
 langchain
 langchain-community
+langchain_aws
 opentelemetry-sdk
+openinference-instrumentation-langchain
 opentelemetry-api
 opentelemetry-semantic-conventions
 python-dotenv
@@ -8,6 +10,6 @@ openlit
 botocore
 setuptools
 boto3
-./aws_opentelemetry_distro_genai_beta-0.1.0b8-py3-none-any.whl
+aws_opentelemetry_distro_genai_beta
 fastapi
 uvicorn[standard]
