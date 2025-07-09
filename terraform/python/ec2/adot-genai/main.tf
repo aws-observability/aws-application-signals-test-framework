@@ -123,34 +123,19 @@ for i in {1..60}; do
   sleep 5
 done
 
-# Create traffic generator script
-cat > /app/generate_traffic.sh << 'TRAFFIC_EOF'
-#!/bin/bash
-DELAY_SECONDS="$${DELAY_SECONDS:-10}"
-NUM_REQUESTS="$${NUM_REQUESTS:-5}"
-TIMEOUT="$${TIMEOUT:-30}"
-MESSAGES=("What is the weather like today?" "Tell me a joke" "How do I make a cup of coffee?" "What are the benefits of exercise?" "Explain quantum computing in simple terms")
-
-echo "Starting traffic generator with $$NUM_REQUESTS requests, $$DELAY_SECONDS second delay"
-date
-
-for i in $$(seq 1 $$NUM_REQUESTS); do
-    message="$${MESSAGES[$$((RANDOM % $${#MESSAGES[@]}))]}"
-    echo "[$(date)] Request $$i: $$message"
-    curl -v -X POST http://localhost:8000/ai-chat -H "Content-Type: application/json" -d "{\"message\": \"$$message\"}" -m $$TIMEOUT
-    echo "Request $$i completed"
-    aws s3 cp /var/log/langchain-service.log s3://appsignals-genai-test/logs/${var.test_id}/langchain-service-request-$$i.log
-    sleep $$DELAY_SECONDS
-done
-
-echo "Traffic generator completed"
-TRAFFIC_EOF
-
-chmod +x /app/generate_traffic.sh
-
-# Start traffic generator in background
+# Generate traffic directly
 echo "Starting traffic generator..."
-nohup /app/generate_traffic.sh > /var/log/traffic-generator.log 2>&1 &
+nohup bash -c '
+for i in {1..5}; do
+    message="What is the weather like today?"
+    echo "[$(date)] Request $i: $message"
+    curl -v -X POST http://localhost:8000/ai-chat -H "Content-Type: application/json" -d "{\"message\": \"$message\"}" -m 30
+    echo "Request $i completed"
+    aws s3 cp /var/log/langchain-service.log s3://appsignals-genai-test/logs/${var.test_id}/langchain-service-request-$i.log
+    sleep 10
+done
+echo "Traffic generator completed"
+' > /var/log/traffic-generator.log 2>&1 &
 EOF
   )
 
