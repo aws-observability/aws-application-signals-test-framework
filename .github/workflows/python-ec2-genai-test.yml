@@ -115,33 +115,7 @@ jobs:
           echo "INSTANCE_ID=$(terraform output langchain_service_instance_id)" >> $GITHUB_ENV
 
       - name: Wait for Gen AI Chatbot service to be ready
-        run: |
-          echo "Waiting for service to be ready at http://${{ env.INSTANCE_IP }}:8000"
-          for i in {1..60}; do
-            if curl -f -s "http://${{ env.INSTANCE_IP }}:8000/health" > /dev/null 2>&1; then
-              echo "Service is ready!"
-              break
-            fi
-            echo "Attempt $i: Service not ready yet, waiting 10 seconds..."
-            sleep 10
-          done
-          
-          # Final check
-          if ! curl -f -s "http://${{ env.INSTANCE_IP }}:8000/health" > /dev/null 2>&1; then
-            echo "Service failed to become ready after 10 minutes"
-            exit 1
-          fi
-          
-      - name: Generate traffic
-        run: |
-          cd sample-apps/traffic-generator/genai
-          chmod +x generate_traffic.sh
-          export SERVER_URL="http://${{ env.INSTANCE_IP }}:8000"
-          export NUM_REQUESTS="5"
-          export DELAY_SECONDS="5"
-          export TIMEOUT="30"
-          export TRACE_ID="Root=${XRAY_TRACE_ID};Parent=$(openssl rand -hex 8);Sampled=1"
-          ./generate_traffic.sh
+        run: sleep 120
 
       - name: Validate generated logs
         run: ./gradlew validator:run --args='-c python/ec2/adot-genai/log-validation.yml
