@@ -91,11 +91,11 @@ public class CWMetricValidator implements IValidator {
     RetryHelper.retry(
         maxRetryCount,
         () -> {
-
+          String httpPath = validationConfig.getHttpPath();
           // Special handling for Genesis path - just check if any metrics exists in namespace
           // since ADOT will just capture any OTel Metrics emitted from the instrumentation library used
           // and convert them into EMF metrics, it's impossible to create a validation template for this.
-          if (validationConfig.getHttpPath().contains("ai-chat")) {
+          if (httpPath != null && httpPath.contains("ai-chat")) {
             validateAnyMetricExists();
             return;
           }
