@@ -148,7 +148,7 @@ public class TraceValidator implements IValidator {
               validationConfig.getHttpPath()));
     }
 
-    if (validationConfig.getHttpPath().contains("ai-chat")) {
+    if (validationConfig.getHttpPath() != null && validationConfig.getHttpPath().contains("ai-chat")) {
       return this.getTraceById(Collections.singletonList(context.getTraceId()));
     }
 
