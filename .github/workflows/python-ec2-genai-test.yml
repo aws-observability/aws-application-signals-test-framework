@@ -167,3 +167,4 @@ jobs:
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="service_zip_url=${{ env.SAMPLE_APP_ZIP }}" \
             -var="trace_id=Root=${{ env.XRAY_TRACE_ID }};Parent=53995c3f42cd8ad8;Sampled=1"
+            
