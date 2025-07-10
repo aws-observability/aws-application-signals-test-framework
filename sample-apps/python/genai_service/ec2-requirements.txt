@@ -10,6 +10,6 @@ openlit
 botocore
 setuptools
 boto3
-aws_opentelemetry_distro_genai_beta
+aws_opentelemetry_distro
 fastapi
 uvicorn[standard]

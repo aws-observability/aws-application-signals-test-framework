@@ -25,9 +25,7 @@ variable "service_zip_url" {
   description = "S3 URL for the service zip file"
 }
 
-variable "python_version" {
-  default = "3.12"
-}
+
 
 variable "cpu_architecture" {
   default = "x86_64"
