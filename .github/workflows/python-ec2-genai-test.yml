@@ -118,7 +118,8 @@ jobs:
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="service_zip_url=${{ env.SAMPLE_APP_ZIP }}" \
             -var="trace_id=${{ env.TRACE_ID_HEADER }}" \
-            -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}"
+            -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
+            -var="python_version=${{ env.PYTHON_VERSION }}"
 
       - name: Get deployment info
         working-directory: terraform/python/ec2/adot-genai
