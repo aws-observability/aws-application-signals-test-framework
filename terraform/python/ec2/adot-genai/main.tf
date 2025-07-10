@@ -34,10 +34,10 @@ locals {
 
 data "aws_ami" "ami" {
   owners = ["amazon"]
-  most_recent      = true
+  most_recent = true
   filter {
     name = "name"
-    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
+    values = ["al2023-ami-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -47,21 +47,6 @@ data "aws_ami" "ami" {
     name   = "architecture"
     values = [var.cpu_architecture]
   }
-  filter {
-    name   = "image-type"
-    values = ["machine"]
-  }
-
-  filter {
-    name   = "root-device-name"
-    values = ["/dev/xvda"]
-  }
-
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
-
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
@@ -82,18 +67,18 @@ resource "aws_instance" "main_service_instance" {
   }
 
   root_block_device {
-    volume_size = 5
+    volume_size = 30
   }
   
   user_data = base64encode(<<-EOF
 #!/bin/bash
 yum update -y
-yum install -y python3.12 python3.12-pip unzip
+yum install -y python3.12 python3.12-pip unzip bc
 
 mkdir -p /app
 cd /app
-aws s3 cp ${var.service_zip_url} langchain-service.zip
-unzip langchain-service.zip
+aws s3 cp ${var.service_zip_url} genai-service.zip
+unzip genai-service.zip
 
 # Having issues installing dependencies from ec2-requirements.txt as these dependencies are quite large and cause timeouts/memory issues on EC2, manually installing instead
 python3.12 -m pip install fastapi uvicorn[standard] --no-cache-dir
@@ -112,6 +97,34 @@ export OTEL_RESOURCE_ATTRIBUTES="service.name=langchain-traceloop-app"
 export AGENT_OBSERVABILITY_ENABLED="true"
 
 nohup opentelemetry-instrument python3.12 server.py > /var/log/langchain-service.log 2>&1 &
+
+# Wait for service to be ready
+echo "Waiting for service to be ready..."
+for i in {1..60}; do
+  if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+    echo "Service is ready!"
+    break
+  fi
+  echo "Attempt $i: Service not ready, waiting 5 seconds..."
+  sleep 5
+done
+
+# Generate traffic directly
+echo "Starting traffic generator..."
+nohup bash -c '
+for i in {1..5}; do
+    message="What is the weather like today?"
+    echo "[$(date)] Request $i: $message"
+    curl -s -X POST http://localhost:8000/ai-chat \
+        -H "Content-Type: application/json" \
+        -H "X-Amzn-Trace-Id: ${var.trace_id}" \
+        -d "{\"message\": \"$message\"}" \
+        -m 30 \
+    echo "Request $i completed"
+    sleep 10
+done
+echo "Traffic generator completed"
+' > /var/log/traffic-generator.log 2>&1 &
 EOF
   )
 

@@ -36,3 +36,8 @@ variable "cpu_architecture" {
 variable "user" {
   default = "ec2-user"
 }
+
+variable "trace_id" {
+  description = "Trace ID for X-Ray tracing"
+  default = "Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1"
+}
