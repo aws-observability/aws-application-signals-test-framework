@@ -115,7 +115,7 @@ jobs:
           echo "INSTANCE_IP=$(terraform output langchain_service_public_ip)" >> $GITHUB_ENV
           echo "INSTANCE_ID=$(terraform output langchain_service_instance_id)" >> $GITHUB_ENV
 
-      - name: Wait for Gen AI Chatbot service to be ready
+      - name: Wait for Gen AI service to be ready and emit logs, traces, and metrics
         run: sleep 300
 
       - name: Validate generated logs
