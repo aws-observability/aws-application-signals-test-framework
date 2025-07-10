@@ -73,7 +73,7 @@ resource "aws_instance" "main_service_instance" {
   user_data = base64encode(<<-EOF
 #!/bin/bash
 yum update -y
-yum install -y python3.12 python3.12-pip unzip bc
+yum install -y python${var.python_version} python${var.python_version}-pip unzip bc
 
 mkdir -p /app
 cd /app
@@ -81,12 +81,13 @@ aws s3 cp ${var.service_zip_url} genai-service.zip
 unzip genai-service.zip
 
 # Having issues installing dependencies from ec2-requirements.txt as these dependencies are quite large and cause timeouts/memory issues on EC2, manually installing instead
-python3.12 -m pip install fastapi uvicorn[standard] --no-cache-dir
-python3.12 -m pip install boto3 botocore setuptools --no-cache-dir
-python3.12 -m pip install opentelemetry-api opentelemetry-sdk opentelemetry-semantic-conventions --no-cache-dir
-python3.12 -m pip install langchain langchain-community langchain_aws --no-cache-dir
-python3.12 -m pip install python-dotenv openlit --no-cache-dir
-python3.12 -m pip install openinference-instrumentation-langchain aws_opentelemetry_distro_genai_beta --no-cache-dir
+python${var.python_version} -m pip install fastapi uvicorn[standard] --no-cache-dir
+python${var.python_version} -m pip install boto3 botocore setuptools --no-cache-dir
+python${var.python_version} -m pip install opentelemetry-api opentelemetry-sdk opentelemetry-semantic-conventions --no-cache-dir
+python${var.python_version} -m pip install langchain langchain-community langchain_aws --no-cache-dir
+python${var.python_version} -m pip install python-dotenv openlit --no-cache-dir
+python${var.python_version} -m pip install openinference-instrumentation-langchain --no-cache-dir
+${var.get_adot_wheel_command}
 
 export AWS_REGION=${var.aws_region}
 export OTEL_PROPAGATORS=tracecontext,xray,baggage
