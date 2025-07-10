@@ -94,21 +94,29 @@ jobs:
             NODE_REMOTE_SAMPLE_APP_IMAGE, e2e-test/node-remote-sample-app-image
             RELEASE_TESTING_ECR_ACCOUNT, e2e-test/${{ github.event.repository.name }}/node-k8s-release-testing-account
 
+      # Temporarily use Java K8s Canary Cluster for Node.js e2e tests
       - name: Retrieve K8s EC2 Secrets
         if: ${{ env.CALLER_WORKFLOW_NAME != 'k8s-os-patching' }}
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
+          # secret-ids: |
+          #   MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/node-k8s-master-node-endpoint
+          #   MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/node-k8s-ssh-key
           secret-ids: |
-            MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/node-k8s-master-node-endpoint
-            MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/node-k8s-ssh-key
+            MAIN_SERVICE_ENDPOINT, e2e-test/aws-application-signals-test-framework/java-k8s-master-node-endpoint
+            MASTER_NODE_SSH_KEY, e2e-test/aws-application-signals-test-framework/java-k8s-ssh-key
 
+      # Temporarily use Java K8s Canary Cluster for Node.js e2e tests
       - name: Retrieve K8s EC2 OS Patching Secrets
         if: ${{ env.CALLER_WORKFLOW_NAME == 'k8s-os-patching' }}
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
+          # secret-ids: |
+          #   MAIN_SERVICE_ENDPOINT, e2e-test/${{ env.CALLER_REPOSITORY }}/node-k8s-master-node-endpoint-pending-value
+          #   MASTER_NODE_SSH_KEY, e2e-test/${{ env.CALLER_REPOSITORY }}/node-k8s-ssh-key-pending-value
           secret-ids: |
-            MAIN_SERVICE_ENDPOINT, e2e-test/${{ env.CALLER_REPOSITORY }}/node-k8s-master-node-endpoint-pending-value
-            MASTER_NODE_SSH_KEY, e2e-test/${{ env.CALLER_REPOSITORY }}/node-k8s-ssh-key-pending-value
+            MAIN_SERVICE_ENDPOINT, e2e-test/aws-application-signals-test-framework/java-k8s-master-node-endpoint-pending-value
+            MASTER_NODE_SSH_KEY, e2e-test/aws-application-signals-test-framework/java-k8s-ssh-key-pending-value
 
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/node/k8s/deploy/resources
