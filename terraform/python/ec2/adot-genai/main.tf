@@ -97,7 +97,7 @@ export OTEL_EXPORTER_OTLP_LOGS_HEADERS="x-aws-log-group=test/genesis,x-aws-log-s
 export OTEL_RESOURCE_ATTRIBUTES="service.name=langchain-traceloop-app"
 export AGENT_OBSERVABILITY_ENABLED="true"
 
-nohup opentelemetry-instrument python3.12 server.py > /var/log/langchain-service.log 2>&1 &
+nohup opentelemetry-instrument python${var.python_version} server.py > /var/log/langchain-service.log 2>&1 &
 
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
