@@ -1,0 +1,6 @@
+-
+  validationType: "cw-log"
+  httpPath: "ai-chat"
+  httpMethod: "post"
+  callingType: "http"
+  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_GENAI_LOG"
