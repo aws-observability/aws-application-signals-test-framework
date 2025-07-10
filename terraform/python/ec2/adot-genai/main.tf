@@ -115,7 +115,11 @@ nohup bash -c '
 for i in {1..5}; do
     message="What is the weather like today?"
     echo "[$(date)] Request $i: $message"
-    curl -v -X POST http://localhost:8000/ai-chat -H "Content-Type: application/json" -d "{\"message\": \"$message\"}" -m 30
+    curl -s -X POST http://localhost:8000/ai-chat \
+        -H "Content-Type: application/json" \
+        -H "X-Amzn-Trace-Id: ${var.trace_id}" \
+        -d "{\"message\": \"$message\"}" \
+        -m 30 \
     echo "Request $i completed"
     sleep 10
 done
