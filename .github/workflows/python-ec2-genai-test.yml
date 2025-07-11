@@ -4,20 +4,12 @@
 name: Python EC2 Gen AI Use Case
 on:
   workflow_dispatch: # be able to run the workflow on demand
-  push:
-    branches:
-      - genesis-release-test
+
   workflow_call:
     inputs:
       caller-workflow-name:
         required: true
         type: string
-
-      cpu-architecture:
-        description: "Permitted values: x86_64 or arm64"
-        required: false
-        type: string
-        default: "x86_64"
       staging-wheel-name:
         required: false
         default: 'aws-opentelemetry-distro'

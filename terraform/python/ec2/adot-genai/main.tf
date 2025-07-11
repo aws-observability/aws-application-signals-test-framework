@@ -37,7 +37,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name = "name"
-    values = ["al2023-ami-*-${var.cpu_architecture}"]
+    values = ["al2023-ami-*-x86_64"]
   }
   filter {
     name   = "state"
@@ -45,7 +45,7 @@ data "aws_ami" "ami" {
   }
   filter {
     name   = "architecture"
-    values = [var.cpu_architecture]
+    values = ["x86_64"]
   }
   filter {
     name   = "virtualization-type"
@@ -55,7 +55,7 @@ data "aws_ami" "ami" {
 
 resource "aws_instance" "main_service_instance" {
   ami                                   = data.aws_ami.ami.id
-  instance_type                         = var.cpu_architecture == "x86_64" ? "t3.medium" : "t4g.medium"
+  instance_type                         = "t3.medium"
   key_name                              = local.ssh_key_name
   iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]

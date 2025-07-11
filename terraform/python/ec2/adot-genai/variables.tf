@@ -27,9 +27,7 @@ variable "service_zip_url" {
 
 
 
-variable "cpu_architecture" {
-  default = "x86_64"
-}
+
 
 variable "user" {
   default = "ec2-user"
