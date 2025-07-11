@@ -101,7 +101,7 @@ echo "Service started with PID: $!"
 
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
-for i in {1..60}; do
+for i in {1..10}; do
   if curl -s http://localhost:8000/health > /dev/null 2>&1; then
     echo "Service is ready!"
     break
