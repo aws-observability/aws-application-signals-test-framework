@@ -95,7 +95,7 @@ nohup node --require '@aws/aws-distro-opentelemetry-node-autoinstrumentation/reg
 
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
-for i in {1..60}; do
+for i in {1..3}; do
   if curl -s http://localhost:8000/health > /dev/null 2>&1; then
     echo "Service is ready!"
     break
