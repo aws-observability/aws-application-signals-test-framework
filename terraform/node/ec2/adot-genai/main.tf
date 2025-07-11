@@ -92,7 +92,6 @@ echo "Checking installed packages:"
 npm list --depth=0
 
 export AWS_REGION=${var.aws_region}
-export OTEL_PROPAGATORS=tracecontext,xray,baggage
 export OTEL_EXPORTER_OTLP_LOGS_HEADERS="x-aws-log-group=test/genesis,x-aws-log-stream=default,x-aws-metric-namespace=genesis"
 export OTEL_RESOURCE_ATTRIBUTES="service.name=langchain-traceloop-app"
 export AGENT_OBSERVABILITY_ENABLED="true"
@@ -105,8 +104,12 @@ echo "Files in directory:"
 ls -la
 echo "Checking if ADOT module exists:"
 node -e "try { require('@aws/aws-distro-opentelemetry-node-autoinstrumentation/register'); console.log('ADOT module found'); } catch(e) { console.log('ADOT module not found:', e.message); }"
-nohup node --require ./customInstrumentation.js index.js > /var/log/langchain-service.log 2>&1 &
+echo "Testing service startup:"
+node index.js > /var/log/langchain-service.log 2>&1 &
 echo "Service started with PID: $!"
+echo "Checking initial logs:"
+sleep 3
+cat /var/log/langchain-service.log
 
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
