@@ -35,6 +35,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
 
       - name: Set Get ADOT Wheel command environment variable
         run: |
