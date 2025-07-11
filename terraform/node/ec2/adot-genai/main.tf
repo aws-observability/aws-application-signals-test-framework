@@ -83,6 +83,7 @@ unzip genai-service.zip
 # Navigate to genai-service directory and install dependencies
 cd genai-service
 npm install
+npm install express @langchain/community @langchain/core @traceloop/node-server-sdk pino
 
 # Download and install ADOT instrumentation
 echo "Installing ADOT instrumentation..."
@@ -104,12 +105,9 @@ echo "Files in directory:"
 ls -la
 echo "Checking if ADOT module exists:"
 node -e "try { require('@aws/aws-distro-opentelemetry-node-autoinstrumentation/register'); console.log('ADOT module found'); } catch(e) { console.log('ADOT module not found:', e.message); }"
-echo "Testing service startup:"
-node index.js > /var/log/langchain-service.log 2>&1 &
+echo "Starting service with ADOT instrumentation:"
+nohup node --require '@aws/aws-distro-opentelemetry-node-autoinstrumentation/register' --require ./customInstrumentation.js index.js > /var/log/langchain-service.log 2>&1 &
 echo "Service started with PID: $!"
-echo "Checking initial logs:"
-sleep 3
-cat /var/log/langchain-service.log
 
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
