@@ -480,6 +480,11 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   /** Node EC2 ADOT SigV4 Log Exporter Test Case Validation */
   NODE_EC2_ADOT_OTLP_LOG("/expected-data-template/node/ec2/adot-aws-otlp/application-log.mustache"),
 
+  /** Node EC2 ADOT Gen AI Test Case Validation */
+  NODE_EC2_ADOT_GENAI_LOG("/expected-data-template/node/ec2/adot-genai/genai-log.mustache"),
+  NODE_EC2_ADOT_GENAI_TRACE("/expected-data-template/node/ec2/adot-genai/genai-trace.mustache"),
+  NODE_EC2_ADOT_GENAI_METRIC("/expected-data-template/node/ec2/adot-genai/genai-metric.mustache"),
+
   /** Node ECS Test Case Validations */
   NODE_ECS_HC_CALL_LOG("/expected-data-template/node/ecs/hc-log.mustache"),
   NODE_ECS_HC_CALL_METRIC("/expected-data-template/node/ecs/hc-metric.mustache"),
