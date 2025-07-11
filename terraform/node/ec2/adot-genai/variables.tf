@@ -39,6 +39,6 @@ variable "trace_id" {
 }
 
 variable "get_adot_wheel_command" {
-  description = "Command to get and install ADOT wheel"
-  default = "python3.12 -m pip install aws-opentelemetry-distro"
+  description = "Command to get and install ADOT instrumentation"
+  default = "npm install @aws/aws-distro-opentelemetry-node-autoinstrumentation"
 }

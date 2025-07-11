@@ -84,23 +84,31 @@ unzip genai-service.zip
 cd genai-service
 npm install
 
+# Download and install ADOT instrumentation
+${var.get_adot_wheel_command}
+
 export AWS_REGION=${var.aws_region}
+export OTEL_PROPAGATORS=tracecontext,xray,baggage
 export OTEL_EXPORTER_OTLP_LOGS_HEADERS="x-aws-log-group=test/genesis,x-aws-log-stream=default,x-aws-metric-namespace=genesis"
 export OTEL_RESOURCE_ATTRIBUTES="service.name=langchain-traceloop-app"
 export AGENT_OBSERVABILITY_ENABLED="true"
 
 # Run the genai service from the genai-service directory
 cd /app/genai-service
+echo "Starting Node.js service..."
 nohup node --require '@aws/aws-distro-opentelemetry-node-autoinstrumentation/register' --require ./customInstrumentation.js index.js > /var/log/langchain-service.log 2>&1 &
+echo "Service started with PID: $!"
 
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
-for i in {1..3}; do
+for i in {1..60}; do
   if curl -s http://localhost:8000/health > /dev/null 2>&1; then
     echo "Service is ready!"
     break
   fi
   echo "Attempt $i: Service not ready, waiting 5 seconds..."
+  echo "Checking service logs:"
+  tail -5 /var/log/langchain-service.log
   sleep 5
 done
 
