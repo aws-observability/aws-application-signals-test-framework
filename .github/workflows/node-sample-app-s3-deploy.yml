@@ -3,6 +3,9 @@
 
 name: Sample App Deployment - Node S3
 on:
+  push:
+    branches:
+      - add-genai-sample-apps
   workflow_dispatch: # be able to run the workflow on demand
 
 permissions:
