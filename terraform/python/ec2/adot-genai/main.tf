@@ -99,6 +99,12 @@ export AGENT_OBSERVABILITY_ENABLED="true"
 
 nohup opentelemetry-instrument python3.12 server.py > /var/log/langchain-service.log 2>&1 &
 
+# Upload logs to S3 bucket for debugging
+echo "Uploading logs to S3..."
+aws s3 cp /var/log/langchain-service.log s3://testadotgenaibucket/logs/${var.test_id}/langchain-service.log
+aws s3 cp /var/log/cloud-init-output.log s3://testadotgenaibucket/logs/${var.test_id}/cloud-init-output.log
+echo "Log upload completed"
+
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
 for i in {1..60}; do
@@ -126,6 +132,13 @@ for i in {1..5}; do
 done
 echo "Traffic generator completed"
 ' > /var/log/traffic-generator.log 2>&1 &
+
+# Upload logs to S3 bucket for debugging
+echo "Uploading logs to S3..."
+aws s3 cp /var/log/langchain-service.log s3://testadotgenaibucket/logs/${var.test_id}/langchain-service.log
+aws s3 cp /var/log/traffic-generator.log s3://testadotgenaibucket/logs/${var.test_id}/traffic-generator.log
+aws s3 cp /var/log/cloud-init-output.log s3://testadotgenaibucket/logs/${var.test_id}/cloud-init-output.log
+echo "Log upload completed"
 EOF
   )
 
