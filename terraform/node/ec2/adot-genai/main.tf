@@ -85,7 +85,11 @@ cd genai-service
 npm install
 
 # Download and install ADOT instrumentation
+echo "Installing ADOT instrumentation..."
 ${var.get_adot_wheel_command}
+echo "ADOT installation completed"
+echo "Checking installed packages:"
+npm list --depth=0
 
 export AWS_REGION=${var.aws_region}
 export OTEL_PROPAGATORS=tracecontext,xray,baggage
@@ -96,7 +100,12 @@ export AGENT_OBSERVABILITY_ENABLED="true"
 # Run the genai service from the genai-service directory
 cd /app/genai-service
 echo "Starting Node.js service..."
-nohup node --require '@aws/aws-distro-opentelemetry-node-autoinstrumentation/register' --require ./customInstrumentation.js index.js > /var/log/langchain-service.log 2>&1 &
+echo "Current directory: $(pwd)"
+echo "Files in directory:"
+ls -la
+echo "Checking if ADOT module exists:"
+node -e "try { require('@aws/aws-distro-opentelemetry-node-autoinstrumentation/register'); console.log('ADOT module found'); } catch(e) { console.log('ADOT module not found:', e.message); }"
+nohup node --require ./customInstrumentation.js index.js > /var/log/langchain-service.log 2>&1 &
 echo "Service started with PID: $!"
 
 # Wait for service to be ready
