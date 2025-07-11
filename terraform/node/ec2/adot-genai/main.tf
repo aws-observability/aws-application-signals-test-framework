@@ -93,10 +93,6 @@ export AGENT_OBSERVABILITY_ENABLED="true"
 cd /app/genai-service
 nohup node --require '@aws/aws-distro-opentelemetry-node-autoinstrumentation/register' --require ./customInstrumentation.js index.js > /var/log/langchain-service.log 2>&1 &
 
-# Upload cloud-init logs to S3
-aws s3 cp /var/log/cloud-init.log s3://adot-genai-js-test/cloud-init-logs/${var.test_id}/cloud-init.log
-aws s3 cp /var/log/cloud-init-output.log s3://adot-genai-js-test/cloud-init-logs/${var.test_id}/cloud-init-output.log
-
 # Wait for service to be ready
 echo "Waiting for service to be ready..."
 for i in {1..60}; do
@@ -124,6 +120,10 @@ for i in {1..5}; do
 done
 echo "Traffic generator completed"
 ' > /var/log/traffic-generator.log 2>&1 &
+
+# Upload cloud-init logs to S3
+aws s3 cp /var/log/cloud-init.log s3://adot-genai-js-test/cloud-init-logs/${var.test_id}/cloud-init.log
+aws s3 cp /var/log/cloud-init-output.log s3://adot-genai-js-test/cloud-init-logs/${var.test_id}/cloud-init-output.log
 
 EOF
   )
