@@ -3,16 +3,12 @@
 
 name: Node EC2 Genesis Use Case
 on:
-  workflow_dispatch: # be able to run the workflow on demand
-  push:
-    branches:
-      - genesis-js-release-test
   workflow_call:
     inputs:
       caller-workflow-name:
         required: true
         type: string
-      staging-wheel-name:
+      staging-instrumentation-name:
         required: false
         default: '@aws/aws-distro-opentelemetry-node-autoinstrumentation'
         type: string
@@ -43,12 +39,12 @@ jobs:
           fetch-depth: 0
 
       - name: Set Get ADOT Instrumentation command environment variable
-        run: echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-genai-js-test/aws-aws-distro-opentelemetry-node-autoinstrumentation-0.6.0-dev0.tar ./adot-instrumentation.tar --region us-east-1 && npm install ./adot-instrumentation.tar" >> $GITHUB_ENV
-          # if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
-          #   echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-          # else
-          #   echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
-          # fi
+        run: |
+          if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+          else
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+          fi
 
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
