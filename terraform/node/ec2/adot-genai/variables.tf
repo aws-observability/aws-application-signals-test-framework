@@ -25,10 +25,6 @@ variable "service_zip_url" {
   description = "S3 URL for the service zip file"
 }
 
-
-
-
-
 variable "user" {
   default = "ec2-user"
 }
