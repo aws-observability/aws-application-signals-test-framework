@@ -4,6 +4,9 @@
 name: Sample App Deployment - Python S3
 on:
   workflow_dispatch: # be able to run the workflow on demand
+  push:
+    branches:
+      - python-genesis-app-metrics-fix
 
 permissions:
   id-token: write
@@ -46,24 +49,40 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_ARN }}
           aws-region: ${{ matrix.aws-region }}
 
-      - name: Build Sample App Zip
-        working-directory: sample-apps/python
-        run: zip -r python-sample-app.zip .
+      # - name: Build Sample App Zip
+      #   working-directory: sample-apps/python
+      #   run: zip -r python-sample-app.zip .
 
-      - name: Upload to S3
-        working-directory: sample-apps/python
-        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
+      # - name: Upload to S3
+      #   working-directory: sample-apps/python
+      #   run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
 
-      - name: Build Lambda Sample App
-        uses: actions/checkout@v4
-        with:
-          repository: 'aws-observability/aws-otel-python-instrumentation'
-      - name: Build sample lambda function
-        shell: bash
-        run: ./package-lambda-function.sh
-        working-directory: lambda-layer/sample-apps
+      # - name: Build Lambda Sample App
+      #   uses: actions/checkout@v4
+      #   with:
+      #     repository: 'aws-observability/aws-otel-python-instrumentation'
+      # - name: Build sample lambda function
+      #   shell: bash
+      #   run: ./package-lambda-function.sh
+      #   working-directory: lambda-layer/sample-apps
 
-      - name: Upload to Lambda Sample App to S3
-        working-directory: lambda-layer/sample-apps
-        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/function.zip --key pyfunction.zip
+      # - name: Upload to Lambda Sample App to S3
+      #   working-directory: lambda-layer/sample-apps
+      #   run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/function.zip --key pyfunction.zip
+
+      # - name: Build Sample App Zip
+      #   working-directory: sample-apps/python
+      #   run: zip -r python-sample-app.zip .
+
+      # - name: Upload to S3
+      #   working-directory: sample-apps/python
+      #   run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
+
+      - name: Build Gen AI Sample App Zip
+        working-directory: sample-apps/python-gen-ai
+        run: zip -r python-gen-ai-sample-app.zip .
+
+      - name: Upload Gen AI Sample App to S3
+        working-directory: sample-apps/python-gen-ai
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-gen-ai-sample-app.zip --key python-gen-ai-sample-app.zip
 
