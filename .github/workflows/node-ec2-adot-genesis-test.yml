@@ -6,7 +6,7 @@ on:
   workflow_dispatch: # be able to run the workflow on demand
   push:
     branches:
-      - genesis-release-test
+      - genesis-js-release-test
   workflow_call:
     inputs:
       caller-workflow-name:
@@ -32,7 +32,7 @@ env:
   SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-us-east-1/node-sample-app.zip
 
 jobs:
-  python-ec2-adot-genai:
+  node-ec2-adot-genesis:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -93,22 +93,22 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/adot-genai && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/node/ec2/adot-genai && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
 
       - name: Deploy service via terraform
-        working-directory: terraform/python/ec2/adot-genai
+        working-directory: terraform/node/ec2/adot-genai
         run: |
           terraform apply -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="service_zip_url=${{ env.SAMPLE_APP_ZIP }}" \
             -var="trace_id=${{ env.TRACE_ID_HEADER }}" \
-            -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
+            -var="get_adot_wheel_command=${{ env.GET_ADOT_INSTRUMENTATION_COMMAND }}" \
 
       - name: Get deployment info
-        working-directory: terraform/python/ec2/adot-genai
+        working-directory: terraform/node/ec2/adot-genai
         run: |
           echo "INSTANCE_IP=$(terraform output langchain_service_public_ip)" >> $GITHUB_ENV
           echo "INSTANCE_ID=$(terraform output langchain_service_instance_id)" >> $GITHUB_ENV
@@ -117,7 +117,7 @@ jobs:
         run: sleep 300
 
       - name: Validate generated logs
-        run: ./gradlew validator:run --args='-c python/ec2/adot-genai/log-validation.yml
+        run: ./gradlew validator:run --args='-c node/ec2/adot-genai/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.INSTANCE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
@@ -129,7 +129,7 @@ jobs:
 
       - name: Validate generated traces
         if: (success() || failure()) && !cancelled()
-        run: ./gradlew validator:run --args='-c python/ec2/adot-genai/trace-validation.yml
+        run: ./gradlew validator:run --args='-c node/ec2/adot-genai/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.INSTANCE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
@@ -140,7 +140,7 @@ jobs:
 
       - name: Validate generated metrics
         if: (success() || failure()) && !cancelled()
-        run: ./gradlew validator:run --args='-c python/ec2/adot-genai/metric-validation.yml
+        run: ./gradlew validator:run --args='-c node/ec2/adot-genai/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.INSTANCE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
@@ -152,7 +152,7 @@ jobs:
       - name: Cleanup
         if: always()
         continue-on-error: true
-        working-directory: terraform/python/ec2/adot-genai
+        working-directory: terraform/node/ec2/adot-genai
         run: |
           terraform destroy -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \

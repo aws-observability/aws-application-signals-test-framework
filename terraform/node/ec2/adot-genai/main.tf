@@ -83,6 +83,10 @@ unzip genai-service.zip
 # Navigate to genai-service directory and install dependencies
 cd genai-service
 npm install
+npm install express @langchain/community @langchain/core @traceloop/node-server-sdk pino
+
+# Download and install ADOT instrumentation
+${var.get_adot_wheel_command}
 
 export AWS_REGION=${var.aws_region}
 export OTEL_EXPORTER_OTLP_LOGS_HEADERS="x-aws-log-group=test/genesis,x-aws-log-stream=default,x-aws-metric-namespace=genesis"
@@ -93,38 +97,26 @@ export AGENT_OBSERVABILITY_ENABLED="true"
 cd /app/genai-service
 nohup node --require '@aws/aws-distro-opentelemetry-node-autoinstrumentation/register' --require ./customInstrumentation.js index.js > /var/log/langchain-service.log 2>&1 &
 
-# Upload cloud-init logs to S3
-aws s3 cp /var/log/cloud-init.log s3://adot-genai-js-test/cloud-init-logs/${var.test_id}/cloud-init.log
-aws s3 cp /var/log/cloud-init-output.log s3://adot-genai-js-test/cloud-init-logs/${var.test_id}/cloud-init-output.log
-
 # Wait for service to be ready
-echo "Waiting for service to be ready..."
 for i in {1..60}; do
   if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-    echo "Service is ready!"
     break
   fi
-  echo "Attempt $i: Service not ready, waiting 5 seconds..."
   sleep 5
 done
 
 # Generate traffic directly
-echo "Starting traffic generator..."
 nohup bash -c '
 for i in {1..5}; do
     message="What is the weather like today?"
-    echo "[$(date)] Request $i: $message"
     curl -s -X POST http://localhost:8000/ai-chat \
         -H "Content-Type: application/json" \
         -H "X-Amzn-Trace-Id: ${var.trace_id}" \
         -d "{\"message\": \"$message\"}" \
-        -m 30 \
-    echo "Request $i completed"
+        -m 30 > /dev/null 2>&1
     sleep 10
 done
-echo "Traffic generator completed"
-' > /var/log/traffic-generator.log 2>&1 &
-
+' > /dev/null 2>&1 &
 EOF
   )
 
