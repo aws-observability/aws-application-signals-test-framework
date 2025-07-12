@@ -83,6 +83,6 @@ jobs:
         run: zip -r python-gen-ai-sample-app.zip .
 
       - name: Upload Gen AI Sample App to S3
-        working-directory: sample-apps/python
+        working-directory: sample-apps/python/genai_service
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-gen-ai-sample-app.zip --key python-gen-ai-sample-app.zip
 
