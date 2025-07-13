@@ -6,11 +6,12 @@ from pydantic import BaseModel
 from langchain_aws import ChatBedrock
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
-from opentelemetry import trace
+from opentelemetry import trace, metrics
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from openinference.instrumentation.langchain import LangChainInstrumentor
+import random
 
 # Load environment variables
 load_dotenv()
@@ -92,7 +93,15 @@ async def chat(request: ChatRequest):
     """
     Chat endpoint that processes a single user message through AWS Bedrock
     """
+
     try:
+        # Emit OTel Metrics
+        meter = metrics.get_meter("genesis-meter", "1.0.0")
+        request_duration = meter.create_histogram(
+            name="Genesis_TestMetrics", description="Genesis request duration", unit="s"
+        )
+        request_duration.record(0.1 + (0.5 * random.random()), {"method": "GET", "status": "200"})
+
         # Process the input through the chain
         result = await chain.ainvoke({"input": request.message})
         return ChatResponse(response=result["text"])
