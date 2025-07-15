@@ -113,7 +113,7 @@ done
 # Generate traffic directly
 echo "Starting traffic generator..."
 nohup bash -c '
-for i in {1..5}; do
+for i in {1..9}; do
     message="What is the weather like today?"
     echo "[$(date)] Request $i: $message"
     curl -s -X POST http://localhost:8000/ai-chat \
