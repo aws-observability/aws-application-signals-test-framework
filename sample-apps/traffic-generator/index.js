@@ -39,17 +39,13 @@ const trafficGenerator = async (interval) => {
     const id = process.env.ID;
 
     let urls = [
-        `http://${mainEndpoint}/outgoing-http-call`,
         `http://${mainEndpoint}/aws-sdk-call?ip=${remoteEndpoint}&testingId=${id}`,
-        `http://${mainEndpoint}/remote-service?ip=${remoteEndpoint}&testingId=${id}`,
-        `http://${mainEndpoint}/client-call`,
-        `http://${mainEndpoint}/mysql`,
     ];
 
     await sendRequests(urls);
     setInterval(() => sendRequests(urls), interval);
 }
 
-const interval = 15 * 1000;
+const interval = 15 * 100000000;
 // Start sending GET requests every 15 seconds (60,000 milliseconds)
 trafficGenerator(interval);
