@@ -123,8 +123,7 @@ jobs:
   run-dotnet-k8s-test:
     if: ${{ inputs.LANGUAGE == 'dotnet' }}
     needs: create-k8s-on-ec2
-    # TODO: Point to REAL K8s implementation after K8s Infra created.
-    uses: ./.github/workflows/dummy-k8s-test.yml
+    uses: ./.github/workflows/dotnet-k8s-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
@@ -134,8 +133,7 @@ jobs:
   run-node-k8s-test:
     if: ${{ inputs.LANGUAGE == 'node' }}
     needs: create-k8s-on-ec2
-    # TODO: Point to REAL K8s implementation after K8s Infra created.
-    uses: ./.github/workflows/dummy-k8s-test.yml
+    uses: ./.github/workflows/node-k8s-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
