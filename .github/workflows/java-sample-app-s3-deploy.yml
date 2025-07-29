@@ -86,7 +86,7 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
-      - name: Build and Upload Main Jar
+      - name: Build and Upload Remote Jar
         working-directory: sample-apps/java/springboot-remote-service
         run: |
           gradle build -P javaVersion=11
@@ -206,3 +206,40 @@ jobs:
           gradle build
           gradle createLambdaZip
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./build/distributions/lambda-function.zip --key java-lambda-function.zip
+
+  java-v11-adaptive-sampling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids:
+            ACCOUNT_ID, adaptive-sampling-region-account/prod-us-west-2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-west-2
+
+      - name: Build and Upload Main JAR
+        working-directory: sample-apps/java/springboot-main-service
+        run: |
+          gradle build -P javaVersion=11
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-us-west-2-adap --body ./build/libs/springboot-*-SNAPSHOT.jar --key java-main-service-v11.jar
+
+      - name: Build and Upload Remote JAR
+        working-directory: sample-apps/java/springboot-remote-service
+        run: |
+          gradle build -P javaVersion=11
+          aws s3api put-object --bucket aws-appsignals-sample-app-prod-us-west-2-adap --body build/libs/springboot-remote-service-*-SNAPSHOT.jar --key java-remote-service-v11.jar
