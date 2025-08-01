@@ -46,7 +46,7 @@ jobs:
         if: contains(github.repository, 'aws-otel-python-instrumentation')
         run: |
           cd ${{ env.TEST_RESOURCES_FOLDER }}/aws-application-signals-test-framework/.github/workflows/
-          EXCLUSIONS="${{ inputs.exclusions }}"
+          EXCLUSIONS="${{ env.EXCLUSIONS }}"
           [[ -n "$EXCLUSIONS" ]] && echo "Applying exclusions to TESTS_EXPECTED: $EXCLUSIONS"
           echo "TESTS_EXPECTED=$(ls | grep -E '^python-' | grep -v 'lambda-layer-perf-test' | grep -E 'test\.ya?ml$' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
 
