@@ -10,6 +10,7 @@ on:
 
 env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  EXCLUSIONS: ${{ inputs.exclusions }}
 
 jobs:
   validate-e2e-tests-are-accounted-for:
