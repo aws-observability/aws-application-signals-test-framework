@@ -30,7 +30,7 @@ jobs:
         if: contains(github.repository, 'aws-otel-java-instrumentation')
         run: |
           cd ${{ env.TEST_RESOURCES_FOLDER }}/aws-application-signals-test-framework/.github/workflows/
-          EXCLUSIONS="${{ inputs.exclusions }}"
+          EXCLUSIONS="${{ env.EXCLUSIONS }}"
           [[ -n "$EXCLUSIONS" ]] && echo "Applying exclusions to TESTS_EXPECTED: $EXCLUSIONS"
           echo "TESTS_EXPECTED=$(ls | grep -E '(^java-)|(^metric-limiter-)' | grep -Ev '(lambda-layer-perf-test|otlp-ocb)' | grep -E 'test\.ya?ml$' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
 
