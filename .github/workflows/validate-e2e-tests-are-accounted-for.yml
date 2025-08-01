@@ -80,6 +80,7 @@ jobs:
               .map { |v| v["uses"] }
               .compact
               .uniq
+              # Ignore the Job that triggers this "validate-e2e-tests-are-accounted-for" validation
               .select { |u| u.include?("aws-application-signals-test-framework/.github/workflows") && !u.include?("validate-e2e-tests-are-accounted-for") }
               .map { |u| u.split("/").last.split("@").first }
               .reject { |w| exclusions.include?(w) }
