@@ -73,10 +73,10 @@ jobs:
           cd ${{ github.repository }}/.github/workflows/
 
           # Get all test framework workflows actually used in application-signals-e2e-test.yml, with exclusions applied
-          EXCLUSIONS="${{ inputs.exclusions }}"
+          EXCLUSIONS="${{ env.EXCLUSIONS }}"
           [[ -n "$EXCLUSIONS" ]] && echo "Applying exclusions to TESTS_ACTUALLY_USED: $EXCLUSIONS"
           echo "TESTS_ACTUALLY_USED=$(ruby -ryaml -e '
-            exclusions = "${{ inputs.exclusions }}".split(",").map(&:strip).reject(&:empty?)
+            exclusions = "${{ env.EXCLUSIONS }}".split(",").map(&:strip).reject(&:empty?)
             workflows = YAML.load_file("application-signals-e2e-test.yml")["jobs"].values
               .map { |v| v["uses"] }
               .compact
