@@ -171,7 +171,7 @@ public class FrontendServiceController {
 public ResponseEntity<String> status(@PathVariable int code, @RequestParam(name = "ip", defaultValue = "localhost") String ip) {
     ip = ip.replace("/", "");
     try {
-        HttpGet request = new HttpGet("http://" + ip + ":8081/status/" + code);
+        HttpGet request = new HttpGet("http://" + ip + ":8080/status/" + code);
         httpClient.execute(request).close();
     } catch (Exception e) {
         // Ignore exception
