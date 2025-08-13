@@ -93,7 +93,8 @@ function run_k8s_master() {
     sudo containerd config default > config.toml
     sudo cp config.toml /etc/containerd/config.toml
     sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/' /etc/containerd/config.toml
-    sudo sed -i 's/systemd_cgroup \= true/systemd_cgroup \= true/' /etc/containerd/config.toml
+    grep -Eq '^[[:space:]]*"?SystemdCgroup"?[[:space:]]*=[[:space:]]*true' /etc/containerd/config.toml || \
+    sudo sed -i "/^[[:space:]]*\\[plugins\\.'io\\.containerd\\.cri\\.v1\\.runtime'\\.containerd\\.runtimes\\.runc\\.options\\]/a\    SystemdCgroup = true" /etc/containerd/config.toml
     sudo systemctl restart containerd && sleep 20
     sudo setenforce 0 && sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
     echo -e "[kubernetes]\nname=Kubernetes\nbaseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/\nenabled=1\ngpgcheck=1\ngpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key\nexclude=kubelet kubeadm kubectl cri-tools kubernetes-cni" | sudo tee /etc/yum.repos.d/kubernetes.repo
@@ -142,7 +143,8 @@ function run_k8s_worker() {
     sudo containerd config default > config.toml
     sudo cp config.toml /etc/containerd/config.toml
     sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/' /etc/containerd/config.toml
-    sudo sed -i 's/systemd_cgroup \= true/systemd_cgroup \= true/' /etc/containerd/config.toml
+    grep -Eq '^[[:space:]]*"?SystemdCgroup"?[[:space:]]*=[[:space:]]*true' /etc/containerd/config.toml || \
+    sudo sed -i "/^[[:space:]]*\\[plugins\\.'io\\.containerd\\.cri\\.v1\\.runtime'\\.containerd\\.runtimes\\.runc\\.options\\]/a\    SystemdCgroup = true" /etc/containerd/config.toml
     sudo systemctl restart containerd
     sudo setenforce 0 && sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
     echo -e "[kubernetes]\nname=Kubernetes\nbaseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/\nenabled=1\ngpgcheck=1\ngpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key\nexclude=kubelet kubeadm kubectl cri-tools kubernetes-cni" | sudo tee /etc/yum.repos.d/kubernetes.repo

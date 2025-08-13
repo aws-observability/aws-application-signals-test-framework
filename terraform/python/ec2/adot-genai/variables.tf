@@ -13,38 +13,32 @@
 # permissions and limitations under the License.
 # -------------------------------------------------------------------------
 
+variable "aws_region" {
+  default = "us-west-2"
+}
+
 variable "test_id" {
   default = "dummy-123"
 }
 
-variable "aws_region" {
-  default = "<aws-region>"
+variable "service_zip_url" {
+  description = "S3 URL for the service zip file"
 }
+
+
+
+
 
 variable "user" {
   default = "ec2-user"
 }
 
-variable "sample_app_zip" {
-  default = "s3://<bucket-name>/<zip>"
+variable "trace_id" {
+  description = "Trace ID for X-Ray tracing"
+  default = "Root=1-5759e988-bd862e3fe1be46a994272793;Parent=53995c3f42cd8ad8;Sampled=1"
 }
 
 variable "get_adot_wheel_command" {
-  default = "aws s3 cp s3://<bucket-name>/<whl> ./<whl> && pip install <whl>"
-}
-
-variable "canary_type" {
-  default = "python-ec2-default"
-}
-
-variable "language_version" {
-  default = "3.9"
-}
-
-variable "cpu_architecture" {
-  default = "x86_64"
-}
-
-variable "application_logs_log_group" {
-  default = "otlp_logs"
+  description = "Command to get and install ADOT wheel"
+  default = "python3.12 -m pip install aws-opentelemetry-distro"
 }

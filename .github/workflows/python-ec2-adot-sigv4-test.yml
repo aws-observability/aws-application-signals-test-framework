@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       python-version:
-        description: "Currently support version 3.8, 3.9, 3.10, 3.11, 3.12"
+        description: "Currently support version 3.8, 3.9, 3.10, 3.11, 3.12, 3.13"
         required: false
         type: string
         default: '3.9'
@@ -39,8 +39,8 @@ env:
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
-  LOG_GROUP_NAME: aws/spans
-  TEST_LOG_GROUP_NAME: otlp_logs
+  SPANS_LOG_GROUP_NAME: aws/spans
+  APPLICATION_LOGS_LOG_GROUP_NAME: otlp_logs
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
@@ -122,7 +122,7 @@ jobs:
               -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
               -var="language_version=${{ env.PYTHON_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
-              -var="test_log_group=${{ env.TEST_LOG_GROUP_NAME }}" \
+              -var="application_logs_log_group=${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
@@ -178,7 +178,7 @@ jobs:
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
@@ -195,7 +195,7 @@ jobs:
           --remote-service-deployment-name python-sample-remote-application-${{ env.TESTING_ID }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}
@@ -213,7 +213,7 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
@@ -222,15 +222,15 @@ jobs:
           --rollup'
       
       - name: Validate generated otlp logs
-        id: log-validation-1
-        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/logs/log-validation.yml
+        id: application-log-validation
+        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/application-log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.TEST_LOG_GROUP_NAME }}
+          --log-group ${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}
           --service-name python-sample-application-${{ env.TESTING_ID }}
           --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}

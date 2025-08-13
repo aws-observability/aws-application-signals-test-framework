@@ -116,23 +116,26 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_UBUNTU_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/ubuntu/client-call-trace.mustache"),
 
   /** Java EC2 ADOT SigV4 (ADOT Stand-Alone) Test Case Validations */
-  JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/adot-sigv4/outgoing-http-call-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
-      "/expected-data-template/java/ec2/adot-sigv4/outgoing-http-call-metric.mustache"),
+      "/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-metric.mustache"),
   JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_TRACE(
-      "/expected-data-template/java/ec2/adot-sigv4/outgoing-http-call-trace.mustache"),
+      "/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-trace.mustache"),
 
-  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/java/ec2/adot-sigv4/aws-sdk-call-log.mustache"),
-  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/java/ec2/adot-sigv4/aws-sdk-call-metric.mustache"),
-  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/java/ec2/adot-sigv4/aws-sdk-call-trace.mustache"),
+  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/aws-sdk-call-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/java/ec2/adot-aws-otlp/aws-sdk-call-metric.mustache"),
+  JAVA_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/aws-sdk-call-trace.mustache"),
 
-  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/java/ec2/adot-sigv4/remote-service-log.mustache"),
-  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/java/ec2/adot-sigv4/remote-service-metric.mustache"),
-  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/java/ec2/adot-sigv4/remote-service-trace.mustache"),
+  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/java/ec2/adot-aws-otlp/remote-service-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/java/ec2/adot-aws-otlp/remote-service-metric.mustache"),
+  JAVA_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/remote-service-trace.mustache"),
 
-  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/java/ec2/adot-sigv4/client-call-log.mustache"),
-  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/adot-sigv4/client-call-metric.mustache"),
-  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/adot-sigv4/client-call-trace.mustache"),
+  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/client-call-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/adot-aws-otlp/client-call-metric.mustache"),
+  JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/client-call-trace.mustache"),
+
+  /** Java EC2 ADOT SigV4 Log Exporter Test Case Validation */
+  JAVA_EC2_ADOT_OTLP_LOG("/expected-data-template/java/ec2/adot-aws-otlp/application-log.mustache"),
 
   /** Java EC2 K8s Test Case Validations */
   JAVA_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/k8s/outgoing-http-call-log.mustache"),
@@ -222,26 +225,31 @@ public enum PredefinedExpectedTemplate implements FileConfig {
 
   /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
-      "/expected-data-template/python/ec2/adot-aws-otlp/traces/outgoing-http-call-log.mustache"),
+      "/expected-data-template/python/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
-      "/expected-data-template/python/ec2/adot-aws-otlp/traces/outgoing-http-call-metric.mustache"),
+      "/expected-data-template/python/ec2/adot-aws-otlp/outgoing-http-call-metric.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_TRACE(
-      "/expected-data-template/python/ec2/adot-aws-otlp/traces/outgoing-http-call-trace.mustache"),
+      "/expected-data-template/python/ec2/adot-aws-otlp/outgoing-http-call-trace.mustache"),
 
-  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/python/ec2/adot-aws-otlp/traces/aws-sdk-call-log.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/traces/aws-sdk-call-metric.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/traces/aws-sdk-call-trace.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/python/ec2/adot-aws-otlp/aws-sdk-call-log.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/aws-sdk-call-metric.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/aws-sdk-call-trace.mustache"),
 
-  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/python/ec2/adot-aws-otlp/traces/remote-service-log.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/traces/remote-service-metric.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/traces/remote-service-trace.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/python/ec2/adot-aws-otlp/remote-service-log.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/remote-service-metric.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/remote-service-trace.mustache"),
 
-  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/python/ec2/adot-aws-otlp/traces/client-call-log.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/traces/client-call-metric.mustache"),
-  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/traces/client-call-trace.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/python/ec2/adot-aws-otlp/client-call-log.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/python/ec2/adot-aws-otlp/client-call-metric.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/client-call-trace.mustache"),
 
   /** Python EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  PYTHON_EC2_ADOT_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/logs/log.mustache"),
+  PYTHON_EC2_ADOT_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/application-log.mustache"),
+
+  /** Python EC2 ADOT Gen AI Test Case Validation */
+  PYTHON_EC2_ADOT_GENAI_LOG("/expected-data-template/python/ec2/adot-genai/genai-log.mustache"),
+  PYTHON_EC2_ADOT_GENAI_TRACE("/expected-data-template/python/ec2/adot-genai/genai-trace.mustache"),
+  PYTHON_EC2_ADOT_GENAI_METRIC("/expected-data-template/python/ec2/adot-genai/genai-metric.mustache"),
 
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
@@ -326,7 +334,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_ASG_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/asg/client-call-metric.mustache"),
   DOTNET_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/asg/client-call-trace.mustache"),
 
-  /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  /** DotNet EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
   DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/dotnet/ec2/adot-sigv4/outgoing-http-call-log.mustache"),
   DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
@@ -449,25 +457,28 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_K8S_CLIENT_CALL_METRIC("/expected-data-template/node/k8s/client-call-metric.mustache"),
   NODE_K8S_CLIENT_CALL_TRACE("/expected-data-template/node/k8s/client-call-trace.mustache"),
 
-  /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  /** Node EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
   NODE_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
-      "/expected-data-template/node/ec2/adot-sigv4/outgoing-http-call-log.mustache"),
+      "/expected-data-template/node/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   NODE_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
-      "/expected-data-template/node/ec2/adot-sigv4/outgoing-http-call-metric.mustache"),
+      "/expected-data-template/node/ec2/adot-aws-otlp/outgoing-http-call-metric.mustache"),
   NODE_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_TRACE(
-      "/expected-data-template/node/ec2/adot-sigv4/outgoing-http-call-trace.mustache"),
+      "/expected-data-template/node/ec2/adot-aws-otlp/outgoing-http-call-trace.mustache"),
 
-  NODE_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/node/ec2/adot-sigv4/aws-sdk-call-log.mustache"),
-  NODE_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/node/ec2/adot-sigv4/aws-sdk-call-metric.mustache"),
-  NODE_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/node/ec2/adot-sigv4/aws-sdk-call-trace.mustache"),
+  NODE_EC2_ADOT_SIGV4_AWS_SDK_CALL_LOG("/expected-data-template/node/ec2/adot-aws-otlp/aws-sdk-call-log.mustache"),
+  NODE_EC2_ADOT_SIGV4_AWS_SDK_CALL_METRIC("/expected-data-template/node/ec2/adot-aws-otlp/aws-sdk-call-metric.mustache"),
+  NODE_EC2_ADOT_SIGV4_AWS_SDK_CALL_TRACE("/expected-data-template/node/ec2/adot-aws-otlp/aws-sdk-call-trace.mustache"),
 
-  NODE_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/node/ec2/adot-sigv4/remote-service-log.mustache"),
-  NODE_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/node/ec2/adot-sigv4/remote-service-metric.mustache"),
-  NODE_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/node/ec2/adot-sigv4/remote-service-trace.mustache"),
+  NODE_EC2_ADOT_SIGV4_REMOTE_SERVICE_LOG("/expected-data-template/node/ec2/adot-aws-otlp/remote-service-log.mustache"),
+  NODE_EC2_ADOT_SIGV4_REMOTE_SERVICE_METRIC("/expected-data-template/node/ec2/adot-aws-otlp/remote-service-metric.mustache"),
+  NODE_EC2_ADOT_SIGV4_REMOTE_SERVICE_TRACE("/expected-data-template/node/ec2/adot-aws-otlp/remote-service-trace.mustache"),
 
-  NODE_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/node/ec2/adot-sigv4/client-call-log.mustache"),
-  NODE_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/node/ec2/adot-sigv4/client-call-metric.mustache"),
-  NODE_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/node/ec2/adot-sigv4/client-call-trace.mustache"),
+  NODE_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/node/ec2/adot-aws-otlp/client-call-log.mustache"),
+  NODE_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/node/ec2/adot-aws-otlp/client-call-metric.mustache"),
+  NODE_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/node/ec2/adot-aws-otlp/client-call-trace.mustache"),
+
+  /** Node EC2 ADOT SigV4 Log Exporter Test Case Validation */
+  NODE_EC2_ADOT_OTLP_LOG("/expected-data-template/node/ec2/adot-aws-otlp/application-log.mustache"),
 
   /** Node ECS Test Case Validations */
   NODE_ECS_HC_CALL_LOG("/expected-data-template/node/ecs/hc-log.mustache"),

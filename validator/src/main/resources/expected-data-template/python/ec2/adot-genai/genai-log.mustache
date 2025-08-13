@@ -1,0 +1,36 @@
+[{
+  "resource": {
+    "attributes": {
+      "aws.local.service": "{{serviceName}}",
+      "aws.service.type": "gen_ai_agent",
+      "service.name": "{{serviceName}}"
+    }
+  },
+  "scope": {
+    "name": "openinference.instrumentation.langchain"
+  },
+  "severityNumber": "^[0-9]+$",
+  "severityText": ".*",
+  "body": {
+    "output": {
+      "messages": [
+        {
+          "content": "^.+$",
+          "role": "assistant"
+        }
+      ]
+    },
+    "input": {
+      "messages": [
+        {
+          "content": "^.+$",
+          "role": "user"
+        }
+      ]
+    }
+  },
+  "attributes": {
+    "event.name": "openinference.instrumentation.langchain"
+  },
+  "traceId": "{{traceId}}"
+}]

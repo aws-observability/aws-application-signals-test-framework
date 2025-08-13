@@ -54,6 +54,14 @@ jobs:
         working-directory: sample-apps/python
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
 
+      - name: Build Gen AI Sample App Zip
+        working-directory: sample-apps/python/genai_service
+        run: zip -r python-gen-ai-sample-app.zip .
+
+      - name: Upload Gen AI Sample App to S3
+        working-directory: sample-apps/python/genai_service
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-gen-ai-sample-app.zip --key python-genai-sample-app.zip
+
       - name: Build Lambda Sample App
         uses: actions/checkout@v4
         with:
@@ -66,4 +74,3 @@ jobs:
       - name: Upload to Lambda Sample App to S3
         working-directory: lambda-layer/sample-apps
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/function.zip --key pyfunction.zip
-

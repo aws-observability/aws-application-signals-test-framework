@@ -116,10 +116,10 @@ resource "null_resource" "main_service_setup" {
       sudo yum install wget -y
       sudo yum install unzip -y
 
-      # Dnf does not have the module for python 3.10, 3,10, 3.12, therefore we need to manually install it by downloading the package from the python website.
+      # Dnf does not have the module for python 3.8, 3.10, 3.12, 3.13, therefore we need to manually install it by downloading the package from the python website.
       # Building and installing the package takes longer then installing it through dnf, so a seperate installation process was made.
       # The canary should run on a version without the manual installation process
-      if [ "${var.language_version}" == "3.8" ] || [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ]; then
+      if [ "${var.language_version}" == "3.8" ] || [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
           # Install modules required to compile Python and also run the sample app
           sudo dnf groupinstall "Development Tools" -y
           sudo dnf install openssl-devel sqlite-devel libffi-devel -y
@@ -249,7 +249,7 @@ resource "null_resource" "remote_service_setup" {
       # Dnf does not have the module for python 3.10, 3,10, 3.12, therefore we need to manually install it by downloading the package from the python website.
       # Building and installing the package takes longer then installing it through dnf, so a seperate installation process was made.
       # The canary should run on a version without the manual installation process
-      if [ "${var.language_version}" == "3.8" ] || [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ]; then
+      if [ "${var.language_version}" == "3.8" ] || [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
           # Install modules required to compile Python and also run the sample app
           sudo dnf groupinstall "Development Tools" -y
           sudo dnf install openssl-devel sqlite-devel libffi-devel -y

@@ -38,7 +38,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Controller;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -163,6 +165,20 @@ public class FrontendServiceController {
     }
     return getXrayTraceId();
   }
+
+@GetMapping("/status/{code}")
+@ResponseBody
+public ResponseEntity<String> status(@PathVariable int code, @RequestParam(name = "ip", defaultValue = "localhost") String ip) {
+    ip = ip.replace("/", "");
+    try {
+        HttpGet request = new HttpGet("http://" + ip + ":8080/status/" + code);
+        httpClient.execute(request).close();
+    } catch (Exception e) {
+        // Ignore exception
+    }
+    logger.info("Service A requested status code {} from Service B", code);
+    return ResponseEntity.ok(getXrayTraceId());
+}
 
   // get x-ray trace id
   private String getXrayTraceId() {

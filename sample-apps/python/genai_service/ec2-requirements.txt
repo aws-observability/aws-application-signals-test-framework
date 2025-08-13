@@ -1,0 +1,15 @@
+langchain
+langchain-community
+langchain_aws
+opentelemetry-sdk
+openinference-instrumentation-langchain
+opentelemetry-api
+opentelemetry-semantic-conventions
+python-dotenv
+openlit
+botocore
+setuptools
+boto3
+aws_opentelemetry_distro
+fastapi
+uvicorn[standard]

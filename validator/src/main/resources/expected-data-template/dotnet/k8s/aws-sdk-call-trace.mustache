@@ -2,7 +2,7 @@
   "name": "^{{serviceName}}$",
   "http": {
     "request": {
-      "url": "^{{endpoint}}/aws-sdk-call$",
+      "url": "^{{endpoint}}/aws-sdk-call(?:\\?{1,2}ip=Redacted&testingId=Redacted)?$",
       "method": "^GET$"
     }
   },
