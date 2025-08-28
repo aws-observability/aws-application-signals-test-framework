@@ -19,7 +19,7 @@ on:
         required: true
         type: string
       dotnet-version:
-        description: "Currently support version 6.0, 8.0"
+        description: "Currently support version 8.0, 9.0"
         required: false
         type: string
         default: '8.0'
