@@ -1,0 +1,12 @@
+-
+  validationType: "trace"
+  httpPath: "/status/{code}"
+  httpMethod: "get"
+  callingType: "http-with-query"
+  expectedTraceTemplate: "JAVA_EC2_ADAPTIVE_SAMPLING_FULL_TRACE"
+-
+  validationType: "trace"
+  httpPath: "/status/{code}"
+  httpMethod: "get"
+  callingType: "http-with-query"
+  expectedTraceTemplate: "JAVA_EC2_ADAPTIVE_SAMPLING_PARTIAL_TRACE"
