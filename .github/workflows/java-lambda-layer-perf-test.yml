@@ -15,6 +15,12 @@ on:
         description: 'The Java version to run the test'
         required: true
         default: '17'
+        type: string
+        
+      ADOT-Java-Branch:
+        description: 'ADOT Java branch to use'
+        required: true
+        default: 'release/v2.11.x'
         type: string  
     
 jobs:
@@ -38,8 +44,14 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: aws-observability/aws-otel-java-instrumentation
-        ref: release/v1.33.x
+        ref: ${{ github.event.inputs.ADOT-Java-Branch }}
         path: aws-otel-java-instrumentation
+
+    - name: Log branch and commit info
+      run: |
+        cd aws-otel-java-instrumentation
+        echo "ADOT Java Branch: ${{ github.event.inputs.ADOT-Java-Branch }}"
+        echo "ADOT Java Commit Hash: $(git rev-parse HEAD)"
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
