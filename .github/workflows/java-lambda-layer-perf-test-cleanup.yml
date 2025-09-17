@@ -24,7 +24,7 @@ on:
         type: string  
     
 jobs:
-  java-lambda-layer-performance-test:
+  java-lambda-layer-performance-test-cleanup:
     runs-on: ubuntu-latest 
     permissions:
         id-token: write
@@ -39,6 +39,19 @@ jobs:
       with:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1     
+
+    - name: Checkout aws-otel-java-instrumentation
+      uses: actions/checkout@v4
+      with:
+        repository: aws-observability/aws-otel-java-instrumentation
+        ref: ${{ github.event.inputs.ADOT-Java-Branch }}
+        path: aws-otel-java-instrumentation
+
+    - name: Log branch and commit info
+      run: |
+        cd aws-otel-java-instrumentation
+        echo "ADOT Java Branch: ${{ github.event.inputs.ADOT-Java-Branch }}"
+        echo "ADOT Java Commit Hash: $(git rev-parse HEAD)"
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
