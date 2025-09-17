@@ -38,7 +38,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: aws-observability/aws-otel-java-instrumentation
-        ref: release/v1.33.x
+        ref: release/v2.11.x
         path: aws-otel-java-instrumentation
 
     - name: Setup Terraform
