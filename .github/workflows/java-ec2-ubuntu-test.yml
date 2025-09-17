@@ -100,7 +100,7 @@ jobs:
       - name: Set Get CW Agent command environment variable
         run: |
           if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
-            echo GET_CW_AGENT_DEB_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb ./cw-agent.deb" >> $GITHUB_ENV
+            echo GET_CW_AGENT_DEB_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/linux/amd64/amazon-cloudwatch-agent.deb ./cw-agent.deb" >> $GITHUB_ENV
           else
             echo GET_CW_AGENT_DEB_COMMAND="wget -O cw-agent.deb https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb" >> $GITHUB_ENV
           fi
