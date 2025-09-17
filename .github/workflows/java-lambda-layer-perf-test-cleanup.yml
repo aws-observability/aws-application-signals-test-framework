@@ -1,0 +1,53 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+name: Java Lambda Layer Performance Test Cleanup
+on:
+  workflow_dispatch:
+    inputs:
+      test_runs:
+        description: 'Number of test runs to perform'
+        required: true
+        default: 20
+        type: number
+        
+      java_version:
+        description: 'The Java version to run the test'
+        required: true
+        default: '17'
+        type: string
+        
+      ADOT-Java-Branch:
+        description: 'ADOT Java branch to use'
+        required: true
+        default: 'release/v2.11.x'
+        type: string  
+    
+jobs:
+  java-lambda-layer-performance-test:
+    runs-on: ubuntu-latest 
+    permissions:
+        id-token: write
+        contents: read
+
+    env:
+      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
+  
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+        aws-region: us-east-1     
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+    
+    - name: Cleanup Terraform Resources
+      if: success() || failure() || cancelled()
+      run: |
+        cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda/terraform
+        echo "Starting Terraform cleanup..."
+        terraform init
+        terraform destroy -auto-approve
+
