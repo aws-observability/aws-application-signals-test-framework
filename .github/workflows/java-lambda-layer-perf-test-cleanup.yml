@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest 
     permissions:
         id-token: write
-        contents: read
+        contents: read   
 
     env:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
@@ -40,9 +40,97 @@ jobs:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1     
 
+    - name: Checkout aws-otel-java-instrumentation
+      uses: actions/checkout@v4
+      with:
+        repository: aws-observability/aws-otel-java-instrumentation
+        ref: ${{ github.event.inputs.ADOT-Java-Branch }}
+        path: aws-otel-java-instrumentation
+
+    - name: Log branch and commit info
+      run: |
+        cd aws-otel-java-instrumentation
+        echo "ADOT Java Branch: ${{ github.event.inputs.ADOT-Java-Branch }}"
+        echo "ADOT Java Commit Hash: $(git rev-parse HEAD)"
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
     
+    # - name: Build and Deploy Lambda Layer
+    #   run: |
+    #     cd aws-otel-java-instrumentation/lambda-layer
+    #     chmod +x build-layer.sh
+    #     ./build-layer.sh
+                
+    #     LAYER_VERSION_ARN=$(aws lambda publish-layer-version \
+    #       --layer-name AWSOpenTelemetryDistroJava \
+    #       --zip-file fileb://build/distributions/aws-opentelemetry-java-layer.zip \
+    #       --compatible-runtimes "java11" "java17" "java21" \
+    #       --compatible-architectures "x86_64" "arm64" \
+    #       --query 'LayerVersionArn' \
+    #       --output text)
+        
+    #     echo "LAYER_VERSION_ARN=$LAYER_VERSION_ARN" >> $GITHUB_ENV
+    #     echo "Published layer ARN $LAYER_VERSION_ARN"
+
+    # - name: Build and Deploy Sample Application with Lambda Layer
+    #   run: |
+    #     cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda
+    #     gradle clean build
+    #     gradle createLambdaZip
+        
+    #     cd terraform
+    #     terraform init
+    #     terraform apply -auto-approve -var "adot_layer_arn=${{ env.LAYER_VERSION_ARN }}"
+
+    # - name: Checkout current repository
+    #   uses: actions/checkout@v4
+    #   with:
+    #     path: current-repo
+    
+    # - name: Run Cold Start Iterations for Base Lambda + Lambda Layer
+    #   run: |
+    #     cd current-repo
+    #     chmod +x lambda-layer-perf-test/lambda-layer-run.sh
+    #     ./lambda-layer-perf-test/lambda-layer-run.sh false aws-opentelemetry-distro-java
+
+    # - name: Remove Application Signals Lambda Layer
+    #   run: |
+    #       echo "Removing Lambda layer..."
+          
+    #       OUTPUT=$(aws lambda update-function-configuration \
+    #           --function-name aws-opentelemetry-distro-java \
+    #           --layers [])
+  
+    #       echo "Lambda configuration:"
+    #       echo "$OUTPUT"
+  
+    #       LAYERS=$(echo "$OUTPUT" | jq -r '.Layers | length')
+  
+    #       if [ "$LAYERS" -ne 0 ]; then
+    #           echo "::error::Found $LAYERS layer(s) still attached to the function"
+    #           echo "::error::Layer details:"
+    #           echo "$OUTPUT" | jq -r '.Layers'
+    #           exit 1
+    #       else
+    #           echo "✅ Layers successfully removed"
+    #       fi
+ 
+    # - name: Run Cold Start Iterations for Base Lambda
+    #   run: |
+    #     cd current-repo
+    #     chmod +x lambda-layer-perf-test/lambda-layer-run.sh
+    #     ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-java
+
+    # - name: Upload test results
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: java-performance-test-results
+    #     path: |
+    #         no_layer_results.txt
+    #         layer_results.txt
+    #     retention-days: 90
+
     - name: Cleanup Terraform Resources
       if: success() || failure() || cancelled()
       run: |
@@ -50,4 +138,3 @@ jobs:
         echo "Starting Terraform cleanup..."
         terraform init
         terraform destroy -auto-approve
-
