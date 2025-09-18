@@ -1,3 +1,6 @@
+# How to Run Lambda Java Performance Test
+[Link](docs/lambda-java-perf-test.md)
+
 # How to Test E2E Resource Changes
 This guide will give a step by step instruction on how to test changes made to Java/Python E2E testing resources before pushing a PR.
 The guide will include the following:
