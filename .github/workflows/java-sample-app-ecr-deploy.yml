@@ -51,6 +51,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
+      - name: Setup Gradle 8.14
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
+
       - name: Build and Upload Main Service Image
         working-directory: sample-apps/java/springboot-main-service
         run: |
@@ -90,6 +95,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
+      - name: Setup Gradle 8.14
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
+
       - name: Build and Upload Remote Service Image
         working-directory: sample-apps/java/springboot-remote-service
         run: |
@@ -121,6 +131,11 @@ jobs:
         with:
           secret-ids: |
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
+
+      - name: Setup Gradle 8.14
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
 
       - name: Build and Upload Main Service Image
         working-directory: sample-apps/java/springboot-main-service
@@ -161,6 +176,11 @@ jobs:
         with:
           secret-ids: |
             JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
+
+      - name: Setup Gradle 8.14
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
 
       - name: Build and Upload Remote Service Image
         working-directory: sample-apps/java/springboot-remote-service
