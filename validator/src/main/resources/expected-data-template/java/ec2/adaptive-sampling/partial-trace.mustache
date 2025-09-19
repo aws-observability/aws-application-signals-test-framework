@@ -1,0 +1,29 @@
+[{
+  "name": "^{{remoteServiceName}}$",
+  "http": {
+    "request": {
+      "url": "^http://{{remoteServiceDeploymentName}}/status/500$",
+      "method": "^GET$"
+    },
+    "response": {
+        "status": "^500$"
+    }
+  },
+  "annotations": {
+    "aws.local.service": "^{{remoteServiceName}}$",
+    "aws.local.operation": "^GET /status/.code.",
+    "aws.local.environment": "^ec2:default$"
+  },
+  "metadata": {
+    "default": {
+      "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
+      "PlatformType": "^AWS::EC2$",
+      "otel.resource.host.image.id": "^{{instanceAmi}}$",
+      "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$",
+      "aws.span.kind": "^LOCAL_ROOT$",
+      "aws.xray.sampling_rule": "^RuleA$",
+      "aws.trace.flag.sampled": "false",
+      "error.type": "^500$"
+    }
+  }
+}]
