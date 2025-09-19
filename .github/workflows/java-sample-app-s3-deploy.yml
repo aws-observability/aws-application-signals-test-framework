@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# This workflow is for building and uploading the Java sample application to S3 bucket. Java 11 will be built and uploaded to all regions to be used by the canary while other versions (8, 17, 21, 22)
+# This workflow is for building and uploading the Java sample application to S3 bucket. Java 11 will be built and uploaded to all regions to be used by the canary while other versions (8, 17, 21, 23)
 # will be uploaded to us-east-1 for the purpose of testing ADOT Java
 name: Sample App Deployment - Java S3
 on:
@@ -96,7 +96,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [ '8', '17', '21', '22' ]
+        java-version: [ '8', '17', '21', '23' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -117,8 +117,8 @@ jobs:
         run: |
           # For Java 8, springboot must be lower than version 3
           # For Java 11,17,21, they are compatible with both springboot version
-          # For Java 22 and above, springboot must be version 3 or higher
-          if [ "${{ matrix.java-version }}" = "22" ]; then
+          # For Java 23 and above, springboot must be version 3 or higher
+          if [ "${{ matrix.java-version }}" = "23" ]; then
             sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
             cat build.gradle.kts
           fi
@@ -130,7 +130,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [ '8', '17', '21', '22' ]
+        java-version: [ '8', '17', '21', '23' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -151,8 +151,8 @@ jobs:
         run: |
           # For Java 8, springboot must be lower than version 3
           # For Java 11,17,21, they are compatible with both springboot version
-          # For Java 22 and above, springboot must be version 3 or higher
-          if [ "${{ matrix.java-version }}" = "22" ]; then
+          # For Java 23 and above, springboot must be version 3 or higher
+          if [ "${{ matrix.java-version }}" = "23" ]; then
             sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
             cat build.gradle.kts
           fi
