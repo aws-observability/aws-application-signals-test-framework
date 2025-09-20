@@ -3,7 +3,7 @@
 
 # This workflow is for building and uploading the Java sample application to ECR.
 # Java 11 will be built and uploaded to all regions to be used by the canary while
-# other versions (8, 17, 21, 22) will be uploaded to us-east-1 for the purpose of
+# other versions (8, 17, 21, 23) will be uploaded to us-east-1 for the purpose of
 # testing ADOT Java
 name: Sample App Deployment - Java ECR
 on:
@@ -51,6 +51,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
+      - name: Setup Gradle 8.14
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
+
       - name: Build and Upload Main Service Image
         working-directory: sample-apps/java/springboot-main-service
         run: |
@@ -90,6 +95,11 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
+      - name: Setup Gradle 8.14
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
+
       - name: Build and Upload Remote Service Image
         working-directory: sample-apps/java/springboot-remote-service
         run: |
@@ -100,7 +110,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [ '8', '17', '21', '22' ]
+        java-version: [ '8', '17', '21', '23' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -122,13 +132,18 @@ jobs:
           secret-ids: |
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
 
+      - name: Setup Gradle 8.14
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
+
       - name: Build and Upload Main Service Image
         working-directory: sample-apps/java/springboot-main-service
         run: |
           # For Java 8, springboot must be lower than version 3
           # For Java 11,17,21, they are compatible with both springboot version
-          # For Java 22 and above, springboot must be version 3 or higher
-          if [ "${{ matrix.java-version }}" = "22" ]; then
+          # For Java 23 and above, springboot must be version 3 or higher
+          if [ "${{ matrix.java-version }}" = "23" ]; then
             sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
             cat build.gradle.kts
           fi
@@ -140,7 +155,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [ '8', '17', '21', '22' ]
+        java-version: [ '8', '17', '21', '23' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -162,13 +177,18 @@ jobs:
           secret-ids: |
             JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
 
+      - name: Setup Gradle 8.14
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14'
+
       - name: Build and Upload Remote Service Image
         working-directory: sample-apps/java/springboot-remote-service
         run: |
           # For Java 8, springboot must be lower than version 3
           # For Java 11,17,21, they are compatible with both springboot version
-          # For Java 22 and above, springboot must be version 3 or higher
-          if [ "${{ matrix.java-version }}" = "22" ]; then
+          # For Java 23 and above, springboot must be version 3 or higher
+          if [ "${{ matrix.java-version }}" = "23" ]; then
             sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
             cat build.gradle.kts
           fi
