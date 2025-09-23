@@ -61,8 +61,8 @@ jobs:
           secret-ids: |
             ACCOUNT_ID, adaptive-sampling-region-account/prod-${{ env.E2E_TEST_AWS_REGION }}
 
+      # Get the credentials for the adaptive sampling account specifically
       - name: Configure AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
