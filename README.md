@@ -1,4 +1,4 @@
-# How to Run Lambda Java Performance Test
+# How to Run Lambda Java Performance Test 
 [Link](docs/lambda-java-perf-test.md)
 
 # How to Test E2E Resource Changes
