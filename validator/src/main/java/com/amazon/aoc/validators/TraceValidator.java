@@ -142,6 +142,9 @@ public class TraceValidator implements IValidator {
       traceFilter += (String.format(" AND annotation.aws_local_operation = \"%s/%s\"",
               context.getServiceName(),
               "FunctionHandler"));
+    } else if (validationConfig.getExpectedTraceTemplate().getPath().getFile().contains("partial-trace")) {
+      // Main service node should NOT be present and remote service SHOULD be
+      traceFilter = String.format("annotation.aws_local_service != \"%s\" AND annotation.aws_local_service = \"%s\"", context.getServiceName(), context.getRemoteServiceName());
     } else {
       traceFilter += (String.format(" AND annotation.aws_local_operation = \"%s %s\"",
               validationConfig.getHttpMethod().toUpperCase(),
