@@ -121,12 +121,18 @@ app.get('/client-call', (req, res) => {
 });
 
 app.get('/mysql', (req, res) => {
-  // Create a connection to the MySQL database
+  // Create a connection to the MySQL database using IAM role authentication
   const connection = mysql.createConnection({
     host: process.env.RDS_MYSQL_CLUSTER_ENDPOINT,
     user: process.env.RDS_MYSQL_CLUSTER_USERNAME,
-    password: process.env.RDS_MYSQL_CLUSTER_PASSWORD,
     database: process.env.RDS_MYSQL_CLUSTER_DATABASE,
+    ssl: {
+      ca: require('fs').readFileSync('/opt/rds-ca-2019-root.pem', 'utf8'),
+      rejectUnauthorized: false
+    },
+    authPlugins: {
+      mysql_clear_password: () => () => Buffer.alloc(0)
+    }
   });
 
   // Connect to the database

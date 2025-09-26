@@ -126,10 +126,6 @@ resource "kubernetes_deployment" "sample_app_deployment" {
             name = "RDS_MYSQL_CLUSTER_USERNAME"
             value = var.rds_mysql_cluster_username
           }
-          env {
-            name = "RDS_MYSQL_CLUSTER_PASSWORD"
-            value = var.rds_mysql_cluster_password
-          }
           port {
             container_port = 8000
           }

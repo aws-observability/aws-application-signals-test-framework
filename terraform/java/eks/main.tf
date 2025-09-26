@@ -120,10 +120,6 @@ resource "kubernetes_deployment" "sample_app_deployment" {
             value = var.rds_mysql_cluster_username
           }
           env {
-            name = "RDS_MYSQL_CLUSTER_PASSWORD"
-            value = var.rds_mysql_cluster_password
-          }
-          env {
             name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
             value = "true"
           }

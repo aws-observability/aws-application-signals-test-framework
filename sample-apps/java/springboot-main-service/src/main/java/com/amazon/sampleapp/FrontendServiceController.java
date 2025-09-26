@@ -32,7 +32,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,12 +150,15 @@ public class FrontendServiceController {
   @ResponseBody
   public String mysql() {
     logger.info("mysql received");
-    final String rdsMySQLClusterPassword = new String(new Base64().decode(System.getenv("RDS_MYSQL_CLUSTER_PASSWORD").getBytes()));
     try {
+      // Use IAM role authentication instead of password
+      String connectionUrl = System.getenv("RDS_MYSQL_CLUSTER_CONNECTION_URL") + 
+                           "?useSSL=true&requireSSL=true&verifyServerCertificate=false" +
+                           "&allowPublicKeyRetrieval=true&useAWSIam=true";
       Connection connection = DriverManager.getConnection(
-              System.getenv("RDS_MYSQL_CLUSTER_CONNECTION_URL"),
+              connectionUrl,
               System.getenv("RDS_MYSQL_CLUSTER_USERNAME"),
-              rdsMySQLClusterPassword);
+              null); // No password needed for IAM auth
       Statement statement = connection.createStatement();
       statement.executeQuery("SELECT * FROM tables LIMIT 1;");
     } catch (SQLException e) {
