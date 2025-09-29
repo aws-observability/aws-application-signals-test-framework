@@ -112,16 +112,16 @@ resource "kubernetes_deployment" "sample_app_deployment" {
             value = "sample-application-${var.test_id}"
           }
           env {
-            name = "RDS_MYSQL_CLUSTER_CONNECTION_URL"
-            value = "jdbc:mysql://${var.rds_mysql_cluster_endpoint}:3306/information_schema"
+            name = "RDS_MYSQL_CLUSTER_DATABASE"
+            value = var.rds_mysql_cluster_database
+          }
+          env {
+            name = "RDS_MYSQL_CLUSTER_ENDPOINT"
+            value = var.rds_mysql_cluster_endpoint
           }
           env {
             name = "RDS_MYSQL_CLUSTER_USERNAME"
             value = var.rds_mysql_cluster_username
-          }
-          env {
-            name = "RDS_MYSQL_CLUSTER_PASSWORD"
-            value = var.rds_mysql_cluster_password
           }
           env {
             name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"

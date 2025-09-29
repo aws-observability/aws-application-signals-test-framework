@@ -11,3 +11,6 @@ node_modules/
 
 # Ignore Bin files from validator folder
 validator/bin
+
+.venv
+__pycache__

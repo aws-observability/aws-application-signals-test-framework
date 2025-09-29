@@ -5,6 +5,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const bunyan = require('bunyan');
 const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
+const { Signer } = require('@aws-sdk/rds-signer');
 
 const PORT = parseInt(process.env.SAMPLE_APP_PORT || '8000', 10);
 
@@ -120,40 +121,59 @@ app.get('/client-call', (req, res) => {
   makeAsyncCall = true;
 });
 
-app.get('/mysql', (req, res) => {
-  // Create a connection to the MySQL database
-  const connection = mysql.createConnection({
-    host: process.env.RDS_MYSQL_CLUSTER_ENDPOINT,
-    user: process.env.RDS_MYSQL_CLUSTER_USERNAME,
-    password: process.env.RDS_MYSQL_CLUSTER_PASSWORD,
-    database: process.env.RDS_MYSQL_CLUSTER_DATABASE,
-  });
+app.get('/mysql', async (req, res) => {
+  try {
+    const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1';
+    const signer = new Signer({
+      region: region,
+      hostname: process.env.RDS_MYSQL_CLUSTER_ENDPOINT,
+      port: 3306,
+      username: process.env.RDS_MYSQL_CLUSTER_USERNAME
+    });
+    const token = await signer.getAuthToken();
 
-  // Connect to the database
-  connection.connect((err) => {
-    if (err) {
-      const msg = '/mysql called with an error: ' + err.errors;
-      logger.error(msg);
-      return res.status(500).send(msg);
-    }
+    // Create a connection to the MySQL database using IAM authentication
+    const connection = mysql.createConnection({
+      host: process.env.RDS_MYSQL_CLUSTER_ENDPOINT,
+      user: process.env.RDS_MYSQL_CLUSTER_USERNAME,
+      password: token,
+      database: process.env.RDS_MYSQL_CLUSTER_DATABASE,
+      ssl: 'Amazon RDS',
+      authPlugins: {
+        mysql_clear_password: () => () => Buffer.from(token + '\0')
+      }
+    });
 
-    // Perform a simple query
-    connection.query('SELECT * FROM tables LIMIT 1;', (queryErr, results) => {
-      // Close the connection
-      connection.end();
-
-      if (queryErr) {
-        const msg = 'Could not complete http request to RDS database:' + queryErr.message;
+    // Connect to the database
+    connection.connect((err) => {
+      if (err) {
+        const msg = '/mysql called with an error: ' + err.message;
         logger.error(msg);
         return res.status(500).send(msg);
       }
 
-      // Send the query results as the response
-      const msg = `/outgoing-http-call response: ${results}`;
-      logger.info(msg);
-      res.send(msg);
+      // Perform a simple query
+      connection.query('SELECT * FROM tables LIMIT 1;', (queryErr, results) => {
+        // Close the connection
+        connection.end();
+
+        if (queryErr) {
+          const msg = 'Could not complete http request to RDS database:' + queryErr.message;
+          logger.error(msg);
+          return res.status(500).send(msg);
+        }
+
+        // Send the query results as the response
+        const msg = `/mysql response: ${JSON.stringify(results)}`;
+        logger.info(msg);
+        res.send(msg);
+      });
     });
-  });
+  } catch (error) {
+    const msg = '/mysql called with IAM token generation error: ' + error.message;
+    logger.error(msg);
+    res.status(500).send(msg);
+  }
 });
 
 app.listen(PORT, () => {
