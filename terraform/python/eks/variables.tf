@@ -61,10 +61,6 @@ variable "rds_mysql_cluster_username" {
   default = "username"
 }
 
-variable "rds_mysql_cluster_password" {
-  default = "password"
-}
-
 variable "account_id" {
   default = "<AWS_ACCOUNT_ID>"
 }
