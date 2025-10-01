@@ -1,0 +1,727 @@
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: Environment
+      value: ec2:default
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+
+
+# Adding Span Metrics For Custom Metrics
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Error
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Operation
+      value: GET remote-service
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: Operation
+      value: GET healthcheck
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{remoteServiceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ec2:default
+    -
+      name: RemoteOperation
+      value: GET /healthcheck
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service
+
+-
+  metricName: Fault
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: RemoteService
+      value: {{remoteServiceDeploymentName}}
+    -
+      name: operation.type
+      value: downstream_service

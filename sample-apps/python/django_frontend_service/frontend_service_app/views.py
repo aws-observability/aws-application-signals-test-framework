@@ -11,10 +11,15 @@ import pymysql
 import requests
 import schedule
 from django.http import HttpResponse, JsonResponse
-from opentelemetry import trace
+from opentelemetry import trace, metrics
 from opentelemetry.trace.span import format_trace_id
 
 logger = logging.getLogger(__name__)
+
+# Initialize OTEL metrics for span metrics
+meter = metrics.get_meter(__name__)
+request_counter = meter.create_counter("custom_requests_total", description="Total requests")
+response_time_histogram = meter.create_histogram("custom_response_time", description="Response time")
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -47,9 +52,18 @@ def run_local_root_client_call_recurring_service():
 run_local_root_client_call_recurring_service()
 
 def healthcheck(request):
+    # Setup Span Attributes And Initialize Counter To Recieve Custom Metrics
+    span = trace.get_current_span()
+    span.set_attribute("operation.type", "healthcheck")
+    request_counter.add(1, {"operation.type": "healthcheck"})
     return HttpResponse("healthcheck")
 
 def aws_sdk_call(request):
+    # Setup Span Attributes And Initialize Counter To Recieve Custom Metrics
+    span = trace.get_current_span()
+    span.set_attribute("operation.type", "aws_sdk_call")
+    request_counter.add(1, {"operation.type": "aws_sdk_call"})
+    
     bucket_name = "e2e-test-bucket-name"
 
     # Add a unique test ID to bucketname to associate buckets to specific test runs
@@ -70,6 +84,11 @@ def aws_sdk_call(request):
     return get_xray_trace_id()
 
 def http_call(request):
+    # Setup Span attributes to recieve Custom Metrics
+    span = trace.get_current_span()
+    span.set_attribute("operation.type", "http_call")
+    request_counter.add(1, {"operation.type": "http_call"})
+
     url = "https://www.amazon.com"
     try:
         response = requests.get(url)
@@ -80,6 +99,11 @@ def http_call(request):
     return get_xray_trace_id()
 
 def downstream_service(request):
+    # Setup Span attributes to recieve Custom Metrics
+    span = trace.get_current_span()
+    span.set_attribute("operation.type", "downstream_service")
+    request_counter.add(1, {"operation.type": "downstream_service"})
+
     ip = request.GET.get('ip', '')
     ip = ip.replace("/", "")
     url = f"http://{ip}:8001/healthcheck"
@@ -94,6 +118,10 @@ def downstream_service(request):
     return get_xray_trace_id()
 
 def async_service(request):
+    # Setup Span Attributes And Initialize Counter To Recieve Custom Metrics
+    span = trace.get_current_span()
+    span.set_attribute("operation.type", "async_service")
+    request_counter.add(1, {"operation.type": "async_service"})
     global should_send_local_root_client_call
     # Log the request
     logger.info("Client-call received")
@@ -111,6 +139,11 @@ def get_xray_trace_id():
     return JsonResponse({"traceId": xray_trace_id})
 
 def mysql(request):
+    # Setup Span attributes to recieve Custom Metrics
+    span = trace.get_current_span()
+    span.set_attribute("operation.type", "mysql")
+    request_counter.add(1, {"operation.type": "mysql"})
+
     logger.info("mysql received")
 
     encoded_password = os.environ["RDS_MYSQL_CLUSTER_PASSWORD"]
