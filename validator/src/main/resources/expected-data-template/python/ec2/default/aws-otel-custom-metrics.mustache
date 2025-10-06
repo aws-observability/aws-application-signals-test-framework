@@ -1,15 +1,4 @@
-# OpenTelemetry Custom Metrics Validation Templates 
--
-  metricName: custom_requests_total
-  namespace: {{customMetricNamespace}}
-  dimensions:
-    -
-      name: operation.type
-      value: healthcheck
-    -
-      name: Service
-      value: {{serviceName}}
-
+# OpenTelemetry Custom Metrics Validation Templates - AWS SDK Call Only
 -
   metricName: custom_requests_total
   namespace: {{customMetricNamespace}}
@@ -20,50 +9,9 @@
     -
       name: Service
       value: {{serviceName}}
-
--
-  metricName: custom_requests_total
-  namespace: {{customMetricNamespace}}
-  dimensions:
     -
-      name: operation.type
-      value: http_call
-    -
-      name: Service
-      value: {{serviceName}}
-
--
-  metricName: custom_requests_total
-  namespace: {{customMetricNamespace}}
-  dimensions:
-    -
-      name: operation.type
-      value: downstream_service
-    -
-      name: Service
-      value: {{serviceName}}
-
--
-  metricName: custom_requests_total
-  namespace: {{customMetricNamespace}}
-  dimensions:
-    -
-      name: operation.type
-      value: async_service
-    -
-      name: Service
-      value: {{serviceName}}
-
--
-  metricName: custom_requests_total
-  namespace: {{customMetricNamespace}}
-  dimensions:
-    -
-      name: operation.type
-      value: mysql
-    -
-      name: Service
-      value: {{serviceName}}
+      name: Environment
+      value: {{testingId}}
 
 # Code for adding in Custom Histogram Metrics
 # -
