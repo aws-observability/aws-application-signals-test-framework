@@ -170,7 +170,7 @@ resource "null_resource" "main_service_setup" {
       export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
       export OTEL_PYTHON_DISTRO="aws_distro"
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
-      eexport OTEL_METRICS_EXPORTER=otlp
+      export OTEL_METRICS_EXPORTER=otlp
       export OTEL_TRACES_EXPORTER=otlp
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
