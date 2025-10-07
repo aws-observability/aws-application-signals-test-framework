@@ -1,0 +1,26 @@
+# OpenTelemetry Custom Metrics Validation Templates - AWS SDK Call Only
+-
+  metricName: custom_requests_total
+  namespace: {{customMetricNamespace}}
+  dimensions:
+    -
+      name: operation.type
+      value: aws_sdk_call
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: {{testingId}}
+
+# Code for adding in Custom Histogram Metrics
+# -
+#   metricName: custom_response_time
+#   namespace: {{customMetricNamespace}}
+#   dimensions:
+#     -
+#       name: operation.type
+#       value: aws_sdk_call
+#     -
+#       name: Service
+#       value: {{serviceName}}

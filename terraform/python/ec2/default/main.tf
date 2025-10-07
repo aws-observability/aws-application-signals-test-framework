@@ -145,7 +145,7 @@ resource "null_resource" "main_service_setup" {
       sudo yum install ec2-instance-connect -y
 
       # Copy in CW Agent configuration
-      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
+      agent_config='${replace(replace(file(var.custom_metrics_enabled ? "./amazon-cloudwatch-custom-agent.json" : "./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
@@ -170,7 +170,7 @@ resource "null_resource" "main_service_setup" {
       export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
       export OTEL_PYTHON_DISTRO="aws_distro"
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
-      export OTEL_METRICS_EXPORTER=none
+      export OTEL_METRICS_EXPORTER=otlp
       export OTEL_TRACES_EXPORTER=otlp
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
@@ -179,6 +179,11 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id}",deployment.environment.name=${var.test_id}"
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4317
+      export AWS_REGION='${var.aws_region}'
+      export CUSTOM_METRICS_CONFIG='${var.custom_metrics_config}'
+      export CUSTOM_METRICS_ENABLED='${var.custom_metrics_enabled}'
       python${var.language_version} manage.py migrate
       nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
 
@@ -275,7 +280,7 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install ec2-instance-connect -y
 
       # Copy in CW Agent configuration
-      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
+      agent_config='${replace(replace(file(var.custom_metrics_enabled ? "./amazon-cloudwatch-custom-agent.json" : "./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
