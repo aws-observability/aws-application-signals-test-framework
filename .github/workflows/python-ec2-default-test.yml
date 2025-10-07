@@ -182,8 +182,7 @@ jobs:
               -var="language_version=${{ env.PYTHON_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
               -var="custom_metrics_enabled=${{ env.CUSTOM_METRICS_ENABLED }}" \
-              -var="custom_metrics_config=${{ env.CUSTOM_METRICS_CONFIG }}"
-            || deployment_failed=$?
+              -var="custom_metrics_config=${{ env.CUSTOM_METRICS_CONFIG }}" || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
