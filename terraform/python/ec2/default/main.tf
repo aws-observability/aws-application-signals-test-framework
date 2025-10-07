@@ -179,7 +179,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
-      export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id},deployment.environment.name=${var.test_id}"
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id},deployment.environment.name=ec2:default"
       ${var.custom_metrics_enabled ? "export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4317" : "# Custom metrics disabled"}
       export AWS_REGION='${var.aws_region}'
       export CUSTOM_METRICS_CONFIG='${var.custom_metrics_config}'
