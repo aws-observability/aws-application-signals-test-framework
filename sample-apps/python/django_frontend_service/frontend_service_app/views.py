@@ -144,7 +144,6 @@ def aws_sdk_call(request):
     return get_xray_trace_id()
 
 def http_call(request):
-
     url = "https://www.amazon.com"
     try:
         response = requests.get(url)
@@ -155,7 +154,6 @@ def http_call(request):
     return get_xray_trace_id()
 
 def downstream_service(request):
-
     ip = request.GET.get('ip', '')
     ip = ip.replace("/", "")
     url = f"http://{ip}:8001/healthcheck"
@@ -187,7 +185,6 @@ def get_xray_trace_id():
     return JsonResponse({"traceId": xray_trace_id})
 
 def mysql(request):
-
     logger.info("mysql received")
 
     encoded_password = os.environ["RDS_MYSQL_CLUSTER_PASSWORD"]
