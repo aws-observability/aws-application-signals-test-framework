@@ -20,3 +20,4 @@ jobs:
     secrets: inherit
     with:
       caller-workflow-name: 'test'
+      aws-region: 'us-west-2'
