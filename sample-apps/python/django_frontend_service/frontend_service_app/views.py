@@ -11,10 +11,77 @@ import pymysql
 import requests
 import schedule
 from django.http import HttpResponse, JsonResponse
-from opentelemetry import trace
+from opentelemetry import trace, metrics
 from opentelemetry.trace.span import format_trace_id
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter as HTTPMetricExporter
+from opentelemetry.sdk.metrics.export import ConsoleMetricsExporter
+from opentelemetry.sdk.resources import Resource
 
 logger = logging.getLogger(__name__)
+
+# Initialize custom OTEL metrics export pipeline - OTLP approach (OTEL/Span export 1) Agent based
+custom_resource = Resource.create({
+        "service.name": os.getenv("OTEL_SERVICE_NAME", "python-sample-application"),
+        "deployment.environment.name": os.getenv("DEPLOYMENT_ENV", "test"),
+        #"test" being over-rided by python-sample-application-${var.test_id} in main.tf
+        })
+custom_otlp_exporter = OTLPMetricExporter(
+    endpoint="http://localhost:4317",
+    insecure=True
+)
+custom_otlp_reader = PeriodicExportingMetricReader(
+    exporter=custom_otlp_exporter,
+    export_interval_millis=5000
+)
+
+# Initialize Console exporter - Direct output approach (OTEL export 2) Custom export pipeline
+custom_console_exporter = ConsoleMetricsExporter()
+custom_console_reader = PeriodicExportingMetricReader(
+    exporter=custom_console_exporter,
+    export_interval_millis=5000
+)
+
+# Custom Export Pipeline - HTTP Direct
+resource = Resource.create({
+    "service.name": os.getenv("OTEL_SERVICE_NAME", "python-sample-application"),
+    "deployment.environment.name": os.getenv("DEPLOYMENT_ENV", "test")
+    })#"test" being over-rided by python-sample-application-${var.test_id} in main.tf
+
+# OtlpHttpMetricExporter.builder().setEndpoint().build()
+metricExporter = HTTPMetricExporter(
+    endpoint="http://localhost:4318/v1/metrics"
+)
+
+# PeriodicMetricReader.builder(metricExporter).setInterval(Duration.ofSeconds(10)).build()
+metricReader = PeriodicExportingMetricReader(
+    exporter=metricExporter,
+    export_interval_millis=5000
+)
+
+# SdkMeterProvider.builder().setResource(resource).registerMetricReader(metricReader).build()
+meterProvider = MeterProvider(
+    resource=resource,
+    metric_readers=[metricReader]
+)
+
+# meterProvider.get("myMeter")
+meter = meterProvider.get_meter("myMeter")
+
+
+# Create meter provider with both exporters
+custom_meter_provider = MeterProvider(
+    resource=custom_resource,
+    metric_readers=[custom_otlp_reader, custom_console_reader]
+)
+
+# Initialize span metrics using custom meter provider
+custom_meter = custom_meter_provider.get_meter("custom-metrics")
+custom_request_counter = custom_meter.create_counter("custom_requests_total", description="Total requests")
+http_counter = meter.create_counter("custom_requests_total", description="Total requests")
+# custom_response_time_histogram = custom_meter.create_histogram("custom_response_time", description="Response time")
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -50,6 +117,13 @@ def healthcheck(request):
     return HttpResponse("healthcheck")
 
 def aws_sdk_call(request):
+    # Setup Span Attributes And Initialize Counter/Histogram To Recieve Custom Metrics
+    # start_time = time.time() #start histogram
+    custom_request_counter.add(1, {"operation.type": "aws_sdk_call"})  # Agent-based export
+    http_counter.add(1, {"operation.type": "aws_sdk_call"})  # Custom export pipeline
+    # duration = time.time() - start_time #end histogram
+    # custom_response_time_histogram.record(duration, {"operation.type": "aws_sdk_call"}) #record histogram
+    
     bucket_name = "e2e-test-bucket-name"
 
     # Add a unique test ID to bucketname to associate buckets to specific test runs
