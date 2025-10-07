@@ -60,5 +60,5 @@ variable "custom_metrics_enabled" {
 variable "custom_metrics_config" {
   description = "JSON configuration for custom metrics"
   type        = string
-  default     = "amazon-cloudwatch-custom-agent.json"
+  default     = "{}"
 }
