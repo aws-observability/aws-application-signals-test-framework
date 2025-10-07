@@ -170,7 +170,7 @@ resource "null_resource" "main_service_setup" {
       export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
       export OTEL_PYTHON_DISTRO="aws_distro"
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
-      export OTEL_METRICS_EXPORTER=otlp
+      export OTEL_METRICS_EXPORTER=${var.custom_metrics_enabled ? "otlp" : "none"}
       export OTEL_TRACES_EXPORTER=otlp
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
@@ -179,7 +179,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
-      export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id}",deployment.environment.name=${var.test_id}"
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id},deployment.environment.name=${var.test_id}"
       ${var.custom_metrics_enabled ? "export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4317" : "# Custom metrics disabled"}
       export AWS_REGION='${var.aws_region}'
       export CUSTOM_METRICS_CONFIG='${var.custom_metrics_config}'
