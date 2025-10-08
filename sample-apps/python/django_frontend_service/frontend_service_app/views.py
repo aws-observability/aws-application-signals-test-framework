@@ -183,13 +183,6 @@ def get_xray_trace_id():
 
 def mysql(request):
     logger.info("mysql received")
-    
-    # Debug log for RDS_MYSQL_CLUSTER_PASSWORD
-    if "RDS_MYSQL_CLUSTER_PASSWORD" in os.environ:
-        logger.info("RDS_MYSQL_CLUSTER_PASSWORD found in environment")
-    else:
-        logger.error("RDS_MYSQL_CLUSTER_PASSWORD NOT found in environment variables")
-        logger.info(f"Available environment variables: {list(os.environ.keys())}")
 
     encoded_password = os.environ["RDS_MYSQL_CLUSTER_PASSWORD"]
     decoded_password = base64.b64decode(encoded_password).decode('utf-8')

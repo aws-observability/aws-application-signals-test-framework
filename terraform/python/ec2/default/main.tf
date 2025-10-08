@@ -183,6 +183,10 @@ resource "null_resource" "main_service_setup" {
       ${var.custom_metrics_enabled ? "export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4317" : "# Custom metrics disabled"}
       export AWS_REGION='${var.aws_region}'
       export CUSTOM_METRICS_ENABLED='${var.custom_metrics_enabled}'
+      export RDS_MYSQL_CLUSTER_ENDPOINT='dummy-endpoint'
+      export RDS_MYSQL_CLUSTER_PASSWORD='ZHVtbXk='  # base64 encoded 'dummy'
+      export RDS_MYSQL_CLUSTER_USERNAME='dummy-user'
+      export RDS_MYSQL_CLUSTER_DATABASE='dummy-db'
       python${var.language_version} manage.py migrate
       nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
 
