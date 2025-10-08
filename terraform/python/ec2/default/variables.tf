@@ -54,5 +54,5 @@ variable "cpu_architecture" {
 variable "custom_metrics_enabled" {
   description = "Enable custom OTEL metrics in the sample application"
   type        = bool
-  default     = false
+  default     = true
 }
