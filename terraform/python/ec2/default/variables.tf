@@ -56,9 +56,3 @@ variable "custom_metrics_enabled" {
   type        = bool
   default     = false
 }
-
-variable "custom_metrics_config" {
-  description = "JSON configuration for custom metrics"
-  type        = string
-  default     = "{}"
-}

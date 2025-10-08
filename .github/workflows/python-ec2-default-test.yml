@@ -58,7 +58,6 @@ env:
   ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
   CUSTOM_METRICS_ENABLED: ${{ inputs.custom-metrics-enabled }}
-  CUSTOM_METRICS_CONFIG: ${{ inputs.custom-metrics-config }}
   SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
@@ -182,7 +181,6 @@ jobs:
               -var="language_version=${{ env.PYTHON_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
               -var="custom_metrics_enabled=${{ env.CUSTOM_METRICS_ENABLED }}" \
-              -var="custom_metrics_config=${{ env.CUSTOM_METRICS_CONFIG }}" || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."

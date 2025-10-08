@@ -81,7 +81,6 @@ custom_meter_provider = MeterProvider(
 custom_meter = custom_meter_provider.get_meter("custom-metrics")
 custom_request_counter = custom_meter.create_counter("custom_requests_total", description="Total requests")
 http_counter = meter.create_counter("custom_requests_total", description="Total requests")
-# custom_response_time_histogram = custom_meter.create_histogram("custom_response_time", description="Response time")
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -123,7 +122,7 @@ def aws_sdk_call(request):
     http_counter.add(1, {"operation.type": "aws_sdk_call"})  # Custom export pipeline
     # duration = time.time() - start_time #end histogram
     # custom_response_time_histogram.record(duration, {"operation.type": "aws_sdk_call"}) #record histogram
-    
+
     bucket_name = "e2e-test-bucket-name"
 
     # Add a unique test ID to bucketname to associate buckets to specific test runs
