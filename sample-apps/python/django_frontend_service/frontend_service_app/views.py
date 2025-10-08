@@ -117,11 +117,9 @@ def healthcheck(request):
 
 def aws_sdk_call(request):
     # Setup Span Attributes And Initialize Counter/Histogram To Recieve Custom Metrics
-    # start_time = time.time() #start histogram
-    custom_request_counter.add(1, {"operation.type": "aws_sdk_call"})  # Agent-based export
-    http_counter.add(1, {"operation.type": "aws_sdk_call"})  # Custom export pipeline
-    # duration = time.time() - start_time #end histogram
-    # custom_response_time_histogram.record(duration, {"operation.type": "aws_sdk_call"}) #record histogram
+    if os.getenv("CUSTOM_METRICS_ENABLED", "false").lower() == "true":
+        custom_request_counter.add(1, {"operation.type": "aws_sdk_call"})  # Agent-based export
+        http_counter.add(1, {"operation.type": "aws_sdk_call"})  # Custom export pipeline
 
     bucket_name = "e2e-test-bucket-name"
 
