@@ -247,7 +247,7 @@ jobs:
       - name: Validate generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c python/ec2/default/metric-validation.yml
+        run: ./gradlew validator:run --args='-c python/ec2/default/metric-validation${{ env.CUSTOM_METRICS_ENABLED == 'true' && '-custom' || '' }}.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
