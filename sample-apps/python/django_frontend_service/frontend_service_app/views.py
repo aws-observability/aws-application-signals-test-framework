@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 custom_resource = Resource.create({
         "service.name": os.getenv("OTEL_SERVICE_NAME", "python-sample-application"),
         "deployment.environment.name": os.getenv("DEPLOYMENT_ENV", "test"),
-        #"test" being over-rided by python-sample-application-${var.test_id} in main.tf
+        #"test" being overridden by python-sample-application-${var.test_id} in main.tf
         })
 custom_otlp_exporter = OTLPMetricExporter(
     endpoint="http://localhost:4317",
@@ -48,7 +48,7 @@ custom_console_reader = PeriodicExportingMetricReader(
 resource = Resource.create({
     "service.name": os.getenv("OTEL_SERVICE_NAME", "python-sample-application"),
     "deployment.environment.name": os.getenv("DEPLOYMENT_ENV", "test")
-    })#"test" being over-rided by python-sample-application-${var.test_id} in main.tf
+    })#"test" being overridden by python-sample-application-${var.test_id} in main.tf
 
 # OtlpHttpMetricExporter.builder().setEndpoint().build()
 metricExporter = HTTPMetricExporter(
@@ -79,8 +79,8 @@ custom_meter_provider = MeterProvider(
 
 # Initialize span metrics using custom meter provider
 custom_meter = custom_meter_provider.get_meter("custom-metrics")
-custom_request_counter = custom_meter.create_counter("custom_requests_total", description="Total requests")
-http_counter = meter.create_counter("custom_requests_total", description="Total requests")
+custom_request_counter = custom_meter.create_counter("cloud_watch_counter", description="Total requests")
+http_counter = meter.create_counter("http_counter", description="Total requests")
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -117,9 +117,8 @@ def healthcheck(request):
 
 def aws_sdk_call(request):
     # Setup Span Attributes And Initialize Counter/Histogram To Recieve Custom Metrics
-    if os.getenv("CUSTOM_METRICS_ENABLED", "false").lower() == "true":
-        custom_request_counter.add(1, {"operation.type": "aws_sdk_call"})  # Agent-based export
-        http_counter.add(1, {"operation.type": "aws_sdk_call"})  # Custom export pipeline
+    custom_request_counter.add(1, {"operation.type": "aws_sdk_call"})  # Agent-based export
+    http_counter.add(1, {"operation.type": "aws_sdk_call"})  # Custom export pipeline
 
     bucket_name = "e2e-test-bucket-name"
 

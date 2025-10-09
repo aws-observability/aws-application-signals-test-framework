@@ -211,9 +211,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/default/client-call-trace.mustache"),
 
 /** Python EC2 Default Custom Metrics Test Case Validations */
-  PYTHON_EC2_DEFAULT_AWS_SDK_CALL_CUSTOM_METRIC("/expected-data-template/python/ec2/default/aws-sdk-call-custom-metrics.mustache"),
   PYTHON_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRICS("/expected-data-template/python/ec2/default/aws-otel-custom-metrics.mustache"),
-  
+
   /** Python EC2 Asg Test Case Validations */
   PYTHON_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/ec2/asg/outgoing-http-call-log.mustache"),
   PYTHON_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/ec2/asg/outgoing-http-call-metric.mustache"),

@@ -45,7 +45,7 @@ llm = ChatBedrock(
         "temperature": 0.7,
         "max_tokens": 500
     },
-    region_name=os.getenv("AWS_DEFAULT_REGION", "us-west-2")
+    region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1")
 )
 
 # Create a prompt template
