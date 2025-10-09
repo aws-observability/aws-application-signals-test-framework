@@ -180,7 +180,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
-      export OTEL_RESOURCE_ATTRIBUTES="service.name=GOAT_Service,deployment.environment.name=GOAT_Pen"
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id},deployment.environment.name=ec2:default"
       export AWS_REGION='${var.aws_region}'
       export CUSTOM_METRICS_ENABLED='${var.custom_metrics_enabled}'
       export RDS_MYSQL_CLUSTER_ENDPOINT='dummy-endpoint'
@@ -283,8 +283,8 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install ec2-instance-connect -y
 
       # Copy in CW Agent configuration
-      agent_config='${replace(replace(file(var.custom_metrics_enabled ? "./amazon-cloudwatch-custom-agent.json" : "./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
-      echo $agent_config > amazon-cloudwatch-agent.json
+      agent_config='${replace(file(var.custom_metrics_enabled ? "./amazon-cloudwatch-custom-agent.json" : "./amazon-cloudwatch-agent.json"), "$REGION", var.aws_region)}'
+      echo "$agent_config" > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
       ${var.get_cw_agent_rpm_command}

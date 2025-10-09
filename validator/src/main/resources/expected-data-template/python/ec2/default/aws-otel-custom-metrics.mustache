@@ -7,6 +7,9 @@
       name: deployment.environment.name
       value: custom_export
     -
+      name: service.name
+      value: {{serviceName}}
+    -
       name: telemetry.sdk.language
       value: python
     -
@@ -22,10 +25,12 @@
   metricName: agent_export_counter
   namespace: {{customMetricNamespace}}
   dimensions:
-
     -
       name: deployment.environment.name
       value: agent_export
+    -
+      name: service.name
+      value: {{serviceName}}
     -
       name: telemetry.sdk.language
       value: python

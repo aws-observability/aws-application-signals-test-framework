@@ -24,9 +24,8 @@ logger = logging.getLogger(__name__)
 
 # Initialize custom OTEL metrics export pipeline - OTLP approach (OTEL/Span export 1) Agent based
 custom_resource = Resource.create({
-        "service.name": "OTEL_SERVICE_NAME",
+        "service.name": os.getenv("OTEL_SERVICE_NAME", "python-sample-application"),
         "deployment.environment.name": "custom_export",
-        #"test" being overridden by python-sample-application-${var.test_id} in main.tf
         })
 custom_otlp_exporter = OTLPMetricExporter(
     endpoint="http://localhost:4317",
@@ -46,7 +45,7 @@ custom_console_reader = PeriodicExportingMetricReader(
 
 # Custom Export Pipeline - HTTP Direct
 resource = Resource.create({
-    "service.name": "OTEL_SERVICE_NAME",
+    "service.name": os.getenv("OTEL_SERVICE_NAME", "python-sample-application"),
     "deployment.environment.name": "agent_export",
     })
 
