@@ -1,27 +1,40 @@
 # OpenTelemetry Custom Metrics Validation Templates - AWS SDK Call Only
 -
-  metricName: cloud_watch_counter
+  metricName: custom_export_counter
   namespace: {{customMetricNamespace}}
   dimensions:
     -
+      name: deployment.environment.name
+      value: custom_export
+    -
+      name: telemetry.sdk.language
+      value: python
+    -
       name: operation.type
-      value: aws_sdk_call
+      value: custom_export_1
     -
-      name: Service
-      value: {{serviceName}}
+      name: telemetry.sdk.version
+      value: 1.33.1
     -
-      name: Environment
-      value: {{testingId}}
+      name: telemetry.sdk.name
+      value: opentelemetry
 -
-  metricName: http_counter
+  metricName: agent_export_counter
   namespace: {{customMetricNamespace}}
   dimensions:
+
+    -
+      name: deployment.environment.name
+      value: agent_export
+    -
+      name: telemetry.sdk.language
+      value: python
     -
       name: operation.type
-      value: aws_sdk_call
+      value: agent_export_1
     -
-      name: Service
-      value: {{serviceName}}
+      name: telemetry.sdk.version
+      value: 1.33.1
     -
-      name: Environment
-      value: {{testingId}}
+      name: telemetry.sdk.name
+      value: opentelemetry
