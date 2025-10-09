@@ -17,7 +17,7 @@ from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter as HTTPMetricExporter
-from opentelemetry.sdk.metrics.export import ConsoleMetricsExporter
+from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
 from opentelemetry.sdk.resources import Resource
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ custom_otlp_reader = PeriodicExportingMetricReader(
 )
 
 # Initialize Console exporter - Direct output approach (OTEL export 2) Custom export pipeline
-custom_console_exporter = ConsoleMetricsExporter()
+custom_console_exporter = ConsoleMetricExporter()
 custom_console_reader = PeriodicExportingMetricReader(
     exporter=custom_console_exporter,
     export_interval_millis=5000
