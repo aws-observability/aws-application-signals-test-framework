@@ -51,7 +51,9 @@ resource = Resource.create({
 
 # Python version of 'OtlpHttpMetricExporter.builder().setEndpoint().build()'
 metricExporter = HTTPMetricExporter(
-    endpoint="http://localhost:4318/v1/metrics"
+    endpoint="http://localhost:4318/v1/metrics",
+    headers={"Content-Type": "application/x-protobuf"},
+    timeout=30
 )
 
 # 'Python version of 'PeriodicMetricReader.builder(metricExporter).setInterval(Duration.ofSeconds(10)).build()'
