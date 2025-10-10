@@ -1,11 +1,11 @@
 # OpenTelemetry Custom Metrics Validation Templates - AWS SDK Call Only
 -
   metricName: custom_export_counter
-  namespace: {{customMetricNamespace}}
+  namespace: {{CWAgent}}
   dimensions:
     -
       name: deployment.environment.name
-      value: custom_export
+      value: ec2:default
     -
       name: service.name
       value: {{serviceName}}
@@ -22,12 +22,12 @@
       name: telemetry.sdk.name
       value: opentelemetry
 -
-  metricName: agent_export_counter
-  namespace: {{customMetricNamespace}}
+  metricName: test_histogram
+  namespace: {{CWAgent}}
   dimensions:
     -
       name: deployment.environment.name
-      value: agent_export
+      value: ec2:default
     -
       name: service.name
       value: {{serviceName}}
@@ -36,7 +36,26 @@
       value: python
     -
       name: operation.type
-      value: agent_export_1
+      value: histogram
+    -
+      name: telemetry.sdk.version
+      value: 1.33.1
+    -
+      name: telemetry.sdk.name
+      value: opentelemetry
+-
+  metricName: test_gauge
+  namespace: {{CWAgent}}
+  dimensions:
+    -
+      name: deployment.environment.name
+      value: ec2:default
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: telemetry.sdk.language
+      value: python
     -
       name: telemetry.sdk.version
       value: 1.33.1

@@ -15,9 +15,18 @@ permissions:
   contents: read
 
 jobs:
-  java-ec2-adaptive-sampling:
+  java-ec2-default:
     uses: ./.github/workflows/python-ec2-default-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
       aws-region: 'us-east-1'
+      custom-metrics-enabled: false
+
+  custom-metrics:
+    uses: ./.github/workflows/python-ec2-default-test.yml
+    secrets: inherit
+    with:
+      caller-workflow-name: 'test'
+      aws-region: 'us-east-1'
+      custom-metrics-enabled: true

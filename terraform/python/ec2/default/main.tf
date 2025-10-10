@@ -145,7 +145,7 @@ resource "null_resource" "main_service_setup" {
       sudo yum install ec2-instance-connect -y
 
       # Copy in CW Agent configuration
-      agent_config='${replace(file(var.custom_metrics_enabled ? "./amazon-cloudwatch-custom-agent.json" : "./amazon-cloudwatch-agent.json"), "$REGION", var.aws_region)}'
+      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
@@ -176,8 +176,8 @@ resource "null_resource" "main_service_setup" {
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
-      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
-      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics
+      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4317
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
       export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id},deployment.environment.name=ec2:default"
@@ -283,7 +283,7 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install ec2-instance-connect -y
 
       # Copy in CW Agent configuration
-      agent_config='${replace(file(var.custom_metrics_enabled ? "./amazon-cloudwatch-custom-agent.json" : "./amazon-cloudwatch-agent.json"), "$REGION", var.aws_region)}'
+      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo "$agent_config" > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
