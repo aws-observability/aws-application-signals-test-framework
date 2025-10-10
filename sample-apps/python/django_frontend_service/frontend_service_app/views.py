@@ -38,8 +38,15 @@ custom_otlp_reader = PeriodicExportingMetricReader(
 
 # Initialize Console exporter - Direct output approach (OTEL export 2) Custom export pipeline
 custom_console_exporter = ConsoleMetricExporter()
+agent_console_exporter = ConsoleMetricExporter()
+
 custom_console_reader = PeriodicExportingMetricReader(
     exporter=custom_console_exporter,
+    export_interval_millis=5000
+)
+
+agent_console_reader = PeriodicExportingMetricReader(
+    exporter=agent_console_exporter,
     export_interval_millis=5000
 )
 
@@ -50,35 +57,31 @@ resource = Resource.create({
     })
 
 # Python version of 'OtlpHttpMetricExporter.builder().setEndpoint().build()'
-metricExporter = HTTPMetricExporter(
+metric_exporter = HTTPMetricExporter(
     endpoint="http://localhost:4318/v1/metrics",
-    headers={"Content-Type": "application/x-protobuf"},
-    timeout=30
 )
 
 # 'Python version of 'PeriodicMetricReader.builder(metricExporter).setInterval(Duration.ofSeconds(10)).build()'
-metricReader = PeriodicExportingMetricReader(
-    exporter=metricExporter,
+metric_reader = PeriodicExportingMetricReader(
+    exporter=metric_exporter,
     export_interval_millis=5000
 )
 
-# Python version of 'SdkMeterProvider.builder().setResource(resource).registerMetricReader(metricReader).build()'
-meterProvider = MeterProvider(
-    resource=resource,
-    metric_readers=[metricReader]
-)
-
-# Create meter provider with both exporters
+# Create meter provider with both exporters Python version of 'SdkMeterProvider.builder().setResource(resource).registerMetricReader(metricReader).build()'
 custom_meter_provider = MeterProvider(
     resource=custom_resource,
     metric_readers=[custom_otlp_reader, custom_console_reader]
 )
 
+agent_meter_provider = MeterProvider(
+    resource=resource,
+    metric_readers=[metric_reader, agent_console_reader]
+)
 # Initialize counters/meters using custom meter provider. Python version of 'meterProvider.get("myMeter")'
 custom_meter = custom_meter_provider.get_meter("custom-metrics")
-meter = meterProvider.get_meter("myMeter")
+agent_meter = agent_meter_provider.get_meter("agent-metrics")
 custom_export_counter = custom_meter.create_counter("custom_export_counter", description="Total requests")
-agent_export_counter = meter.create_counter("agent_export_counter", description="Total requests")
+agent_export_counter = agent_meter.create_counter("agent_export_counter", description="Total requests")
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -115,8 +118,8 @@ def healthcheck(request):
 
 def aws_sdk_call(request):
     # Setup Span Attributes And Initialize Counter/Histogram To Recieve Custom Metrics
-    custom_export_counter.add(1, {"operation.type": "custom_export_1"})  # Agent-based export
-    agent_export_counter.add(1, {"operation.type": "agent_export_1"})  # Custom export pipeline
+    custom_export_counter.add(1, {"operation.type": "custom_export_1"})  # Custom export
+    agent_export_counter.add(1, {"operation.type": "agent_export_1"})  # Agent export pipeline
 
     bucket_name = "e2e-test-bucket-name"
 
