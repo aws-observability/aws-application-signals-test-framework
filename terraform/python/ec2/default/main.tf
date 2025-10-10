@@ -171,13 +171,12 @@ resource "null_resource" "main_service_setup" {
       export OTEL_PYTHON_DISTRO="aws_distro"
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
       export OTEL_METRICS_EXPORTER=otlp
-      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics
       export OTEL_TRACES_EXPORTER=otlp
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
-      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
       export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id},deployment.environment.name=ec2:default"
