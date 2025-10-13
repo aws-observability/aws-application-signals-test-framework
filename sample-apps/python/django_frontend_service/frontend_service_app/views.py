@@ -16,14 +16,11 @@ from opentelemetry.trace.span import format_trace_id
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter as HTTPMetricExporter
 from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.metrics import Observation
 import random
 
 logger = logging.getLogger(__name__)
-test_gauge_memory = 512.0 #global variable for test gauge
 
 # Initialize custom OTEL metrics export pipeline - OTLP approach (OTEL/Span export 1) Agent based
 custom_resource = Resource.create({
@@ -57,14 +54,8 @@ custom_meter_provider = MeterProvider(
 # Initialize counters/meters using custom meter provider. Python version of 'meterProvider.get("myMeter")'
 custom_meter = custom_meter_provider.get_meter("custom-metrics") #Create custom_meter
 custom_export_counter = custom_meter.create_counter("custom_export_counter", description="Total requests") #Create custom exporter counter
-test_histogram = custom_meter.create_histogram("test_histogram", description="Request payload size", unit="bytes")  #Create histogram
- #Create gauge
-test_gauge = custom_meter.create_observable_gauge(
-    name="test_gauge",
-    description="test gauge memory",
-    unit="MB",
-    callbacks=[lambda: [Observation(test_gauge_memory, {})]]
-)
+test_histogram = custom_meter.create_histogram("test_histogram", description="Request payload size")  #Create histogram
+test_gauge = custom_meter.create_gauge("test_gauge", description="test gauge memory")  #Create synchronous gauge
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -101,12 +92,10 @@ def healthcheck(request):
 
 def aws_sdk_call(request):
     # Setup Span Attributes And Initialize Counter/Gauge/Histogram To Recieve Custom Metrics
-    global test_gauge_memory #Call memory variable into api to be updated
-
     start_time = time.time() #Begin histogram
     custom_export_counter.add(1, {"operation.type": "custom_export_1"})  # Custom export
     test_histogram.record(random.randint(100, 1000), {"operation.type": "histogram"}) #Record histogram
-    test_gauge_memory = random.uniform(400.0, 800.0) #Call gauge
+    test_gauge.record(100.0, {"operation.type": "gauge"}) #Record gauge
 
     bucket_name = "e2e-test-bucket-name"
 
