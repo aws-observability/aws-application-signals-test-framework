@@ -161,9 +161,11 @@ public class CWMetricValidator implements IValidator {
       List<Metric> actualMetricList)
       throws Exception {
     for (String dimensionValue : dimensionValues) {
-      actualMetricList.addAll(
-          this.listMetricFromCloudWatch(
-              cloudWatchService, expectedMetricList, dimensionName, dimensionValue));
+      log.info("DEBUG: Querying CloudWatch for dimension {}={}", dimensionName, dimensionValue);
+      List<Metric> foundMetrics = this.listMetricFromCloudWatch(
+              cloudWatchService, expectedMetricList, dimensionName, dimensionValue);
+      log.info("DEBUG: Found {} metrics for {}={}", foundMetrics.size(), dimensionName, dimensionValue);
+      actualMetricList.addAll(foundMetrics);
     }
   }
 
