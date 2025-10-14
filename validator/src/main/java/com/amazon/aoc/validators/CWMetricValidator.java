@@ -101,9 +101,12 @@ public class CWMetricValidator implements IValidator {
           }
           // We will query the Service, RemoteService, and RemoteTarget dimensions to ensure we
           // get all metrics from all aggregations, specifically the [RemoteService] aggregation.
+          log.info("DEBUG: context.getServiceName() = {}", context.getServiceName());
+          log.info("DEBUG: context.getMetricNamespace() = {}", context.getMetricNamespace());
           List<String> serviceNames =
               Lists.newArrayList(
                   context.getServiceName(), context.getRemoteServiceDeploymentName());
+          log.info("DEBUG: serviceNames = {}", serviceNames);
           List<String> remoteServiceNames =
               Lists.newArrayList(context.getRemoteServiceDeploymentName());
           List<String> remoteTargetNames = Lists.newArrayList();
