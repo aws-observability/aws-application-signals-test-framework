@@ -29,6 +29,7 @@ test_gauge_memory = 512.0 #global variable for test gauge
 custom_resource = Resource.create({
         "service.name": os.getenv("OTEL_SERVICE_NAME", "python-sample-application"),
         "deployment.environment.name": "ec2:default",
+        "telemetry.source": "EC2",
         })
 custom_otlp_exporter = OTLPMetricExporter(
     endpoint="http://localhost:4317",
