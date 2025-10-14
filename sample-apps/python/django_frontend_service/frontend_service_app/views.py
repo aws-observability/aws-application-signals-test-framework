@@ -13,52 +13,12 @@ import schedule
 from django.http import HttpResponse, JsonResponse
 from opentelemetry import trace, metrics
 from opentelemetry.trace.span import format_trace_id
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter as HTTPMetricExporter
-from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.metrics import Observation
-import random
 
 logger = logging.getLogger(__name__)
-test_gauge_memory = 512.0 #global variable for test gauge
 
-# Initialize custom OTEL metrics export pipeline - OTLP approach (OTEL/Span export 1) Agent based
-custom_resource = Resource.create({
-        "service.name": os.getenv("OTEL_SERVICE_NAME", "python-sample-application"),
-        "deployment.environment.name": "ec2:default",
-        "telemetry.source": "EC2",
-        })
-custom_otlp_exporter = OTLPMetricExporter(
-    endpoint="http://localhost:4317",
-    insecure=True
-)
-custom_otlp_reader = PeriodicExportingMetricReader(
-    exporter=custom_otlp_exporter,
-    export_interval_millis=5000
-)
-
-# Initialize Console exporter - Direct output approach (OTEL export 2) Custom export pipeline
-custom_console_exporter = ConsoleMetricExporter()
-
-custom_console_reader = PeriodicExportingMetricReader(
-    exporter=custom_console_exporter,
-    export_interval_millis=5000
-)
-
-# Create meter provider with both exporters Python version of 'SdkMeterProvider.builder().setResource(resource).registerMetricReader(metricReader).build()'
-custom_meter_provider = MeterProvider(
-    resource=custom_resource,
-    metric_readers=[custom_otlp_reader, custom_console_reader]
-)
-
-
-# Initialize counters/meters using custom meter provider. Python version of 'meterProvider.get("myMeter")'
-custom_meter = custom_meter_provider.get_meter("custom-metrics") #Create custom_meter
-custom_export_counter = custom_meter.create_counter("custom_export_counter", description="Total requests") #Create custom exporter counter
-test_histogram = custom_meter.create_histogram("test_histogram", description="Request payload size", unit="bytes")  #Create histogram
+#python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter");
+meter = metrics.get_meter("myMeter")
+agent_export_counter = meter.create_counter("agent_export_counter", unit="1", description="Agent export counter")
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -94,12 +54,7 @@ def healthcheck(request):
     return HttpResponse("healthcheck")
 
 def aws_sdk_call(request):
-    # Setup Span Attributes And Initialize Counter/Gauge/Histogram To Recieve Custom Metrics
-    global test_gauge_memory #Call memory variable into api to be updated
-
-    start_time = time.time() #Begin histogram
-    custom_export_counter.add(1, {"operation.type": "custom_export_1"})  # Custom export
-    test_histogram.record(random.randint(100, 1000), {"operation.type": "histogram"}) #Record histogram
+    agent_export_counter.add(1, {"operation_type": "custom_counter"})
 
     bucket_name = "e2e-test-bucket-name"
 
