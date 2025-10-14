@@ -55,7 +55,6 @@ custom_meter_provider = MeterProvider(
 custom_meter = custom_meter_provider.get_meter("custom-metrics") #Create custom_meter
 custom_export_counter = custom_meter.create_counter("custom_export_counter", description="Total requests") #Create custom exporter counter
 test_histogram = custom_meter.create_histogram("test_histogram", description="Request payload size")  #Create histogram
-test_gauge = custom_meter.create_gauge("test_gauge", description="test gauge memory")  #Create synchronous gauge
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -95,7 +94,6 @@ def aws_sdk_call(request):
     start_time = time.time() #Begin histogram
     custom_export_counter.add(1, {"operation.type": "custom_export_1"})  # Custom export
     test_histogram.record(random.randint(100, 1000), {"operation.type": "histogram"}) #Record histogram
-    test_gauge.record(100.0, {"operation.type": "gauge"}) #Record gauge
 
     bucket_name = "e2e-test-bucket-name"
 
