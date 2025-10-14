@@ -36,6 +36,10 @@ on:
         required: false
         type: boolean
         default: false
+      custom-metrics-config:
+        required: false
+        type: string
+        default: '{}'
     outputs:
       job-started:
         value: ${{ jobs.python-ec2-default.outputs.job-started }}

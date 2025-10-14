@@ -32,3 +32,7 @@
   httpMethod: "get"
   callingType: "http-with-query"
   expectedMetricTemplate: "PYTHON_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC"
+-
+  validationType: "cw-metric"
+  callingType: "none"
+  expectedMetricTemplate: "PYTHON_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC"
