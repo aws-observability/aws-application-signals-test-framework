@@ -31,4 +31,4 @@
   httpPath: "aws-sdk-call"
   httpMethod: "get"
   callingType: "http-with-query"
-  expectedMetricTemplate: "PYTHON_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRICS"
+  expectedMetricTemplate: "PYTHON_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC"

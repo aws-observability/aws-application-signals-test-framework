@@ -1,7 +1,7 @@
 # OpenTelemetry Custom Metrics Validation Templates - AWS SDK Call Only
 -
   metricName: custom_export_counter
-  namespace: {{ApplicationSignals}}
+  namespace: {{CWAgent}}
   dimensions:
     -
       name: deployment.environment.name
@@ -23,7 +23,7 @@
       value: opentelemetry
 -
   metricName: test_histogram
-  namespace: {{ApplicationSignals}}
+  namespace: {{CWAgent}}
   dimensions:
     -
       name: deployment.environment.name
