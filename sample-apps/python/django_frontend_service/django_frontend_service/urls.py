@@ -10,4 +10,6 @@ urlpatterns = [
     path('remote-service', views.downstream_service),
     path('client-call', views.async_service),
     path('mysql', views.mysql),
+    path('custom-export-counter', views.custom_export_counter_endpoint),
+    path('test-histogram', views.test_histogram_endpoint),
 ]

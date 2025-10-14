@@ -44,6 +44,8 @@ const trafficGenerator = async (interval) => {
         `http://${mainEndpoint}/remote-service?ip=${remoteEndpoint}&testingId=${id}`,
         `http://${mainEndpoint}/client-call`,
         `http://${mainEndpoint}/mysql`,
+        `http://${mainEndpoint}/custom-export-counter`,
+        `http://${mainEndpoint}/test-histogram`,
     ];
 
     await sendRequests(urls);

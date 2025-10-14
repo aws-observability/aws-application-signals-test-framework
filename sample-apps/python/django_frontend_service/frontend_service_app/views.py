@@ -55,8 +55,10 @@ def healthcheck(request):
     return HttpResponse("healthcheck")
 
 def aws_sdk_call(request):
+    logger.info("Recording custom metrics in aws_sdk_call")
     custom_export_counter.add(1, {"operation.type": "custom_export_1"})
     test_histogram.record(random.randint(100, 1000), {"operation.type": "histogram"})
+    logger.info("Custom metrics recorded successfully")
     bucket_name = "e2e-test-bucket-name"
 
     # Add a unique test ID to bucketname to associate buckets to specific test runs
