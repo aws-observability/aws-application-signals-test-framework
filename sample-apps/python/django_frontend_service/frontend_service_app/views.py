@@ -7,7 +7,7 @@ import threading
 import time
 
 import boto3
-import pymysql
+from mysql import connector as mysql_connector
 import requests
 import schedule
 from django.http import HttpResponse, JsonResponse
@@ -113,17 +113,34 @@ def get_xray_trace_id():
 def mysql(request):
     logger.info("mysql received")
 
-    encoded_password = os.environ["RDS_MYSQL_CLUSTER_PASSWORD"]
-    decoded_password = base64.b64decode(encoded_password).decode('utf-8')
-
     try:
-        connection = pymysql.connect(host=os.environ["RDS_MYSQL_CLUSTER_ENDPOINT"],
-                                     user=os.environ["RDS_MYSQL_CLUSTER_USERNAME"],
-                                     password=decoded_password,
-                                     database=os.environ["RDS_MYSQL_CLUSTER_DATABASE"])
+        region = os.environ.get('AWS_REGION') or os.environ.get('AWS_DEFAULT_REGION') or 'us-east-1'
+        rds_client = boto3.client('rds', region_name=region)
+        hostname = os.environ.get("RDS_MYSQL_CLUSTER_ENDPOINT")
+        username = os.environ.get("RDS_MYSQL_CLUSTER_USERNAME")
+        database = os.environ.get("RDS_MYSQL_CLUSTER_DATABASE")
+        auth_token = rds_client.generate_db_auth_token(
+            DBHostname=hostname,
+            Port=3306,
+            DBUsername=username
+        )
+
+        logger.info(f"Generated IAM token length: {len(auth_token) if auth_token else 0}")
+        connection = mysql_connector.connect(
+            host=hostname,
+            user=username,
+            password=auth_token,
+            database=database,
+            ssl_disabled=False,
+            auth_plugin='mysql_clear_password'
+        )
+        
         with connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT * FROM tables LIMIT 1;")
+                results = cursor.fetchall()
+                logger.info(f"Query executed successfully, rows: {len(results)}")
+                
     except Exception as e:  # pylint: disable=broad-except
         logger.error("Could not complete http request to RDS database:" + str(e))
     finally:
