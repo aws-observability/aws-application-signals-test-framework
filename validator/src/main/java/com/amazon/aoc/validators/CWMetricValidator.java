@@ -99,8 +99,8 @@ public class CWMetricValidator implements IValidator {
             validateAnyMetricExists();
             return;
           }
-          // We will query the Service, RemoteService, and RemoteTarget dimensions to ensure we
-          // get all metrics from all aggregations, specifically the [RemoteService] aggregation.
+          // Query the Service, RemoteService, and RemoteTarget dimensions to ensure we
+          // Get all metrics from all aggregations, specifically the [RemoteService] aggregation.
           log.info("DEBUG: context.getServiceName() = {}", context.getServiceName());
           log.info("DEBUG: context.getMetricNamespace() = {}", context.getMetricNamespace());
           List<String> serviceNames =
