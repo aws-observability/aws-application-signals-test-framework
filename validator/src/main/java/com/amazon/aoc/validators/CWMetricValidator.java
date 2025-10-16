@@ -250,9 +250,12 @@ public class CWMetricValidator implements IValidator {
     // search by metric name
     List<Metric> result = new ArrayList<>();
     for (String metricName : metricNameMap.keySet()) {
-      result.addAll(
-          cloudWatchService.listMetrics(
-              metricNameMap.get(metricName), metricName, dimensionKey, dimensionValue));
+      String namespace = metricNameMap.get(metricName);
+      log.info("DEBUG: CloudWatch Query - Namespace: {}, MetricName: {}, DimensionKey: {}, DimensionValue: {}", 
+               namespace, metricName, dimensionKey, dimensionValue);
+      List<Metric> metrics = cloudWatchService.listMetrics(namespace, metricName, dimensionKey, dimensionValue);
+      log.info("DEBUG: CloudWatch Query Result - Found {} metrics", metrics.size());
+      result.addAll(metrics);
     }
     return result;
   }
