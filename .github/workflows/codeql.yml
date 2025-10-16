@@ -107,6 +107,8 @@ jobs:
 
   all-codeql-checks-pass:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [analyze]
     if: always()
     steps:
