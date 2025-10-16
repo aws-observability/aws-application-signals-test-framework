@@ -1,4 +1,8 @@
 {
+  "agent": {
+    "debug": true,
+    "region": "$REGION"
+  },
   "traces": {
     "traces_collected": {
       "application_signals": {}

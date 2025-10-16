@@ -32,7 +32,7 @@ permissions:
   contents: read
 
 env:
-  E2E_TEST_AWS_REGION: 'us-east-1'
+  E2E_TEST_AWS_REGION: 'us-west-2'
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   NODE_VERSION: ${{ inputs.node-version }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
