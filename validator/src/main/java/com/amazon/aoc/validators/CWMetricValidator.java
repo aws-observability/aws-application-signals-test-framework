@@ -99,8 +99,8 @@ public class CWMetricValidator implements IValidator {
             validateAnyMetricExists();
             return;
           }
-          // We will query the Service, RemoteService, and RemoteTarget dimensions to ensure we
-          // get all metrics from all aggregations, specifically the [RemoteService] aggregation.
+          // Query the Service, RemoteService, and RemoteTarget dimensions to ensure we
+          // Get all metrics from all aggregations, specifically the [RemoteService] aggregation.
           List<String> serviceNames =
               Lists.newArrayList(
                   context.getServiceName(), context.getRemoteServiceDeploymentName());
@@ -158,9 +158,9 @@ public class CWMetricValidator implements IValidator {
       List<Metric> actualMetricList)
       throws Exception {
     for (String dimensionValue : dimensionValues) {
-      actualMetricList.addAll(
-          this.listMetricFromCloudWatch(
-              cloudWatchService, expectedMetricList, dimensionName, dimensionValue));
+      List<Metric> foundMetrics = this.listMetricFromCloudWatch(
+              cloudWatchService, expectedMetricList, dimensionName, dimensionValue);
+      actualMetricList.addAll(foundMetrics);
     }
   }
 
@@ -245,9 +245,10 @@ public class CWMetricValidator implements IValidator {
     // search by metric name
     List<Metric> result = new ArrayList<>();
     for (String metricName : metricNameMap.keySet()) {
-      result.addAll(
-          cloudWatchService.listMetrics(
-              metricNameMap.get(metricName), metricName, dimensionKey, dimensionValue));
+      String namespace = metricNameMap.get(metricName);
+
+      List<Metric> metrics = cloudWatchService.listMetrics(namespace, metricName, dimensionKey, dimensionValue);
+      result.addAll(metrics);
     }
     return result;
   }

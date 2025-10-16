@@ -1,8 +1,4 @@
 {
-  "agent": {
-    "debug": true,
-    "region": "$REGION"
-  },
   "traces": {
     "traces_collected": {
       "application_signals": {}
@@ -10,7 +6,11 @@
   },
   "logs": {
     "metrics_collected": {
-      "application_signals": {}
+      "application_signals": {},
+      "otlp": {
+        "grpc_endpoint": "0.0.0.0:4317",
+        "http_endpoint": "0.0.0.0:4318"
+      }
     }
   }
 }

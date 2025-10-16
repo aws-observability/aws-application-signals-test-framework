@@ -32,6 +32,10 @@ on:
         required: false
         type: string
         default: 'github'
+      custom-metrics-enabled:
+        required: false
+        type: boolean
+        default: false
     outputs:
       job-started:
         value: ${{ jobs.python-ec2-default.outputs.job-started }}
@@ -49,6 +53,7 @@ env:
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
+  CUSTOM_METRICS_ENABLED: ${{ inputs.custom-metrics-enabled }}
   SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
@@ -171,7 +176,7 @@ jobs:
               -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
               -var="language_version=${{ env.PYTHON_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
-            || deployment_failed=$?
+              -var="custom_metrics_enabled=${{ env.CUSTOM_METRICS_ENABLED }}" \
           
             if [ $deployment_failed -eq 1 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
@@ -252,9 +257,26 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
+      - name: Validate CWAgent metrics
+        id: cwagent-metric-validation
+        if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ec2/default/custom-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --metric-namespace CWAgent
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name python-sample-remote-application-${{ env.TESTING_ID }}
+          --query-string ip=${{ env.REMOTE_SERVICE_IP }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+
       - name: Validate generated traces
         id: trace-validation
-        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.cwagent-metric-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c python/ec2/default/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
@@ -281,7 +303,7 @@ jobs:
         if: always()
         id: validation-result
         run: |
-          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.cwagent-metric-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> $GITHUB_OUTPUT
           else
             echo "validation-result=failure" >> $GITHUB_OUTPUT

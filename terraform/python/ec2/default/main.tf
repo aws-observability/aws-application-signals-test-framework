@@ -170,15 +170,24 @@ resource "null_resource" "main_service_setup" {
       export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
       export OTEL_PYTHON_DISTRO="aws_distro"
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
-      export OTEL_METRICS_EXPORTER=none
+      export OTEL_METRICS_EXPORTER=otlp
       export OTEL_TRACES_EXPORTER=otlp
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=localhost:4317
+      export OTEL_EXPORTER_OTLP_INSECURE=true
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
+      export OTEL_RESOURCE_ATTRIBUTES="Service=python-sample-application-${var.test_id},Environment=ec2:default"
+      export AWS_REGION='${var.aws_region}'
+      export CUSTOM_METRICS_ENABLED='${var.custom_metrics_enabled}'
+      export RDS_MYSQL_CLUSTER_ENDPOINT='dummy-endpoint'
+      export RDS_MYSQL_CLUSTER_PASSWORD='ZHVtbXk='  # base64 encoded 'dummy'
+      export RDS_MYSQL_CLUSTER_USERNAME='dummy-user'
+      export RDS_MYSQL_CLUSTER_DATABASE='dummy-db'
       python${var.language_version} manage.py migrate
       nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
 
@@ -276,7 +285,7 @@ resource "null_resource" "remote_service_setup" {
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
-      echo $agent_config > amazon-cloudwatch-agent.json
+      echo "$agent_config" > amazon-cloudwatch-agent.json
 
       # Get and run CW agent rpm
       ${var.get_cw_agent_rpm_command}
