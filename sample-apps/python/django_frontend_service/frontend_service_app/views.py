@@ -16,7 +16,7 @@ from opentelemetry.trace.span import format_trace_id
 
 logger = logging.getLogger(__name__)
 
-#python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter");
+#python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter"); for custom metrics
 meter = metrics.get_meter("myMeter")
 custom_export_counter = meter.create_counter("custom_export_counter", unit="1", description="Custom export counter")
 test_histogram = meter.create_histogram("test_histogram", description="Test histogram")
@@ -55,23 +55,10 @@ def healthcheck(request):
     return HttpResponse("healthcheck")
 
 def aws_sdk_call(request):
-    # Debug OTEL configuration
-    logger.info(f"OTEL_EXPORTER_OTLP_METRICS_PROTOCOL: {os.getenv('OTEL_EXPORTER_OTLP_METRICS_PROTOCOL')}")
-    logger.info(f"OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: {os.getenv('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT')}")
     
-    # Debug metric provider
-    provider = metrics.get_meter_provider()
-    logger.info(f"MeterProvider type: {type(provider).__name__}")
-    if hasattr(provider, '_readers'):
-        logger.info(f"Active metric readers: {len(provider._readers)}")
-        for reader in provider._readers:
-            logger.info(f"Reader type: {type(reader).__name__}")
-            if hasattr(reader, '_exporter'):
-                logger.info(f"Exporter type: {type(reader._exporter).__name__}")
-    
+    # Increment counter/histogram
     custom_export_counter.add(1, {"operation.type": "custom_export_1"})
     test_histogram.record(random.randint(100, 1000), {"operation.type": "histogram"})
-    logger.info("Custom metrics recorded")
 
     bucket_name = "e2e-test-bucket-name"
 

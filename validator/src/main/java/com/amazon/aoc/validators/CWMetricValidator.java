@@ -101,12 +101,9 @@ public class CWMetricValidator implements IValidator {
           }
           // Query the Service, RemoteService, and RemoteTarget dimensions to ensure we
           // Get all metrics from all aggregations, specifically the [RemoteService] aggregation.
-          log.info("DEBUG: context.getServiceName() = {}", context.getServiceName());
-          log.info("DEBUG: context.getMetricNamespace() = {}", context.getMetricNamespace());
           List<String> serviceNames =
               Lists.newArrayList(
                   context.getServiceName(), context.getRemoteServiceDeploymentName());
-          log.info("DEBUG: serviceNames = {}", serviceNames);
           List<String> remoteServiceNames =
               Lists.newArrayList(context.getRemoteServiceDeploymentName());
           List<String> remoteTargetNames = Lists.newArrayList();
@@ -161,10 +158,8 @@ public class CWMetricValidator implements IValidator {
       List<Metric> actualMetricList)
       throws Exception {
     for (String dimensionValue : dimensionValues) {
-      log.info("DEBUG: Querying CloudWatch for dimension {}={}", dimensionName, dimensionValue);
       List<Metric> foundMetrics = this.listMetricFromCloudWatch(
               cloudWatchService, expectedMetricList, dimensionName, dimensionValue);
-      log.info("DEBUG: Found {} metrics for {}={}", foundMetrics.size(), dimensionName, dimensionValue);
       actualMetricList.addAll(foundMetrics);
     }
   }
@@ -251,10 +246,8 @@ public class CWMetricValidator implements IValidator {
     List<Metric> result = new ArrayList<>();
     for (String metricName : metricNameMap.keySet()) {
       String namespace = metricNameMap.get(metricName);
-      log.info("DEBUG: CloudWatch Query - Namespace: {}, MetricName: {}, DimensionKey: {}, DimensionValue: {}", 
-               namespace, metricName, dimensionKey, dimensionValue);
+
       List<Metric> metrics = cloudWatchService.listMetrics(namespace, metricName, dimensionKey, dimensionValue);
-      log.info("DEBUG: CloudWatch Query Result - Found {} metrics", metrics.size());
       result.addAll(metrics);
     }
     return result;
