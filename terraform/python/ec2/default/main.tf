@@ -181,7 +181,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_INSECURE=true
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
-      export OTEL_RESOURCE_ATTRIBUTES="Service=python-sample-application-${var.test_id},deployment.environment.name=ec2:default"
+      export OTEL_RESOURCE_ATTRIBUTES="Service=python-sample-application-${var.test_id},Environment=ec2:default"
       export AWS_REGION='${var.aws_region}'
       export CUSTOM_METRICS_ENABLED='${var.custom_metrics_enabled}'
       export RDS_MYSQL_CLUSTER_ENDPOINT='dummy-endpoint'
