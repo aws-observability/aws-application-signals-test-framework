@@ -10,17 +10,50 @@
       name: Service
       value: {{serviceName}}
     -
-      name: telemetry.sdk.language
-      value: python
+      name: aws.local.service
+      value: {{serviceName}}
+    -
+      name: cloud.account.id
+      value: ANY_VALUE
+    -
+      name: cloud.availability_zone
+      value: ANY_VALUE
+    -
+      name: cloud.platform
+      value: ANY_VALUE
+    -
+      name: cloud.provider
+      value: aws
+    -
+      name: cloud.region
+      value: us-east-1
+    -
+      name: host.id
+      value: ANY_VALUE
+    -
+      name: host.name
+      value: ANY_VALUE
+    -
+      name: host.type
+      value: ANY_VALUE
     -
       name: operation.type
       value: custom_export_1
     -
-      name: telemetry.sdk.version
-      value: 1.33.1
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: telemetry.auto.version
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.language
+      value: python
     -
       name: telemetry.sdk.name
       value: opentelemetry
+    -
+      name: telemetry.sdk.version
+      value: 1.33.1
 -
   metricName: test_histogram
   namespace: CWAgent
@@ -32,14 +65,47 @@
       name: Service
       value: {{serviceName}}
     -
-      name: telemetry.sdk.language
-      value: python
+      name: aws.local.service
+      value: {{serviceName}}
+    -
+      name: cloud.account.id
+      value: ANY_VALUE
+    -
+      name: cloud.availability_zone
+      value: ANY_VALUE
+    -
+      name: cloud.platform
+      value: ANY_VALUE
+    -
+      name: cloud.provider
+      value: aws
+    -
+      name: cloud.region
+      value: us-east-1
+    -
+      name: host.id
+      value: ANY_VALUE
+    -
+      name: host.name
+      value: ANY_VALUE
+    -
+      name: host.type
+      value: ANY_VALUE
     -
       name: operation.type
       value: histogram
     -
-      name: telemetry.sdk.version
-      value: 1.33.1
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: telemetry.auto.version
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.language
+      value: python
     -
       name: telemetry.sdk.name
       value: opentelemetry
+    -
+      name: telemetry.sdk.version
+      value: 1.33.1
