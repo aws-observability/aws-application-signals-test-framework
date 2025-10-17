@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 env:
-  E2E_TEST_AWS_REGION: us-east-1
+  E2E_TEST_AWS_REGION: us-west-2
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-us-west-2-adap/java-main-service-v11.jar
   SAMPLE_APP_REMOTE_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-us-west-2-adap/java-remote-service-v11.jar
