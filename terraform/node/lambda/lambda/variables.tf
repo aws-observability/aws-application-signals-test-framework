@@ -31,7 +31,7 @@ variable "architecture" {
 variable "region" {
   type        = string
   description = "Lambda function running region, default value is us-west-2"
-  default     = "us-west-2"
+  default     = "us-east-1"
 }
 
 variable "is_canary" {

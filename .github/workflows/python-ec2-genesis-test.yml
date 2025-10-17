@@ -20,7 +20,7 @@ permissions:
   contents: read
 
 env:
-  E2E_TEST_AWS_REGION: 'us-west-2'
+  E2E_TEST_AWS_REGION: 'us-east-1'
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}

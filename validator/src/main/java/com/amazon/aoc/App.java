@@ -97,7 +97,7 @@ public class App implements Callable<Integer> {
 
   @CommandLine.Option(
       names = {"--region"},
-      defaultValue = "us-west-2")
+      defaultValue = "us-east-1")
   private String region;
 
   @CommandLine.Option(names = {"--availability-zone"})
