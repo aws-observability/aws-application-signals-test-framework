@@ -8,7 +8,7 @@ name: Test
 on:
   push:
     branches:
-      - otel-custom-metrics-test
+      - last_passing_test
 
 permissions:
   id-token: write
