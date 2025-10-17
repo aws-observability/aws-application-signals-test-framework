@@ -20,7 +20,7 @@ jobs:
     secrets: inherit
     with:
       caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
+      aws-region: 'us-west-2'
       custom-metrics-enabled: false
 
   custom-metrics:
@@ -28,5 +28,5 @@ jobs:
     secrets: inherit
     with:
       caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
+      aws-region: 'us-west-2'
       custom-metrics-enabled: true
