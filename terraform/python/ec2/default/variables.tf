@@ -48,11 +48,3 @@ variable "language_version" {
 variable "cpu_architecture" {
   default = "x86_64"
 }
-
-#Adding Custom Metrics Variables
-
-variable "custom_metrics_enabled" {
-  description = "Enable custom OTEL metrics in the sample application"
-  type        = bool
-  default     = false
-}
