@@ -32,10 +32,6 @@ on:
         required: false
         type: string
         default: 'github'
-      custom-metrics-enabled:
-        required: false
-        type: boolean
-        default: false
     outputs:
       job-started:
         value: ${{ jobs.python-ec2-default.outputs.job-started }}
