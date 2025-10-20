@@ -49,7 +49,7 @@ env:
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app.zip
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app-delete-me.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
@@ -171,7 +171,7 @@ jobs:
               -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
               -var="language_version=${{ env.PYTHON_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
-              || deployment_failed=1
+              || deployment_failed=$?
             if [ $deployment_failed -eq 1 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
             fi

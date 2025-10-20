@@ -161,8 +161,8 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_wheel_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip
-      unzip -o python-sample-app.zip
+      aws s3 cp ${var.sample_app_zip} ./python-sample-app-delete-me.zip
+      unzip -o python-sample-app-delete-me.zip
 
       # Export environment variables for instrumentation
       cd ./django_frontend_service
@@ -181,7 +181,6 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_INSECURE=true
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
-      export OTEL_RESOURCE_ATTRIBUTES="Service=python-sample-application-${var.test_id},Environment=ec2:default"
       export AWS_REGION='${var.aws_region}'
       python${var.language_version} manage.py migrate
       nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
@@ -295,8 +294,8 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_wheel_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip
-      unzip -o python-sample-app.zip
+      aws s3 cp ${var.sample_app_zip} ./python-sample-app-delete-me.zip
+      unzip -o python-sample-app-delete-me.zip
 
       # Export environment variables for instrumentation
       cd ./django_remote_service
