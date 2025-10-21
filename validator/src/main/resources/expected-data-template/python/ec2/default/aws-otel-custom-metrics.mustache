@@ -5,9 +5,6 @@
   namespace: CWAgent
   dimensions:
     -
-      name: Service
-      value: {{serviceName}}
-    -
       name: deployment.environment.name
       value: ec2:default
     -
@@ -21,7 +18,7 @@
       value: {{serviceName}}
     -
       name: operation.type
-      value: histogram
+      value: custom_export_1
     -
       name: host.type
       value: ANY_VALUE
@@ -59,9 +56,6 @@
   metricName: test_histogram
   namespace: CWAgent
   dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
     -
       name: deployment.environment.name
       value: ec2:default
