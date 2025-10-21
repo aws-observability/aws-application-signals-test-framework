@@ -139,7 +139,7 @@ public class CWMetricValidator implements IValidator {
               expectedMetricList,
               actualMetricList);
           addMetrics(
-              CloudWatchService.DEPLOYMENT_ENVIRONMENT_DIMENSION,
+              CloudWatchService.CUSTOM_ENVIRONMENT_DIMENSION,
               Lists.newArrayList("ec2:default"),
               expectedMetricList,
               actualMetricList);
