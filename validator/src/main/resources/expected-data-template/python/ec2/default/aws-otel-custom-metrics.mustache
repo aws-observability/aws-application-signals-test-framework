@@ -5,12 +5,6 @@
   namespace: CWAgent
   dimensions:
     -
-      name: Environment
-      value: ec2:default
-    -
-      name: Service
-      value: {{serviceName}}
-    -
       name: service.name
       value: {{serviceName}}
     -
@@ -65,12 +59,6 @@
   metricName: test_histogram
   namespace: CWAgent
   dimensions:
-    -
-      name: Environment
-      value: ec2:default
-    -
-      name: Service
-      value: {{serviceName}}
     -
       name: service.name
       value: {{serviceName}}
