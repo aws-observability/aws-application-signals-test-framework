@@ -5,102 +5,102 @@
   namespace: CWAgent
   dimensions:
     -
-      name: service.name
-      value: {{serviceName}}
-    -
       name: deployment.environment.name
       value: ec2:default
     -
       name: aws.local.service
       value: {{serviceName}}
     -
-      name: cloud.account.id
+      name: cloud.region
+      value: ANY_VALUE
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: operation.type
+      value: histogram
+    -
+      name: host.type
       value: ANY_VALUE
     -
       name: cloud.availability_zone
       value: ANY_VALUE
     -
-      name: cloud.platform
-      value: aws_ec2
+      name: telemetry.sdk.name
+      value: opentelemetry
+    -
+      name: telemetry.sdk.language
+      value: python
     -
       name: cloud.provider
       value: aws
     -
-      name: cloud.region
-      value: ANY_VALUE
-    -
-      name: host.id
+      name: cloud.account.id
       value: ANY_VALUE
     -
       name: host.name
       value: ANY_VALUE
     -
-      name: host.type
+      name: telemetry.sdk.version
       value: ANY_VALUE
     -
-      name: operation.type
-      value: custom_export_1
+      name: host.id
+      value: ANY_VALUE
     -
       name: telemetry.auto.version
       value: ANY_VALUE
     -
-      name: telemetry.sdk.language
-      value: python
-    -
-      name: telemetry.sdk.name
-      value: opentelemetry
-    -
-      name: telemetry.sdk.version
-      value: ANY_VALUE
+      name: cloud.platform
+      value: aws_ec2
 -
   metricName: test_histogram
   namespace: CWAgent
   dimensions:
     -
-      name: service.name
-      value: {{serviceName}}
-    -
       name: deployment.environment.name
       value: ec2:default
     -
       name: aws.local.service
       value: {{serviceName}}
     -
-      name: cloud.account.id
+      name: cloud.region
+      value: ANY_VALUE
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: operation.type
+      value: histogram
+    -
+      name: host.type
       value: ANY_VALUE
     -
       name: cloud.availability_zone
       value: ANY_VALUE
     -
-      name: cloud.platform
-      value: aws_ec2
+      name: telemetry.sdk.name
+      value: opentelemetry
+    -
+      name: telemetry.sdk.language
+      value: python
     -
       name: cloud.provider
       value: aws
     -
-      name: cloud.region
-      value: ANY_VALUE
-    -
-      name: host.id
+      name: cloud.account.id
       value: ANY_VALUE
     -
       name: host.name
       value: ANY_VALUE
     -
-      name: host.type
+      name: telemetry.sdk.version
       value: ANY_VALUE
     -
-      name: operation.type
-      value: histogram
+      name: host.id
+      value: ANY_VALUE
     -
       name: telemetry.auto.version
       value: ANY_VALUE
     -
-      name: telemetry.sdk.language
-      value: python
-    -
-      name: telemetry.sdk.name
-      value: opentelemetry
-    -
-      name: telemetry.sdk.version
-      value: ANY_VALUE
+      name: cloud.platform
+      value: aws_ec2
