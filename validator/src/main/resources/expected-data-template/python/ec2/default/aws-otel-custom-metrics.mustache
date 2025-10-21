@@ -2,7 +2,7 @@
 # ANY_VALUE defines a string to = 'ANY_VALUE' to pass validation testing
 -
   metricName: custom_export_counter
-  namespace: CWAgent
+  namespace: {{metricNamespace}}
   dimensions:
     -
       name: deployment.environment.name
@@ -54,7 +54,7 @@
       value: aws_ec2
 -
   metricName: test_histogram
-  namespace: CWAgent
+  namespace: {{metricNamespace}}
   dimensions:
     -
       name: deployment.environment.name
