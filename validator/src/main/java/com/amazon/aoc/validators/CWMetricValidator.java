@@ -133,6 +133,16 @@ public class CWMetricValidator implements IValidator {
               remoteTargetNames,
               expectedMetricList,
               actualMetricList);
+          addMetrics(
+              CloudWatchService.CUSTOM_SERVICE_DIMENSION,
+              serviceNames,
+              expectedMetricList,
+              actualMetricList);
+          addMetrics(
+              CloudWatchService.DEPLOYMENT_ENVIRONMENT_DIMENSION,
+              Lists.newArrayList("ec2:default"),
+              expectedMetricList,
+              actualMetricList);
 
           // remove the skip dimensions
           log.info("dimensions to be skipped in validation: {}", skippedDimensionNameList);
