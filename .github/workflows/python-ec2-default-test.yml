@@ -49,7 +49,7 @@ env:
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app.zip
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app-delete-me.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
@@ -252,7 +252,7 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
-          # Creating a separate validation for custom metrics sent by CloudWatch Agent
+          # Creating a separate validation for custom metrics
       - name: Validate custom metrics
         id: cwagent-metric-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
