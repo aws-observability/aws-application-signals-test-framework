@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 #python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter"); for custom metrics
 meter = metrics.get_meter("myMeter")
 custom_export_counter = meter.create_counter("custom_export_counter", unit="1", description="Custom export counter")
-test_histogram = meter.create_histogram("test_histogram", description="Test histogram")
+custom_export_histogram = meter.create_histogram("custom_export_histogram", description="Custom export histogram")
+custom_export_gauge = meter.create_up_down_counter("custom_export_gauge", unit="1", description="Custom export gauge")
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -57,8 +58,10 @@ def healthcheck(request):
 def aws_sdk_call(request):
     
     # Increment counter/histogram
-    custom_export_counter.add(1, {"operation.type": "custom_export_1"})
-    test_histogram.record(random.randint(100, 1000), {"operation.type": "histogram"})
+    custom_export_counter.add(1, {"Operation": "counter"})
+    custom_export_histogram.record(random.randint(100, 1000), {"Operation": "histogram"})
+    custom_export_gauge.add(random.randint(-10, 10), {"Operation": "gauge"})
+
 
     bucket_name = "e2e-test-bucket-name"
 

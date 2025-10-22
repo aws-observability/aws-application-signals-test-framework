@@ -17,8 +17,8 @@
       name: service.name
       value: {{serviceName}}
     -
-      name: operation.type
-      value: custom_export_1
+      name: Operation
+      value: counter
     -
       name: host.type
       value: ANY_VALUE
@@ -53,7 +53,7 @@
       name: cloud.platform
       value: aws_ec2
 -
-  metricName: test_histogram
+  metricName: custom_export_histogram
   namespace: {{metricNamespace}}
   dimensions:
     -
@@ -69,8 +69,60 @@
       name: service.name
       value: {{serviceName}}
     -
-      name: operation.type
+      name: Operation
       value: histogram
+    -
+      name: host.type
+      value: ANY_VALUE
+    -
+      name: cloud.availability_zone
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.name
+      value: opentelemetry
+    -
+      name: telemetry.sdk.language
+      value: python
+    -
+      name: cloud.provider
+      value: aws
+    -
+      name: cloud.account.id
+      value: ANY_VALUE
+    -
+      name: host.name
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.version
+      value: ANY_VALUE
+    -
+      name: host.id
+      value: ANY_VALUE
+    -
+      name: telemetry.auto.version
+      value: ANY_VALUE
+    -
+      name: cloud.platform
+      value: aws_ec2
+-
+  metricName: custom_export_gauge
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: deployment.environment.name
+      value: ec2:default
+    -
+      name: aws.local.service
+      value: {{serviceName}}
+    -
+      name: cloud.region
+      value: ANY_VALUE
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: gauge
     -
       name: host.type
       value: ANY_VALUE
