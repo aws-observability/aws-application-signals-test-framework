@@ -34,7 +34,7 @@ permissions:
   contents: read
 
 env:
-  E2E_TEST_AWS_REGION: 'us-west-2' # Test uses us-west-2 in the us-east-1 accoun
+  E2E_TEST_AWS_REGION: 'us-west-2' # Test uses us-west-2 in the us-east-1 account
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   METRIC_NAMESPACE: ApplicationSignals
   JAVA_VERSION: ${{ inputs.java-version }}

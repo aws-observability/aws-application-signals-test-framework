@@ -5,16 +5,23 @@ import os
 import base64
 import threading
 import time
-
+import random
 import boto3
 import pymysql
 import requests
 import schedule
 from django.http import HttpResponse, JsonResponse
-from opentelemetry import trace
+from opentelemetry import trace, metrics
 from opentelemetry.trace.span import format_trace_id
 
 logger = logging.getLogger(__name__)
+
+#python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter"); for custom metrics
+meter = metrics.get_meter("myMeter")
+agent_based_counter = meter.create_counter("agent_based_counter", unit="1", description="agent export counter")
+agent_based_histogram = meter.create_histogram("agent_based_histogram", description="agent export histogram")
+agent_based_gauge = meter.create_up_down_counter("agent_based_gauge", unit="1", description="agent export gauge")
+
 
 should_send_local_root_client_call = False
 lock = threading.Lock()
@@ -50,6 +57,12 @@ def healthcheck(request):
     return HttpResponse("healthcheck")
 
 def aws_sdk_call(request):
+    
+    # Increment counter/histogram
+    agent_based_counter.add(1, {"Operation": "counter"})
+    agent_based_histogram.record(random.randint(100, 1000), {"Operation": "histogram"})
+    agent_based_gauge.add(random.randint(-10, 10), {"Operation": "gauge"})
+
     bucket_name = "e2e-test-bucket-name"
 
     # Add a unique test ID to bucketname to associate buckets to specific test runs
