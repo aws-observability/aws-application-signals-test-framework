@@ -169,7 +169,7 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_CUSTOM_METRICS_ENDPOINT=http://localhost:4318/v1/metrics' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_INSECURE=true' C-m
-      tmux send-keys -t frontend 'export OTEL_RESOURCE_ATTRIBUTES="service.name=node-sample-application-${var.test_id},deployment.environment.name=ec2:default" C-m
+      tmux send-keys -t frontend 'export OTEL_RESOURCE_ATTRIBUTES="service.name=node-sample-application-${var.test_id},deployment.environment.name=ec2:default"' C-m
       tmux send-keys -t frontend 'export TESTING_ID=${var.test_id}' C-m
       tmux send-keys -t frontend 'export AWS_REGION=${var.aws_region}' C-m
       tmux send-keys -t frontend 'export OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express' C-m
