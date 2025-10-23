@@ -159,15 +159,15 @@ resource "null_resource" "main_service_setup" {
       # Export environment variables for instrumentation
       # Note: We use OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express to avoid
       # having to validate around the telemetry generated for middleware
-      tmux send-keys -t frontend 'export OTEL_METRICS_EXPORTER=none' C-m
+      tmux send-keys -t frontend 'export OTEL_METRICS_EXPORTER=otlp' C-m
       tmux send-keys -t frontend 'export OTEL_TRACES_EXPORTER=otlp' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf' C-m
-      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf' C-m
-      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_CUSTOM_METRICS_ENDPOINT=http://localhost:4318/v1/metrics' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_CUSTOM_METRICS_ENDPOINT=localhost:4317' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_INSECURE=true' C-m
       tmux send-keys -t frontend 'export OTEL_RESOURCE_ATTRIBUTES="service.name=node-sample-application-${var.test_id},deployment.environment.name=ec2:default"' C-m
       tmux send-keys -t frontend 'export TESTING_ID=${var.test_id}' C-m

@@ -6,7 +6,7 @@ const mysql = require('mysql2');
 const bunyan = require('bunyan');
 const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
 const { MeterProvider, PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
-const { OTLPMetricExporter } = require('@opentelemetry/exporter-otlp-http');
+const { OTLPMetricExporter } = require('@opentelemetry/exporter-otlp-grpc');
 const { metrics } = require('@opentelemetry/api');
 const { Resource } = require('@opentelemetry/resources');
 const { randomInt } = require('crypto');
@@ -19,13 +19,13 @@ const app = express();
 const logger = bunyan.createLogger({name: 'express-app', level: 'info'});
 
 // Custom export pipeline - runs alongside existing CWAgent & ADOT setup
-const pipelineResource = Resource.default().merge(new Resource({
+const pipelineResource = new Resource({
     'service.name': `node-sample-application-${process.env.TESTING_ID}`,
     'deployment.environment.name': 'ec2:default'
 }));
 
 const pipelineMetricExporter = new OTLPMetricExporter({
-    url: 'http://localhost:4318/v1/metrics'
+    endpoint: 'localhost:4317'
 });
 
 const pipelineMetricReader = new PeriodicExportingMetricReader({
