@@ -247,7 +247,7 @@ jobs:
       - name: Validate custom metrics
         id: cwagent-metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c node/ec2/default/metric-validation.yml
+        run: ./gradlew validator:run --args='-c node/ec2/default/custom-metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --account-id ${{ env.ACCOUNT_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
