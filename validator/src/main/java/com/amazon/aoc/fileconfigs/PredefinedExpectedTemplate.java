@@ -430,6 +430,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/node/ec2/default/client-call-metric.mustache"),
   NODE_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/node/ec2/default/client-call-trace.mustache"),
 
+    /** Python EC2 Default Custom Metrics Test Case Validations */
+  NODE_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC("/expected-data-template/node/ec2/default/aws-otel-custom-metrics.mustache"),
+
   /** Node EC2 ASG Test Case Validations */
   NODE_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/node/ec2/asg/outgoing-http-call-log.mustache"),
   NODE_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/node/ec2/asg/outgoing-http-call-metric.mustache"),
