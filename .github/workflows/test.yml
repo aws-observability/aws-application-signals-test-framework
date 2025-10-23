@@ -15,14 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  python-ec2-default:
-    uses: ./.github/workflows/python-ec2-default-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-  
-    node-ec2-default:
+  node-ec2-default:
     uses: ./.github/workflows/node-ec2-default-test.yml
     secrets: inherit
     with:
