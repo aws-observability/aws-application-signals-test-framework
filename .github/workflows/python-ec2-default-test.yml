@@ -258,6 +258,7 @@ jobs:
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c python/ec2/default/custom-metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
+          --account-id ${{ env.ACCOUNT_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
           --region ${{ env.E2E_TEST_AWS_REGION }}
