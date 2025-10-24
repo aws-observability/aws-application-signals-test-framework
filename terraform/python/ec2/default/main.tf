@@ -161,8 +161,8 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_wheel_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip
-      unzip -o python-sample-app.zip
+      aws s3 cp ${var.sample_app_zip} ./python-sample-app-delete-me.zip
+      unzip -o python-sample-app-delete-me.zip
 
       # Export environment variables for instrumentation
       cd ./django_frontend_service
@@ -294,8 +294,8 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_wheel_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip
-      unzip -o python-sample-app.zip
+      aws s3 cp ${var.sample_app_zip} ./python-sample-app-delete-me.zip
+      unzip -o python-sample-app-delete-me.zip
 
       # Export environment variables for instrumentation
       cd ./django_remote_service
