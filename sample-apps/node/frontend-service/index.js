@@ -22,7 +22,7 @@ const logger = bunyan.createLogger({name: 'express-app', level: 'info'});
 const pipelineResource = new Resource({
     'service.name': `node-sample-application-${process.env.TESTING_ID}`,
     'deployment.environment.name': 'ec2:default'
-}));
+});
 
 const pipelineMetricExporter = new OTLPMetricExporter({
     endpoint: 'localhost:4317'

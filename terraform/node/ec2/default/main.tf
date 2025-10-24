@@ -167,7 +167,7 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc' C-m
-      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_CUSTOM_METRICS_ENDPOINT=localhost:4317' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=localhost:4317' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_INSECURE=true' C-m
       tmux send-keys -t frontend 'export OTEL_RESOURCE_ATTRIBUTES="service.name=node-sample-application-${var.test_id},deployment.environment.name=ec2:default"' C-m
       tmux send-keys -t frontend 'export TESTING_ID=${var.test_id}' C-m
