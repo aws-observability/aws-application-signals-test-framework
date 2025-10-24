@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   node-ec2-default:
-    uses: ./.github/workflows/node-ec2-default-test.yml
+    uses: ./.github/workflows/python-ec2-default-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
