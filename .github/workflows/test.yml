@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  node-ec2-default:
+  python-ec2-default:
     uses: ./.github/workflows/python-ec2-default-test.yml
     secrets: inherit
     with:
