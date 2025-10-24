@@ -182,7 +182,7 @@ resource "null_resource" "main_service_setup" {
       export SERVICE_NAME='python-sample-application-${var.test_id}'
       export DEPLOYMENT_ENVIRONMENT_NAME='ec2:default'
       export OTEL_TRACES_SAMPLER=always_on
-      export OTEL_RESOURCE_ATTRIBUTES="service.name=${SERVICE_NAME},deployment.environment.name=${DEPLOYMENT_ENVIRONMENT_NAME}"
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME}"
       export AWS_REGION='${var.aws_region}'
       python${var.language_version} manage.py migrate
       nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
