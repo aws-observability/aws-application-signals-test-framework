@@ -177,6 +177,16 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend 'export OTEL_TRACES_SAMPLER=always_on' C-m
       tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js' C-m
 
+      # Wait for app to start and capture debug info
+      sleep 5
+      echo "=== DEBUG: Tmux session output ==="
+      tmux capture-pane -t frontend -p
+      echo "=== DEBUG: Node processes ==="
+      ps aux | grep node || echo "No node processes found"
+      echo "=== DEBUG: Port 8000 status ==="
+      netstat -tlnp | grep 8000 || echo "Port 8000 not listening"
+      echo "=== DEBUG: End ==="
+
       # Check if the application is up. If it is not up, then exit 1.
       attempt_counter=0
       max_attempts=30
