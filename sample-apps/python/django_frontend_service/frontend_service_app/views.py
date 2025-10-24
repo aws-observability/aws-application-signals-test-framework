@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 # Custom export pipeline - runs alongside existing CWAgent & ADOT setup
 pipeline_resource = Resource.create({
-    "service.name": f"python-sample-application-{os.environ['TESTING_ID']}",
-    "deployment.environment.name": "ec2:default"
+    "service.name": {os.environ['OTEL_SERVICE_NAME']},
+    "deployment.environment.name": {os.environ['OTEL_DEPLOYMENT_ENVIRONMENT_NAME']}
 })
 
 pipeline_metric_exporter = OTLPMetricExporter(
