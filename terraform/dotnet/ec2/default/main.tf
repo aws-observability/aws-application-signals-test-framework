@@ -230,6 +230,9 @@ resource "null_resource" "remote_service_setup" {
       sudo dnf install -y dotnet-sdk-${var.language_version}
       sudo yum install unzip -y
 
+      # enable ec2 instance connect for debug
+      sudo yum install ec2-instance-connect -y
+      
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
