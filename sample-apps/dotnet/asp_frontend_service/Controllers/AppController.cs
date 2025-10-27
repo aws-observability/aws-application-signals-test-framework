@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using Amazon.S3;
 using Microsoft.AspNetCore.Mvc;
 using Amazon.S3.Model;
+using System.Diagnostics.Metrics;
+using System.Collections.Generic;
+
 
 namespace asp_frontend_service.Controllers;
 
@@ -22,6 +25,8 @@ public class AppController : ControllerBase
     private static bool threadStarted = false;
     private readonly AmazonS3Client s3Client = new AmazonS3Client();
     private readonly HttpClient httpClient = new HttpClient();
+    private static readonly Meter meter = new Meter("myMeter");
+    private static readonly Counter<int> counter = meter.CreateCounter<int>("myCounter");
 
     private static readonly Thread thread = new Thread(() =>
             {
@@ -69,6 +74,7 @@ public class AppController : ControllerBase
     [Route("/aws-sdk-call")]
     public string AWSSDKCall([FromQuery] string testingId)
     {
+        counter.Add(1, new KeyValuePair<string, object?>("Operation", "counter"));
        var request = new GetBucketLocationRequest()
             {
                BucketName = testingId

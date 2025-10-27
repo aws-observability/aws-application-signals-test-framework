@@ -295,6 +295,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/ec2/default/aws-sdk-call-metric.mustache"),
   DOTNET_EC2_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/ec2/default/aws-sdk-call-trace.mustache"),
 
+      /** DotNet EC2 Default Custom Metrics Test Case Validations */
+  DOTNET_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC("/expected-data-template/dotnet/ec2/default/aws-otel-custom-metrics.mustache"),
+
   DOTNET_EC2_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/ec2/default/remote-service-log.mustache"),
   DOTNET_EC2_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/ec2/default/remote-service-metric.mustache"),
   DOTNET_EC2_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/dotnet/ec2/default/remote-service-trace.mustache"),
@@ -430,7 +433,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/node/ec2/default/client-call-metric.mustache"),
   NODE_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/node/ec2/default/client-call-trace.mustache"),
 
-    /** Python EC2 Default Custom Metrics Test Case Validations */
+    /** Node EC2 Default Custom Metrics Test Case Validations */
   NODE_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC("/expected-data-template/node/ec2/default/aws-otel-custom-metrics.mustache"),
 
   /** Node EC2 ASG Test Case Validations */
