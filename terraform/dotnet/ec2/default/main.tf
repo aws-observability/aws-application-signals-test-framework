@@ -243,8 +243,8 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-appdotnet-sample-app-delete-me.zip
-      unzip -o dotnet-sample-appdotnet-sample-app-delete-me.zip
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app-delete-me.zip
+      unzip -o dotnet-sample-app-delete-me.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -264,9 +264,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
-      export SERVICE_NAME='dotnet-sample-application-${var.test_id}'
-      export DEPLOYMENT_ENVIRONMENT_NAME='ec2:default'
-      export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME}"
+      export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id}
       export OTEL_METRICS_EXPORTER=none
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false

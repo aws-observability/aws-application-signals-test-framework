@@ -26,7 +26,8 @@ public class AppController : ControllerBase
     private readonly AmazonS3Client s3Client = new AmazonS3Client();
     private readonly HttpClient httpClient = new HttpClient();
     private static readonly Meter meter = new Meter("myMeter");
-    private static readonly Counter<int> counter = meter.CreateCounter<int>("myCounter");
+    private static readonly Counter<int> agentBasedCounter = meter.CreateCounter<int>("agent_based_counter");
+    private static readonly Histogram<double> agentBasedHistogram = meter.CreateHistogram<double>("agent_based_histogram");
 
     private static readonly Thread thread = new Thread(() =>
             {
@@ -74,8 +75,13 @@ public class AppController : ControllerBase
     [Route("/aws-sdk-call")]
     public string AWSSDKCall([FromQuery] string testingId)
     {
-        counter.Add(1, new KeyValuePair<string, object?>("Operation", "counter"));
-       var request = new GetBucketLocationRequest()
+        var random = new Random();
+        
+        // Agent-based metrics
+        agentBasedCounter.Add(1, new KeyValuePair<string, object?>("Operation", "counter"));
+        agentBasedHistogram.Record(random.NextDouble() * 100, new KeyValuePair<string, object?>("Operation", "histogram"));
+        
+        var request = new GetBucketLocationRequest()
             {
                BucketName = testingId
             };
