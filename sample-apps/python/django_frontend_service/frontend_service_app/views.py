@@ -33,7 +33,7 @@ pipeline_metric_exporter = OTLPMetricExporter(
 
 pipeline_metric_reader = PeriodicExportingMetricReader(
     exporter=pipeline_metric_exporter,
-    export_interval_millis=10000
+    export_interval_millis=1000
 )
 
 pipeline_meter_provider = MeterProvider(
