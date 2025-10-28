@@ -1,7 +1,7 @@
 {
   "agent": {
     "debug": true,
-    "region": "REGION"
+    "region": "$REGION"
   },
   "traces": {
     "traces_collected": {

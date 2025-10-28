@@ -28,6 +28,13 @@ public class AppController : ControllerBase
     private static readonly Meter meter = new Meter("myMeter");
     private static readonly Counter<int> agentBasedCounter = meter.CreateCounter<int>("agent_based_counter");
     private static readonly Histogram<double> agentBasedHistogram = meter.CreateHistogram<double>("agent_based_histogram");
+    private static readonly UpDownCounter<int> agentBasedGauge = meter.CreateUpDownCounter<int>("agent_based_gauge");
+    
+    // Custom pipeline metrics
+    private static readonly Meter customPipelineMeter = new Meter("customPipelineMeter");
+    private static readonly Counter<int> customPipelineCounter = customPipelineMeter.CreateCounter<int>("custom_pipeline_counter");
+    private static readonly Histogram<double> customPipelineHistogram = customPipelineMeter.CreateHistogram<double>("custom_pipeline_histogram");
+    private static readonly UpDownCounter<int> customPipelineGauge = customPipelineMeter.CreateUpDownCounter<int>("custom_pipeline_gauge");
 
     private static readonly Thread thread = new Thread(() =>
             {
@@ -78,8 +85,30 @@ public class AppController : ControllerBase
         var random = new Random();
         
         // Agent-based metrics
+        var histogramValue = random.NextDouble() * 100;
+        var gaugeValue = random.Next(-10, 11);
         agentBasedCounter.Add(1, new KeyValuePair<string, object?>("Operation", "counter"));
-        agentBasedHistogram.Record(random.NextDouble() * 100, new KeyValuePair<string, object?>("Operation", "histogram"));
+        agentBasedHistogram.Record(histogramValue, new KeyValuePair<string, object?>("Operation", "histogram"));
+        agentBasedGauge.Add(gaugeValue, new KeyValuePair<string, object?>("Operation", "gauge"));
+        
+        // Custom pipeline metrics with required Telemetry.Source attribute
+        var pipelineHistogramValue = random.NextDouble() * 50;
+        var pipelineGaugeValue = random.Next(-5, 6);
+        var pipelineAttributes = new KeyValuePair<string, object?>[] {
+            new("Operation", "pipeline_counter"),
+            new("Telemetry.Source", "UserMetric"),
+        };
+        var pipelineHistogramAttributes = new KeyValuePair<string, object?>[] {
+            new("Operation", "pipeline_histogram"),
+            new("Telemetry.Source", "UserMetric"),
+        };
+        var pipelineGaugeAttributes = new KeyValuePair<string, object?>[] {
+            new("Operation", "pipeline_gauge"),
+            new("Telemetry.Source", "UserMetric"),
+        };
+        customPipelineCounter.Add(1, pipelineAttributes);
+        customPipelineHistogram.Record(pipelineHistogramValue, pipelineHistogramAttributes);
+        customPipelineGauge.Add(pipelineGaugeValue, pipelineGaugeAttributes);
         
         var request = new GetBucketLocationRequest()
             {
