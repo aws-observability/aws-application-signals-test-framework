@@ -14,21 +14,21 @@ on:
       java_version:
         description: 'The Java version to run the test'
         required: true
-        default: '17'
+        default: '21'
         type: string
         
       ADOT-Java-Branch:
         description: 'ADOT Java branch to use'
         required: true
-        default: 'release/v2.11.x'
-        type: string  
+        default: 'main'
+        type: string
     
 jobs:
   java-lambda-layer-performance-test:
     runs-on: ubuntu-latest 
     permissions:
         id-token: write
-        contents: read   
+        contents: read
 
     env:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
