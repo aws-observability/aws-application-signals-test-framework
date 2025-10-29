@@ -38,7 +38,7 @@ function create_resources() {
       --iam-instance-profile Name=$INSTANCE_PROFILE \
       --associate-public-ip-address \
       --block-device-mappings 'DeviceName=/dev/xvda,Ebs={VolumeSize=80,VolumeType=gp3}' \
-      --metadata-options 'HttpPutResponseHopLimit=3,HttpEndpoint=enabled' \
+      --metadata-options 'HttpPutResponseHopLimit=3,HttpEndpoint=enabled,HttpTokens=required' \
       --query 'Instances[0].InstanceId' \
       --output text)
 
@@ -54,7 +54,7 @@ function create_resources() {
       --iam-instance-profile Name=$INSTANCE_PROFILE \
       --associate-public-ip-address \
       --block-device-mappings 'DeviceName=/dev/xvda,Ebs={VolumeSize=80,VolumeType=gp3}' \
-      --metadata-options 'HttpPutResponseHopLimit=3,HttpEndpoint=enabled' \
+      --metadata-options 'HttpPutResponseHopLimit=3,HttpEndpoint=enabled,HttpTokens=required' \
       --query 'Instances[0].InstanceId' \
       --output text)
 
