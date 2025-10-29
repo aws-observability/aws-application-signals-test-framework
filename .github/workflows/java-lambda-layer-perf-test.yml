@@ -10,13 +10,7 @@ on:
         required: true
         default: 20
         type: number
-        
-      java_version:
-        description: 'The Java version to run the test'
-        required: true
-        default: '21'
-        type: string
-        
+
       ADOT-Java-Branch:
         description: 'ADOT Java branch to use'
         required: true
@@ -39,13 +33,19 @@ jobs:
       with:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1
-
+ 
     - name: Checkout aws-otel-java-instrumentation
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         repository: aws-observability/aws-otel-java-instrumentation
         ref: ${{ github.event.inputs.ADOT-Java-Branch }}
         path: aws-otel-java-instrumentation
+
+    - name: Set up Java version for ADOT Java Lambda build
+      uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+      with:
+        java-version-file: aws-otel-java-instrumentation/.java-version
+        distribution: temurin
 
     - name: Log branch and commit info
       run: |
