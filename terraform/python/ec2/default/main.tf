@@ -179,10 +179,8 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
       export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=localhost:4317
       export OTEL_EXPORTER_OTLP_METRICS_INSECURE=true
-      export SERVICE_NAME='python-sample-application-${var.test_id}'
-      export DEPLOYMENT_ENVIRONMENT_NAME='ec2:default'
       export OTEL_TRACES_SAMPLER=always_on
-      export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME}"
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id},deployment.environment.name=ec2:default"
       export AWS_REGION='${var.aws_region}'
       python${var.language_version} manage.py migrate
       nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
