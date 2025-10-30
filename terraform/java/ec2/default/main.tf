@@ -135,18 +135,21 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_jar_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_jar} ./main-service.jar
+      aws s3 cp ${var.sample_app_jar} ./main-service-delete-me.jar
 
       JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
-      OTEL_METRICS_EXPORTER=none \
+      OTEL_METRICS_EXPORTER=otlp \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
       OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
       OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
-      OTEL_RESOURCE_ATTRIBUTES="service.name=sample-application-${var.test_id},Internal_Org=Financial,Business Unit=Payments,Region=us-east-1,aws.application_signals.metric_resource_keys=Business Unit&Region&Organization" \
+      SERVICE_NAME='python-sample-application-${var.test_id}'
+      DEPLOYMENT_ENVIRONMENT_NAME='ec2:default'
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics \
+      OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME},Internal_Org=Financial,Business Unit=Payments,Region=us-east-1,aws.application_signals.metric_resource_keys=Business Unit&Region&Organization" \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
-      nohup java -XX:+UseG1GC -jar main-service.jar &> nohup.out &
+      nohup java -XX:+UseG1GC -jar main-service-delete-me.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -233,7 +236,7 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_jar_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_remote_app_jar} ./remote-service.jar
+      aws s3 cp ${var.sample_remote_app_jar} ./remote-service-delete-me.jar
 
       JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
       OTEL_METRICS_EXPORTER=none \
@@ -244,7 +247,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
-      nohup java -XX:+UseG1GC -jar remote-service.jar &> nohup.out &
+      nohup java -XX:+UseG1GC -jar remote-service-delete-me.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30

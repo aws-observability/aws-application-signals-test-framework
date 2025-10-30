@@ -1,0 +1,228 @@
+# OpenTelemetry Custom Metrics Validation Templates - AWS SDK Call Only
+# ANY_VALUE defines a string to = 'ANY_VALUE' to pass validation testing
+# Custom export templates
+-
+  metricName: agent_based_counter
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: deployment.environment.name
+      value: ec2:default
+    -
+      name: aws.local.service
+      value: {{serviceName}}
+    -
+      name: cloud.region
+      value: {{region}}
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: counter
+    -
+      name: host.type
+      value: ANY_VALUE
+    -
+      name: cloud.availability_zone
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.name
+      value: opentelemetry
+    -
+      name: telemetry.sdk.language
+      value: java
+    -
+      name: cloud.provider
+      value: aws
+    -
+      name: cloud.account.id
+      value: {{accountId}}
+    -
+      name: host.name
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.version
+      value: ANY_VALUE
+    -
+      name: host.id
+      value: ANY_VALUE
+    -
+      name: telemetry.auto.version
+      value: ANY_VALUE
+    -
+      name: cloud.platform
+      value: aws_ec2
+-
+  metricName: agent_based_histogram
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: deployment.environment.name
+      value: ec2:default
+    -
+      name: aws.local.service
+      value: {{serviceName}}
+    -
+      name: cloud.region
+      value: {{region}}
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: histogram
+    -
+      name: host.type
+      value: ANY_VALUE
+    -
+      name: cloud.availability_zone
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.name
+      value: opentelemetry
+    -
+      name: telemetry.sdk.language
+      value: java
+    -
+      name: cloud.provider
+      value: aws
+    -
+      name: cloud.account.id
+      value: {{accountId}}
+    -
+      name: host.name
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.version
+      value: ANY_VALUE
+    -
+      name: host.id
+      value: ANY_VALUE
+    -
+      name: telemetry.auto.version
+      value: ANY_VALUE
+    -
+      name: cloud.platform
+      value: aws_ec2
+-
+  metricName: agent_based_gauge
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: deployment.environment.name
+      value: ec2:default
+    -
+      name: aws.local.service
+      value: {{serviceName}}
+    -
+      name: cloud.region
+      value: {{region}}
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: gauge
+    -
+      name: host.type
+      value: ANY_VALUE
+    -
+      name: cloud.availability_zone
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.name
+      value: opentelemetry
+    -
+      name: telemetry.sdk.language
+      value: java
+    -
+      name: cloud.provider
+      value: aws
+    -
+      name: cloud.account.id
+      value: {{accountId}}
+    -
+      name: host.name
+      value: ANY_VALUE
+    -
+      name: telemetry.sdk.version
+      value: ANY_VALUE
+    -
+      name: host.id
+      value: ANY_VALUE
+    -
+      name: telemetry.auto.version
+      value: ANY_VALUE
+    -
+      name: cloud.platform
+      value: aws_ec2
+      value: aws_ec2
+
+# Export pipeline metrics
+-
+  metricName: custom_pipeline_counter
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: deployment.environment.name
+      value: ec2:default
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: pipeline_counter
+    -
+      name: telemetry.sdk.name
+      value: opentelemetry
+    -
+      name: telemetry.sdk.language
+      value: java
+    -
+      name: telemetry.sdk.version
+      value: ANY_VALUE
+-
+  metricName: custom_pipeline_histogram
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: deployment.environment.name
+      value: ec2:default
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: pipeline_histogram
+    -
+      name: telemetry.sdk.name
+      value: opentelemetry
+    -
+      name: telemetry.sdk.language
+      value: java
+    -
+      name: telemetry.sdk.version
+      value: ANY_VALUE
+-
+  metricName: custom_pipeline_gauge
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: deployment.environment.name
+      value: ec2:default
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: Operation
+      value: pipeline_gauge
+    -
+      name: telemetry.sdk.name
+      value: opentelemetry
+    -
+      name: telemetry.sdk.language
+      value: java
+    -
+      name: telemetry.sdk.version
+      value: ANY_VALUE

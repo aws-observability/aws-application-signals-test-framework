@@ -45,6 +45,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.metrics.Meter;
+import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.exporter.otlp.http.metrics.OtlpHttpMetricExporter;
+import io.opentelemetry.sdk.metrics.export.MetricExporter;
+import io.opentelemetry.sdk.metrics.SdkMeterProvider;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.metrics.export.MetricReader;
+import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.api.metrics.DoubleHistogram;
+import io.opentelemetry.api.metrics.LongUpDownCounter;
+import java.time.Duration;
 
 @Controller
 public class FrontendServiceController {
@@ -76,10 +92,50 @@ public class FrontendServiceController {
     executorService.scheduleAtFixedRate(runnableTask, 100, 1000, TimeUnit.MILLISECONDS);
   }
 
+  // Agent-based metrics using GlobalOpenTelemetry
+  private static final Meter meter = GlobalOpenTelemetry.getMeter("myMeter");
+  private static final LongCounter counter = meter.counterBuilder("agent_based_counter").build();
+  private static final DoubleHistogram histogram = meter.histogramBuilder("agent_based_histogram").build();
+  private static final LongUpDownCounter gauge = meter.upDownCounterBuilder("agent_based_gauge").build();
+
+  // Pipeline-based metrics (initialized in constructor)
+  private final Meter pipelineMeter;
+  private final LongCounter pipelineCounter;
+  private final DoubleHistogram pipelineHistogram;
+  private final LongUpDownCounter pipelineGauge;
+
   @Autowired
   public FrontendServiceController(CloseableHttpClient httpClient, S3Client s3) {
     this.httpClient = httpClient;
     this.s3 = s3;
+    
+    MetricExporter pipelineMetricExporter = OtlpHttpMetricExporter.builder()
+        .setEndpoint("http://localhost:4318/v1/metrics")
+        .setTimeout(Duration.ofSeconds(10))
+        .build();
+        
+        MetricReader pipelineMetricReader = PeriodicMetricReader.builder(pipelineMetricExporter)
+        .setInterval(Duration.ofSeconds(60))
+        .build();
+    
+    SdkMeterProvider pipelineMeterProvider = SdkMeterProvider.builder()
+        .setResource(Resource.getDefault())
+        .registerMetricReader(pipelineMetricReader)
+        .build();
+    
+    OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
+        .setMeterProvider(pipelineMeterProvider)
+        .build();
+    
+    // Initialize pipeline metrics
+    this.pipelineMeter = openTelemetry.getMeter("myMeter");
+    this.pipelineCounter = pipelineMeter.counterBuilder("custom_pipeline_counter").build();
+    this.pipelineHistogram = pipelineMeter.histogramBuilder("custom_pipeline_histogram").build();
+    this.pipelineGauge = pipelineMeter.upDownCounterBuilder("custom_pipeline_gauge").build();
+  }
+  
+  private int random(int min, int max) {
+    return (int) (Math.random() * (max - min + 1)) + min;
   }
 
   @GetMapping("/")
@@ -92,6 +148,16 @@ public class FrontendServiceController {
   @GetMapping("/aws-sdk-call")
   @ResponseBody
   public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
+    
+    logger.info("Incrementing custom counter - OpenTelemetry available: {}", GlobalOpenTelemetry.get() != null);
+    counter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "counter"));
+    histogram.record((double)random(100,1000), Attributes.of(AttributeKey.stringKey("Operation"), "histogram"));
+    gauge.add(random(-10,10), Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
+
+    pipelineCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_counter"));
+    pipelineHistogram.record(random(100,1000), Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_histogram"));
+    pipelineGauge.add(random(-10,10), Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_gauge"));
+    
     String bucketName = "e2e-test-bucket-name";
     if (testingId != null) {
       bucketName += "-" + testingId;
