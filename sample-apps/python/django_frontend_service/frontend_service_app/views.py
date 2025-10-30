@@ -16,7 +16,7 @@ from opentelemetry.trace.span import format_trace_id
 
 logger = logging.getLogger(__name__)
 
-#python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter"); for custom metrics
+#python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter"); for custom metrics.
 meter = metrics.get_meter("myMeter")
 agent_based_counter = meter.create_counter("agent_based_counter", unit="1", description="agent export counter")
 agent_based_histogram = meter.create_histogram("agent_based_histogram", description="agent export histogram")
