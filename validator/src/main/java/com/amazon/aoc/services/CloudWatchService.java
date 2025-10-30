@@ -36,6 +36,9 @@ public class CloudWatchService {
   public static final String SERVICE_DIMENSION = "Service";
   public static final String REMOTE_SERVICE_DIMENSION = "RemoteService";
   public static final String REMOTE_TARGET_DIMENSION = "RemoteTarget";
+  public static final String CUSTOM_SERVICE_DIMENSION = "service.name";
+  public static final String CUSTOM_ENVIRONMENT_DIMENSION = "deployment.environment.name";
+
 
   private static final int MAX_QUERY_PERIOD = 60;
   private static final String REQUESTER = "integrationTest";

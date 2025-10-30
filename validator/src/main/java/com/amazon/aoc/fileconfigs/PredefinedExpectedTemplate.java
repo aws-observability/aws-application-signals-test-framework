@@ -137,6 +137,10 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   /** Java EC2 ADOT SigV4 Log Exporter Test Case Validation */
   JAVA_EC2_ADOT_OTLP_LOG("/expected-data-template/java/ec2/adot-aws-otlp/application-log.mustache"),
 
+  /** Java EC2 X-Ray Adaptive Sampling Test Case Validation */
+  JAVA_EC2_ADAPTIVE_SAMPLING_FULL_TRACE("/expected-data-template/java/ec2/adaptive-sampling/full-trace.mustache"),
+  JAVA_EC2_ADAPTIVE_SAMPLING_PARTIAL_TRACE("/expected-data-template/java/ec2/adaptive-sampling/partial-trace.mustache"),
+
   /** Java EC2 K8s Test Case Validations */
   JAVA_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/k8s/outgoing-http-call-log.mustache"),
   JAVA_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/k8s/outgoing-http-call-metric.mustache"),
@@ -205,6 +209,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_DEFAULT_CLIENT_CALL_LOG("/expected-data-template/python/ec2/default/client-call-log.mustache"),
   PYTHON_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/python/ec2/default/client-call-metric.mustache"),
   PYTHON_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/default/client-call-trace.mustache"),
+
+  /** Python EC2 Default Custom Metrics Test Case Validations */
+  PYTHON_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC("/expected-data-template/python/ec2/default/aws-otel-custom-metrics.mustache"),
 
   /** Python EC2 Asg Test Case Validations */
   PYTHON_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/ec2/asg/outgoing-http-call-log.mustache"),

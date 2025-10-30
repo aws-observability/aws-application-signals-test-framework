@@ -10,42 +10,42 @@ on:
         required: true
         default: 20
         type: number
-        
-      java_version:
-        description: 'The Java version to run the test'
-        required: true
-        default: '17'
-        type: string
-        
+
       ADOT-Java-Branch:
         description: 'ADOT Java branch to use'
         required: true
-        default: 'release/v2.11.x'
-        type: string  
+        default: 'main'
+        type: string
     
 jobs:
   java-lambda-layer-performance-test:
     runs-on: ubuntu-latest 
     permissions:
         id-token: write
-        contents: read   
+        contents: read
 
     env:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
   
     steps:
     - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
       with:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1
-
+ 
     - name: Checkout aws-otel-java-instrumentation
-      uses: actions/checkout@v4
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         repository: aws-observability/aws-otel-java-instrumentation
         ref: ${{ github.event.inputs.ADOT-Java-Branch }}
         path: aws-otel-java-instrumentation
+
+    - name: Set up Java version for ADOT Java Lambda build
+      uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+      with:
+        java-version-file: aws-otel-java-instrumentation/.java-version
+        distribution: temurin
 
     - name: Log branch and commit info
       run: |
@@ -54,7 +54,7 @@ jobs:
         echo "ADOT Java Commit Hash: $(git rev-parse HEAD)"
 
     - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
+      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #v3.1.2
     
     - name: Build and Deploy Lambda Layer
       run: |
@@ -85,13 +85,13 @@ jobs:
 
     # Re-authenticate to refresh credentials (important!)
     - name: Refresh AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
       with:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1
 
     - name: Checkout current repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         path: current-repo
     
@@ -130,7 +130,7 @@ jobs:
         ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-java
 
     - name: Upload test results
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: java-performance-test-results
         path: |
@@ -141,7 +141,7 @@ jobs:
     # Always re-authenticate to refresh credentials before cleanup
     - name: Refresh AWS Credentials before cleanup
       if: success() || failure() || cancelled()
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
       with:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1
