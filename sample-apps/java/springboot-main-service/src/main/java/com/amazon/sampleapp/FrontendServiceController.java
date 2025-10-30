@@ -45,6 +45,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.metrics.Meter;
+import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.exporter.otlp.http.metrics.OtlpHttpMetricExporter;
+import io.opentelemetry.sdk.metrics.export.MetricExporter;
+import io.opentelemetry.sdk.metrics.SdkMeterProvider;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.metrics.export.MetricReader;
+import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.api.metrics.DoubleHistogram;
+import io.opentelemetry.api.metrics.LongUpDownCounter;
+import java.time.Duration;
 
 @Controller
 public class FrontendServiceController {
@@ -76,10 +92,66 @@ public class FrontendServiceController {
     executorService.scheduleAtFixedRate(runnableTask, 100, 1000, TimeUnit.MILLISECONDS);
   }
 
+  // Agent-based metrics using GlobalOpenTelemetry
+  private static final Meter meter = GlobalOpenTelemetry.getMeter("myMeter");
+  private static final LongCounter agentBasedCounter = meter.counterBuilder("agent_based_counter").build();
+  private static final DoubleHistogram agentBasedHistogram = meter.histogramBuilder("agent_based_histogram").build();
+  private static final LongUpDownCounter agentBasedGauge = meter.upDownCounterBuilder("agent_based_gauge").build();
+
+  // Pipeline-based metrics (initialized in constructor)
+  private final Meter customPipelineMeter;
+  private final LongCounter customPipelineCounter;
+  private final DoubleHistogram customPipelineHistogram;
+  private final LongUpDownCounter customPipelineGauge;
+
   @Autowired
   public FrontendServiceController(CloseableHttpClient httpClient, S3Client s3) {
     this.httpClient = httpClient;
     this.s3 = s3;
+     
+    // Get environment variables
+    String serviceName = System.getenv("SERVICE_NAME");
+    String deploymentEnvironmentName = System.getenv("DEPLOYMENT_ENVIRONMENT_NAME");
+    
+    // Create pipeline resource without interfering attributes
+    Resource pipelineResource;
+    if (serviceName != null && deploymentEnvironmentName != null && 
+        !serviceName.isEmpty() && !deploymentEnvironmentName.isEmpty()) {
+        pipelineResource = Resource.getDefault().toBuilder()
+            .put("service.name", serviceName)
+            .put("deployment.environment.name", deploymentEnvironmentName)
+            .build();
+    } else {
+        pipelineResource = Resource.getDefault();
+    }
+    
+    MetricExporter pipelineMetricExporter = OtlpHttpMetricExporter.builder()
+        .setEndpoint("http://localhost:4318/v1/metrics")
+        .setTimeout(Duration.ofSeconds(10))
+        .build();
+        
+    MetricReader pipelineMetricReader = PeriodicMetricReader.builder(pipelineMetricExporter)
+        .setInterval(Duration.ofSeconds(1))
+        .build();
+    
+    SdkMeterProvider pipelineMeterProvider = SdkMeterProvider.builder()
+        .setResource(pipelineResource)
+        .registerMetricReader(pipelineMetricReader)
+        .build();
+    
+    OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
+        .setMeterProvider(pipelineMeterProvider)
+        .build();
+    
+    // Initialize pipeline metrics
+    this.customPipelineMeter = openTelemetry.getMeter("myMeter");
+    this.customPipelineCounter = customPipelineMeter.counterBuilder("custom_pipeline_counter").build();
+    this.customPipelineHistogram = customPipelineMeter.histogramBuilder("custom_pipeline_histogram").build();
+    this.customPipelineGauge = customPipelineMeter.upDownCounterBuilder("custom_pipeline_gauge").build();
+  }
+
+  private int random(int min, int max) {
+    return (int) (Math.random() * (max - min + 1)) + min;
   }
 
   @GetMapping("/")
@@ -92,6 +164,15 @@ public class FrontendServiceController {
   @GetMapping("/aws-sdk-call")
   @ResponseBody
   public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
+    
+    agentBasedCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "counter"));
+    agentBasedHistogram.record((double)random(100,1000), Attributes.of(AttributeKey.stringKey("Operation"), "histogram"));
+    agentBasedGauge.add(random(-10,10), Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
+
+    customPipelineCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_counter"));
+    customPipelineHistogram.record(random(100,1000), Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_histogram"));
+    customPipelineGauge.add(random(-10,10), Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_gauge"));
+    
     String bucketName = "e2e-test-bucket-name";
     if (testingId != null) {
       bucketName += "-" + testingId;
