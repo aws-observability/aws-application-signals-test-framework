@@ -16,6 +16,36 @@ from opentelemetry.trace.span import format_trace_id
 
 logger = logging.getLogger(__name__)
 
+# Custom export pipeline - runs alongside existing CWAgent & ADOT setup
+# Set up variables for if statement to avoid app crashes on other platforms
+service_name = os.environ.get('SERVICE_NAME')
+deployment_environment_name = os.environ.get('DEPLOYMENT_ENVIRONMENT_NAME')
+# if vars come back empty pipeline will assign value of 'None'
+if service_name and deployment_environment_name:
+    pipeline_resource = Resource.create({
+        "service.name": service_name,
+        "deployment.environment.name": deployment_environment_name
+    })
+else:
+    pipeline_resource = Resource.create({})
+
+pipeline_metric_exporter = OTLPMetricExporter(
+    endpoint="localhost:4317"
+)
+
+pipeline_metric_reader = PeriodicExportingMetricReader(
+    exporter=pipeline_metric_exporter,
+    export_interval_millis=1000
+)
+
+pipeline_meter_provider = MeterProvider(
+    resource=pipeline_resource,
+    metric_readers=[pipeline_metric_reader]
+)
+
+pipeline_meter = pipeline_meter_provider.get_meter("myMeter")
+
+
 #python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter"); for custom metrics
 meter = metrics.get_meter("myMeter")
 agent_based_counter = meter.create_counter("agent_based_counter", unit="1", description="agent export counter")
