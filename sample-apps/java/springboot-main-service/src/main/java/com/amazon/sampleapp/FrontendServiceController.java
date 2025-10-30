@@ -94,15 +94,15 @@ public class FrontendServiceController {
 
   // Agent-based metrics using GlobalOpenTelemetry
   private static final Meter meter = GlobalOpenTelemetry.getMeter("myMeter");
-  private static final LongCounter counter = meter.counterBuilder("agent_based_counter").build();
-  private static final DoubleHistogram histogram = meter.histogramBuilder("agent_based_histogram").build();
-  private static final LongUpDownCounter gauge = meter.upDownCounterBuilder("agent_based_gauge").build();
+  private static final LongCounter agentBasedCounter = meter.counterBuilder("agent_based_counter").build();
+  private static final DoubleHistogram agentBasedHistogram = meter.histogramBuilder("agent_based_histogram").build();
+  private static final LongUpDownCounter agentBasedGauge = meter.upDownCounterBuilder("agent_based_gauge").build();
 
   // Pipeline-based metrics (initialized in constructor)
   private final Meter pipelineMeter;
-  private final LongCounter pipelineCounter;
-  private final DoubleHistogram pipelineHistogram;
-  private final LongUpDownCounter pipelineGauge;
+  private final LongCounter CustomPipelineCounter;
+  private final DoubleHistogram CustomPipelineHistogram;
+  private final LongUpDownCounter CustomPipelineGauge;
 
   @Autowired
   public FrontendServiceController(CloseableHttpClient httpClient, S3Client s3) {
@@ -115,7 +115,7 @@ public class FrontendServiceController {
         .build();
         
         MetricReader pipelineMetricReader = PeriodicMetricReader.builder(pipelineMetricExporter)
-        .setInterval(Duration.ofSeconds(60))
+        .setInterval(Duration.ofSeconds(1))
         .build();
     
     SdkMeterProvider pipelineMeterProvider = SdkMeterProvider.builder()
@@ -149,7 +149,6 @@ public class FrontendServiceController {
   @ResponseBody
   public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
     
-    logger.info("Incrementing custom counter - OpenTelemetry available: {}", GlobalOpenTelemetry.get() != null);
     counter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "counter"));
     histogram.record((double)random(100,1000), Attributes.of(AttributeKey.stringKey("Operation"), "histogram"));
     gauge.add(random(-10,10), Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
