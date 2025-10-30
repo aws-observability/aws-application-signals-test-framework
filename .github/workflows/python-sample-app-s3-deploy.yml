@@ -48,11 +48,11 @@ jobs:
 
       - name: Build Sample App Zip
         working-directory: sample-apps/python
-        run: zip -r python-sample-app.zip .
+        run: zip -r python-sample-app-delete-me.zip .
 
       - name: Upload to S3
         working-directory: sample-apps/python
-        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app-delete-me.zip --key python-sample-app-delete-me.zip
 
       - name: Build Gen AI Sample App Zip
         working-directory: sample-apps/python/genai_service

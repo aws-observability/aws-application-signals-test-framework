@@ -132,8 +132,8 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
-      unzip -o dotnet-sample-app.zip
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app-delete-me.zip
+      unzip -o dotnet-sample-app-delete-me.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -151,10 +151,14 @@ resource "null_resource" "main_service_setup" {
       export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
       export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
-      export OTEL_METRICS_EXPORTER=none
-      export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
+      export OTEL_METRICS_EXPORTER=otlp
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics
+      export SERVICE_NAME='dotnet-sample-application-${var.test_id}'
+      export DEPLOYMENT_ENVIRONMENT_NAME='ec2:default'
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME}"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
@@ -227,6 +231,9 @@ resource "null_resource" "remote_service_setup" {
       sudo dnf install -y dotnet-sdk-${var.language_version}
       sudo yum install unzip -y
 
+      # enable ec2 instance connect for debug
+      sudo yum install ec2-instance-connect -y
+      
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
@@ -240,8 +247,8 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
-      unzip -o dotnet-sample-app.zip
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app-delete-me.zip
+      unzip -o dotnet-sample-app-delete-me.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
