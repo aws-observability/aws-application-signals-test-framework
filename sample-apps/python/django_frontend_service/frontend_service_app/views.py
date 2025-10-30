@@ -22,10 +22,17 @@ from opentelemetry.semconv.resource import ResourceAttributes
 logger = logging.getLogger(__name__)
 
 # Custom export pipeline - runs alongside existing CWAgent & ADOT setup
-pipeline_resource = Resource.create({
-    "service.name": os.environ['SERVICE_NAME'],
-    "deployment.environment.name": os.environ['DEPLOYMENT_ENVIRONMENT_NAME']
-})
+# Set up variables for if statement to avoid app crashes on other platforms
+service_name = os.environ.get('SERVICE_NAME')
+deployment_environment_name = os.environ.get('DEPLOYMENT_ENVIRONMENT_NAME')
+# if vars come back empty pipeline will assign value of 'None'
+if service_name and deployment_environment_name:
+    pipeline_resource = Resource.create({
+        "service.name": service_name,
+        "deployment.environment.name": deployment_environment_name
+    })
+else:
+    pipeline_resource = Resource.create({})
 
 pipeline_metric_exporter = OTLPMetricExporter(
     endpoint="localhost:4317"
