@@ -34,9 +34,9 @@ on:
         default: 'github'
     outputs:
       job-started:
-        value: ${{ jobs.python-ec2-default.outputs.job-started }}
+        value: ${{ jobs.lk-python-ec2-default.outputs.job-started }}
       validation-result:
-        value: ${{ jobs.python-ec2-default.outputs.validation-result }}
+        value: ${{ jobs.lk-python-ec2-default.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -57,7 +57,7 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
 
 jobs:
-  python-ec2-default:
+  lk-python-ec2-default:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
