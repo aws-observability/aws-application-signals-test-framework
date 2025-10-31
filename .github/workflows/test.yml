@@ -12,7 +12,7 @@ permissions:
   id-token: write
   contents: read
 jobs:
-  python-ec2-default:
+  llkk-python-ec2-default:
     uses: ./.github/workflows/luke-test-python-ec2-default-test.yml
     secrets: inherit
     with:
