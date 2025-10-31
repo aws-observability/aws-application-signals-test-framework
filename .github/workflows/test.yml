@@ -7,7 +7,7 @@ name: Test
 on:
   push:
     branches:
-      - Python_Custom_metrics
+      - lk-upstream-test
 permissions:
   id-token: write
   contents: read
