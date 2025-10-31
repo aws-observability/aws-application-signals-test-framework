@@ -44,7 +44,7 @@ env:
   PYTHON_VERSION: ${{ inputs.python-version }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app-delete-me.zip
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
