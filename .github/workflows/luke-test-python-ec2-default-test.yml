@@ -26,7 +26,7 @@ on:
         default: "x86_64"
       staging-wheel-name:
         required: false
-        default: 'luke_test_aws_opentelemetry_distro-0.13.0.dev0-py3-none-any.whl'
+        default: 'aws_opentelemetry_distro-0.999.0.dev0-py3-none-any.whl'
         type: string
       otel-source:
         required: false
