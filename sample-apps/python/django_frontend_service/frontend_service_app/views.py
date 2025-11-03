@@ -21,18 +21,31 @@ from opentelemetry.semconv.resource import ResourceAttributes
 
 logger = logging.getLogger(__name__)
 
-# Custom export pipeline - runs alongside existing CWAgent & ADOT setup
-# Set up variables for if statement to avoid app crashes on other platforms
+# Custom export pipeline - match agent resource to prevent interference
 service_name = os.environ.get('SERVICE_NAME')
 deployment_environment_name = os.environ.get('DEPLOYMENT_ENVIRONMENT_NAME')
-# if vars come back empty pipeline will assign value of 'None'
+
 if service_name and deployment_environment_name:
     pipeline_resource = Resource.create({
-        "service.name": service_name,
-        "deployment.environment.name": deployment_environment_name
+        ResourceAttributes.SERVICE_NAME: service_name,
+        ResourceAttributes.DEPLOYMENT_ENVIRONMENT: deployment_environment_name
     })
 else:
-    pipeline_resource = Resource.create({})
+    def extract_value(attrs, key):
+        if f'{key}=' in attrs:
+            start = attrs.find(f'{key}=') + len(f'{key}=')
+            end = attrs.find(',', start)
+            return attrs[start:end] if end != -1 else attrs[start:]
+        return None
+    
+    resource_attrs = os.environ.get('OTEL_RESOURCE_ATTRIBUTES', '')
+    extracted_service_name = extract_value(resource_attrs, 'service.name')
+    deployment_env = extract_value(resource_attrs, 'deployment.environment.name')
+    
+    resource_dict = {ResourceAttributes.SERVICE_NAME: extracted_service_name or os.environ.get('OTEL_SERVICE_NAME', 'django-frontend-service')}
+    if deployment_env:
+        resource_dict[ResourceAttributes.DEPLOYMENT_ENVIRONMENT] = deployment_env
+    pipeline_resource = Resource.create(resource_dict)
 
 pipeline_metric_exporter = OTLPMetricExporter(
     endpoint="localhost:4317"
