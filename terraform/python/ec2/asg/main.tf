@@ -164,7 +164,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315
     export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc
     export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc
-    export OTEL_RESOURCE_ATTRIBUTES="service.name=python-sample-application-${var.test_id},deployment.environment.name=ec2:python-ec2-single-asg-${var.test_id}"
+    export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
     export OTEL_TRACES_SAMPLER=always_on
     python${var.language_version} manage.py migrate
     nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
