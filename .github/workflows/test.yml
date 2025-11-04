@@ -15,8 +15,8 @@ permissions:
   contents: read
 
 jobs:
-  python-ec2-asg:
-    uses: ./.github/workflows/python-ec2-asg-test.yml
+  python-ec2-default-test:
+    uses: ./.github/workflows/python-ec2-default-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
