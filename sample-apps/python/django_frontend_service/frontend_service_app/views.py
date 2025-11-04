@@ -103,7 +103,7 @@ def aws_sdk_call(request):
     agent_based_histogram.record(random.randint(100, 1000), {"Operation": "histogram"})
     agent_based_gauge.add(random.randint(-10, 10), {"Operation": "gauge"})
 
-    if custom_pipeline_counter:
+    if pipeline_meter:
         custom_pipeline_counter.add(1, {"Operation": "pipeline_counter"})
         custom_pipeline_histogram.record(random.randint(100, 1000), {"Operation": "pipeline_histogram"})
         custom_pipeline_gauge.add(random.randint(-10, 10), {"Operation": "pipeline_gauge"})
