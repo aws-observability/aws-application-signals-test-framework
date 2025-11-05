@@ -13,46 +13,14 @@ import schedule
 from django.http import HttpResponse, JsonResponse
 from opentelemetry import trace, metrics
 from opentelemetry.trace.span import format_trace_id
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-from opentelemetry.semconv.resource import ResourceAttributes
 
 logger = logging.getLogger(__name__)
 
-# Custom export pipeline - runs alongside existing CWAgent & ADOT setup
-pipeline_resource = Resource.create({
-    "service.name": os.environ['SERVICE_NAME'],
-    "deployment.environment.name": os.environ['DEPLOYMENT_ENVIRONMENT_NAME']
-})
-
-pipeline_metric_exporter = OTLPMetricExporter(
-    endpoint="localhost:4317"
-)
-
-pipeline_metric_reader = PeriodicExportingMetricReader(
-    exporter=pipeline_metric_exporter,
-    export_interval_millis=1000
-)
-
-pipeline_meter_provider = MeterProvider(
-    resource=pipeline_resource,
-    metric_readers=[pipeline_metric_reader]
-)
-
-pipeline_meter = pipeline_meter_provider.get_meter("myMeter")
-
-
-#python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter"); for custom metrics
+#python equivalent of Meter meter = GlobalOpenTelemetry.getMeter("myMeter"); for custom metrics.
 meter = metrics.get_meter("myMeter")
 agent_based_counter = meter.create_counter("agent_based_counter", unit="1", description="agent export counter")
 agent_based_histogram = meter.create_histogram("agent_based_histogram", description="agent export histogram")
 agent_based_gauge = meter.create_up_down_counter("agent_based_gauge", unit="1", description="agent export gauge")
-
-custom_pipeline_counter = pipeline_meter.create_counter("custom_pipeline_counter", unit="1", description="pipeline export counter")
-custom_pipeline_histogram = pipeline_meter.create_histogram("custom_pipeline_histogram", description="pipeline export histogram")
-custom_pipeline_gauge = pipeline_meter.create_up_down_counter("custom_pipeline_gauge", unit="1", description="pipeline export gauge")
 
 
 should_send_local_root_client_call = False
@@ -94,10 +62,6 @@ def aws_sdk_call(request):
     agent_based_counter.add(1, {"Operation": "counter"})
     agent_based_histogram.record(random.randint(100, 1000), {"Operation": "histogram"})
     agent_based_gauge.add(random.randint(-10, 10), {"Operation": "gauge"})
-
-    custom_pipeline_counter.add(1, {"Operation": "pipeline_counter"})
-    custom_pipeline_histogram.record(random.randint(100, 1000), {"Operation": "pipeline_histogram"})
-    custom_pipeline_gauge.add(random.randint(-10, 10), {"Operation": "pipeline_gauge"})
 
     bucket_name = "e2e-test-bucket-name"
 
