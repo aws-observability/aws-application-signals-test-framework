@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   python-ec2-default:
-    uses: ./.github/workflows/python-ecs-test.yml
+    uses: ./.github/workflows/python-eks-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
