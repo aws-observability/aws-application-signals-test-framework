@@ -13,17 +13,18 @@ import schedule
 from django.http import HttpResponse, JsonResponse
 from opentelemetry import trace, metrics
 from opentelemetry.trace.span import format_trace_id
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-from opentelemetry.semconv.resource import ResourceAttributes
 
 logger = logging.getLogger(__name__)
 
 # Custom export pipeline - only create if specific env vars exist
 pipeline_meter = None
 if os.environ.get('SERVICE_NAME') and os.environ.get('DEPLOYMENT_ENVIRONMENT_NAME'):
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+    from opentelemetry.semconv.resource import ResourceAttributes
+    
     service_name = os.environ.get('SERVICE_NAME')
     deployment_env = os.environ.get('DEPLOYMENT_ENVIRONMENT_NAME')
     pipeline_resource = Resource.create({
