@@ -6,10 +6,7 @@ const mysql = require('mysql2');
 const bunyan = require('bunyan');
 const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
 const opentelemetry = require('@opentelemetry/sdk-node');
-const { MeterProvider, PeriodicExportingMetricReader, ConsoleMetricExporter } = require('@opentelemetry/sdk-metrics');
-const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
 const { metrics } = require('@opentelemetry/api');
-const { Resource } = require('@opentelemetry/resources');
 const { randomInt } = require('crypto');
 
 const PORT = parseInt(process.env.SAMPLE_APP_PORT || '8000', 10);
@@ -19,38 +16,57 @@ const app = express();
 // Create bunyan logger
 const logger = bunyan.createLogger({name: 'express-app', level: 'info'});
 
-// Custom export pipeline - runs alongside existing CWAgent & ADOT setup
-const pipelineResource = new Resource({
-    'service.name': `node-sample-application-${process.env.TESTING_ID}`,
-    'deployment.environment.name': 'ec2:default',
-    'Telemetry.Source': 'CustomMetric'
-});
+let pipelineMeter = null;
 
-const pipelineMetricExporter = new OTLPMetricExporter({
-    url: 'http://localhost:4318/v1/metrics'
-});
+if (process.env.SERVICE_NAME && process.env.DEPLOYMENT_ENVIRONMENT_NAME) {
+    const { Resource } = require('@opentelemetry/resources');
+    const { MeterProvider, PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
+    const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
+    
+    const serviceName = process.env.SERVICE_NAME;
+    const deploymentEnv = process.env.DEPLOYMENT_ENVIRONMENT_NAME;
+    
+    const pipelineResource = new Resource({
+        // SEMRESATTRS_DEPLOYMENT_ENVIRONMENT_NAME maps to dimension 'deployment.name' so "deployment.environment.name" used 
+        // to assign value correctly.
+        'service.name': serviceName,
+        'deployment.environment.name': deploymentEnv
+    });
 
-const pipelineMetricReader = new PeriodicExportingMetricReader({
-    exporter: pipelineMetricExporter,
-    exportIntervalMillis: 5000
-});
+    const pipelineMetricExporter = new OTLPMetricExporter({
+        url: 'http://localhost:4318/v1/metrics'
+    });
+    
+    const pipelineMetricReader = new PeriodicExportingMetricReader({
+        exporter: pipelineMetricExporter,
+        exportIntervalMillis: 1000
+    });
+    
+    const pipelineMeterProvider = new MeterProvider({
+        resource: pipelineResource,
+        readers: [pipelineMetricReader]
+    });
+    
+    pipelineMeter = pipelineMeterProvider.getMeter('myMeter');
+}
 
-const pipelineMeterProvider = new MeterProvider({
-    resource: pipelineResource,
-    readers: [pipelineMetricReader]
-});
-
-const pipelineMeter = pipelineMeterProvider.getMeter('myMeter');
 
 const meter = metrics.getMeter('myMeter');
 const agent_based_counter = meter.createCounter('agent_based_counter', {description: 'agent export counter'});
 const agent_based_histogram = meter.createHistogram('agent_based_histogram', {description: 'agent export histogram'});
 const agent_based_gauge = meter.createUpDownCounter('agent_based_gauge', {description: 'agent export gauge'});
 
-const custom_pipeline_counter = pipelineMeter.createCounter('custom_pipeline_counter', {unit: '1', description: 'pipeline export counter'});
-const custom_pipeline_histogram = pipelineMeter.createHistogram('custom_pipeline_histogram', {description: 'pipeline export histogram'});
-const custom_pipeline_gauge = pipelineMeter.createUpDownCounter('custom_pipeline_gauge', {unit: '1', description: 'pipeline export gauge'});
+let custom_pipeline_counter = null;
+let custom_pipeline_histogram = null;
+let custom_pipeline_gauge = null;
 
+if (pipelineMeter) {
+  custom_pipeline_counter = pipelineMeter.createCounter('custom_pipeline_counter', {unit: '1', description: 'pipeline export counter'});
+  custom_pipeline_histogram = pipelineMeter.createHistogram('custom_pipeline_histogram', {description: 'pipeline export histogram'});
+  custom_pipeline_gauge = pipelineMeter.createUpDownCounter('custom_pipeline_gauge', {unit: '1', description: 'pipeline export gauge'});
+}
+
+console.log('=== Metrics Setup Complete ===');
 app.get('/', (req, res) => {
   res.send('Node.js Application Started! Available endpoints: /healthcheck, /aws-sdk-call, /outgoing-http-call, /remote-service, /client-call, /mysql');
 });
@@ -92,9 +108,11 @@ app.get('/aws-sdk-call', async (req, res) => {
   agent_based_gauge.add(randomInt(-10, 11), { Operation : 'gauge' });
   
   // Increment counter/histogram/gauge for pipeline export
-  custom_pipeline_counter.add(1, { Operation : 'pipeline_counter' });
-  custom_pipeline_histogram.record(randomInt(100,1001), { Operation : 'pipeline_histogram' });
-  custom_pipeline_gauge.add(randomInt(-10, 11), { Operation : 'pipeline_gauge' });
+  if (custom_pipeline_counter) {
+    custom_pipeline_counter.add(1, { Operation : 'pipeline_counter' });
+    custom_pipeline_histogram.record(randomInt(100,1001), { Operation : 'pipeline_histogram' });
+    custom_pipeline_gauge.add(randomInt(-10, 11), { Operation : 'pipeline_gauge' });
+  }
   
   try {
     await s3Client.send(
@@ -167,6 +185,8 @@ app.get('/client-call', (req, res) => {
   // Trigger async call to generate telemetry for InternalOperation use case
   makeAsyncCall = true;
 });
+
+
 
 app.get('/mysql', (req, res) => {
   // Create a connection to the MySQL database
