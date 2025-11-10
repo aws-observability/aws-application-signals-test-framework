@@ -315,7 +315,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_WINDOWS_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/ec2/windows/aws-sdk-call-metric.mustache"),
   DOTNET_EC2_WINDOWS_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/ec2/windows/aws-sdk-call-trace.mustache"),
 
-    /** Python EC2 Default Custom Metrics Test Case Validations */
+    /** DOTNET EC2 Default Custom Metrics Test Case Validations */
   DOTNET_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC("/expected-data-template/dotnet/ec2/default/aws-otel-custom-metrics.mustache"),
 
   DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/ec2/windows/remote-service-log.mustache"),

@@ -8,14 +8,14 @@ name: Test
 on:
   push:
     branches:
-      - dotnet_Custom_metrics
+      - dotnet_custom_metrics
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  python-ec2-default:
+  dotnet-ec2-default:
     uses: ./.github/workflows/dotnet-ec2-default-test.yml
     secrets: inherit
     with:
