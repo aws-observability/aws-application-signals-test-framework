@@ -138,7 +138,6 @@ public class AppController : ControllerBase
             customPipelineCounter.Add(1, new KeyValuePair<string, object?>("Operation", "pipeline_counter"));
             customPipelineHistogram?.Record(random.Next(100, 1001), new KeyValuePair<string, object?>("Operation", "pipeline_histogram"));
             customPipelineGauge?.Add(random.Next(-10, 11), new KeyValuePair<string, object?>("Operation", "pipeline_gauge"));
-        }nsole.WriteLine("[PIPELINE] Metrics recorded - will be exported via OTLP to localhost:4317");
         }
         
         
