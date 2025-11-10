@@ -34,7 +34,7 @@ if (process.env.SERVICE_NAME && process.env.DEPLOYMENT_ENVIRONMENT_NAME) {
     });
 
     const pipelineMetricExporter = new OTLPMetricExporter({
-        url: 'http://localhost:4318/v1/metrics'
+        url: 'http://localhost:4317'
     });
     
     const pipelineMetricReader = new PeriodicExportingMetricReader({
