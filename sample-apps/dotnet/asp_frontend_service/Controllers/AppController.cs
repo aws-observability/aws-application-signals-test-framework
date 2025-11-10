@@ -64,13 +64,13 @@ public class AppController : ControllerBase
                 }))
                 .AddOtlpExporter(options =>
                 {
-                    options.Endpoint = new Uri("http://localhost:4317");
-                    options.Protocol = OtlpExportProtocol.Grpc;
+                    options.Endpoint = new Uri("http://localhost:4318/v1/metrics");
+                    options.Protocol = OtlpExportProtocol.HttpProtobuf;
                 })
-                .AddMeter("myMeter")
+                .AddMeter("customPipelineMeter")
                 .Build();
             
-            pipelineMeter = new Meter("myMeter");
+            pipelineMeter = new Meter("customPipelineMeter");
             customPipelineCounter = pipelineMeter.CreateCounter<int>("custom_pipeline_counter", "1", "pipeline export counter");
             customPipelineHistogram = pipelineMeter.CreateHistogram<double>("custom_pipeline_histogram", "ms", "pipeline export histogram");
             customPipelineGauge = pipelineMeter.CreateUpDownCounter<int>("custom_pipeline_gauge", "1", "pipeline export gauge");
