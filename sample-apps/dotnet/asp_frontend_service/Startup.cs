@@ -35,12 +35,15 @@ public class Startup
                 .AddService(Environment.GetEnvironmentVariable("SERVICE_NAME") ?? "dotnet-sample-application")
                 .AddAttributes(new Dictionary<string, object> { { "Telemetry.Source", "UserMetric" } }))
             .WithMetrics(metrics => metrics
+                .AddAspNetCoreInstrumentation()
                 .AddMeter("myMeter")
                 .AddOtlpExporter(options => {
                     options.Endpoint = new Uri(Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT") ?? "http://localhost:4318/v1/metrics");
-                    Console.WriteLine($"Custom pipeline OTLP endpoint: {options.Endpoint}");
                 })
-                .AddConsoleExporter());
+                .AddConsoleExporter((exporterOptions, metricReaderOptions) =>
+                {
+                    metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 1000;
+                }));
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
