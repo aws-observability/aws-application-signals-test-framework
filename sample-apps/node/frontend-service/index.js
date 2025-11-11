@@ -34,7 +34,7 @@ if (process.env.SERVICE_NAME && process.env.DEPLOYMENT_ENVIRONMENT_NAME) {
     });
 
     const pipelineMetricExporter = new OTLPMetricExporter({
-        url: 'http://localhost:4317'
+        url: 'http://localhost:4318/v1/metrics'
     });
     
     const pipelineMetricReader = new PeriodicExportingMetricReader({
@@ -66,7 +66,6 @@ if (pipelineMeter) {
   custom_pipeline_gauge = pipelineMeter.createUpDownCounter('custom_pipeline_gauge', {unit: '1', description: 'pipeline export gauge'});
 }
 
-console.log('=== Metrics Setup Complete ===');
 app.get('/', (req, res) => {
   res.send('Node.js Application Started! Available endpoints: /healthcheck, /aws-sdk-call, /outgoing-http-call, /remote-service, /client-call, /mysql');
 });
