@@ -15,8 +15,8 @@ permissions:
   contents: read
 
 jobs:
-  node-ec2-asg:
-    uses: ./.github/workflows/node-ec2-asg-test.yml
+  node-k8s-test:
+    uses: ./.github/workflows/node-k8s-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
