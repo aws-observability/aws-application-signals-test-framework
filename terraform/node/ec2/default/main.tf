@@ -170,9 +170,9 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend 'export OTEL_TRACES_EXPORTER=otlp' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false' C-m
-      tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics' C-m
-      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces' C-m
-      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf' C-m
+      tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4315' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4315' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=grpc' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4317' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_INSECURE=true' C-m
