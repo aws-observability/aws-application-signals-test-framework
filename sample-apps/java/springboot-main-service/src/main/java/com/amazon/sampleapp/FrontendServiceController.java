@@ -98,7 +98,7 @@ public class FrontendServiceController {
   private static final DoubleHistogram agentBasedHistogram = meter.histogramBuilder("agent_based_histogram").build();
   private static final LongUpDownCounter agentBasedGauge = meter.upDownCounterBuilder("agent_based_gauge").build();
 
-  // Pipeline-based metrics (initialized in constructor)
+  // Pipeline-based metrics (conditionally initialized)
   private final Meter customPipelineMeter;
   private final LongCounter customPipelineCounter;
   private final DoubleHistogram customPipelineHistogram;
@@ -113,41 +113,45 @@ public class FrontendServiceController {
     String serviceName = System.getenv("SERVICE_NAME");
     String deploymentEnvironmentName = System.getenv("DEPLOYMENT_ENVIRONMENT_NAME");
     
-    // Create pipeline resource without interfering attributes
-    Resource pipelineResource;
+    // Only create pipeline if environment variables exist (matching Python logic)
     if (serviceName != null && deploymentEnvironmentName != null && 
         !serviceName.isEmpty() && !deploymentEnvironmentName.isEmpty()) {
-        pipelineResource = Resource.getDefault().toBuilder()
+        
+        Resource pipelineResource = Resource.getDefault().toBuilder()
             .put("service.name", serviceName)
             .put("deployment.environment.name", deploymentEnvironmentName)
             .build();
-    } else {
-        pipelineResource = Resource.getDefault();
-    }
-    
-    MetricExporter pipelineMetricExporter = OtlpHttpMetricExporter.builder()
-        .setEndpoint("http://localhost:4318/v1/metrics")
-        .setTimeout(Duration.ofSeconds(10))
-        .build();
         
-    MetricReader pipelineMetricReader = PeriodicMetricReader.builder(pipelineMetricExporter)
-        .setInterval(Duration.ofSeconds(1))
-        .build();
-    
-    SdkMeterProvider pipelineMeterProvider = SdkMeterProvider.builder()
-        .setResource(pipelineResource)
-        .registerMetricReader(pipelineMetricReader)
-        .build();
-    
-    OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
-        .setMeterProvider(pipelineMeterProvider)
-        .build();
-    
-    // Initialize pipeline metrics
-    this.customPipelineMeter = openTelemetry.getMeter("myMeter");
-    this.customPipelineCounter = customPipelineMeter.counterBuilder("custom_pipeline_counter").build();
-    this.customPipelineHistogram = customPipelineMeter.histogramBuilder("custom_pipeline_histogram").build();
-    this.customPipelineGauge = customPipelineMeter.upDownCounterBuilder("custom_pipeline_gauge").build();
+        MetricExporter pipelineMetricExporter = OtlpHttpMetricExporter.builder()
+            .setEndpoint("http://localhost:4317")
+            .setTimeout(Duration.ofSeconds(10))
+            .build();
+            
+        MetricReader pipelineMetricReader = PeriodicMetricReader.builder(pipelineMetricExporter)
+            .setInterval(Duration.ofSeconds(1))
+            .build();
+        
+        SdkMeterProvider pipelineMeterProvider = SdkMeterProvider.builder()
+            .setResource(pipelineResource)
+            .registerMetricReader(pipelineMetricReader)
+            .build();
+        
+        OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
+            .setMeterProvider(pipelineMeterProvider)
+            .build();
+        
+        // Initialize pipeline metrics
+        this.customPipelineMeter = openTelemetry.getMeter("myMeter");
+        this.customPipelineCounter = customPipelineMeter.counterBuilder("custom_pipeline_counter").build();
+        this.customPipelineHistogram = customPipelineMeter.histogramBuilder("custom_pipeline_histogram").build();
+        this.customPipelineGauge = customPipelineMeter.upDownCounterBuilder("custom_pipeline_gauge").build();
+    } else {
+        // No pipeline metrics if environment variables missing
+        this.customPipelineMeter = null;
+        this.customPipelineCounter = null;
+        this.customPipelineHistogram = null;
+        this.customPipelineGauge = null;
+    }
   }
 
   private int random(int min, int max) {
@@ -169,9 +173,12 @@ public class FrontendServiceController {
     agentBasedHistogram.record((double)random(100,1000), Attributes.of(AttributeKey.stringKey("Operation"), "histogram"));
     agentBasedGauge.add(random(-10,10), Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
 
-    customPipelineCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_counter"));
-    customPipelineHistogram.record(random(100,1000), Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_histogram"));
-    customPipelineGauge.add(random(-10,10), Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_gauge"));
+    // Only record pipeline metrics if pipeline exists (matching Python logic)
+    if (customPipelineCounter != null) {
+        customPipelineCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_counter"));
+        customPipelineHistogram.record(random(100,1000), Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_histogram"));
+        customPipelineGauge.add(random(-10,10), Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_gauge"));
+    }
     
     String bucketName = "e2e-test-bucket-name";
     if (testingId != null) {
