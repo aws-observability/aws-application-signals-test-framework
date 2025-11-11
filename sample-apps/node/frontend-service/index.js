@@ -66,10 +66,6 @@ if (pipelineMeter) {
   custom_pipeline_gauge = pipelineMeter.createUpDownCounter('custom_pipeline_gauge', {unit: '1', description: 'pipeline export gauge'});
 }
 
-app.get('/', (req, res) => {
-  res.send('Node.js Application Started! Available endpoints: /healthcheck, /aws-sdk-call, /outgoing-http-call, /remote-service, /client-call, /mysql');
-});
-
 app.get('/healthcheck', (req, res) => {
   logger.info('/healthcheck called successfully');
   res.send('healthcheck');
@@ -113,6 +109,10 @@ app.get('/aws-sdk-call', async (req, res) => {
     custom_pipeline_gauge.add(randomInt(-10, 11), { Operation : 'pipeline_gauge' });
   }
   
+  // Add custom warning log for validation testing
+  const warningMsg = "This is a custom log for validation testing";
+  logger.warn(warningMsg);
+
   try {
     await s3Client.send(
       new GetBucketLocationCommand({
