@@ -135,8 +135,8 @@ resource "null_resource" "main_service_setup" {
       sudo yum install ec2-instance-connect -y
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./node-sample-app.zip
-      unzip -o node-sample-app.zip
+      aws s3 cp ${var.sample_app_zip} ./node-sample-app-delete-me.zip
+      unzip -o node-sample-app-delete-me.zip
 
       # Enter appropriate service folder
       cd frontend-service
@@ -247,8 +247,8 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install ec2-instance-connect -y
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./node-sample-app.zip
-      unzip -o node-sample-app.zip
+      aws s3 cp ${var.sample_app_zip} ./node-sample-app-delete-me.zip
+      unzip -o node-sample-app-delete-me.zip
 
       # Enter appropriate service folder
       cd remote-service

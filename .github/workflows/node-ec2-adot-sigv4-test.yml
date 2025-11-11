@@ -118,7 +118,7 @@ jobs:
             terraform apply -auto-approve \
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
-              -var="sample_app_zip=s3://aws-appsignals-sample-app-prod-us-east-1/node-sample-app.zip" \
+              -var="sample_app_zip=s3://aws-appsignals-sample-app-prod-us-east-1/node-sample-app-delete-me.zip" \
               -var="get_adot_instrumentation_command=${{ env.GET_ADOT_INSTRUMENTATION_COMMAND }}" \
               -var="language_version=${{ env.NODE_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \

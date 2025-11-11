@@ -15,9 +15,8 @@ permissions:
   contents: read
 
 jobs:
-  node-ec2-default:
-    uses: ./.github/workflows/node-ec2-default-test.yml
+  node-ec2-adot-sigv4:
+    uses: ./.github/workflows/node-ec2-adot-sigv4-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
