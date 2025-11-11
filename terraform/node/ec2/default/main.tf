@@ -169,11 +169,14 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_INSECURE=true' C-m
-      tmux send-keys -t frontend 'export OTEL_RESOURCE_ATTRIBUTES="service.name=node-sample-application-${var.test_id},deployment.environment.name=ec2:default"' C-m
+      tmux send-keys -t frontend 'export SERVICE_NAME=node-sample-application-${var.test_id}' C-m
+      tmux send-keys -t frontend 'export DEPLOYMENT_ENVIRONMENT_NAME=ec2:default' C-m
+      tmux send-keys -t frontend 'export OTEL_RESOURCE_ATTRIBUTES="service.name=$$SERVICE_NAME,deployment.environment.name=$$DEPLOYMENT_ENVIRONMENT_NAME"' C-m
+      tmux send-keys -t frontend 'export AWS_REGION=${var.aws_region}' C-m
       tmux send-keys -t frontend 'export TESTING_ID=${var.test_id}' C-m
       tmux send-keys -t frontend 'export AWS_REGION=${var.aws_region}' C-m
       tmux send-keys -t frontend 'export OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express' C-m
-      tmux send-keys -t frontend 'export OTEL_SERVICE_NAME=node-sample-application-${var.test_id}' C-m
+      tmux send-keys -t frontend 'export OTEL_SERVICE_NAME=$$SERVICE_NAME' C-m
       tmux send-keys -t frontend 'export OTEL_TRACES_SAMPLER=always_on' C-m
       tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js' C-m
 
