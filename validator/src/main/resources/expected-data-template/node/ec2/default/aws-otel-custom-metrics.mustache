@@ -157,9 +157,8 @@
     -
       name: cloud.platform
       value: aws_ec2
-      value: aws_ec2
 
-# Export pipeline metrics
+# Export pipeline metrics - only basic dimensions based on actual output
 -
   metricName: custom_pipeline_counter
   namespace: {{metricNamespace}}
@@ -173,15 +172,6 @@
     -
       name: Operation
       value: pipeline_counter
-    -
-      name: telemetry.sdk.name
-      value: opentelemetry
-    -
-      name: telemetry.sdk.language
-      value: nodejs
-    -
-      name: telemetry.sdk.version
-      value: ANY_VALUE
 -
   metricName: custom_pipeline_histogram
   namespace: {{metricNamespace}}
@@ -195,15 +185,6 @@
     -
       name: Operation
       value: pipeline_histogram
-    -
-      name: telemetry.sdk.name
-      value: opentelemetry
-    -
-      name: telemetry.sdk.language
-      value: nodejs
-    -
-      name: telemetry.sdk.version
-      value: ANY_VALUE
 -
   metricName: custom_pipeline_gauge
   namespace: {{metricNamespace}}
@@ -217,12 +198,3 @@
     -
       name: Operation
       value: pipeline_gauge
-    -
-      name: telemetry.sdk.name
-      value: opentelemetry
-    -
-      name: telemetry.sdk.language
-      value: nodejs
-    -
-      name: telemetry.sdk.version
-      value: ANY_VALUE
