@@ -45,7 +45,7 @@ env:
   NODE_VERSION: ${{ inputs.node-version }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/node-sample-app-delete-me.zip
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/node-sample-app.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals

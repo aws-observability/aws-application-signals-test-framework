@@ -217,7 +217,7 @@ jobs:
 
       - name: Set Sample App Image
         run: |
-          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.NODE_MAIN_SAMPLE_APP_IMAGE }}:delete-me" >> $GITHUB_ENV
+          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.NODE_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
           echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.NODE_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online

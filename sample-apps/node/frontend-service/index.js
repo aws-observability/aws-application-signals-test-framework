@@ -18,6 +18,7 @@ const logger = bunyan.createLogger({name: 'express-app', level: 'info'});
 
 let pipelineMeter = null;
 
+// Creation of conditional pipeline. Will only be created if SERVICE_NAME & DEPLOYMENT_ENVIRONMENT_NAME are defined in main.tf file
 if (process.env.SERVICE_NAME && process.env.DEPLOYMENT_ENVIRONMENT_NAME) {
     const { Resource } = require('@opentelemetry/resources');
     const { MeterProvider, PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
@@ -50,12 +51,13 @@ if (process.env.SERVICE_NAME && process.env.DEPLOYMENT_ENVIRONMENT_NAME) {
     pipelineMeter = pipelineMeterProvider.getMeter('myMeter');
 }
 
-
+// Use global meter
 const meter = metrics.getMeter('myMeter');
 const agent_based_counter = meter.createCounter('agent_based_counter', {description: 'agent export counter'});
 const agent_based_histogram = meter.createHistogram('agent_based_histogram', {description: 'agent export histogram'});
 const agent_based_gauge = meter.createUpDownCounter('agent_based_gauge', {description: 'agent export gauge'});
 
+// Continuation of conditional custom pipeline
 let custom_pipeline_counter = null;
 let custom_pipeline_histogram = null;
 let custom_pipeline_gauge = null;

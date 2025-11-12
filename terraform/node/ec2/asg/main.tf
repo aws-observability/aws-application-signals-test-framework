@@ -114,8 +114,8 @@ resource "aws_launch_configuration" "launch_configuration" {
     sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
     # Get and run the sample application with configuration
-    aws s3 cp ${var.sample_app_zip} ./node-sample-app-delete-me.zip
-    unzip -o node-sample-app-delete-me.zip
+    aws s3 cp ${var.sample_app_zip} ./node-sample-app.zip
+    unzip -o node-sample-app.zip
 
     # Enter appropriate service folder
     cd frontend-service
@@ -239,8 +239,8 @@ resource "null_resource" "remote_service_setup" {
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./node-sample-app-delete-me.zip
-      unzip -o node-sample-app-delete-me.zip
+      aws s3 cp ${var.sample_app_zip} ./node-sample-app.zip
+      unzip -o node-sample-app.zip
 
       # Enter appropriate service folder
       cd remote-service
