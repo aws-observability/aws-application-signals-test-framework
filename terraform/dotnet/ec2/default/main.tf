@@ -159,7 +159,7 @@ resource "null_resource" "main_service_setup" {
       export SERVICE_NAME='dotnet-sample-application-${var.test_id}'
       export DEPLOYMENT_ENVIRONMENT_NAME='ec2:default'
       export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME}"
-      export AWS_REGION="$${AWS_REGION}"
+      export AWS_REGION="${var.aws_region}"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
