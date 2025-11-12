@@ -153,9 +153,10 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
-      export OTEL_METRICS_EXPORTER=otlp
+      export OTEL_METRICS_EXPORTER=none
       export SERVICE_NAME='service.name=dotnet-sample-application-${var.test_id}'
-      export OTEL_RESOURCE_ATTRIBUTES="$${{SERVICE_NAME}"}
+      export DEPLOYMENT_ENVIRONMENT_NAME="$${DEPLOYMENT_ENVIRONMENT_NAME}"
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME}"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
