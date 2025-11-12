@@ -15,10 +15,9 @@ permissions:
   contents: read
 
 jobs:
-  node-eks-test:
-    uses: ./.github/workflows/node-eks-test.yml
+  node-ecs-test:
+    uses: ./.github/workflows/node-ecs-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
       aws-region: 'us-east-1'
-      test-cluster-name: 'e2e-playground'
