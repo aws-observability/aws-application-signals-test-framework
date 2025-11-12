@@ -11,10 +11,6 @@ using Microsoft.AspNetCore.Mvc;
 using Amazon.S3.Model;
 using System.Diagnostics.Metrics;
 using System.Collections.Generic;
-using OpenTelemetry;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Exporter;
 
 
 namespace asp_frontend_service.Controllers;
