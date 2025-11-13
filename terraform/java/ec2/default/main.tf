@@ -138,7 +138,7 @@ resource "null_resource" "main_service_setup" {
       aws s3 cp ${var.sample_app_jar} ./main-service-delete-me.jar
 
       JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
-      OTEL_METRICS_EXPORTER=otlp \
+      OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
       OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
