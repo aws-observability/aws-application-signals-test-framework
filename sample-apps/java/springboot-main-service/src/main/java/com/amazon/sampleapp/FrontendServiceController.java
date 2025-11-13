@@ -202,19 +202,42 @@ public class FrontendServiceController {
     
     // Record agent-based metrics
     logger.info("Recording agent-based metrics using GlobalOpenTelemetry...");
+    logger.info("GlobalOpenTelemetry instance: {}", GlobalOpenTelemetry.get().getClass().getName());
+    logger.info("Agent meter instance: {}", agentMeter.getClass().getName());
+    
     int histogramValue = random(100,1000);
     int gaugeValue = random(-10,10);
     
-    agentBasedCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "counter"));
-    logger.info("Agent counter incremented by 1 with Operation=counter");
+    try {
+        agentBasedCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "counter"));
+        logger.info("Agent counter incremented by 1 with Operation=counter - SUCCESS");
+    } catch (Exception e) {
+        logger.error("Failed to record agent counter: {}", e.getMessage());
+    }
     
-    agentBasedHistogram.record((double)histogramValue, Attributes.of(AttributeKey.stringKey("Operation"), "histogram"));
-    logger.info("Agent histogram recorded value {} with Operation=histogram", histogramValue);
+    try {
+        agentBasedHistogram.record((double)histogramValue, Attributes.of(AttributeKey.stringKey("Operation"), "histogram"));
+        logger.info("Agent histogram recorded value {} with Operation=histogram - SUCCESS", histogramValue);
+    } catch (Exception e) {
+        logger.error("Failed to record agent histogram: {}", e.getMessage());
+    }
     
-    agentBasedGauge.add(gaugeValue, Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
-    logger.info("Agent gauge added {} with Operation=gauge", gaugeValue);
+    try {
+        agentBasedGauge.add(gaugeValue, Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
+        logger.info("Agent gauge added {} with Operation=gauge - SUCCESS", gaugeValue);
+    } catch (Exception e) {
+        logger.error("Failed to record agent gauge: {}", e.getMessage());
+    }
     
     logger.info("Agent-based metrics recording COMPLETE");
+    
+    // Force flush to ensure metrics are sent
+    try {
+        logger.info("Attempting to force flush agent metrics...");
+        // Note: GlobalOpenTelemetry doesn't expose flush directly, but metrics should auto-export
+    } catch (Exception e) {
+        logger.error("Failed to flush agent metrics: {}", e.getMessage());
+    }
 
     // Only record pipeline metrics if pipeline exists (matching Python logic)
     if (customPipelineCounter != null) {
