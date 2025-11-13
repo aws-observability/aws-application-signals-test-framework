@@ -93,10 +93,10 @@ public class FrontendServiceController {
   }
 
   // Agent-based metrics using GlobalOpenTelemetry
-  private static final Meter meter = GlobalOpenTelemetry.getMeter("myMeter");
-  private static final LongCounter agentBasedCounter = meter.counterBuilder("agent_based_counter").build();
-  private static final DoubleHistogram agentBasedHistogram = meter.histogramBuilder("agent_based_histogram").build();
-  private static final LongUpDownCounter agentBasedGauge = meter.upDownCounterBuilder("agent_based_gauge").build();
+  private final Meter agentMeter;
+  private final LongCounter agentBasedCounter;
+  private final DoubleHistogram agentBasedHistogram;
+  private final LongUpDownCounter agentBasedGauge;
 
   // Pipeline-based metrics (conditionally initialized)
   private final Meter customPipelineMeter;
@@ -108,6 +108,14 @@ public class FrontendServiceController {
   public FrontendServiceController(CloseableHttpClient httpClient, S3Client s3) {
     this.httpClient = httpClient;
     this.s3 = s3;
+    
+    // Initialize agent-based metrics using GLOBAL OpenTelemetry (ADOT agent's configuration)
+    this.agentMeter = GlobalOpenTelemetry.get().getMeter("agent-meter");
+    this.agentBasedCounter = agentMeter.counterBuilder("agent_based_counter").build();
+    this.agentBasedHistogram = agentMeter.histogramBuilder("agent_based_histogram").build();
+    this.agentBasedGauge = agentMeter.upDownCounterBuilder("agent_based_gauge").build();
+    logger.info("Agent-based metrics initialized: counter={}, histogram={}, gauge={}", 
+                agentBasedCounter != null, agentBasedHistogram != null, agentBasedGauge != null);
      
     // Get environment variables
     String serviceName = System.getenv("SERVICE_NAME");
@@ -120,6 +128,7 @@ public class FrontendServiceController {
         Resource pipelineResource = Resource.getDefault().toBuilder()
             .put("service.name", serviceName)
             .put("deployment.environment.name", deploymentEnvironmentName)
+            .put("metric.source", "pipeline")
             .build();
         
         MetricExporter pipelineMetricExporter = OtlpHttpMetricExporter.builder()
@@ -136,12 +145,8 @@ public class FrontendServiceController {
             .registerMetricReader(pipelineMetricReader)
             .build();
         
-        OpenTelemetry openTelemetry = OpenTelemetrySdk.builder()
-            .setMeterProvider(pipelineMeterProvider)
-            .build();
-        
-        // Initialize pipeline metrics
-        this.customPipelineMeter = openTelemetry.getMeter("myMeter");
+        // Initialize pipeline metrics using SEPARATE SdkMeterProvider
+        this.customPipelineMeter = pipelineMeterProvider.get("pipeline-meter");
         this.customPipelineCounter = customPipelineMeter.counterBuilder("custom_pipeline_counter").build();
         this.customPipelineHistogram = customPipelineMeter.histogramBuilder("custom_pipeline_histogram").build();
         this.customPipelineGauge = customPipelineMeter.upDownCounterBuilder("custom_pipeline_gauge").build();
@@ -169,9 +174,11 @@ public class FrontendServiceController {
   @ResponseBody
   public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
     
+    logger.info("Recording agent-based metrics");
     agentBasedCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "counter"));
     agentBasedHistogram.record((double)random(100,1000), Attributes.of(AttributeKey.stringKey("Operation"), "histogram"));
     agentBasedGauge.add(random(-10,10), Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
+    logger.info("Agent-based metrics recorded");
 
     // Only record pipeline metrics if pipeline exists (matching Python logic)
     if (customPipelineCounter != null) {

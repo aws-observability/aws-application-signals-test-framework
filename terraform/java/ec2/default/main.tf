@@ -150,6 +150,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME},Internal_Org=Financial,Business Unit=Payments,Region=us-east-1,aws.application_signals.metric_resource_keys=Business Unit&Region&Organization" \
       AWS_REGION='${var.aws_region}' \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
+      OTEL_JAVAAGENT_ENABLED=true \
       nohup java -Dotel.java.global-autoconfigure.enabled=true -XX:+UseG1GC -jar main-service-delete-me.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
