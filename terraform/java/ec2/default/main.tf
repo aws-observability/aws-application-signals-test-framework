@@ -147,6 +147,7 @@ resource "null_resource" "main_service_setup" {
       SERVICE_NAME='sample-application-${var.test_id}' \
       DEPLOYMENT_ENVIRONMENT_NAME='ec2:default' \
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics \
+      OTEL_EXPORTER_OTLP_METRICS_INSECURE=true
       OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME},Internal_Org=Financial,Business Unit=Payments,Region=us-east-1,aws.application_signals.metric_resource_keys=Business Unit&Region&Organization" \
       AWS_REGION='${var.aws_region}' \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
