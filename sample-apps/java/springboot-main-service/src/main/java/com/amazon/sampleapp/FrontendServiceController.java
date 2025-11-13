@@ -123,7 +123,7 @@ public class FrontendServiceController {
             .build();
         
         MetricExporter pipelineMetricExporter = OtlpHttpMetricExporter.builder()
-            .setEndpoint("http://localhost:4317")
+            .setEndpoint("http://localhost:4318/v1/metrics")
             .setTimeout(Duration.ofSeconds(10))
             .build();
             
