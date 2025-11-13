@@ -11,7 +11,10 @@ using Microsoft.AspNetCore.Mvc;
 using Amazon.S3.Model;
 using System.Diagnostics.Metrics;
 using System.Collections.Generic;
-
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Exporter;
 
 namespace asp_frontend_service.Controllers;
 
@@ -25,17 +28,17 @@ public class AppController : ControllerBase
     private static bool threadStarted = false;
     private readonly AmazonS3Client s3Client = new AmazonS3Client();
     private readonly HttpClient httpClient = new HttpClient();
-    private static readonly Meter meter = new Meter("myMeter");
+    private static readonly Meter meter = new Meter("myMeterSource");
     private static readonly Counter<int> agentBasedCounter = meter.CreateCounter<int>("agent_based_counter");
     private static readonly Histogram<double> agentBasedHistogram = meter.CreateHistogram<double>("agent_based_histogram");
     private static readonly UpDownCounter<int> agentBasedGauge = meter.CreateUpDownCounter<int>("agent_based_gauge");
     
     // Custom pipeline metrics - only create if specific env vars exist
-    private static readonly Meter? pipelineMeter;
-    private static readonly Counter<int>? customPipelineCounter;
-    private static readonly Histogram<double>? customPipelineHistogram;
-    private static readonly UpDownCounter<int>? customPipelineGauge;
-    private static readonly MeterProvider? pipelineMeterProvider;
+    private static readonly Meter pipelineMeter;
+    private static readonly Counter<int> customPipelineCounter;
+    private static readonly Histogram<double> customPipelineHistogram;
+    private static readonly UpDownCounter<int> customPipelineGauge;
+    private static readonly MeterProvider pipelineMeterProvider;
 
     static AppController()
     {
