@@ -34,6 +34,8 @@ uv pip install -r evals/requirements.txt
 
 ### 3. Configure MCP Server Path
 
+> **Note:** The sample applications directory (`SAMPLES_ROOT`) is hardcoded to point to `mcp-testing/` as samples are expected to live in this directory.
+
 Get the absolute path to your MCP server directory:
 
 ```bash
