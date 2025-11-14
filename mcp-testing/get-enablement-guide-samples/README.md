@@ -14,6 +14,8 @@ The testing flow is:
 ### General
 - AWS CLI configured with appropriate credentials and permissions
 - Access to AWS services: Lambda, API Gateway, ECR, EC2, IAM
+- kubectl installed (for EKS deployments)
+- Terraform installed (for Terraform deployments)
 
 ### For Lambda Deployments
 
@@ -26,17 +28,9 @@ The testing flow is:
 - Docker with buildx support for multi-platform builds
 - AWS ECR repository access
 
-## Platforms
+### Build and Push Images to ECR
 
-### EC2
-
-#### Containerized Deployment (Docker)
-
-Applications run as Docker containers on an EC2 instance, with images pulled from Amazon ECR repos.
-
-##### Build and Push Images to ECR
-
-```shell
+```bash
 # Navigate to app directory (see table below)
 cd <app-directory>
 
@@ -70,11 +64,13 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 | java-springboot    | docker-apps/java/spring-boot | java-springboot |
 | nodejs-express     | docker-apps/nodejs/express   | nodejs-express  |
 
-##### Deploy & Cleanup Containerized Infrastructure
+## Deployment Platforms
 
-**Using CDK:**
+### EC2 Deployment
 
-```shell
+#### Using CDK
+
+```bash
 cd infrastructure/ec2/cdk
 
 # Install dependencies (first time only)
@@ -91,6 +87,81 @@ cdk destroy <stack-name>
 | python-django      | PythonDjangoCdkStack   |
 | java-springboot    | JavaSpringBootCdkStack |
 | nodejs-express     | NodejsExpressCdkStack  |
+
+### EKS Deployment
+
+#### Using CDK
+
+```bash
+# Navigate to the CDK directory
+cd infrastructure/eks/cdk
+
+# Install dependencies
+npm install
+
+# Deploy the stack
+cdk deploy <stack-name>
+
+# Clean up when done
+cdk destroy <stack-name>
+```
+
+| Language-Framework | Stack Name                |
+|--------------------|---------------------------|
+| python-flask       | PythonFlaskEksCdkStack    |
+| python-django      | PythonDjangoEksCdkStack   |
+| java-springboot    | JavaSpringBootEksCdkStack |
+| nodejs-express     | NodejsExpressEksCdkStack  |
+
+#### Using Terraform
+
+##### Deployment Instructions
+
+1. **Navigate to the terraform directory:**
+   ```bash
+   cd infrastructure/eks/terraform
+   ```
+
+2. **Initialize Terraform:**
+   ```bash
+   terraform init
+   ```
+
+3. **Plan the deployment:**
+   ```bash
+   terraform plan -var-file="<var-file>"
+   ```
+
+4. **Deploy the infrastructure:**
+   ```bash
+   terraform apply -var-file="<var-file>"
+   ```
+
+5. **Configure kubectl:**
+   ```bash
+   aws eks update-kubeconfig --region <region> --name <cluster-name>
+   ```
+
+6. **Verify deployment:**
+   ```bash
+   kubectl get pods
+   kubectl get services
+   ```
+
+##### Clean Up
+
+```bash
+terraform destroy -var-file="<var-file>"
+```
+
+##### Configuration Reference
+
+| Language-Framework | Variables File                |
+|--------------------|-------------------------------|
+| python-flask       | config/python-flask.tfvars    |
+| python-django      | config/python-django.tfvars   |
+| java-springboot    | config/java-springboot.tfvars |
+| nodejs-express     | config/nodejs-express.tfvars  |
 
 ### Lambda
 
@@ -111,7 +182,7 @@ Each Lambda function has a `build.sh` script that uses Docker to build the deplo
 - Packages the code and dependencies into a zip file
 - Outputs the deployment artifact to `infrastructure/lambda/builds/`
 
-```shell
+```bash
 cd infrastructure/lambda/<language>-lambda
 ./build.sh
 ```
@@ -122,7 +193,7 @@ cd infrastructure/lambda/<language>-lambda
 
 **Using CDK:**
 
-```shell
+```bash
 cd infrastructure/lambda/cdk
 
 # Install dependencies (first time only)
@@ -139,7 +210,7 @@ cdk destroy <stack-name>
 
 **Using Terraform:**
 
-```shell
+```bash
 cd infrastructure/lambda/terraform
 
 # Initialize Terraform (first time only)
@@ -160,7 +231,7 @@ terraform destroy -var="config_file=<config-file>"
 
 After deployment, manually invoke the Lambda function to start generating internal traffic:
 
-```shell
+```bash
 # For CDK:
 aws lambda invoke --function-name PythonLambdaCdk --invocation-type Event /dev/stdout
 

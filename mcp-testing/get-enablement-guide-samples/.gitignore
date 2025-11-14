@@ -42,3 +42,65 @@ infrastructure/lambda/cdk/.cdk.staging
 # Lambda build artifacts
 infrastructure/lambda/builds/
 infrastructure/lambda/*/build/
+
+# EKS Terraform
+infrastructure/eks/terraform/.terraform/
+infrastructure/eks/terraform/.terraform.lock.hcl
+infrastructure/eks/terraform/.terraform.tfstate.lock.info
+infrastructure/eks/terraform/terraform.tfstate
+infrastructure/eks/terraform/terraform.tfstate.backup
+infrastructure/eks/terraform/*.tfvars
+
+# EKS CDK TypeScript compilation output
+infrastructure/eks/cdk/**/*.js
+infrastructure/eks/cdk/**/*.d.ts
+infrastructure/eks/cdk/node_modules
+infrastructure/eks/cdk/cdk.out
+infrastructure/eks/cdk/.cdk.staging
+
+# Un-ignore the EKS CDK lib/ directory
+!infrastructure/eks/cdk/lib/
+!infrastructure/eks/cdk/lib/**
+
+# EKS build artifacts
+infrastructure/eks/builds/
+infrastructure/eks/*/build/
+
+# CDK TypeScript compilation output
+.cdk.staging
+cdk.out
+*.js
+*.d.ts
+
+# CDK generated files
+cdk.context.json
+outputs.json
+
+# Build artifacts
+obj/
+target/
+build/
+node_modules/
+__pycache__/
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Parcel default cache directory
+.parcel-cache
+
+# npm
+npm-debug.log*
+.npm
+
+# Yarn
+yarn-error.log
+
+# dotenv environment variables file
+.env
+
+# IDE
+.vscode/
+.idea/
