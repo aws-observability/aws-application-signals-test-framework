@@ -139,11 +139,15 @@ resource "null_resource" "main_service_setup" {
 
       JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
       OTEL_METRICS_EXPORTER=otlp \
-      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics \
+      OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
       OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics \
+      OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       SERVICE_NAME='sample-application-${var.test_id}' \
       DEPLOYMENT_ENVIRONMENT_NAME='ec2:default' \
+      OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME},Internal_Org=Financial,Business Unit=Payments,Region=us-east-1,aws.application_signals.metric_resource_keys=Business Unit&Region&Organization" \
       AWS_REGION='${var.aws_region}' \
       nohup java -Dotel.java.global-autoconfigure.enabled=true -XX:+UseG1GC -jar main-service-delete-me.jar &> nohup.out &
 
