@@ -16,19 +16,28 @@
 
 Auto-discovers and runs all tasks defined in *_tasks.py files in the specified directory.
 
+Environment Variables:
+    MCP_SERVER_ROOT: Path to MCP server root directory (e.g., /path/to/cloudwatch-applicationsignals-mcp-server)
+
 Usage:
-    python -m evals applicationsignals                                    # Run all tasks
-    python -m evals applicationsignals --list                             # List all available tasks
-    python -m evals applicationsignals --task investigation_tasks         # Run all investigation tasks
-    python -m evals applicationsignals --task-id petclinic_scheduling_rca # Run specific task
-    python -m evals applicationsignals --task investigation_tasks --task-id basic_service_health  # Combine filters
-    python -m evals applicationsignals -v                                 # Verbose output
-    python -m evals applicationsignals --no-cleanup                       # Skip cleanup after eval
+    export MCP_SERVER_ROOT=/path/to/cloudwatch-applicationsignals-mcp-server
+    python -m evals tasks --list                             # List all available tasks
+    python -m evals tasks                                    # Run all tasks
+    python -m evals tasks --task investigation_tasks         # Run all investigation tasks
+    python -m evals tasks --task-id <task_id>                # Run specific task
+    python -m evals tasks --task investigation_tasks --task-id <task_id>  # Combine filters
+    python -m evals tasks -v                                 # Verbose output
+    python -m evals tasks --no-cleanup                       # Skip cleanup after eval
+
+Example:
+    export MCP_SERVER_ROOT=/Users/username/projects/mcp/src/cloudwatch-applicationsignals-mcp-server
+    python -m evals tasks --list
 """
 
 import argparse
 import asyncio
 import importlib
+import os
 import sys
 import traceback
 from evals.core import EvalRunner, TaskResult
@@ -126,7 +135,7 @@ async def main():
     parser = argparse.ArgumentParser(description='Evaluate MCP tools')
     parser.add_argument(
         'task_dir',
-        help='Task directory name (relative to evals/, e.g., "applicationsignals")',
+        help='Task directory name (relative to evals/, e.g., "tasks/applicationsignals")',
     )
     parser.add_argument(
         '--verbose', '-v', action='store_true', help='Enable verbose/debug logging'
@@ -148,6 +157,28 @@ async def main():
     )
 
     args = parser.parse_args()
+
+    # Get MCP server root from environment variable
+    mcp_server_root_str = os.environ.get('MCP_SERVER_ROOT')
+    if not mcp_server_root_str:
+        logger.error('MCP_SERVER_ROOT environment variable is required')
+        print('Example: export MCP_SERVER_ROOT=/path/to/mcp/src/cloudwatch-applicationsignals-mcp-server')
+        sys.exit(1)
+
+    mcp_server_root = Path(mcp_server_root_str).resolve()
+    if not mcp_server_root.exists():
+        logger.error(f'MCP server directory does not exist: {mcp_server_root}')
+        sys.exit(1)
+
+    # Auto-detect server.py in awslabs package structure
+    mcp_server_file = next((mcp_server_root / 'awslabs').glob('*/server.py'), None)
+    if not mcp_server_file:
+        logger.error(f'No server.py found at {mcp_server_root}/awslabs/*/server.py')
+        logger.error('Expected awslabs MCP server structure')
+        sys.exit(1)
+
+    mcp_server_file = mcp_server_file.resolve()
+    print(f'Using MCP server: {mcp_server_file}\n')
 
     if args.verbose:
         logger.add(
@@ -218,7 +249,7 @@ async def main():
 
     # Create runner and execute tasks
     try:
-        runner = EvalRunner(tasks=tasks)
+        runner = EvalRunner(tasks=tasks, mcp_server_root=mcp_server_root, mcp_server_file=mcp_server_file)
         results = await runner.run_all(args.verbose, skip_cleanup=args.no_cleanup)
 
         # Report results

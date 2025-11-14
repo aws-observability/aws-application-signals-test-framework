@@ -18,7 +18,8 @@ from evals.core import Task
 from pathlib import Path
 
 
-SAMPLES_ROOT = Path(__file__).parent.parent.parent.parent
+# Samples root: base.py -> applicationsignals/ -> samples/
+SAMPLES_ROOT = Path(__file__).parent / 'samples'
 
 
 class ApplicationSignalsTask(Task):
@@ -26,25 +27,4 @@ class ApplicationSignalsTask(Task):
 
     Provides common configuration for all Application Signals tasks.
     """
-
-    def get_server_root_directory(self) -> Path:
-        """Return MCP server root directory.
-
-        TODO: Update this to point to your local MCP server directory.
-
-        Example:
-            return Path('/Users/username/projects/mcp/src/cloudwatch-applicationsignals-mcp-server')
-        """
-        raise NotImplementedError(
-            "Please configure get_server_root_directory() in base.py to point to your local MCP server. "
-            "See mcp-testing/README.md for setup instructions."
-        )
-
-    def get_server_file(self) -> Path:
-        """Return MCP server file path."""
-        return (
-            self.get_server_root_directory()
-            / 'awslabs'
-            / 'cloudwatch_applicationsignals_mcp_server'
-            / 'server.py'
-        )
+    pass

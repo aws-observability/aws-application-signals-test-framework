@@ -35,8 +35,6 @@ class Task(ABC):
     Required Implementations:
         - get_prompt(working_directory): Return the prompt string for the agent
         - rubric: Property returning validation criteria
-        - get_server_file(): Return path to MCP server file
-        - get_server_root_directory(): Return server root directory
 
     Optional Overrides:
         - get_captors(working_directory): Return captors to collect execution data
@@ -151,16 +149,6 @@ class Task(ABC):
     def get_working_directory(self) -> Optional[Path]:
         """Return working directory for this task. None uses current directory."""
         return None
-
-    @abstractmethod
-    def get_server_file(self) -> Path:
-        """Return path to the MCP server file."""
-        pass
-
-    @abstractmethod
-    def get_server_root_directory(self) -> Path:
-        """Return root directory of the MCP server (where imports work)."""
-        pass
 
     def setup(self, working_directory: Path) -> None:
         """Set up workspace before task execution.
