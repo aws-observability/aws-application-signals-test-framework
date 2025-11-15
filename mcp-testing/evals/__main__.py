@@ -17,10 +17,10 @@
 Auto-discovers and runs all tasks defined in *_tasks.py files in the specified directory.
 
 Environment Variables:
-    MCP_SERVER_ROOT: Path to MCP server root directory (e.g., /path/to/cloudwatch-applicationsignals-mcp-server)
+    MCP_SERVER_ROOT: Path to MCP repository root (e.g., /path/to/mcp)
 
 Usage:
-    export MCP_SERVER_ROOT=/path/to/cloudwatch-applicationsignals-mcp-server
+    export MCP_SERVER_ROOT=/path/to/mcp
     python -m evals tasks --list                             # List all available tasks
     python -m evals tasks                                    # Run all tasks
     python -m evals tasks --task investigation_tasks         # Run all investigation tasks
@@ -30,7 +30,7 @@ Usage:
     python -m evals tasks --no-cleanup                       # Skip cleanup after eval
 
 Example:
-    export MCP_SERVER_ROOT=/Users/username/projects/mcp/src/cloudwatch-applicationsignals-mcp-server
+    export MCP_SERVER_ROOT=/path/to/mcp
     python -m evals tasks --list
 """
 
