@@ -388,9 +388,15 @@ setup_slos() {
     fi
     echo ""
 
+    # Disable exit on error for SLO creation
+    set +e
+
+    SUCCESS_COUNT=0
+    FAIL_COUNT=0
+
     # Problem 1: Download Faults
     echo "Creating SLO: Download Availability..."
-    aws application-signals create-service-level-objective \
+    ERROR_MSG=$(aws application-signals create-service-level-objective \
         --region "$REGION" \
         --name "download-availability" \
         --sli '{
@@ -415,13 +421,19 @@ setup_slos() {
             },
             "AttainmentGoal": 99.0,
             "WarningThreshold": 99.0
-        }' --no-cli-pager
-    echo "✓ Download Availability SLO created"
+        }' --no-cli-pager 2>&1)
+    if [ $? -eq 0 ]; then
+        echo "✓ Download Availability SLO created"
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    else
+        echo "❌ Download Availability SLO failed: $ERROR_MSG"
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
 
     # Problem 2: Tag Filter Inefficiency
     echo ""
     echo "Creating SLO: List Documents Latency..."
-    aws application-signals create-service-level-objective \
+    ERROR_MSG=$(aws application-signals create-service-level-objective \
         --region "$REGION" \
         --name "list-latency" \
         --sli '{
@@ -434,7 +446,7 @@ setup_slos() {
                 "OperationName": "GET /documents",
                 "MetricType": "LATENCY"
             },
-            "MetricThreshold": 500.0,
+            "MetricThreshold": 200.0,
             "ComparisonOperator": "LessThanOrEqualTo"
         }' \
         --goal '{
@@ -446,13 +458,19 @@ setup_slos() {
             },
             "AttainmentGoal": 99.0,
             "WarningThreshold": 99.0
-        }' --no-cli-pager
-    echo "✓ List Documents Latency SLO created"
+        }' --no-cli-pager 2>&1)
+    if [ $? -eq 0 ]; then
+        echo "✓ List Documents Latency SLO created"
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    else
+        echo "❌ List Documents Latency SLO failed: $ERROR_MSG"
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
 
     # Problem 3: Scanner Service Upload Latency
     echo ""
     echo "Creating SLO: Upload Latency..."
-    aws application-signals create-service-level-objective \
+    ERROR_MSG=$(aws application-signals create-service-level-objective \
         --region "$REGION" \
         --name "upload-latency" \
         --sli '{
@@ -477,13 +495,19 @@ setup_slos() {
             },
             "AttainmentGoal": 99.0,
             "WarningThreshold": 99.0
-        }' --no-cli-pager
-    echo "✓ Upload Latency SLO created"
+        }' --no-cli-pager 2>&1)
+    if [ $? -eq 0 ]; then
+        echo "✓ Upload Latency SLO created"
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    else
+        echo "❌ Upload Latency SLO failed: $ERROR_MSG"
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
 
     # Problem 4: Overly Broad Retry Logic
     echo ""
     echo "Creating SLO: Get Document Latency..."
-    aws application-signals create-service-level-objective \
+    ERROR_MSG=$(aws application-signals create-service-level-objective \
         --region "$REGION" \
         --name "get-latency" \
         --sli '{
@@ -508,11 +532,20 @@ setup_slos() {
             },
             "AttainmentGoal": 99.0,
             "WarningThreshold": 99.0
-        }' --no-cli-pager
-    echo "✓ Get Document Latency SLO created"
+        }' --no-cli-pager 2>&1)
+    if [ $? -eq 0 ]; then
+        echo "✓ Get Document Latency SLO created"
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+    else
+        echo "❌ Get Document Latency SLO failed: $ERROR_MSG"
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
 
     echo ""
-    echo "✓ All 4 SLOs created successfully"
+    echo "✓ SLO creation complete: $SUCCESS_COUNT succeeded, $FAIL_COUNT failed"
+
+    # Re-enable exit on error
+    set -e
 }
 
 # Main

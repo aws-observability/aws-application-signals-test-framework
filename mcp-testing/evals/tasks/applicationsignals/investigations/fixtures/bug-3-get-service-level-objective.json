@@ -1,0 +1,74 @@
+{
+    "ResponseMetadata": {
+        "RequestId": "47cf9e0f-4a10-4930-9842-12edbb27ee2d",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Fri, 14 Nov 2024 21:13:42 GMT",
+            "content-type": "application/json",
+            "content-length": "1121",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "47cf9e0f-4a10-4930-9842-12edbb27ee2d"
+        },
+        "RetryAttempts": 0
+    },
+    "Slo": {
+        "Arn": "arn:aws:application-signals:us-east-1:123456789012:slo/upload-latency",
+        "Name": "upload-latency",
+        "CreatedTime": "2024-11-14 11:41:52.469000-08:00",
+        "LastUpdatedTime": "2024-11-14 11:41:52.469000-08:00",
+        "Sli": {
+            "SliMetric": {
+                "KeyAttributes": {
+                    "Environment": "ec2:default",
+                    "Name": "document-manager",
+                    "Type": "Service"
+                },
+                "OperationName": "POST /documents",
+                "MetricType": "LATENCY",
+                "MetricDataQueries": [
+                    {
+                        "Id": "latency",
+                        "MetricStat": {
+                            "Metric": {
+                                "Namespace": "ApplicationSignals",
+                                "MetricName": "Latency",
+                                "Dimensions": [
+                                    {
+                                        "Name": "Operation",
+                                        "Value": "POST /documents"
+                                    },
+                                    {
+                                        "Name": "Service",
+                                        "Value": "document-manager"
+                                    },
+                                    {
+                                        "Name": "Environment",
+                                        "Value": "ec2:default"
+                                    }
+                                ]
+                            },
+                            "Period": 60,
+                            "Stat": "p99",
+                            "Unit": "Milliseconds"
+                        },
+                        "ReturnData": true
+                    }
+                ]
+            },
+            "MetricThreshold": 500,
+            "ComparisonOperator": "LessThanOrEqualTo"
+        },
+        "EvaluationType": "PeriodBased",
+        "Goal": {
+            "Interval": {
+                "RollingInterval": {
+                    "DurationUnit": "MINUTE",
+                    "Duration": 5
+                }
+            },
+            "AttainmentGoal": 99,
+            "WarningThreshold": 99
+        },
+        "MetricSourceType": "ServiceOperation"
+    }
+}

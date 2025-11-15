@@ -1,0 +1,103 @@
+{
+    "ResponseMetadata": {
+        "RequestId": "e3f6ef9d-86aa-4603-bc7f-d02074f4494d",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Fri, 14 Nov 2024 21:13:49 GMT",
+            "content-type": "application/json",
+            "content-length": "1900",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "e3f6ef9d-86aa-4603-bc7f-d02074f4494d"
+        },
+        "RetryAttempts": 0
+    },
+    "AuditFindings": [
+        {
+            "KeyAttributes": {
+                "Environment": "ec2:default",
+                "Name": "document-manager",
+                "Type": "Service"
+            },
+            "AuditorResults": [
+                {
+                    "Auditor": "TRACE",
+                    "Description": "Traces show the long latency are caused by a dependency invocation, see a [sample trace](<#xray:transaction-search/1-6917855c-4b16f4e8474d2daac2eeaf04~Node1?~(context~(timeRange~(start~'2024-11-14T19*3A33*3A00Z~end~'2024-11-14T19*3A43*3A00Z)))&segmentName=document-manager>).  \n* **Dependency**: *scanner_service* hosted in *ec2:default*  \n* **Invoked operation**: `POST /scan`",
+                    "Severity": "HIGH"
+                }
+            ],
+            "Operation": "POST /documents",
+            "MetricGraph": {
+                "MetricDataQueries": [
+                    {
+                        "Id": "m1",
+                        "MetricStat": {
+                            "Metric": {
+                                "Namespace": "ApplicationSignals",
+                                "MetricName": "Latency",
+                                "Dimensions": [
+                                    {
+                                        "Name": "Operation",
+                                        "Value": "POST /documents"
+                                    },
+                                    {
+                                        "Name": "Service",
+                                        "Value": "document-manager"
+                                    },
+                                    {
+                                        "Name": "Environment",
+                                        "Value": "ec2:default"
+                                    }
+                                ]
+                            },
+                            "Period": 600,
+                            "Stat": "p99"
+                        },
+                        "ReturnData": true,
+                        "Period": 600,
+                        "AccountId": "123456789012"
+                    }
+                ],
+                "StartTime": "2024-11-14 11:33:00-08:00",
+                "EndTime": "2024-11-14 11:33:00-08:00"
+            },
+            "DependencyGraph": {
+                "Nodes": [
+                    {
+                        "KeyAttributes": {
+                            "Environment": "ec2:default",
+                            "Name": "document-manager",
+                            "Type": "Service"
+                        },
+                        "Name": "document-manager",
+                        "NodeId": "Node1",
+                        "Operation": "POST /documents",
+                        "Type": "Service",
+                        "Duration": 0.3235909938812256,
+                        "Status": "Error"
+                    },
+                    {
+                        "KeyAttributes": {
+                            "Environment": "ec2:default",
+                            "Name": "scanner_service",
+                            "Type": "Service"
+                        },
+                        "Name": "scanner_service",
+                        "NodeId": "Node2",
+                        "Operation": "POST /scan",
+                        "Type": "Service",
+                        "Duration": 0.3175673484802246,
+                        "Status": "OK"
+                    }
+                ],
+                "Edges": [
+                    {
+                        "SourceNodeId": "Node1",
+                        "DestinationNodeId": "Node2",
+                        "ConnectionType": "DIRECT"
+                    }
+                ]
+            },
+            "Type": "Latency"
+        }
+    ]
+}

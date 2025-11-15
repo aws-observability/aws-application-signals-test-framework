@@ -114,6 +114,108 @@ class InvestigationTask(ApplicationSignalsTask):
 # Task definitions
 TASKS = [
     InvestigationTask(
+        id='bug-1-investigation',
+        prompt='Is there anything wrong with my SLOs?',
+        validation_rubric=[
+            'Agent identifies that the problem is that we are seeing elevated latency in GET /documents/{document_id}/download',
+            'Agent identifies that the root cause is that we are getting ParamValidationError errors as the s3_key is not persisted in upload_document',
+            'Agent makes a fix that would prevent ParamValidationError by storing s3_key in upload_document or by checking s3_key presence before get_document',
+        ],
+       # Sometimes the agent will call audit_slos with "default auditors" then with "all auditors second", and other times it will call with "all auditors" only.
+        expected_tool_calls=[
+            [
+                'list_slos',
+                'get_slo',
+                'audit_slos',
+            ],
+            [
+                'list_slos',
+                'audit_slos',
+                'get_slo',
+                'audit_slos',
+            ],
+        ],
+        mock_config={
+            'boto3': {
+                'application-signals': {
+                    'list_service_level_objectives': [
+                        {
+                            'request': {}, 'response': 
+                            'bug-1-list-service-level-objectives.json'
+                        }
+                    ],
+                    'get_service_level_objective': [
+                        {
+                            'request': {'Id': 'download-availability'}, 
+                            'response': 'bug-1-get-service-level-objective.json'
+                        }
+                    ],
+                    'list_audit_findings': [
+                        {
+                            'request': {'Auditors': ['slo']},
+                            'response': 'bug-1-list-audit-findings-default-auditor.json',
+                        },
+                        {
+                            'request': {},
+                            'response': 'bug-1-list-audit-findings-all-auditors.json',
+                        },
+                    ],
+                }
+            }
+        },
+    ),
+    InvestigationTask(
+        id='bug-3-investigation',
+        prompt='Is there anything wrong with my SLOs?',
+        validation_rubric=[
+            'Agent identifies that the problem is that we are seeing elevated latency in POST /documents',
+            'Agent identifies that the root cause is that scan_file is taking a long time',
+            'Agent makes a fix that would timeout calls to scan_file in less than 500ms OR prevents scan_file from being run for large files',
+        ],
+        # Sometimes the agent will call audit_slos with "default auditors" then with "all auditors second", and other times it will call with "all auditors" only.
+        expected_tool_calls=[
+            [
+                'list_slos',
+                'get_slo',
+                'audit_slos',
+            ],
+            [
+                'list_slos',
+                'audit_slos',
+                'get_slo',
+                'audit_slos',
+            ],
+        ],
+        mock_config={
+            'boto3': {
+                'application-signals': {
+                    'list_service_level_objectives': [
+                        {
+                            'request': {}, 
+                            'response': 'bug-3-list-service-level-objectives.json'
+                        }
+                    ],
+                    'get_service_level_objective': [
+                        {
+                            'request': {'Id': 'upload-latency'}, 
+                            'response': 'bug-3-get-service-level-objective.json'
+                        }
+                    ],
+                    'list_audit_findings': [
+                        {
+                            'request': {'Auditors': ['slo']},
+                            'response': 'bug-3-list-audit-findings-default-auditor.json',
+                        },
+                        {
+                            'request': {},
+                            'response': 'bug-3-list-audit-findings-all-auditors.json',
+                        },
+                    ],
+                }
+            }
+        },
+    ),
+    InvestigationTask(
         id='bug-4-investigation',
         prompt='Is there anything wrong with my services?',
         validation_rubric=[
