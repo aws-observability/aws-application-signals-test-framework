@@ -9,6 +9,12 @@ using System.Threading.Tasks;
 using Amazon.S3;
 using Microsoft.AspNetCore.Mvc;
 using Amazon.S3.Model;
+using System.Diagnostics.Metrics;
+using System.Collections.Generic;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Exporter;
 
 namespace asp_frontend_service.Controllers;
 
@@ -22,6 +28,53 @@ public class AppController : ControllerBase
     private static bool threadStarted = false;
     private readonly AmazonS3Client s3Client = new AmazonS3Client();
     private readonly HttpClient httpClient = new HttpClient();
+    private static readonly Meter meter = new Meter("myMeterSource");
+    private static readonly Counter<int> agentBasedCounter = meter.CreateCounter<int>("agent_based_counter");
+    private static readonly Histogram<double> agentBasedHistogram = meter.CreateHistogram<double>("agent_based_histogram");
+    private static readonly UpDownCounter<int> agentBasedGauge = meter.CreateUpDownCounter<int>("agent_based_gauge");
+    
+    // Custom pipeline metrics - only create if specific env vars exist
+    private static readonly Meter pipelineMeter;
+    private static readonly Counter<int> customPipelineCounter;
+    private static readonly Histogram<double> customPipelineHistogram;
+    private static readonly UpDownCounter<int> customPipelineGauge;
+    private static readonly MeterProvider pipelineMeterProvider;
+
+    static AppController()
+    {
+        var serviceName = Environment.GetEnvironmentVariable("SERVICE_NAME");
+        var deploymentEnv = Environment.GetEnvironmentVariable("DEPLOYMENT_ENVIRONMENT_NAME");
+        
+        if (!string.IsNullOrEmpty(serviceName) && !string.IsNullOrEmpty(deploymentEnv))
+        {
+            var pipelineResource = ResourceBuilder.CreateDefault()
+                .AddAttributes(new Dictionary<string, object>
+                {
+                    ["service.name"] = serviceName,
+                    ["deployment.environment.name"] = deploymentEnv
+                })
+                .Build();
+            
+            pipelineMeterProvider = Sdk.CreateMeterProviderBuilder()
+                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddAttributes(new Dictionary<string, object>
+                {
+                    ["service.name"] = serviceName,
+                    ["deployment.environment.name"] = deploymentEnv
+                }))
+                .AddOtlpExporter(options =>
+                {
+                    options.Endpoint = new Uri("http://localhost:4318/v1/metrics");
+                    options.Protocol = OtlpExportProtocol.HttpProtobuf;
+                })
+                .AddMeter("myMeter")
+                .Build();
+            
+            pipelineMeter = new Meter("myMeter");
+            customPipelineCounter = pipelineMeter.CreateCounter<int>("custom_pipeline_counter", "1", "pipeline export counter");
+            customPipelineHistogram = pipelineMeter.CreateHistogram<double>("custom_pipeline_histogram", "ms", "pipeline export histogram");
+            customPipelineGauge = pipelineMeter.CreateUpDownCounter<int>("custom_pipeline_gauge", "1", "pipeline export gauge");
+        }
+    }
 
     private static readonly Thread thread = new Thread(() =>
             {
@@ -50,7 +103,6 @@ public class AppController : ControllerBase
     {
         if (!threadStarted)
         {
-            Console.WriteLine("Starting thread");
             threadStarted = true;
             thread.Start();
         }
@@ -69,7 +121,32 @@ public class AppController : ControllerBase
     [Route("/aws-sdk-call")]
     public string AWSSDKCall([FromQuery] string testingId)
     {
-       var request = new GetBucketLocationRequest()
+        var random = new Random();
+        
+        // Agent-based metrics
+        var histogramValue = random.NextDouble() * 100;
+        var gaugeValue = random.Next(-10, 11);
+        
+        agentBasedCounter.Add(1, new KeyValuePair<string, object?>("Operation", "counter"));
+        agentBasedHistogram.Record(histogramValue, new KeyValuePair<string, object?>("Operation", "histogram"));
+        agentBasedGauge.Add(gaugeValue, new KeyValuePair<string, object?>("Operation", "gauge"));
+        
+        // Custom pipeline metrics - only record if pipeline exists
+        if (customPipelineCounter != null)
+        {
+            customPipelineCounter.Add(1, new KeyValuePair<string, object?>("Operation", "pipeline_counter"));
+            customPipelineHistogram?.Record(random.Next(100, 1001), new KeyValuePair<string, object?>("Operation", "pipeline_histogram"));
+            customPipelineGauge?.Add(random.Next(-10, 11), new KeyValuePair<string, object?>("Operation", "pipeline_gauge"));
+        }
+        
+        
+        var bucketName = "e2e-test-bucket-name";
+        if (!string.IsNullOrEmpty(testingId))
+        {
+            bucketName += "-" + testingId;
+        }
+        
+        var request = new GetBucketLocationRequest()
             {
                BucketName = testingId
             };
