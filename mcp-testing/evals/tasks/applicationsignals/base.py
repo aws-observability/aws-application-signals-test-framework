@@ -53,4 +53,4 @@ class ApplicationSignalsTask(Task):
         Returns:
             Path to server.py file
         """
-        return self.get_server_root_directory() / 'awslabs' / 'cloudwatch_applicationsignals' / 'server.py'
+        return self.get_server_root_directory() / 'awslabs' / 'cloudwatch_applicationsignals_mcp_server' / 'server.py'
