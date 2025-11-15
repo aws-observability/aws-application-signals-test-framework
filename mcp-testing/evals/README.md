@@ -6,6 +6,11 @@ Currently used for evaluating CloudWatch Application Signals MCP tools. Designed
 
 ## Setup
 
+### Prerequisites
+
+- Python 3.10+
+- AWS credentials configured
+
 ### 1. Install MCP Server
 
 Clone and install an AWS Labs MCP server:
@@ -90,7 +95,7 @@ Example:
 export MCP_SERVER_ROOT=/path/to/mcp
 export MCP_EVAL_MODEL_ID=us.anthropic.claude-sonnet-4-20250514-v1:0
 export MCP_EVAL_MAX_TURNS=30
-export MCP_CLOUDWATCH_APPLICATION_SIGNALS_LOG_LEVEL=DEBUG
+export MCP_CLOUDWATCH_APPLICATION_SIGNALS_LOG_LEVEL=DEBUG # For debugging server issues
 python -m evals tasks --task-id my_task
 ```
 
