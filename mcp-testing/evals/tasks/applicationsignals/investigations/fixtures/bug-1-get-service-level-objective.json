@@ -1,0 +1,105 @@
+{
+    "ResponseMetadata": {
+        "RequestId": "41cee246-11d4-4bf5-aec6-f9b5b0f02e73",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Fri, 14 Nov 2024 17:57:29 GMT",
+            "content-type": "application/json",
+            "content-length": "1714",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "41cee246-11d4-4bf5-aec6-f9b5b0f02e73"
+        },
+        "RetryAttempts": 0
+    },
+    "Slo": {
+        "Arn": "arn:aws:application-signals:us-east-1:123456789012:slo/download-availability",
+        "Name": "download-availability",
+        "CreatedTime": "2024-11-14 09:10:38.071000-08:00",
+        "LastUpdatedTime": "2024-11-14 09:10:38.071000-08:00",
+        "Sli": {
+            "SliMetric": {
+                "KeyAttributes": {
+                    "Environment": "ec2:default",
+                    "Name": "document-manager",
+                    "Type": "Service"
+                },
+                "OperationName": "GET /documents/{document_id}/download",
+                "MetricType": "AVAILABILITY",
+                "MetricDataQueries": [
+                    {
+                        "Id": "availability",
+                        "Expression": "(1 - fault / volume) * 100",
+                        "ReturnData": true,
+                        "Period": 60
+                    },
+                    {
+                        "Id": "fault",
+                        "MetricStat": {
+                            "Metric": {
+                                "Namespace": "ApplicationSignals",
+                                "MetricName": "Fault",
+                                "Dimensions": [
+                                    {
+                                        "Name": "Operation",
+                                        "Value": "GET /documents/{document_id}/download"
+                                    },
+                                    {
+                                        "Name": "Service",
+                                        "Value": "document-manager"
+                                    },
+                                    {
+                                        "Name": "Environment",
+                                        "Value": "ec2:default"
+                                    }
+                                ]
+                            },
+                            "Period": 60,
+                            "Stat": "Sum"
+                        },
+                        "ReturnData": false
+                    },
+                    {
+                        "Id": "volume",
+                        "MetricStat": {
+                            "Metric": {
+                                "Namespace": "ApplicationSignals",
+                                "MetricName": "Latency",
+                                "Dimensions": [
+                                    {
+                                        "Name": "Operation",
+                                        "Value": "GET /documents/{document_id}/download"
+                                    },
+                                    {
+                                        "Name": "Service",
+                                        "Value": "document-manager"
+                                    },
+                                    {
+                                        "Name": "Environment",
+                                        "Value": "ec2:default"
+                                    }
+                                ]
+                            },
+                            "Period": 60,
+                            "Stat": "SampleCount"
+                        },
+                        "ReturnData": false
+                    }
+                ]
+            },
+            "MetricThreshold": 99,
+            "ComparisonOperator": "GreaterThanOrEqualTo"
+        },
+        "EvaluationType": "PeriodBased",
+        "Goal": {
+            "Interval": {
+                "RollingInterval": {
+                    "DurationUnit": "MINUTE",
+                    "Duration": 5
+                }
+            },
+            "AttainmentGoal": 99,
+            "WarningThreshold": 99
+        },
+        "MetricSourceType": "ServiceOperation"
+    }
+}
