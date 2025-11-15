@@ -15,15 +15,12 @@
 """Base task class for Application Signals MCP evaluation."""
 
 from evals.core import Task
+from evals.core.eval_config import MCP_SERVER_ROOT
 from pathlib import Path
 
 
-# Samples root: base.py -> applicationsignals/ -> tasks/ -> evals/ -> cloudwatch-applicationsignals-mcp-server/ -> src/ -> root/ -> samples/cloudwatch-applicationsignals-mcp
-SAMPLES_ROOT = (
-    Path(__file__).parent.parent.parent.parent.parent.parent
-    / 'samples'
-    / 'cloudwatch-applicationsignals-mcp'
-)
+# Samples root: base.py -> applicationsignals/ -> samples/
+SAMPLES_ROOT = Path(__file__).parent / 'samples'
 
 
 class ApplicationSignalsTask(Task):
@@ -33,17 +30,27 @@ class ApplicationSignalsTask(Task):
     """
 
     def get_server_root_directory(self) -> Path:
-        """Return MCP server root directory.
+        """Return CloudWatch Application Signals MCP server root directory.
 
-        MCP server working directory: base.py -> applicationsignals/ -> tasks/ -> evals/ -> cloudwatch-applicationsignals-mcp-server/
+        Combines MCP_SERVER_ROOT (points to mcp repo root) with the server-specific path.
+
+        Returns:
+            Path to cloudwatch-applicationsignals-mcp-server root directory
+
+        Raises:
+            ValueError: If MCP_SERVER_ROOT environment variable is not set
         """
-        return Path(__file__).parent.parent.parent.parent
+        if not MCP_SERVER_ROOT:
+            raise ValueError(
+                'MCP_SERVER_ROOT environment variable is required. '
+                'Example: export MCP_SERVER_ROOT=/path/to/mcp'
+            )
+        return Path(MCP_SERVER_ROOT) / 'src' / 'cloudwatch-applicationsignals-mcp-server'
 
     def get_server_file(self) -> Path:
-        """Return MCP server file path."""
-        return (
-            self.get_server_root_directory()
-            / 'awslabs'
-            / 'cloudwatch_applicationsignals_mcp_server'
-            / 'server.py'
-        )
+        """Return CloudWatch Application Signals MCP server file path.
+
+        Returns:
+            Path to server.py file
+        """
+        return self.get_server_root_directory() / 'awslabs' / 'cloudwatch_applicationsignals' / 'server.py'

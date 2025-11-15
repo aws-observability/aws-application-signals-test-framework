@@ -69,10 +69,9 @@ class EvalRunner:
 
         Connects to MCP server, executes agent loop, validates results, and cleans up.
         """
-        # TODO: Separate server config from tasks. Task should specify server name,
-        # and a separate module should handle server setup/configuration.
-        server_file = str(task.get_server_file())
+        # Get server paths from task (allows different tasks to use different servers)
         server_root_dir = str(task.get_server_root_directory())
+        server_file = str(task.get_server_file())
         mock_config = task.resolved_mock_config
         working_directory = task.get_working_directory() or Path.cwd()
 

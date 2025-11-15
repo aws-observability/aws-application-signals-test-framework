@@ -19,6 +19,7 @@ Centralized location for all configurable values.
 These settings apply to both the agent being evaluated and the LLM judge.
 
 Environment variable overrides:
+- MCP_SERVER_ROOT: Path to MCP repository root (required)
 - MCP_EVAL_MODEL_ID: Override default Bedrock model ID
 - MCP_EVAL_AWS_REGION: Override default AWS region
 - MCP_EVAL_MAX_TURNS: Override default max conversation turns
@@ -36,6 +37,7 @@ _DEFAULT_TEMPERATURE = 0.0
 
 # Configuration values (can be overridden via environment variables)
 # Used by both the agent being evaluated and the LLM judge
+MCP_SERVER_ROOT = os.environ.get('MCP_SERVER_ROOT')
 MODEL_ID = os.environ.get('MCP_EVAL_MODEL_ID', _DEFAULT_MODEL_ID)
 AWS_REGION = os.environ.get('MCP_EVAL_AWS_REGION', _DEFAULT_AWS_REGION)
 MAX_TURNS = int(os.environ.get('MCP_EVAL_MAX_TURNS', str(_DEFAULT_MAX_TURNS)))
