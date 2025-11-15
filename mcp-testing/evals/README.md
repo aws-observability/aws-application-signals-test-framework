@@ -45,8 +45,8 @@ uv pip install -r evals/requirements.txt
 Set the `MCP_SERVER_ROOT` environment variable and run from the `mcp-testing/` directory:
 
 ```bash
-# Set MCP server root (absolute or relative path)
-export MCP_SERVER_ROOT=/path/to/mcp/src/<server-name>
+# Set MCP server root to the mcp repository root (absolute or relative path)
+export MCP_SERVER_ROOT=/path/to/mcp
 
 # List all available tasks
 python -m evals tasks --list
@@ -65,28 +65,29 @@ python -m evals tasks --task-id <task_id> --no-cleanup
 ```
 
 **Path Behavior:**
-- `MCP_SERVER_ROOT` supports both absolute and relative paths
-- Relative paths are resolved from the directory where you run the command
-- Absolute paths recommended for clarity
-
-The framework automatically detects the MCP server file at `$MCP_SERVER_ROOT/awslabs/*/server.py`
+- `MCP_SERVER_ROOT` should point to the mcp repository root (e.g., `/path/to/mcp`)
+- Each task specifies which server it uses (e.g., `src/cloudwatch-applicationsignals-mcp-server`)
+- This allows running tasks for different MCP servers in the same test suite
+- Supports both absolute and relative paths (absolute recommended for clarity)
 
 ## Configuration
 
 The framework can be configured via environment variables:
 
-- **MCP_SERVER_ROOT**: Path to MCP server root directory (required)
+- **MCP_SERVER_ROOT**: Path to MCP repository root directory (required, e.g., `/path/to/mcp`)
 - **MCP_EVAL_MODEL_ID**: Override default Bedrock model ID (default: `us.anthropic.claude-sonnet-4-20250514-v1:0`)
 - **MCP_EVAL_AWS_REGION**: Override default AWS region (default: `us-east-1`)
 - **MCP_EVAL_MAX_TURNS**: Override default max conversation turns (default: `20`)
 - **MCP_EVAL_TEMPERATURE**: Override default model temperature (default: `0.0`)
-- **MCP_CLOUDWATCH_APPLICATION_SIGNALS_LOG_LEVEL**: Control MCP server log verbosity for debugging (default: `WARNING`, options: `DEBUG`, `INFO`, `WARNING`, `ERROR`)
 
 **Note:** Model settings apply to both the agent being evaluated and the LLM judge, but MAX_TURNS is not relevant for the LLM judge (one-shot call).
 
-Example (for CloudWatch Application Signals):
+**MCP Server Logging (for evaluated agent only, judge does not use MCP):**
+- **MCP_CLOUDWATCH_APPLICATION_SIGNALS_LOG_LEVEL**: Control MCP server log verbosity for debugging (default: `WARNING`, options: `DEBUG`, `INFO`, `WARNING`, `ERROR`)
+
+Example:
 ```bash
-export MCP_SERVER_ROOT=/path/to/mcp/src/cloudwatch-applicationsignals-mcp-server
+export MCP_SERVER_ROOT=/path/to/mcp
 export MCP_EVAL_MODEL_ID=us.anthropic.claude-sonnet-4-20250514-v1:0
 export MCP_EVAL_MAX_TURNS=30
 export MCP_CLOUDWATCH_APPLICATION_SIGNALS_LOG_LEVEL=DEBUG

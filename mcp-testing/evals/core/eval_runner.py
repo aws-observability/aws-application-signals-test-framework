@@ -31,17 +31,13 @@ from typing import Any, Dict, List
 class EvalRunner:
     """Orchestrates evaluation of MCP tools using agent-based testing."""
 
-    def __init__(self, tasks: List[Task], mcp_server_root: Path, mcp_server_file: Path):
+    def __init__(self, tasks: List[Task]):
         """Initialize evaluation runner.
 
         Args:
             tasks: List of Task instances to evaluate
-            mcp_server_root: Path to MCP server root directory (where imports work)
-            mcp_server_file: Path to MCP server file (e.g., server.py)
         """
         self.tasks = tasks
-        self.mcp_server_root = mcp_server_root
-        self.mcp_server_file = mcp_server_file
 
     async def run_all(
         self,
@@ -73,10 +69,9 @@ class EvalRunner:
 
         Connects to MCP server, executes agent loop, validates results, and cleans up.
         """
-        # TODO: Separate server config from tasks. Task should specify server name,
-        # and a separate module should handle server setup/configuration.
-        server_root_dir = str(self.mcp_server_root)
-        server_file = str(self.mcp_server_file)
+        # Get server paths from task (allows different tasks to use different servers)
+        server_root_dir = str(task.get_server_root_directory())
+        server_file = str(task.get_server_file())
         mock_config = task.resolved_mock_config
         working_directory = task.get_working_directory() or Path.cwd()
 

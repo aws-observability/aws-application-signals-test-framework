@@ -41,6 +41,7 @@ import os
 import sys
 import traceback
 from evals.core import EvalRunner, TaskResult
+from evals.core.eval_config import MCP_SERVER_ROOT
 from evals.core.task import Task
 from loguru import logger
 from pathlib import Path
@@ -158,27 +159,18 @@ async def main():
 
     args = parser.parse_args()
 
-    # Get MCP server root from environment variable
-    mcp_server_root_str = os.environ.get('MCP_SERVER_ROOT')
-    if not mcp_server_root_str:
+    # Validate MCP_SERVER_ROOT environment variable
+    if not MCP_SERVER_ROOT:
         logger.error('MCP_SERVER_ROOT environment variable is required')
-        print('Example: export MCP_SERVER_ROOT=/path/to/mcp/src/cloudwatch-applicationsignals-mcp-server')
+        print('Example: export MCP_SERVER_ROOT=/path/to/mcp')
         sys.exit(1)
 
-    mcp_server_root = Path(mcp_server_root_str).resolve()
+    mcp_server_root = Path(MCP_SERVER_ROOT).resolve()
     if not mcp_server_root.exists():
-        logger.error(f'MCP server directory does not exist: {mcp_server_root}')
+        logger.error(f'MCP repository directory does not exist: {mcp_server_root}')
         sys.exit(1)
 
-    # Auto-detect server.py in awslabs package structure
-    mcp_server_file = next((mcp_server_root / 'awslabs').glob('*/server.py'), None)
-    if not mcp_server_file:
-        logger.error(f'No server.py found at {mcp_server_root}/awslabs/*/server.py')
-        logger.error('Expected awslabs MCP server structure')
-        sys.exit(1)
-
-    mcp_server_file = mcp_server_file.resolve()
-    print(f'Using MCP server: {mcp_server_file}\n')
+    print(f'Using MCP repository: {mcp_server_root}\n')
 
     if args.verbose:
         logger.add(
@@ -249,7 +241,7 @@ async def main():
 
     # Create runner and execute tasks
     try:
-        runner = EvalRunner(tasks=tasks, mcp_server_root=mcp_server_root, mcp_server_file=mcp_server_file)
+        runner = EvalRunner(tasks=tasks)
         results = await runner.run_all(args.verbose, skip_cleanup=args.no_cleanup)
 
         # Report results

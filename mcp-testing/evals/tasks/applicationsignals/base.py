@@ -15,6 +15,7 @@
 """Base task class for Application Signals MCP evaluation."""
 
 from evals.core import Task
+from evals.core.eval_config import MCP_SERVER_ROOT
 from pathlib import Path
 
 
@@ -27,4 +28,29 @@ class ApplicationSignalsTask(Task):
 
     Provides common configuration for all Application Signals tasks.
     """
-    pass
+
+    def get_server_root_directory(self) -> Path:
+        """Return CloudWatch Application Signals MCP server root directory.
+
+        Combines MCP_SERVER_ROOT (points to mcp repo root) with the server-specific path.
+
+        Returns:
+            Path to cloudwatch-applicationsignals-mcp-server root directory
+
+        Raises:
+            ValueError: If MCP_SERVER_ROOT environment variable is not set
+        """
+        if not MCP_SERVER_ROOT:
+            raise ValueError(
+                'MCP_SERVER_ROOT environment variable is required. '
+                'Example: export MCP_SERVER_ROOT=/path/to/mcp'
+            )
+        return Path(MCP_SERVER_ROOT) / 'src' / 'cloudwatch-applicationsignals-mcp-server'
+
+    def get_server_file(self) -> Path:
+        """Return CloudWatch Application Signals MCP server file path.
+
+        Returns:
+            Path to server.py file
+        """
+        return self.get_server_root_directory() / 'awslabs' / 'cloudwatch_applicationsignals' / 'server.py'

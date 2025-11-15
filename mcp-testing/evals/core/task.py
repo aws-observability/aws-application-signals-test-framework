@@ -34,7 +34,8 @@ class Task(ABC):
 
     Required Implementations:
         - get_prompt(working_directory): Return the prompt string for the agent
-        - rubric: Property returning validation criteria
+        - get_server_root_directory(): Return MCP server root directory path
+        - get_server_file(): Return MCP server file path
 
     Optional Overrides:
         - get_captors(working_directory): Return captors to collect execution data
@@ -78,6 +79,35 @@ class Task(ABC):
 
         Returns:
             Prompt string describing the task the agent should complete
+        """
+        pass
+
+    @abstractmethod
+    def get_server_root_directory(self) -> Path:
+        """Return MCP server root directory path.
+
+        This should return the server root directory where imports work (e.g., where dependencies are installed).
+        Typically combines MCP_SERVER_ROOT environment variable with server-specific path.
+
+        Example:
+            Path(os.environ['MCP_SERVER_ROOT']) / 'src' / 'cloudwatch-applicationsignals-mcp-server'
+
+        Returns:
+            Path to MCP server root directory
+        """
+        pass
+
+    @abstractmethod
+    def get_server_file(self) -> Path:
+        """Return MCP server file path.
+
+        This should return the full path to the server.py file.
+
+        Example:
+            self.get_server_root_directory() / 'awslabs' / 'cloudwatch_applicationsignals' / 'server.py'
+
+        Returns:
+            Path to MCP server file
         """
         pass
 
