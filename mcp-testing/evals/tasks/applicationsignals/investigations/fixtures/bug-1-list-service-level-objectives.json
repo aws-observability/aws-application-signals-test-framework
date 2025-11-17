@@ -1,0 +1,30 @@
+{
+    "ResponseMetadata": {
+        "RequestId": "c634d0b1-dc0b-4b49-921c-d77c11527790",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Fri, 14 Nov 2024 17:57:26 GMT",
+            "content-type": "application/json",
+            "content-length": "472",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "c634d0b1-dc0b-4b49-921c-d77c11527790"
+        },
+        "RetryAttempts": 0
+    },
+    "SloSummaries": [
+        {
+            "Arn": "arn:aws:application-signals:us-east-1:123456789012:slo/download-availability",
+            "Name": "download-availability",
+            "KeyAttributes": {
+                "AwsAccountId": "123456789012",
+                "Environment": "ec2:default",
+                "Name": "document-manager",
+                "Type": "Service"
+            },
+            "OperationName": "GET /documents/{document_id}/download",
+            "CreatedTime": "2024-11-14 09:10:38.071000-08:00",
+            "EvaluationType": "PeriodBased",
+            "MetricSourceType": "ServiceOperation"
+        }
+    ]
+}
