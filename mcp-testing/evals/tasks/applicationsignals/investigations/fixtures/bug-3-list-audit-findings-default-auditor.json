@@ -1,0 +1,66 @@
+{
+    "ResponseMetadata": {
+        "RequestId": "59ef198a-72f9-4e6e-b1f1-0bfa1cdf55c9",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Fri, 14 Nov 2024 21:22:01 GMT",
+            "content-type": "application/json",
+            "content-length": "1042",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "59ef198a-72f9-4e6e-b1f1-0bfa1cdf55c9"
+        },
+        "RetryAttempts": 0
+    },
+    "AuditFindings": [
+        {
+            "KeyAttributes": {
+                "Environment": "ec2:default",
+                "Name": "document-manager",
+                "Type": "Service"
+            },
+            "AuditorResults": [
+                {
+                    "Auditor": "SLO",
+                    "Description": "SLO upload-latency is in breach.",
+                    "Severity": "HIGH"
+                }
+            ],
+            "Operation": "POST /documents",
+            "MetricGraph": {
+                "MetricDataQueries": [
+                    {
+                        "Id": "m1",
+                        "MetricStat": {
+                            "Metric": {
+                                "Namespace": "ApplicationSignals",
+                                "MetricName": "Latency",
+                                "Dimensions": [
+                                    {
+                                        "Name": "Operation",
+                                        "Value": "POST /documents"
+                                    },
+                                    {
+                                        "Name": "Service",
+                                        "Value": "document-manager"
+                                    },
+                                    {
+                                        "Name": "Environment",
+                                        "Value": "ec2:default"
+                                    }
+                                ]
+                            },
+                            "Period": 600,
+                            "Stat": "p99"
+                        },
+                        "ReturnData": true,
+                        "Period": 600,
+                        "AccountId": "123456789012"
+                    }
+                ],
+                "StartTime": "2024-11-14 12:22:00-08:00",
+                "EndTime": "2024-11-14 12:22:00-08:00"
+            },
+            "Type": "Latency"
+        }
+    ]
+}
