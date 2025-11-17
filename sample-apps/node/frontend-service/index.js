@@ -187,8 +187,6 @@ app.get('/client-call', (req, res) => {
   makeAsyncCall = true;
 });
 
-
-
 app.get('/mysql', (req, res) => {
   // Create a connection to the MySQL database
   const connection = mysql.createConnection({
