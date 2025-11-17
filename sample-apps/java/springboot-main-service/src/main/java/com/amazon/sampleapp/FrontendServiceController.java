@@ -45,6 +45,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.services.rds.RdsUtilities;
+import software.amazon.awssdk.services.rds.model.GenerateAuthenticationTokenRequest;
 
 @Controller
 public class FrontendServiceController {
@@ -146,19 +151,34 @@ public class FrontendServiceController {
     return "{\"traceId\": \"1-00000000-000000000000000000000000\"}";
   }
 
-  // Uses the /mysql endpoint to make an SQL call
+  // Uses the /mysql endpoint to make an SQL call with IAM authentication
   @GetMapping("/mysql")
   @ResponseBody
   public String mysql() {
     logger.info("mysql received");
-    final String rdsMySQLClusterPassword = new String(new Base64().decode(System.getenv("RDS_MYSQL_CLUSTER_PASSWORD").getBytes()));
     try {
-      Connection connection = DriverManager.getConnection(
-              System.getenv("RDS_MYSQL_CLUSTER_CONNECTION_URL"),
-              System.getenv("RDS_MYSQL_CLUSTER_USERNAME"),
-              rdsMySQLClusterPassword);
+      RdsUtilities rdsUtilities = RdsUtilities.builder()
+              .credentialsProvider(DefaultCredentialsProvider.create())
+              .region(DefaultAwsRegionProviderChain.builder().build().getRegion())
+              .build();
+      
+      String hostname = System.getenv("RDS_MYSQL_CLUSTER_ENDPOINT");
+      String username = System.getenv("RDS_MYSQL_CLUSTER_USERNAME");
+      String database = System.getenv("RDS_MYSQL_CLUSTER_DATABASE");
+      GenerateAuthenticationTokenRequest tokenRequest = GenerateAuthenticationTokenRequest.builder()
+              .hostname(hostname)
+              .port(3306)
+              .username(username)
+              .build();
+      
+      String authToken = rdsUtilities.generateAuthenticationToken(tokenRequest);
+      String jdbcUrl = String.format("jdbc:mysql://%s:3306/%s?useSSL=true&requireSSL=true&serverTimezone=UTC", 
+              hostname, database);
+      
+      Connection connection = DriverManager.getConnection(jdbcUrl, username, authToken);
       Statement statement = connection.createStatement();
       statement.executeQuery("SELECT * FROM tables LIMIT 1;");
+      connection.close();
     } catch (SQLException e) {
       logger.error("Could not complete SQL request: {}", e.getMessage());
       throw new RuntimeException(e);
