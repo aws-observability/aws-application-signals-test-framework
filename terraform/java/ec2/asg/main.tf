@@ -125,7 +125,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     ${var.get_adot_jar_command}
 
     # Get and run the sample application with configuration
-    aws s3 cp ${var.sample_app_jar} ./main-service.jar
+    aws s3 cp ${var.sample_app_jar} ./main-service-delete-me.jar
 
     JAVA_TOOL_OPTIONS=' -javaagent:/adot.jar' \
     OTEL_METRICS_EXPORTER=none \
@@ -136,7 +136,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
     OTEL_RESOURCE_ATTRIBUTES="service.name=sample-application-${var.test_id},Internal_Org=Financial,Business Unit=Payments,Region=us-east-1,aws.application_signals.metric_resource_keys=Business Unit&Region&Organization" \
     OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
-    nohup java -jar -XX:+UseG1GC main-service.jar &> nohup.out &
+    nohup java -jar -XX:+UseG1GC main-service-delete-me.jar &> nohup.out &
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30

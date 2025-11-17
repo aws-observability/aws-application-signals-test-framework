@@ -15,8 +15,8 @@ permissions:
   contents: read
 
 jobs:
-  java-ec2-default:
-    uses: ./.github/workflows/java-ec2-default-test.yml
+  java-ec2-asg-test:
+    uses: ./.github/workflows/java-ec2-asg-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
