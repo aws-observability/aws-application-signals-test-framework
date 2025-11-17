@@ -124,7 +124,7 @@ jobs:
             terraform apply -auto-approve \
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
-              -var="sample_app_jar=s3://aws-appsignals-sample-app-prod-us-east-1/java-main-service-v${{ env.JAVA_VERSION }}.jar" \
+              -var="sample_app_jar=s3://aws-appsignals-sample-app-prod-us-east-1/main-service-delete-me.jar" \
               -var="sample_remote_app_jar=s3://aws-appsignals-sample-app-prod-us-east-1/java-remote-service-v${{ env.JAVA_VERSION }}.jar" \
               -var="get_adot_jar_command=${{ env.GET_ADOT_JAR_COMMAND }}" \
               -var="language_version=${{ env.JAVA_VERSION }}" \

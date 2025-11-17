@@ -128,7 +128,7 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_jar_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_jar} ./main-service.jar --region us-east-1
+      aws s3 cp ${var.sample_app_jar} ./main-service-delete-me.jar --region us-east-1
 
       # OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       export JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar'
@@ -141,7 +141,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs
       export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default
       export OTEL_RESOURCE_ATTRIBUTES=service.name=sample-application-${var.test_id}
-      nohup java -jar main-service.jar &> nohup.out &
+      nohup java -jar main-service-delete-me.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
