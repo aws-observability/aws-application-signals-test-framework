@@ -109,78 +109,53 @@ public class FrontendServiceController {
     this.httpClient = httpClient;
     this.s3 = s3;
     
-    logger.info("Initializing FrontendServiceController with custom metrics...");
-    
     // Initialize agent-based metrics using GLOBAL OpenTelemetry (ADOT agent's configuration)
-    logger.info("Creating agent-based metrics using GlobalOpenTelemetry...");
     this.agentMeter = GlobalOpenTelemetry.get().getMeter("agent-meter");
-    logger.info("Agent meter created: {}", agentMeter.getClass().getName());
     
     this.agentBasedCounter = agentMeter.counterBuilder("agent_based_counter").build();
     this.agentBasedHistogram = agentMeter.histogramBuilder("agent_based_histogram").build();
     this.agentBasedGauge = agentMeter.upDownCounterBuilder("agent_based_gauge").build();
-    logger.info("Agent-based metrics initialized successfully: counter={}, histogram={}, gauge={}", 
-                agentBasedCounter != null, agentBasedHistogram != null, agentBasedGauge != null);
      
     // Get environment variables
     String serviceName = System.getenv("SERVICE_NAME");
     String deploymentEnvironmentName = System.getenv("DEPLOYMENT_ENVIRONMENT_NAME");
-    logger.info("Environment variables - SERVICE_NAME: '{}', DEPLOYMENT_ENVIRONMENT_NAME: '{}'", 
-                serviceName, deploymentEnvironmentName);
     
     // Only create pipeline if environment variables exist (matching Python logic)
     if (serviceName != null && deploymentEnvironmentName != null && 
         !serviceName.isEmpty() && !deploymentEnvironmentName.isEmpty()) {
         
-        logger.info("Creating custom pipeline metrics with SERVICE_NAME='{}' and DEPLOYMENT_ENVIRONMENT_NAME='{}'", 
-                    serviceName, deploymentEnvironmentName);
-        
         Resource pipelineResource = Resource.getDefault().toBuilder()
             .put("service.name", serviceName)
             .put("deployment.environment.name", deploymentEnvironmentName)
-            .put("metric.source", "pipeline")
             .build();
-        logger.info("Pipeline resource created with attributes: {}", pipelineResource.getAttributes());
         
         MetricExporter pipelineMetricExporter = OtlpHttpMetricExporter.builder()
             .setEndpoint("http://localhost:4318/v1/metrics")
             .setTimeout(Duration.ofSeconds(10))
             .build();
-        logger.info("Pipeline OTLP exporter created targeting: http://localhost:4318/v1/metrics");
             
         MetricReader pipelineMetricReader = PeriodicMetricReader.builder(pipelineMetricExporter)
             .setInterval(Duration.ofSeconds(1))
             .build();
-        logger.info("Pipeline metric reader created with 1-second export interval");
         
         SdkMeterProvider pipelineMeterProvider = SdkMeterProvider.builder()
             .setResource(pipelineResource)
             .registerMetricReader(pipelineMetricReader)
             .build();
-        logger.info("Pipeline meter provider created: {}", pipelineMeterProvider.getClass().getName());
         
         // Initialize pipeline metrics using SEPARATE SdkMeterProvider
         this.customPipelineMeter = pipelineMeterProvider.get("pipeline-meter");
-        logger.info("Pipeline meter created: {}", customPipelineMeter.getClass().getName());
         
         this.customPipelineCounter = customPipelineMeter.counterBuilder("custom_pipeline_counter").build();
         this.customPipelineHistogram = customPipelineMeter.histogramBuilder("custom_pipeline_histogram").build();
         this.customPipelineGauge = customPipelineMeter.upDownCounterBuilder("custom_pipeline_gauge").build();
-        
-        logger.info("Pipeline metrics initialized successfully: counter={}, histogram={}, gauge={}", 
-                    customPipelineCounter != null, customPipelineHistogram != null, customPipelineGauge != null);
-        logger.info("Custom pipeline metrics setup COMPLETE - will export to CloudWatch Agent on port 4318");
     } else {
         // No pipeline metrics if environment variables missing
-        logger.warn("Pipeline metrics NOT created - missing environment variables (SERVICE_NAME or DEPLOYMENT_ENVIRONMENT_NAME)");
         this.customPipelineMeter = null;
         this.customPipelineCounter = null;
         this.customPipelineHistogram = null;
         this.customPipelineGauge = null;
     }
-    
-    logger.info("FrontendServiceController initialization complete - Agent metrics: {}, Pipeline metrics: {}", 
-                agentBasedCounter != null, customPipelineCounter != null);
   }
 
   private int random(int min, int max) {
@@ -198,68 +173,27 @@ public class FrontendServiceController {
   @ResponseBody
   public String awssdkCall(@RequestParam(name = "testingId", required = false) String testingId) {
     
-    logger.info("=== RECORDING CUSTOM METRICS ===");
-    
     // Record agent-based metrics
-    logger.info("Recording agent-based metrics using GlobalOpenTelemetry...");
-    logger.info("GlobalOpenTelemetry instance: {}", GlobalOpenTelemetry.get().getClass().getName());
-    logger.info("Agent meter instance: {}", agentMeter.getClass().getName());
-    
     int histogramValue = random(100,1000);
     int gaugeValue = random(-10,10);
     
-    try {
-        agentBasedCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "counter"));
-        logger.info("Agent counter incremented by 1 with Operation=counter - SUCCESS");
-    } catch (Exception e) {
-        logger.error("Failed to record agent counter: {}", e.getMessage());
-    }
+    agentBasedCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "counter"));
     
-    try {
-        agentBasedHistogram.record((double)histogramValue, Attributes.of(AttributeKey.stringKey("Operation"), "histogram"));
-        logger.info("Agent histogram recorded value {} with Operation=histogram - SUCCESS", histogramValue);
-    } catch (Exception e) {
-        logger.error("Failed to record agent histogram: {}", e.getMessage());
-    }
+    agentBasedHistogram.record((double)histogramValue, Attributes.of(AttributeKey.stringKey("Operation"), "histogram"));
     
-    try {
-        agentBasedGauge.add(gaugeValue, Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
-        logger.info("Agent gauge added {} with Operation=gauge - SUCCESS", gaugeValue);
-    } catch (Exception e) {
-        logger.error("Failed to record agent gauge: {}", e.getMessage());
-    }
-    
-    logger.info("Agent-based metrics recording COMPLETE");
-    
-    // Force flush to ensure metrics are sent
-    try {
-        logger.info("Attempting to force flush agent metrics...");
-        // Note: GlobalOpenTelemetry doesn't expose flush directly, but metrics should auto-export
-    } catch (Exception e) {
-        logger.error("Failed to flush agent metrics: {}", e.getMessage());
-    }
+    agentBasedGauge.add(gaugeValue, Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
 
     // Only record pipeline metrics if pipeline exists (matching Python logic)
     if (customPipelineCounter != null) {
-        logger.info("Recording pipeline metrics using custom SdkMeterProvider...");
         int pipelineHistogramValue = random(100,1000);
         int pipelineGaugeValue = random(-10,10);
         
         customPipelineCounter.add(1, Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_counter"));
-        logger.info("Pipeline counter incremented by 1 with Operation=pipeline_counter");
         
         customPipelineHistogram.record(pipelineHistogramValue, Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_histogram"));
-        logger.info("Pipeline histogram recorded value {} with Operation=pipeline_histogram", pipelineHistogramValue);
         
         customPipelineGauge.add(pipelineGaugeValue, Attributes.of(AttributeKey.stringKey("Operation"), "pipeline_gauge"));
-        logger.info("Pipeline gauge added {} with Operation=pipeline_gauge", pipelineGaugeValue);
-        
-        logger.info("Pipeline metrics recording COMPLETE - exported to localhost:4318");
-    } else {
-        logger.warn("Pipeline metrics SKIPPED - customPipelineCounter is null");
     }
-    
-    logger.info("=== CUSTOM METRICS RECORDING FINISHED ===");
     
     String bucketName = "e2e-test-bucket-name";
     if (testingId != null) {
