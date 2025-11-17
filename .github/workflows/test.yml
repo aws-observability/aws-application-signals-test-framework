@@ -20,4 +20,5 @@ jobs:
     secrets: inherit
     with:
       caller-workflow-name: 'test'
+      aws-region: 'us-east-1'
       test-cluster-name: 'e2e-playground'
