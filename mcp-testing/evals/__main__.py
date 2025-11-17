@@ -16,22 +16,32 @@
 
 Auto-discovers and runs all tasks defined in *_tasks.py files in the specified directory.
 
+Environment Variables:
+    MCP_SERVER_ROOT: Path to MCP repository root (e.g., /path/to/mcp)
+
 Usage:
-    python -m evals applicationsignals                                    # Run all tasks
-    python -m evals applicationsignals --list                             # List all available tasks
-    python -m evals applicationsignals --task investigation_tasks         # Run all investigation tasks
-    python -m evals applicationsignals --task-id petclinic_scheduling_rca # Run specific task
-    python -m evals applicationsignals --task investigation_tasks --task-id basic_service_health  # Combine filters
-    python -m evals applicationsignals -v                                 # Verbose output
-    python -m evals applicationsignals --no-cleanup                       # Skip cleanup after eval
+    export MCP_SERVER_ROOT=/path/to/mcp
+    python -m evals tasks --list                             # List all available tasks
+    python -m evals tasks                                    # Run all tasks
+    python -m evals tasks --task investigation_tasks         # Run all investigation tasks
+    python -m evals tasks --task-id <task_id>                # Run specific task
+    python -m evals tasks --task investigation_tasks --task-id <task_id>  # Combine filters
+    python -m evals tasks -v                                 # Verbose output
+    python -m evals tasks --no-cleanup                       # Skip cleanup after eval
+
+Example:
+    export MCP_SERVER_ROOT=/path/to/mcp
+    python -m evals tasks --list
 """
 
 import argparse
 import asyncio
 import importlib
+import os
 import sys
 import traceback
 from evals.core import EvalRunner, TaskResult
+from evals.core.eval_config import MCP_SERVER_ROOT
 from evals.core.task import Task
 from loguru import logger
 from pathlib import Path
@@ -126,7 +136,7 @@ async def main():
     parser = argparse.ArgumentParser(description='Evaluate MCP tools')
     parser.add_argument(
         'task_dir',
-        help='Task directory name (relative to evals/, e.g., "applicationsignals")',
+        help='Task directory name (relative to evals/, e.g., "tasks/applicationsignals")',
     )
     parser.add_argument(
         '--verbose', '-v', action='store_true', help='Enable verbose/debug logging'
@@ -148,6 +158,19 @@ async def main():
     )
 
     args = parser.parse_args()
+
+    # Validate MCP_SERVER_ROOT environment variable
+    if not MCP_SERVER_ROOT:
+        logger.error('MCP_SERVER_ROOT environment variable is required')
+        print('Example: export MCP_SERVER_ROOT=/path/to/mcp')
+        sys.exit(1)
+
+    mcp_server_root = Path(MCP_SERVER_ROOT).resolve()
+    if not mcp_server_root.exists():
+        logger.error(f'MCP repository directory does not exist: {mcp_server_root}')
+        sys.exit(1)
+
+    print(f'Using MCP repository: {mcp_server_root}\n')
 
     if args.verbose:
         logger.add(

@@ -4,18 +4,55 @@ Generic evaluation framework for testing AI agents using Model Context Protocol 
 
 Currently used for evaluating CloudWatch Application Signals MCP tools. Designed to be easily extended to other MCP tools.
 
-## Quick Start
+## Setup
 
 ### Prerequisites
 
 - Python 3.10+
 - AWS credentials configured
 
-### Running Evals
+### 1. Install MCP Server
 
-Run the below commands from the `src/cloudwatch-applicationsignals-mcp-server` directory.
+Clone and install an AWS Labs MCP server:
 
 ```bash
+# Clone the MCP repository
+git clone https://github.com/awslabs/mcp.git
+cd mcp/src/<server-name>
+
+# Install the server package
+uv pip install -e .
+```
+
+Example for CloudWatch Application Signals:
+```bash
+cd mcp/src/cloudwatch-applicationsignals-mcp-server
+uv pip install -e .
+```
+
+### 2. Setup Environment and Install Dependencies
+
+From the `mcp-testing/` directory:
+
+```bash
+# Create virtual environment
+uv venv
+
+# Activate virtual environment
+source .venv/bin/activate
+
+# Install eval dependencies
+uv pip install -r evals/requirements.txt
+```
+
+### 3. Running Evals
+
+Set the `MCP_SERVER_ROOT` environment variable and run from the `mcp-testing/` directory:
+
+```bash
+# Set MCP server root to the mcp repository root (absolute or relative path)
+export MCP_SERVER_ROOT=/path/to/mcp
+
 # List all available tasks
 python -m evals tasks --list
 
@@ -32,25 +69,33 @@ python -m evals tasks --task-id <task_id> -v
 python -m evals tasks --task-id <task_id> --no-cleanup
 ```
 
-### Configuration
+**Path Behavior:**
+- `MCP_SERVER_ROOT` should point to the mcp repository root (e.g., `/path/to/mcp`)
+- Each task specifies which server it uses (e.g., `src/cloudwatch-applicationsignals-mcp-server`)
+- This allows running tasks for different MCP servers in the same test suite
+- Supports both absolute and relative paths (absolute recommended for clarity)
 
-The framework can be configured via environment variables.
+## Configuration
 
+The framework can be configured via environment variables:
+
+- **MCP_SERVER_ROOT**: Path to MCP repository root directory (required, e.g., `/path/to/mcp`)
 - **MCP_EVAL_MODEL_ID**: Override default Bedrock model ID (default: `us.anthropic.claude-sonnet-4-20250514-v1:0`)
 - **MCP_EVAL_AWS_REGION**: Override default AWS region (default: `us-east-1`)
 - **MCP_EVAL_MAX_TURNS**: Override default max conversation turns (default: `20`)
 - **MCP_EVAL_TEMPERATURE**: Override default model temperature (default: `0.0`)
 
-**Note:** These settings apply to both the agent being evaluated and the LLM judge, but MAX_TURNS is not relevant for the LLM judge (one-shot call).
+**Note:** Model settings apply to both the agent being evaluated and the LLM judge, but MAX_TURNS is not relevant for the LLM judge (one-shot call).
 
 **MCP Server Logging (for evaluated agent only, judge does not use MCP):**
 - **MCP_CLOUDWATCH_APPLICATION_SIGNALS_LOG_LEVEL**: Control MCP server log verbosity for debugging (default: `WARNING`, options: `DEBUG`, `INFO`, `WARNING`, `ERROR`)
 
 Example:
 ```bash
+export MCP_SERVER_ROOT=/path/to/mcp
 export MCP_EVAL_MODEL_ID=us.anthropic.claude-sonnet-4-20250514-v1:0
 export MCP_EVAL_MAX_TURNS=30
-export MCP_CLOUDWATCH_APPLICATION_SIGNALS_LOG_LEVEL=DEBUG  # For debugging server issues
+export MCP_CLOUDWATCH_APPLICATION_SIGNALS_LOG_LEVEL=DEBUG # For debugging server issues
 python -m evals tasks --task-id my_task
 ```
 

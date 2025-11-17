@@ -34,9 +34,8 @@ class Task(ABC):
 
     Required Implementations:
         - get_prompt(working_directory): Return the prompt string for the agent
-        - rubric: Property returning validation criteria
-        - get_server_file(): Return path to MCP server file
-        - get_server_root_directory(): Return server root directory
+        - get_server_root_directory(): Return MCP server root directory path
+        - get_server_file(): Return MCP server file path
 
     Optional Overrides:
         - get_captors(working_directory): Return captors to collect execution data
@@ -80,6 +79,35 @@ class Task(ABC):
 
         Returns:
             Prompt string describing the task the agent should complete
+        """
+        pass
+
+    @abstractmethod
+    def get_server_root_directory(self) -> Path:
+        """Return MCP server root directory path.
+
+        This should return the server root directory where imports work (e.g., where dependencies are installed).
+        Typically combines MCP_SERVER_ROOT environment variable with server-specific path.
+
+        Example:
+            Path(os.environ['MCP_SERVER_ROOT']) / 'src' / 'cloudwatch-applicationsignals-mcp-server'
+
+        Returns:
+            Path to MCP server root directory
+        """
+        pass
+
+    @abstractmethod
+    def get_server_file(self) -> Path:
+        """Return MCP server file path.
+
+        This should return the full path to the server.py file.
+
+        Example:
+            self.get_server_root_directory() / 'awslabs' / 'cloudwatch_applicationsignals' / 'server.py'
+
+        Returns:
+            Path to MCP server file
         """
         pass
 
@@ -151,16 +179,6 @@ class Task(ABC):
     def get_working_directory(self) -> Optional[Path]:
         """Return working directory for this task. None uses current directory."""
         return None
-
-    @abstractmethod
-    def get_server_file(self) -> Path:
-        """Return path to the MCP server file."""
-        pass
-
-    @abstractmethod
-    def get_server_root_directory(self) -> Path:
-        """Return root directory of the MCP server (where imports work)."""
-        pass
 
     def setup(self, working_directory: Path) -> None:
         """Set up workspace before task execution.
