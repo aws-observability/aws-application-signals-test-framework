@@ -15,9 +15,9 @@ permissions:
   contents: read
 
 jobs:
-  java-ecs-test:
-    uses: ./.github/workflows/java-ecs-test.yml
+  java-eks-test:
+    uses: ./.github/workflows/java-eks-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
+      test-cluster-name: 'e2e-playground'
