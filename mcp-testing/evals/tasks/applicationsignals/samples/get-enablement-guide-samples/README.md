@@ -210,7 +210,6 @@ cdk destroy <stack-name>
 
 | Language | Config File  | Stack Name           | Function Name   | Build Output              |
 |----------|--------------|----------------------|-----------------|---------------------------|
-| dotnet   | dotnet.json  | DotnetLambdaCdkStack | DotnetLambdaCdk | builds/dotnet-lambda.zip  |
 | python   | python.json  | PythonLambdaCdkStack | PythonLambdaCdk | builds/python-lambda.zip  |
 | nodejs   | nodejs.json  | NodejsLambdaCdkStack | NodejsLambdaCdk | builds/nodejs-lambda.zip  |
 | java     | java.json    | JavaLambdaCdkStack   | JavaLambdaCdk   | builds/java-lambda.zip    |
@@ -230,7 +229,6 @@ terraform destroy -var="config_file=<config-file>"
 
 | Language | Config File  | Function Name          | Build Output              |
 |----------|--------------|------------------------|---------------------------|
-| dotnet   | dotnet.json  | DotnetLambdaTerraform  | builds/dotnet-lambda.zip  |
 | python   | python.json  | PythonLambdaTerraform  | builds/python-lambda.zip  |
 | nodejs   | nodejs.json  | NodejsLambdaTerraform  | builds/nodejs-lambda.zip  |
 | java     | java.json    | JavaLambdaTerraform    | builds/java-lambda.zip    |
@@ -243,13 +241,11 @@ After deployment, manually invoke the Lambda function to start generating intern
 
 ```bash
 # For CDK:
-aws lambda invoke --function-name DotnetLambdaCdk --invocation-type Event /dev/stdout
 aws lambda invoke --function-name PythonLambdaCdk --invocation-type Event /dev/stdout
 aws lambda invoke --function-name NodejsLambdaCdk --invocation-type Event /dev/stdout
 aws lambda invoke --function-name JavaLambdaCdk --invocation-type Event /dev/stdout
 
 # For Terraform:
-aws lambda invoke --function-name DotnetLambdaTerraform --invocation-type Event /dev/stdout
 aws lambda invoke --function-name PythonLambdaTerraform --invocation-type Event /dev/stdout
 aws lambda invoke --function-name NodejsLambdaTerraform --invocation-type Event /dev/stdout
 aws lambda invoke --function-name JavaLambdaTerraform --invocation-type Event /dev/stdout
