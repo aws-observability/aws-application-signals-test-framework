@@ -137,6 +137,9 @@ resource "null_resource" "main_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_app_jar} ./main-service-delete-me.jar
 
+      export SERVICE_NAME='sample-application-${var.test_id}' 
+      export DEPLOYMENT_ENVIRONMENT_NAME='ec2:default' 
+
       JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
       OTEL_METRICS_EXPORTER=otlp \
       OTEL_LOGS_EXPORT=none \
@@ -145,8 +148,6 @@ resource "null_resource" "main_service_setup" {
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
-      SERVICE_NAME='sample-application-${var.test_id}' \
-      DEPLOYMENT_ENVIRONMENT_NAME='ec2:default' \
       OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME},aws.application_signals.metric_resource_keys=all_attributes" \
       AWS_REGION='${var.aws_region}' \
       nohup java -Dotel.java.global-autoconfigure.enabled=true -XX:+UseG1GC -jar main-service-delete-me.jar &> nohup.out &
