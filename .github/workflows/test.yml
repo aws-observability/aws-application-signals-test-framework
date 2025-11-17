@@ -15,8 +15,9 @@ permissions:
   contents: read
 
 jobs:
-  java-ec2-adot-sigv4-test:
-    uses: ./.github/workflows/java-ec2-adot-sigv4-test.yml
+  java-ecs-test:
+    uses: ./.github/workflows/java-ecs-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
+      aws-region: 'us-east-1'
