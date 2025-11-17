@@ -15,10 +15,8 @@ permissions:
   contents: read
 
 jobs:
-  java-eks-test:
-    uses: ./.github/workflows/java-eks-test.yml
+  java-k8s-test:
+    uses: ./.github/workflows/java-k8s-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-      test-cluster-name: 'e2e-playground'
