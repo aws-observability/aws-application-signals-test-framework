@@ -60,6 +60,7 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 | Language-Framework | App Directory                 | ECR Repo          |
 |--------------------|-------------------------------|-------------------|
 | dotnet-aspnetcore  | docker-apps/dotnet/aspnetcore | dotnet-aspnetcore |
+| dotnet-framework   | docker-apps/dotnet/framework  | dotnet-framework  |
 | python-flask       | docker-apps/python/flask      | python-flask      |
 | python-django      | docker-apps/python/django     | python-django     |
 | java-springboot    | docker-apps/java/spring-boot  | java-springboot   |
@@ -85,6 +86,7 @@ cdk destroy <stack-name>
 | Language-Framework | Stack Name               |
 |--------------------|--------------------------|
 | dotnet-aspnetcore  | DotnetAspnetcoreCdkStack |
+| dotnet-framework   | DotnetFrameworkCdkStack  |
 | python-flask       | PythonFlaskCdkStack      |
 | python-django      | PythonDjangoCdkStack     |
 | java-springboot    | JavaSpringBootCdkStack   |
@@ -131,6 +133,7 @@ cdk destroy <stack-name>
 | Language-Framework | Stack Name                   |
 |--------------------|------------------------------|
 | dotnet-aspnetcore  | DotnetAspnetcoreEksCdkStack  |
+| dotnet-framework   | DotnetFrameworkEksCdkStack   |
 | python-flask       | PythonFlaskEksCdkStack       |
 | python-django      | PythonDjangoEksCdkStack      |
 | java-springboot    | JavaSpringBootEksCdkStack    |
@@ -182,6 +185,7 @@ terraform destroy -var-file="<var-file>"
 | Language-Framework | Variables File                   |
 |--------------------|----------------------------------|
 | dotnet-aspnetcore  | config/dotnet-aspnetcore.tfvars |
+| dotnet-framework   | config/dotnet-framework.tfvars  |
 | python-flask       | config/python-flask.tfvars      |
 | python-django      | config/python-django.tfvars     |
 | java-springboot    | config/java-springboot.tfvars   |
