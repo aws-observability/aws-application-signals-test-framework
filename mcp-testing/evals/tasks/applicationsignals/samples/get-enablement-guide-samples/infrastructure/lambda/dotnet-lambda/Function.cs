@@ -28,45 +28,22 @@ public class Function
     public async Task<Dictionary<string, object>> FunctionHandler(Dictionary<string, object> input, ILambdaContext context)
     {
         /**
-         * Self-contained Lambda function that generates internal traffic.
-         * 
-         * Runs for ~10 minutes, calling application functions in a loop.
+         * Lambda function that performs S3 bucket operations.
          */
-        Console.WriteLine("Starting self-contained traffic generation");
+        Console.WriteLine("Starting Lambda execution");
 
-        int duration = 600; // Run for 10 minutes (600 seconds)
-        int interval = 2; // Call every 2 seconds
-
-        var startTime = DateTime.Now;
-        int iteration = 0;
-
-        while ((DateTime.Now - startTime).TotalSeconds < duration)
-        {
-            iteration++;
-            string timestamp = DateTime.Now.ToString("HH:mm:ss");
-
-            Console.WriteLine($"[{timestamp}] Iteration {iteration}: Generating traffic...");
-
-            // Call buckets logic
-            var bucketsResult = await ListBuckets();
-            Console.WriteLine($"[{timestamp}] Buckets check: {bucketsResult["bucket_count"]} buckets found");
-
-            // Sleep between requests
-            await Task.Delay(interval * 1000);
-        }
-
-        double elapsed = (DateTime.Now - startTime).TotalSeconds;
-        Console.WriteLine($"Traffic generation completed. Total iterations: {iteration}, Elapsed time: {elapsed:F2}s");
+        // Call buckets logic
+        var bucketsResult = await ListBuckets();
+        Console.WriteLine($"Buckets check: {bucketsResult["bucket_count"]} buckets found");
 
         return new Dictionary<string, object>
         {
             ["statusCode"] = 200,
-            ["body"] = new Dictionary<string, object>
+            ["body"] = JsonSerializer.Serialize(new Dictionary<string, object>
             {
-                ["message"] = "Traffic generation completed",
-                ["iterations"] = iteration,
-                ["elapsed_seconds"] = elapsed
-            }
+                ["message"] = "Execution completed",
+                ["buckets"] = bucketsResult
+            })
         };
     }
 

@@ -2,5 +2,8 @@
 #checkov:skip=CKV_DOCKER_3:USER not required - build container with short-lived execution for creating deployment artifacts
 FROM gradle:8.5-jdk17
 
+# Install build tools
+RUN apt-get update && apt-get install -y zip && rm -rf /var/lib/apt/lists/*
+
 # Set working directory
 WORKDIR /var/task

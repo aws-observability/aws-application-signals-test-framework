@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # Build script for Java Lambda function
-# Uses Docker to build Lambda deployment package with Gradle
+# Uses Docker to build Lambda deployment package with exact runtime environment
 set -e
 
 # Configuration
@@ -23,7 +23,7 @@ BUILDS_OUTPUT_DIR="../builds"
 OUTPUT_ZIP="java-lambda.zip"
 BUILD_IMAGE="lambda-java-builder:17"
 
-echo "Building Java Lambda function with Docker and Gradle..."
+echo "Building Java Lambda function with Docker..."
 
 # Verify Docker is available
 if ! command -v docker &> /dev/null; then
@@ -52,12 +52,16 @@ cp build.gradle "$BUILD_DIR/"
 # Build in Docker container
 echo "Building package in Docker container..."
 docker run --rm \
+    --entrypoint "" \
     -v "$(pwd)/$BUILD_DIR":/var/task \
     "$BUILD_IMAGE" \
-    gradle clean buildZip
+    bash -c "
+        gradle clean buildZip
+        cp build/distributions/*.zip /var/task/package.zip
+    "
 
-# Copy the built zip to builds directory
-cp "$BUILD_DIR/build/distributions/"*.zip "$BUILDS_OUTPUT_DIR/$OUTPUT_ZIP"
+# Move the zip to builds directory
+mv "$BUILD_DIR/package.zip" "$BUILDS_OUTPUT_DIR/$OUTPUT_ZIP"
 
 # Clean up build directory
 rm -rf "$BUILD_DIR"
