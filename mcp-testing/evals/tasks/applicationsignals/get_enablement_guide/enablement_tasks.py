@@ -217,10 +217,12 @@ class EnablementTask(ApplicationSignalsTask):
 from .configs.ec2_python_docker import EC2_PYTHON_DOCKER_TASKS
 from .configs.ec2_nodejs_docker import EC2_NODEJS_DOCKER_TASKS
 from .configs.ec2_java_docker import EC2_JAVA_DOCKER_TASKS
+from .configs.ecs import ECS_TASKS
 
 # Aggregate all tasks from different configurations
 TASKS = [
     *EC2_PYTHON_DOCKER_TASKS,
     *EC2_NODEJS_DOCKER_TASKS,
     *EC2_JAVA_DOCKER_TASKS,
+    *ECS_TASKS,
 ]
