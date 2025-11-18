@@ -7,5 +7,5 @@
   "handler": "com.example.LambdaHandler::handleRequest",
   "memorySize": 512,
   "runtime": "java17",
-  "timeout": 620
+  "timeout": 30
 }
