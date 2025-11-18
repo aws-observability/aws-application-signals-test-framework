@@ -215,8 +215,10 @@ class EnablementTask(ApplicationSignalsTask):
 # Import task configurations after class definition to avoid circular import
 # TODO: Refactor
 from .configs.ec2_python_docker import EC2_PYTHON_DOCKER_TASKS
+from .configs.ec2_java_docker import EC2_JAVA_DOCKER_TASKS
 
 # Aggregate all tasks from different configurations
 TASKS = [
     *EC2_PYTHON_DOCKER_TASKS,
+    *EC2_JAVA_DOCKER_TASKS,
 ]
