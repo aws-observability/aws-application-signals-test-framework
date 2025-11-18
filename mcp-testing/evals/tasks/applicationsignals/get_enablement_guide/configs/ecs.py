@@ -161,7 +161,7 @@ ECS_TASKS = [
             ADOT_SDK_RUBRIC +
             APPLICATION_RUBIC +
             COMMON_OTEL_ENV_VARS_RUBRIC +
-            PYTHON_OTEL_ENV_VARS_RUBRIC
+            NODEJS_OTEL_ENV_VARS_RUBRIC
         ),
     ),
 
