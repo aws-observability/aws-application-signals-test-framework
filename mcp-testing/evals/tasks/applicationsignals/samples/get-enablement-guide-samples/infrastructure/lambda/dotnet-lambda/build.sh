@@ -13,17 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Build script for Java Lambda function
+# Build script for .NET Lambda function
 # Uses Docker to build Lambda deployment package with exact runtime environment
 set -e
 
 # Configuration
 BUILD_DIR="build"
 BUILDS_OUTPUT_DIR="../builds"
-OUTPUT_ZIP="java-lambda.zip"
-BUILD_IMAGE="lambda-java-builder:17"
+OUTPUT_ZIP="dotnet-lambda.zip"
+BUILD_IMAGE="lambda-dotnet-builder:8.0"
 
-echo "Building Java Lambda function with Docker..."
+echo "Building .NET Lambda function with Docker..."
 
 # Verify Docker is available
 if ! command -v docker &> /dev/null; then
@@ -46,8 +46,8 @@ mkdir -p "$BUILD_DIR"
 
 # Copy source files to build directory
 echo "Copying source files..."
-cp -r src "$BUILD_DIR/"
-cp build.gradle "$BUILD_DIR/"
+cp *.cs "$BUILD_DIR/"
+cp *.csproj "$BUILD_DIR/"
 
 # Build in Docker container
 echo "Building package in Docker container..."
@@ -56,8 +56,9 @@ docker run --rm \
     -v "$(pwd)/$BUILD_DIR":/var/task \
     "$BUILD_IMAGE" \
     bash -c "
-        gradle clean buildZip
-        cp build/distributions/*.zip /var/task/package.zip
+        dotnet publish -c Release -o publish
+        cd publish
+        zip -r /var/task/package.zip . -q
     "
 
 # Move the zip to builds directory
