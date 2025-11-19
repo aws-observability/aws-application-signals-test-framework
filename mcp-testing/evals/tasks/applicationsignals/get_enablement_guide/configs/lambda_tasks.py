@@ -14,7 +14,7 @@
 
 """Lambda enablement task configurations."""
 
-from ..enablement_tasks import EnablementTask, ENABLEMENT_PROMPT
+from ..enablement_tasks import EnablementTask, LAMBDA_ENABLEMENT_PROMPT
 
 
 # Component rubrics for Lambda Application Signals enablement
@@ -64,7 +64,7 @@ LAMBDA_TASKS = [
     # Python Lambda with CDK
     EnablementTask(
         id='lambda_python_cdk',
-        prompt_template=ENABLEMENT_PROMPT,
+        prompt_template=LAMBDA_ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/lambda/cdk',
             'infrastructure/lambda/python-lambda',
@@ -89,7 +89,7 @@ LAMBDA_TASKS = [
     # Python Lambda with Terraform
     EnablementTask(
         id='lambda_python_terraform',
-        prompt_template=ENABLEMENT_PROMPT,
+        prompt_template=LAMBDA_ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/lambda/terraform',
             'infrastructure/lambda/python-lambda',
@@ -114,7 +114,7 @@ LAMBDA_TASKS = [
     # Node.js Lambda with CDK
     EnablementTask(
         id='lambda_nodejs_cdk',
-        prompt_template=ENABLEMENT_PROMPT,
+        prompt_template=LAMBDA_ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/lambda/cdk',
             'infrastructure/lambda/nodejs-lambda',
@@ -139,7 +139,7 @@ LAMBDA_TASKS = [
     # Node.js Lambda with Terraform
     EnablementTask(
         id='lambda_nodejs_terraform',
-        prompt_template=ENABLEMENT_PROMPT,
+        prompt_template=LAMBDA_ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/lambda/terraform',
             'infrastructure/lambda/nodejs-lambda',
@@ -164,7 +164,7 @@ LAMBDA_TASKS = [
     # Java Lambda with CDK
     EnablementTask(
         id='lambda_java_cdk',
-        prompt_template=ENABLEMENT_PROMPT,
+        prompt_template=LAMBDA_ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/lambda/cdk',
             'infrastructure/lambda/java-lambda',
@@ -189,7 +189,7 @@ LAMBDA_TASKS = [
     # Java Lambda with Terraform
     EnablementTask(
         id='lambda_java_terraform',
-        prompt_template=ENABLEMENT_PROMPT,
+        prompt_template=LAMBDA_ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/lambda/terraform',
             'infrastructure/lambda/java-lambda',
@@ -214,7 +214,7 @@ LAMBDA_TASKS = [
     # .NET Lambda with CDK
     EnablementTask(
         id='lambda_dotnet_cdk',
-        prompt_template=ENABLEMENT_PROMPT,
+        prompt_template=LAMBDA_ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/lambda/cdk',
             'infrastructure/lambda/dotnet-lambda',
@@ -239,7 +239,7 @@ LAMBDA_TASKS = [
     # .NET Lambda with Terraform
     EnablementTask(
         id='lambda_dotnet_terraform',
-        prompt_template=ENABLEMENT_PROMPT,
+        prompt_template=LAMBDA_ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/lambda/terraform',
             'infrastructure/lambda/dotnet-lambda',

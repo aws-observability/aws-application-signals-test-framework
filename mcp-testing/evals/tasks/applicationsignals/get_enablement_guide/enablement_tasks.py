@@ -40,10 +40,14 @@ from typing import Optional
 ENABLEMENT_PROMPT = """Enable Application Signals for my {language} {framework} on {platform}.
 
 My infrastructure as code directory is: {iac_abs_path}
+My application directory is: {app_abs_path}"""
+
+LAMBDA_ENABLEMENT_PROMPT = """Enable Application Signals for my {language} {framework} on {platform}.
+
+My infrastructure as code directory is: {iac_abs_path}
 My application directory is: {app_abs_path}
 My AWS Region for Lambda + CDK is: "us-west-2"
-My AWS Region for Lambda + Terraform is: "us-east-1"
-"""
+My AWS Region for Lambda + Terraform is: "us-east-1"""
 
 class EnablementTask(ApplicationSignalsTask):
     """Task for evaluating Application Signals enablement.
