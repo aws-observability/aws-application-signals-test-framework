@@ -220,6 +220,7 @@ from .configs.ec2_java_docker import EC2_JAVA_DOCKER_TASKS
 from .configs.eks_python_docker import EKS_PYTHON_DOCKER_TASKS
 from .configs.eks_nodejs_docker import EKS_NODEJS_DOCKER_TASKS
 from .configs.eks_java_docker import EKS_JAVA_DOCKER_TASKS
+from .configs.ecs import ECS_TASKS
 
 # Aggregate all tasks from different configurations
 TASKS = [
@@ -229,4 +230,5 @@ TASKS = [
     *EKS_PYTHON_DOCKER_TASKS,
     *EKS_NODEJS_DOCKER_TASKS,
     *EKS_JAVA_DOCKER_TASKS
+    *ECS_TASKS,
 ]
