@@ -36,6 +36,7 @@ export class LambdaStack extends cdk.Stack {
       'python3.13': lambda.Runtime.PYTHON_3_13,
       'nodejs20.x': lambda.Runtime.NODEJS_20_X,
       'java17': lambda.Runtime.JAVA_17,
+      'dotnet8': lambda.Runtime.DOTNET_8,
     };
 
     const lambdaRuntime = runtimeMap[config.runtime];

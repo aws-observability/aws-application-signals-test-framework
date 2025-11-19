@@ -1,0 +1,11 @@
+{
+  "artifactPath": "../builds/dotnet-lambda.zip",
+  "environment": {
+    "LOG_LEVEL": "INFO"
+  },
+  "functionName": "DotnetLambdaTerraform",
+  "handler": "DotnetLambda::DotnetLambda.Function::FunctionHandler",
+  "memorySize": 512,
+  "runtime": "dotnet8",
+  "timeout": 30
+}
