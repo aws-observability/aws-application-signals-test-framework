@@ -119,6 +119,9 @@ resource "null_resource" "main_service_setup" {
       sudo dnf install -y dotnet-sdk-${var.language_version}
       sudo yum install unzip -y
 
+    # enable ec2 instance connect for debug
+      sudo yum install ec2-instance-connect -y
+
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
@@ -163,6 +166,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
+      export AWS_REGION="${var.aws_region}"
       export ASPNETCORE_URLS=http://0.0.0.0:8080
       nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_frontend_service.dll &
 
