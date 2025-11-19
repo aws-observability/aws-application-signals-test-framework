@@ -42,6 +42,12 @@ ENABLEMENT_PROMPT = """Enable Application Signals for my {language} {framework} 
 My infrastructure as code directory is: {iac_abs_path}
 My application directory is: {app_abs_path}"""
 
+LAMBDA_ENABLEMENT_PROMPT = """Enable Application Signals for my {language} {framework} on {platform}.
+
+My infrastructure as code directory is: {iac_abs_path}
+My application directory is: {app_abs_path}
+My AWS Region for Lambda + CDK is: "us-west-2"
+My AWS Region for Lambda + Terraform is: "us-east-1"""
 
 class EnablementTask(ApplicationSignalsTask):
     """Task for evaluating Application Signals enablement.
@@ -221,6 +227,7 @@ from .configs.eks_python_docker import EKS_PYTHON_DOCKER_TASKS
 from .configs.eks_nodejs_docker import EKS_NODEJS_DOCKER_TASKS
 from .configs.eks_java_docker import EKS_JAVA_DOCKER_TASKS
 from .configs.ecs import ECS_TASKS
+from .configs.lambda_tasks import LAMBDA_TASKS
 
 # Aggregate all tasks from different configurations
 TASKS = [
@@ -231,4 +238,5 @@ TASKS = [
     *EKS_NODEJS_DOCKER_TASKS,
     *EKS_JAVA_DOCKER_TASKS
     *ECS_TASKS,
+    *LAMBDA_TASKS,
 ]
