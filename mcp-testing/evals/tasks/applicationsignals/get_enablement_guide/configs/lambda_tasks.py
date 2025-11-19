@@ -52,8 +52,8 @@ OTEL_WRAPPER_RUBRIC = [
 
 # Integrity checks
 LAMBDA_INTEGRITY_RUBRIC = [
-    'Integrity: All existing environment variables are preserved (passes if no existing environment variables in original config, or if diff shows existing ones are kept)',
-    'Integrity: All existing layers are preserved (passes if no existing layers in original config, or if diff shows existing ones are kept)', 
+    'Integrity: All existing environment variables, if they existed, are preserved (passes if no existing environment variables in original config, or if diff shows existing ones are kept)',
+    'Integrity: All existing layers, if they existed, are preserved (passes if no existing layers in original config, or if diff shows existing ones are kept)',
     'Integrity: No application code changes required',
     'Integrity: Only Lambda function configuration modified',
 ]
