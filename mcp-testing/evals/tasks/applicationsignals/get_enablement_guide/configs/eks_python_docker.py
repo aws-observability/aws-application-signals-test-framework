@@ -21,7 +21,7 @@ from ..enablement_tasks import EnablementTask, ENABLEMENT_PROMPT
 
 # CloudWatch Agent component
 CLOUDWATCH_AGENT_RUBRIC = [
-    'IAM: CloudWatchAgentServerPolicy and AWSXRayWriteOnlyAccess are attached to EKS role used by worker nodes',
+    'IAM: CloudWatchAgentServerPolicy is attached to EKS role used by worker nodes',
     'CloudWatch Observability EKS add-on: Added to the EKS Cluster',
 ]
 

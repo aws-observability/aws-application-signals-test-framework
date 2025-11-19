@@ -21,13 +21,13 @@ from ..enablement_tasks import EnablementTask, ENABLEMENT_PROMPT
 
 # CloudWatch Agent component
 CLOUDWATCH_AGENT_RUBRIC = [
-    'IAM: CloudWatchAgentServerPolicy and AWSXRayWriteOnlyAccess are attached to EKS role used by worker nodes',
+    'IAM: CloudWatchAgentServerPolicy is attached to EKS role used by worker nodes',
     'CloudWatch Observability EKS add-on: Added to the EKS Cluster',
 ]
 
 # ADOT Java component
 ADOT_JAVA_RUBRIC = [
-    'Kubernetes Deployment: Instrumentation annotation added with inject-python set to true',
+    'Kubernetes Deployment: Instrumentation annotation added with inject-java set to true',
 ]
 
 # Framework-agnostic Java component
