@@ -19,6 +19,11 @@ from ..enablement_tasks import EnablementTask, LAMBDA_ENABLEMENT_PROMPT
 
 # Component rubrics for Lambda Application Signals enablement
 
+# IAM permissions component
+IAM_PERMISSIONS_RUBRIC = [
+    'Lambda: CloudWatchLambdaApplicationSignalsExecutionRolePolicy managed policy attached to execution role',
+]
+
 # X-Ray tracing component
 XRAY_TRACING_RUBRIC = [
     'Lambda: X-Ray active tracing enabled (tracing: lambda.Tracing.ACTIVE or TracingConfig.Mode: Active)',
@@ -79,6 +84,7 @@ LAMBDA_TASKS = [
         expected_tools=['get_enablement_guide'],
         modifies_code=True,
         validation_rubric=(
+            IAM_PERMISSIONS_RUBRIC +
             XRAY_TRACING_RUBRIC +
             PYTHON_ADOT_LAYER_RUBRIC +
             OTEL_WRAPPER_RUBRIC +
@@ -104,6 +110,7 @@ LAMBDA_TASKS = [
         expected_tools=['get_enablement_guide'],
         modifies_code=True,
         validation_rubric=(
+            IAM_PERMISSIONS_RUBRIC +
             XRAY_TRACING_RUBRIC +
             PYTHON_ADOT_LAYER_RUBRIC +
             OTEL_WRAPPER_RUBRIC +
@@ -129,6 +136,7 @@ LAMBDA_TASKS = [
         expected_tools=['get_enablement_guide'],
         modifies_code=True,
         validation_rubric=(
+            IAM_PERMISSIONS_RUBRIC +
             XRAY_TRACING_RUBRIC +
             NODEJS_ADOT_LAYER_RUBRIC +
             OTEL_WRAPPER_RUBRIC +
@@ -154,6 +162,7 @@ LAMBDA_TASKS = [
         expected_tools=['get_enablement_guide'],
         modifies_code=True,
         validation_rubric=(
+            IAM_PERMISSIONS_RUBRIC +
             XRAY_TRACING_RUBRIC +
             NODEJS_ADOT_LAYER_RUBRIC +
             OTEL_WRAPPER_RUBRIC +
@@ -179,6 +188,7 @@ LAMBDA_TASKS = [
         expected_tools=['get_enablement_guide'],
         modifies_code=True,
         validation_rubric=(
+            IAM_PERMISSIONS_RUBRIC +
             XRAY_TRACING_RUBRIC +
             JAVA_ADOT_LAYER_RUBRIC +
             OTEL_WRAPPER_RUBRIC +
@@ -204,6 +214,7 @@ LAMBDA_TASKS = [
         expected_tools=['get_enablement_guide'],
         modifies_code=True,
         validation_rubric=(
+            IAM_PERMISSIONS_RUBRIC +
             XRAY_TRACING_RUBRIC +
             JAVA_ADOT_LAYER_RUBRIC +
             OTEL_WRAPPER_RUBRIC +
@@ -229,6 +240,7 @@ LAMBDA_TASKS = [
         expected_tools=['get_enablement_guide'],
         modifies_code=True,
         validation_rubric=(
+            IAM_PERMISSIONS_RUBRIC +
             XRAY_TRACING_RUBRIC +
             DOTNET_ADOT_LAYER_RUBRIC +
             OTEL_WRAPPER_RUBRIC +
@@ -254,6 +266,7 @@ LAMBDA_TASKS = [
         expected_tools=['get_enablement_guide'],
         modifies_code=True,
         validation_rubric=(
+            IAM_PERMISSIONS_RUBRIC +
             XRAY_TRACING_RUBRIC +
             DOTNET_ADOT_LAYER_RUBRIC +
             OTEL_WRAPPER_RUBRIC +
