@@ -18,41 +18,19 @@ const s3 = new S3Client({});
 
 exports.handler = async (event, context) => {
     /**
-     * Self-contained Lambda function that generates internal traffic.
-     * 
-     * Runs for ~10 minutes, calling application functions in a loop.
+     * Lambda function that performs S3 bucket operations.
      */
-    console.log('Starting self-contained traffic generation');
+    console.log('Starting Lambda execution');
 
-    const duration = 600; // Run for 10 minutes (600 seconds)
-    const interval = 2; // Call every 2 seconds
-
-    const startTime = Date.now();
-    let iteration = 0;
-
-    while ((Date.now() - startTime) / 1000 < duration) {
-        iteration++;
-        const timestamp = new Date().toLocaleTimeString();
-
-        console.log(`[${timestamp}] Iteration ${iteration}: Generating traffic...`);
-
-        // Call buckets logic
-        const bucketsResult = await listBuckets();
-        console.log(`[${timestamp}] Buckets check: ${bucketsResult.bucket_count} buckets found`);
-
-        // Sleep between requests
-        await new Promise(resolve => setTimeout(resolve, interval * 1000));
-    }
-
-    const elapsed = (Date.now() - startTime) / 1000;
-    console.log(`Traffic generation completed. Total iterations: ${iteration}, Elapsed time: ${elapsed.toFixed(2)}s`);
+    // Call buckets logic
+    const bucketsResult = await listBuckets();
+    console.log(`Buckets check: ${bucketsResult.bucket_count} buckets found`);
 
     return {
         statusCode: 200,
         body: JSON.stringify({
-            message: 'Traffic generation completed',
-            iterations: iteration,
-            elapsed_seconds: elapsed
+            message: 'Execution completed',
+            buckets: bucketsResult
         })
     };
 };
