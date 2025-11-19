@@ -169,36 +169,6 @@ provider "kubernetes" {
   }
 }
 
-# Kubernetes ConfigMap for aws-auth
-resource "kubernetes_config_map" "aws_auth" {
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = yamlencode([
-      {
-        rolearn  = aws_iam_role.node_role.arn
-        username = "system:node:{{EC2PrivateDNSName}}"
-        groups   = ["system:bootstrappers", "system:nodes"]
-      },
-      {
-        rolearn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/Admin"
-        username = "admin"
-        groups   = ["system:masters"]
-      },
-      {
-        rolearn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ReadOnly"
-        username = "readonly"
-        groups   = ["system:authenticated"]
-      }
-    ])
-  }
-
-  depends_on = [aws_eks_node_group.app_nodes]
-}
-
 # Kubernetes Deployment
 resource "kubernetes_deployment" "app" {
   metadata {
