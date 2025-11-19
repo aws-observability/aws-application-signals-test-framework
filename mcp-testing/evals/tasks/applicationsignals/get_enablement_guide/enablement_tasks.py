@@ -36,7 +36,6 @@ from loguru import logger
 from pathlib import Path
 from typing import Optional
 
-
 # Prompt templates
 ENABLEMENT_PROMPT = """Enable Application Signals for my {language} {framework} on {platform}.
 
@@ -213,5 +212,15 @@ class EnablementTask(ApplicationSignalsTask):
             logger.warning(f'Failed to reset git state: {e}')
 
 
-# Task definitions
-TASKS = []
+# Import task configurations after class definition to avoid circular import
+# TODO: Refactor
+from .configs.ec2_python_docker import EC2_PYTHON_DOCKER_TASKS
+from .configs.ec2_nodejs_docker import EC2_NODEJS_DOCKER_TASKS
+from .configs.ec2_java_docker import EC2_JAVA_DOCKER_TASKS
+
+# Aggregate all tasks from different configurations
+TASKS = [
+    *EC2_PYTHON_DOCKER_TASKS,
+    *EC2_NODEJS_DOCKER_TASKS,
+    *EC2_JAVA_DOCKER_TASKS,
+]
