@@ -90,6 +90,26 @@ cdk destroy <stack-name>
 | java-springboot    | JavaSpringBootCdkStack   |
 | nodejs-express     | NodejsExpressCdkStack    |
 
+#### Using Terraform
+
+```bash
+cd infrastructure/ec2/terraform
+
+terraform init
+
+terraform apply -var-file="<var-file>"
+
+terraform destroy -var-file="<var-file>"
+```
+
+| Language-Framework | Variables File                   |
+|--------------------|----------------------------------|
+| dotnet-aspnetcore  | config/dotnet-aspnetcore.tfvars  |
+| python-flask       | config/python-flask.tfvars       |
+| python-django      | config/python-django.tfvars      |
+| java-springboot    | config/java-springboot.tfvars    |
+| nodejs-express     | config/nodejs-express.tfvars     |
+
 ### EKS Deployment
 
 #### Using CDK
