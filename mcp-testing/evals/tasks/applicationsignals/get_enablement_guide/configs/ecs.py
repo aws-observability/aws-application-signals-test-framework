@@ -76,6 +76,13 @@ JAVA_ADOT_SDK_RUBRIC = [
     'ADOT SDK: CMD has copy javaagent from ADOT SDK container to volumeMount in application container',
 ]
 
+# OpenTelemetry Java environment variables
+DOTNET_OTEL_ENV_VARS_RUBRIC = [
+    'Integrity: -e DOTNET_ADDITIONAL_DEPS=/otel-auto-instrumentation-dotnet/AdditionalDeps',
+    'Integrity: -e DOTNET_SHARED_STORE=/otel-auto-instrumentation-dotnet/store',
+    'Integrity: -e DOTNET_STARTUP_HOOKS=/otel-auto-instrumentation-dotnet/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll',
+    'Integrity: -e OTEL_DOTNET_AUTO_HOME=/otel-auto-instrumentation-dotnet',
+]
 
 # Task definitions - compose rubrics from components
 ECS_TASKS = [
@@ -182,6 +189,58 @@ ECS_TASKS = [
             COMMON_OTEL_ENV_VARS_RUBRIC +
             JAVA_OTEL_ENV_VARS_RUBRIC +
             JAVA_ADOT_SDK_RUBRIC
+        ),
+    ),
+
+    # CDK - .NET
+    EnablementTask(
+        id='ecs_dotnet_cdk',
+        prompt_template=ENABLEMENT_PROMPT,
+        git_paths=[
+            'infrastructure/ecs/cdk',
+            'docker-apps/dotnet/aspnetcore',
+        ],
+        iac_dir='infrastructure/ecs/cdk',
+        app_dir='docker-apps/dotnet/aspnetcore',
+        language='dotnet',
+        framework='aspnetcore',
+        platform='ecs',
+        build_command='npm install && npm run build',
+        build_working_dir='infrastructure/ecs/cdk',
+        expected_tools=['get_enablement_guide'],
+        modifies_code=True,
+        validation_rubric=(
+            CLOUDWATCH_AGENT_RUBRIC +
+            ADOT_SDK_RUBRIC +
+            APPLICATION_RUBIC +
+            COMMON_OTEL_ENV_VARS_RUBRIC +
+            DOTNET_OTEL_ENV_VARS_RUBRIC
+        ),
+    ),
+
+    # Terraform - .NET
+    EnablementTask(
+        id='ecs_dotnet_terraform',
+        prompt_template=ENABLEMENT_PROMPT,
+        git_paths=[
+            'infrastructure/ecs/terraform',
+            'docker-apps/dotnet/aspnetcore',
+        ],
+        iac_dir='infrastructure/ecs/terraform',
+        app_dir='docker-apps/dotnet/aspnetcore',
+        language='dotnet',
+        framework='aspnetcore',
+        platform='ecs',
+        build_command='terraform init && terraform validate',
+        build_working_dir='infrastructure/ecs/terraform',
+        expected_tools=['get_enablement_guide'],
+        modifies_code=True,
+        validation_rubric=(
+            CLOUDWATCH_AGENT_RUBRIC +
+            ADOT_SDK_RUBRIC +
+            APPLICATION_RUBIC +
+            COMMON_OTEL_ENV_VARS_RUBRIC +
+            DOTNET_OTEL_ENV_VARS_RUBRIC
         ),
     ),
 ]
