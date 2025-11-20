@@ -202,6 +202,7 @@ resource "aws_ecs_task_definition" "app" {
       essential           = true
       memory              = 512
       readonlyRootFilesystem = true
+      user                = "0:0"
 
       environment = [
         {
