@@ -13,10 +13,7 @@
 # limitations under the License.
 
 # Use the official Node.js image as the base
-FROM node:20-alpine
-
-# Install curl
-RUN apk add --no-cache curl
+FROM public.ecr.aws/docker/library/node:20
 
 # Set working directory
 WORKDIR /app
