@@ -201,7 +201,7 @@ resource "aws_ecs_task_definition" "app" {
       image               = local.ecr_image_uri
       essential           = true
       memory              = 512
-      readonlyRootFilesystem = true
+      readonlyRootFilesystem = false
       user                = "0:0"
 
       environment = [
