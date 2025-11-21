@@ -95,7 +95,7 @@ export class ECSAppStack extends cdk.Stack {
       image: ecs.ContainerImage.fromRegistry(ecrImageUri),
       essential: true,
       memoryReservationMiB: 512,
-      readonlyRootFilesystem: true,
+      readonlyRootFilesystem: false,
       environment: {
         PORT: config.port.toString(),
       },

@@ -61,6 +61,10 @@ PYTHON_OTEL_ENV_VARS_RUBRIC = [
     'Integrity: -e PYTHONPATH includes volumeMount from ADOT Python container and auto_instrumentation of the volumeMount',
 ]
 
+PYTHON_DJANGO_ENV_VARS_RUBRIC = [
+    'Integrity: -e DJANGO_SETTINGS_MODULE set to django application settings module',
+]
+
 # OpenTelemetry Node.js environment variables for CJS applications
 NODEJS_OTEL_ENV_VARS_RUBRIC = [
     'Integrity: -e NODE_OPTIONS=--require /otel-auto-instrumentation-node/autoinstrumentation.js',
@@ -87,9 +91,9 @@ DOTNET_OTEL_ENV_VARS_RUBRIC = [
 # Task definitions - compose rubrics from components
 ECS_TASKS = [
 
-    # CDK - Python
+    # CDK - Python Flask
     EnablementTask(
-        id='ecs_python_cdk',
+        id='ecs_python_flask_cdk',
         prompt_template=ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/ecs/cdk',
@@ -113,9 +117,9 @@ ECS_TASKS = [
         ),
     ),
 
-    # Terraform - Python
+    # Terraform - Python Flask
     EnablementTask(
-        id='ecs_python_terraform',
+        id='ecs_python_flask_terraform',
         prompt_template=ENABLEMENT_PROMPT,
         git_paths=[
             'infrastructure/ecs/terraform',
@@ -136,6 +140,60 @@ ECS_TASKS = [
             APPLICATION_RUBIC +
             COMMON_OTEL_ENV_VARS_RUBRIC +
             PYTHON_OTEL_ENV_VARS_RUBRIC
+        ),
+    ),
+
+    # CDK - Python Django
+    EnablementTask(
+        id='ecs_python_django_cdk',
+        prompt_template=ENABLEMENT_PROMPT,
+        git_paths=[
+            'infrastructure/ecs/cdk',
+            'docker-apps/python/django',
+        ],
+        iac_dir='infrastructure/ecs/cdk',
+        app_dir='docker-apps/python/django',
+        language='python',
+        framework='django',
+        platform='ecs',
+        build_command='npm install && npm run build',
+        build_working_dir='infrastructure/ecs/cdk',
+        expected_tools=['get_enablement_guide'],
+        modifies_code=True,
+        validation_rubric=(
+            CLOUDWATCH_AGENT_RUBRIC +
+            ADOT_SDK_RUBRIC +
+            APPLICATION_RUBIC +
+            COMMON_OTEL_ENV_VARS_RUBRIC +
+            PYTHON_OTEL_ENV_VARS_RUBRIC +
+            PYTHON_DJANGO_ENV_VARS_RUBRIC
+        ),
+    ),
+
+    # Terraform - Python Django
+    EnablementTask(
+        id='ecs_python_django_terraform',
+        prompt_template=ENABLEMENT_PROMPT,
+        git_paths=[
+            'infrastructure/ecs/terraform',
+            'docker-apps/python/django',
+        ],
+        iac_dir='infrastructure/ecs/terraform',
+        app_dir='docker-apps/python/django',
+        language='python',
+        framework='django',
+        platform='ecs',
+        build_command='terraform init && terraform validate',
+        build_working_dir='infrastructure/ecs/terraform',
+        expected_tools=['get_enablement_guide'],
+        modifies_code=True,
+        validation_rubric=(
+            CLOUDWATCH_AGENT_RUBRIC +
+            ADOT_SDK_RUBRIC +
+            APPLICATION_RUBIC +
+            COMMON_OTEL_ENV_VARS_RUBRIC +
+            PYTHON_OTEL_ENV_VARS_RUBRIC +
+            PYTHON_DJANGO_ENV_VARS_RUBRIC
         ),
     ),
 
@@ -161,7 +219,7 @@ ECS_TASKS = [
             ADOT_SDK_RUBRIC +
             APPLICATION_RUBIC +
             COMMON_OTEL_ENV_VARS_RUBRIC +
-            PYTHON_OTEL_ENV_VARS_RUBRIC
+            NODEJS_OTEL_ENV_VARS_RUBRIC
         ),
     ),
 
