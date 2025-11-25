@@ -11,11 +11,16 @@ export interface AppConfig {
   language: string;
   port: number;
   healthCheckPath: string;
+  platform?: 'linux' | 'windows';
 }
 
 export class EKSAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, config: AppConfig, props?: cdk.StackProps) {
     super(scope, id, props);
+
+    // Default to linux if platform not specified
+    const platform = config.platform || 'linux';
+    const isWindows = platform === 'windows';
 
     const ecrImageUri = `${this.account}.dkr.ecr.${this.region}.amazonaws.com/${config.imageName}:latest`;
 
@@ -80,6 +85,8 @@ export class EKSAppStack extends cdk.Stack {
         id: launchTemplate.ref,
         version: launchTemplate.attrLatestVersionNumber,
       },
+      // Set AMI type based on platform
+      amiType: isWindows ? 'WINDOWS_CORE_2022_x86_64' : 'AL2_x86_64',
     });
 
     nodeGroup.addDependency(cluster.node.defaultChild as cdk.CfnResource);
@@ -96,6 +103,10 @@ export class EKSAppStack extends cdk.Stack {
         template: {
           metadata: { labels: { app: config.appName } },
           spec: {
+            // Add node selector for platform
+            nodeSelector: {
+              'kubernetes.io/os': platform
+            },
             containers: [{
               name: config.appName,
               image: ecrImageUri,
@@ -104,7 +115,13 @@ export class EKSAppStack extends cdk.Stack {
                 { name: 'PORT', value: config.port.toString() },
                 { name: 'AWS_REGION', value: this.region }
               ],
-              lifecycle: {
+              lifecycle: isWindows ? {
+                postStart: {
+                  exec: {
+                    command: ['powershell', '-Command', 'Start-Process powershell -ArgumentList "-File C:\\app\\generate-traffic.ps1" -WindowStyle Hidden']
+                  }
+                }
+              } : {
                 postStart: {
                   exec: {
                     command: ['sh', '-c', 'nohup bash /app/generate-traffic.sh > /dev/null 2>&1 &']
@@ -150,6 +167,11 @@ export class EKSAppStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'Language', {
       value: config.language,
       description: 'Application language',
+    });
+
+    new cdk.CfnOutput(this, 'Platform', {
+      value: platform,
+      description: 'Application platform (linux/windows)',
     });
   }
 }
