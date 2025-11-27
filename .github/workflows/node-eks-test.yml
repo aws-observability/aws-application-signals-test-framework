@@ -243,11 +243,11 @@ jobs:
               -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
               -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
               -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
+              -var="rds_mysql_cluster_database=information_schema" \
               -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
               -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
-              -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' \
               -var='account_id=${{ env.ACCOUNT_ID }}' \
-            || deployment_failed=$?          
+            || deployment_failed=$?
 
             if [ $deployment_failed -ne 0 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
