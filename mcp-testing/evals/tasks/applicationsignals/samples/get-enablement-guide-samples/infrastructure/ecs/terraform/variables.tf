@@ -33,3 +33,9 @@ variable "log_retention_in_days" {
     error_message = "Log retention must be at least 365 days (1 year) for security compliance."
   }
 }
+
+variable "health_check_path" {
+  description = "Health check path"
+  type        = string
+  default     = "/health"
+}
