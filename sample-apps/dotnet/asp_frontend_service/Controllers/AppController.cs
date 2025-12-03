@@ -56,8 +56,7 @@ public class AppController : ControllerBase
             pipelineMeterProvider = Sdk.CreateMeterProviderBuilder()
                 .SetResourceBuilder(ResourceBuilder.CreateDefault().AddAttributes(new Dictionary<string, object>
                 {
-                    ["service.name"] = serviceName,
-                    ["deployment.environment.name"] = deploymentEnv
+                    ["service.name"] = serviceName
                 }))
                 .AddOtlpExporter(options =>
                 {
