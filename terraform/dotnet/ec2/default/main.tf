@@ -154,6 +154,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
       export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics
       export OTEL_METRICS_EXPORTER=otlp
       export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics
