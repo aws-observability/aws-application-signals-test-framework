@@ -1,6 +1,7 @@
 # OpenTelemetry Custom Metrics Validation Templates - AWS SDK Call Only
 # ANY_VALUE defines a string to = 'ANY_VALUE' to pass validation testing
 # Custom export templates
+# cloud.account.id is not being parsed correctly when using {{accountId}}, value has been replace with "ANY_VALUE".
 -
   metricName: agent_based_counter
   namespace: {{metricNamespace}}
@@ -37,7 +38,7 @@
       value: aws
     -
       name: cloud.account.id
-      value: {{accountId}}
+      value: ANY_VALUE
     -
       name: host.name
       value: ANY_VALUE
@@ -110,7 +111,7 @@
       value: aws
     -
       name: cloud.account.id
-      value: {{accountId}}
+      value: ANY_VALUE
     -
       name: host.name
       value: ANY_VALUE
@@ -183,7 +184,7 @@
       value: aws
     -
       name: cloud.account.id
-      value: {{accountId}}
+      value: ANY_VALUE
     -
       name: host.name
       value: ANY_VALUE
