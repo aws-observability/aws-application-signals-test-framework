@@ -48,7 +48,28 @@
       name: host.id
       value: ANY_VALUE
     -
-      name: telemetry.auto.version
+      name: telemetry.distro.version
+      value: ANY_VALUE
+    -
+      name: telemetry.distro.name
+      value: ANY_VALUE
+    -
+      name: process.runtime.version
+      value: ANY_VALUE
+    -
+      name: process.pid
+      value: ANY_VALUE
+    -
+      name: container.id
+      value: ANY_VALUE
+    -
+      name: process.owner
+      value: ANY_VALUE
+    -
+      name: process.runtime.name
+      value: ANY_VALUE
+    -
+      name: process.runtime.description
       value: ANY_VALUE
     -
       name: cloud.platform
@@ -100,7 +121,28 @@
       name: host.id
       value: ANY_VALUE
     -
-      name: telemetry.auto.version
+      name: telemetry.distro.version
+      value: ANY_VALUE
+    -
+      name: telemetry.distro.name
+      value: ANY_VALUE
+    -
+      name: process.runtime.version
+      value: ANY_VALUE
+    -
+      name: process.pid
+      value: ANY_VALUE
+    -
+      name: container.id
+      value: ANY_VALUE
+    -
+      name: process.owner
+      value: ANY_VALUE
+    -
+      name: process.runtime.name
+      value: ANY_VALUE
+    -
+      name: process.runtime.description
       value: ANY_VALUE
     -
       name: cloud.platform
@@ -152,7 +194,28 @@
       name: host.id
       value: ANY_VALUE
     -
-      name: telemetry.auto.version
+      name: telemetry.distro.version
+      value: ANY_VALUE
+    -
+      name: telemetry.distro.name
+      value: ANY_VALUE
+    -
+      name: process.runtime.version
+      value: ANY_VALUE
+    -
+      name: process.pid
+      value: ANY_VALUE
+    -
+      name: container.id
+      value: ANY_VALUE
+    -
+      name: process.owner
+      value: ANY_VALUE
+    -
+      name: process.runtime.name
+      value: ANY_VALUE
+    -
+      name: process.runtime.description
       value: ANY_VALUE
     -
       name: cloud.platform
@@ -172,15 +235,6 @@
     -
       name: Operation
       value: pipeline_counter
-    -
-      name: telemetry.sdk.name
-      value: opentelemetry
-    -
-      name: telemetry.sdk.language
-      value: dotnet
-    -
-      name: telemetry.sdk.version
-      value: ANY_VALUE
 -
   metricName: custom_pipeline_histogram
   namespace: {{metricNamespace}}
@@ -194,15 +248,6 @@
     -
       name: Operation
       value: pipeline_histogram
-    -
-      name: telemetry.sdk.name
-      value: opentelemetry
-    -
-      name: telemetry.sdk.language
-      value: dotnet
-    -
-      name: telemetry.sdk.version
-      value: ANY_VALUE
 -
   metricName: custom_pipeline_gauge
   namespace: {{metricNamespace}}
@@ -216,12 +261,3 @@
     -
       name: Operation
       value: pipeline_gauge
-    -
-      name: telemetry.sdk.name
-      value: opentelemetry
-    -
-      name: telemetry.sdk.language
-      value: dotnet
-    -
-      name: telemetry.sdk.version
-      value: ANY_VALUE
