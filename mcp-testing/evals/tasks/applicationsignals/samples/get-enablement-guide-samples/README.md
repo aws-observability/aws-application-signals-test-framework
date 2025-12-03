@@ -57,12 +57,13 @@ docker buildx build --platform linux/amd64,linux/arm64 \
   .
 ```
 
-| Language-Framework | App Directory                | ECR Repo        |
-|--------------------|------------------------------|-----------------|
-| python-flask       | docker-apps/python/flask     | python-flask    |
-| python-django      | docker-apps/python/django    | python-django   |
-| java-springboot    | docker-apps/java/spring-boot | java-springboot |
-| nodejs-express     | docker-apps/nodejs/express   | nodejs-express  |
+| Language-Framework | App Directory                 | ECR Repo          |
+|--------------------|-------------------------------|-------------------|
+| dotnet-aspnetcore  | docker-apps/dotnet/aspnetcore | dotnet-aspnetcore |
+| python-flask       | docker-apps/python/flask      | python-flask      |
+| python-django      | docker-apps/python/django     | python-django     |
+| java-springboot    | docker-apps/java/spring-boot  | java-springboot   |
+| nodejs-express     | docker-apps/nodejs/express    | nodejs-express    |
 
 ## Deployment Platforms
 
@@ -81,12 +82,33 @@ cdk deploy <stack-name>
 cdk destroy <stack-name>
 ```
 
-| Language-Framework | Stack Name             |
-|--------------------|------------------------|
-| python-flask       | PythonFlaskCdkStack    |
-| python-django      | PythonDjangoCdkStack   |
-| java-springboot    | JavaSpringBootCdkStack |
-| nodejs-express     | NodejsExpressCdkStack  |
+| Language-Framework | Stack Name               |
+|--------------------|--------------------------|
+| dotnet-aspnetcore  | DotnetAspnetcoreCdkStack |
+| python-flask       | PythonFlaskCdkStack      |
+| python-django      | PythonDjangoCdkStack     |
+| java-springboot    | JavaSpringBootCdkStack   |
+| nodejs-express     | NodejsExpressCdkStack    |
+
+#### Using Terraform
+
+```bash
+cd infrastructure/ec2/terraform
+
+terraform init
+
+terraform apply -var-file="<var-file>"
+
+terraform destroy -var-file="<var-file>"
+```
+
+| Language-Framework | Variables File                   |
+|--------------------|----------------------------------|
+| dotnet-aspnetcore  | config/dotnet-aspnetcore.tfvars  |
+| python-flask       | config/python-flask.tfvars       |
+| python-django      | config/python-django.tfvars      |
+| java-springboot    | config/java-springboot.tfvars    |
+| nodejs-express     | config/nodejs-express.tfvars     |
 
 ### EKS Deployment
 
@@ -106,12 +128,13 @@ cdk deploy <stack-name>
 cdk destroy <stack-name>
 ```
 
-| Language-Framework | Stack Name                |
-|--------------------|---------------------------|
-| python-flask       | PythonFlaskEksCdkStack    |
-| python-django      | PythonDjangoEksCdkStack   |
-| java-springboot    | JavaSpringBootEksCdkStack |
-| nodejs-express     | NodejsExpressEksCdkStack  |
+| Language-Framework | Stack Name                   |
+|--------------------|------------------------------|
+| dotnet-aspnetcore  | DotnetAspnetcoreEksCdkStack  |
+| python-flask       | PythonFlaskEksCdkStack       |
+| python-django      | PythonDjangoEksCdkStack      |
+| java-springboot    | JavaSpringBootEksCdkStack    |
+| nodejs-express     | NodejsExpressEksCdkStack     |
 
 #### Using Terraform
 
@@ -156,12 +179,13 @@ terraform destroy -var-file="<var-file>"
 
 ##### Configuration Reference
 
-| Language-Framework | Variables File                |
-|--------------------|-------------------------------|
-| python-flask       | config/python-flask.tfvars    |
-| python-django      | config/python-django.tfvars   |
-| java-springboot    | config/java-springboot.tfvars |
-| nodejs-express     | config/nodejs-express.tfvars  |
+| Language-Framework | Variables File                   |
+|--------------------|----------------------------------|
+| dotnet-aspnetcore  | config/dotnet-aspnetcore.tfvars |
+| python-flask       | config/python-flask.tfvars      |
+| python-django      | config/python-django.tfvars     |
+| java-springboot    | config/java-springboot.tfvars   |
+| nodejs-express     | config/nodejs-express.tfvars    |
 
 ### Lambda
 
@@ -209,6 +233,7 @@ cdk destroy <stack-name>
 | python   | python.json  | PythonLambdaCdkStack | PythonLambdaCdk | builds/python-lambda.zip  |
 | nodejs   | nodejs.json  | NodejsLambdaCdkStack | NodejsLambdaCdk | builds/nodejs-lambda.zip  |
 | java     | java.json    | JavaLambdaCdkStack   | JavaLambdaCdk   | builds/java-lambda.zip    |
+| dotnet   | dotnet.json  | DotnetLambdaCdkStack | DotnetLambdaCdk | builds/dotnet-lambda.zip  |
 
 **Using Terraform:**
 
@@ -228,6 +253,7 @@ terraform destroy -var="config_file=<config-file>"
 | python   | python.json  | PythonLambdaTerraform  | builds/python-lambda.zip  |
 | nodejs   | nodejs.json  | NodejsLambdaTerraform  | builds/nodejs-lambda.zip  |
 | java     | java.json    | JavaLambdaTerraform    | builds/java-lambda.zip    |
+| dotnet   | dotnet.json  | DotnetLambdaTerraform  | builds/dotnet-lambda.zip  |
 
 **Note:** You must run the build script before deploying. If you modify Lambda code or dependencies, rebuild before redeploying.
 
@@ -240,11 +266,13 @@ After deployment, manually invoke the Lambda function to start generating intern
 aws lambda invoke --function-name PythonLambdaCdk --invocation-type Event /dev/stdout
 aws lambda invoke --function-name NodejsLambdaCdk --invocation-type Event /dev/stdout
 aws lambda invoke --function-name JavaLambdaCdk --invocation-type Event /dev/stdout
+aws lambda invoke --function-name DotnetLambdaCdk --invocation-type Event /dev/stdout
 
 # For Terraform:
 aws lambda invoke --function-name PythonLambdaTerraform --invocation-type Event /dev/stdout
 aws lambda invoke --function-name NodejsLambdaTerraform --invocation-type Event /dev/stdout
 aws lambda invoke --function-name JavaLambdaTerraform --invocation-type Event /dev/stdout
+aws lambda invoke --function-name DotnetLambdaTerraform --invocation-type Event /dev/stdout
 ```
 
 Each invocation executes quickly, listing S3 buckets. Invoke multiple times to generate more traffic. Execution logs can be monitored in CloudWatch Logs.

@@ -74,16 +74,40 @@ resource "aws_iam_role" "node_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "node_policy" {
-  for_each = toset([
-    "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
-    "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
-    "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-    "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
-    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-  ])
-  policy_arn = each.value
+resource "aws_iam_role_policy_attachment" "node_worker_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.node_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "node_cni_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  role       = aws_iam_role.node_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "node_ecr_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+  role       = aws_iam_role.node_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "node_s3_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+  role       = aws_iam_role.node_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "node_ssm_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  role       = aws_iam_role.node_role.name
+}
+
+# Launch template for metadata options
+resource "aws_launch_template" "node_template" {
+  name_prefix = "${var.app_name}-node-"
+  
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 3
+  }
 }
 
 # EKS Cluster
@@ -95,7 +119,7 @@ resource "aws_eks_cluster" "app_cluster" {
   vpc_config {
     subnet_ids              = data.aws_subnets.public.ids
     endpoint_private_access = true
-    endpoint_public_access  = false
+    endpoint_public_access  = true
   }
 
   depends_on = [
@@ -118,47 +142,19 @@ resource "aws_eks_node_group" "app_nodes" {
 
   instance_types = ["t3.medium"]
 
-  # Launch template for IMDSv2 configuration
   launch_template {
-    name    = aws_launch_template.node_group_lt.name
-    version = aws_launch_template.node_group_lt.latest_version
+    id      = aws_launch_template.node_template.id
+    version = "$Latest"
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.node_policy
+    aws_launch_template.node_template,
+    aws_iam_role_policy_attachment.node_worker_policy,
+    aws_iam_role_policy_attachment.node_cni_policy,
+    aws_iam_role_policy_attachment.node_ecr_policy,
+    aws_iam_role_policy_attachment.node_s3_policy,
+    aws_iam_role_policy_attachment.node_ssm_policy
   ]
-}
-
-# Launch template for EKS node group with IMDSv2 hop limit
-resource "aws_launch_template" "node_group_lt" {
-  name_prefix   = "${var.app_name}-node-group-"
-  image_id      = data.aws_ami.eks_worker.id
-  instance_type = "t3.medium"
-
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 2
-    instance_metadata_tags      = "disabled"
-  }
-
-  tag_specifications {
-    resource_type = "instance"
-    tags = {
-      Name = "${var.app_name}-node"
-    }
-  }
-}
-
-# Get the latest EKS optimized AMI
-data "aws_ami" "eks_worker" {
-  filter {
-    name   = "name"
-    values = ["amazon-eks-node-1.30-v*"]
-  }
-
-  most_recent = true
-  owners      = ["602401143452"] # Amazon EKS AMI Account ID
 }
 
 # Configure Kubernetes provider
@@ -171,36 +167,6 @@ provider "kubernetes" {
     command     = "aws"
     args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.app_cluster.name]
   }
-}
-
-# Kubernetes ConfigMap for aws-auth
-resource "kubernetes_config_map" "aws_auth" {
-  metadata {
-    name      = "aws-auth"
-    namespace = "kube-system"
-  }
-
-  data = {
-    mapRoles = yamlencode([
-      {
-        rolearn  = aws_iam_role.node_role.arn
-        username = "system:node:{{EC2PrivateDNSName}}"
-        groups   = ["system:bootstrappers", "system:nodes"]
-      },
-      {
-        rolearn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/Admin"
-        username = "admin"
-        groups   = ["system:masters"]
-      },
-      {
-        rolearn  = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ReadOnly"
-        username = "readonly"
-        groups   = ["system:authenticated"]
-      }
-    ])
-  }
-
-  depends_on = [aws_eks_node_group.app_nodes]
 }
 
 # Kubernetes Deployment

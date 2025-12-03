@@ -36,13 +36,18 @@ from loguru import logger
 from pathlib import Path
 from typing import Optional
 
-
 # Prompt templates
 ENABLEMENT_PROMPT = """Enable Application Signals for my {language} {framework} on {platform}.
 
 My infrastructure as code directory is: {iac_abs_path}
 My application directory is: {app_abs_path}"""
 
+LAMBDA_ENABLEMENT_PROMPT = """Enable Application Signals for my {language} {framework} on {platform}.
+
+My infrastructure as code directory is: {iac_abs_path}
+My application directory is: {app_abs_path}
+My AWS Region for Lambda + CDK is: "us-west-2"
+My AWS Region for Lambda + Terraform is: "us-east-1"""
 
 class EnablementTask(ApplicationSignalsTask):
     """Task for evaluating Application Signals enablement.
@@ -213,5 +218,29 @@ class EnablementTask(ApplicationSignalsTask):
             logger.warning(f'Failed to reset git state: {e}')
 
 
-# Task definitions
-TASKS = []
+# Import task configurations after class definition to avoid circular import
+# TODO: Refactor
+from .configs.ec2_python_docker import EC2_PYTHON_DOCKER_TASKS
+from .configs.ec2_nodejs_docker import EC2_NODEJS_DOCKER_TASKS
+from .configs.ec2_java_docker import EC2_JAVA_DOCKER_TASKS
+from .configs.ec2_dotnet_docker import EC2_DOTNET_DOCKER_TASKS
+from .configs.eks_python_docker import EKS_PYTHON_DOCKER_TASKS
+from .configs.eks_nodejs_docker import EKS_NODEJS_DOCKER_TASKS
+from .configs.eks_java_docker import EKS_JAVA_DOCKER_TASKS
+from .configs.eks_dotnet_docker import EKS_DOTNET_DOCKER_TASKS
+from .configs.ecs import ECS_TASKS
+from .configs.lambda_tasks import LAMBDA_TASKS
+
+# Aggregate all tasks from different configurations
+TASKS = [
+    *EC2_PYTHON_DOCKER_TASKS,
+    *EC2_NODEJS_DOCKER_TASKS,
+    *EC2_JAVA_DOCKER_TASKS,
+    *EC2_DOTNET_DOCKER_TASKS,
+    *EKS_PYTHON_DOCKER_TASKS,
+    *EKS_NODEJS_DOCKER_TASKS,
+    *EKS_JAVA_DOCKER_TASKS,
+    *EKS_DOTNET_DOCKER_TASKS,
+    *ECS_TASKS,
+    *LAMBDA_TASKS,
+]

@@ -23,7 +23,7 @@ const app = new cdk.App();
 // Use account/region from environment or CLI config
 const env = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
-  region: process.env.CDK_DEFAULT_REGION,
+  region: process.env.CDK_DEFAULT_REGION_OVERRIDE || process.env.CDK_DEFAULT_REGION,
 };
 
 // Read all config files from config directory

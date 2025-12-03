@@ -12,36 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Use the official Node.js image as the base
-FROM public.ecr.aws/docker/library/node:20
+FROM mcr.microsoft.com/dotnet/sdk:9.0
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files first for better layer caching
-COPY package*.json ./
+# Install curl for traffic generation
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies
-RUN npm ci --only=production
+COPY AspNetCoreApp.csproj .
+RUN dotnet restore AspNetCoreApp.csproj
 
-# Copy app to image
-COPY . ./
+COPY . .
+RUN dotnet publish AspNetCoreApp.csproj -c Release -o out
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV HOST=0.0.0.0
-ENV PORT=8080
+# Create non-root user for security
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
 
-# Change ownership to the built-in node user
-RUN chown -R node:node /app
+ENV ASPNETCORE_URLS=http://+:5000
 
-USER node
-
-# Expose the port that the app will run on
-EXPOSE 8080
+EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:5000/health || exit 1
 
-# Command to start the application
-CMD ["npm", "run", "start"]
+CMD ["dotnet", "out/AspNetCoreApp.dll"]

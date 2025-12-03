@@ -18,8 +18,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -30,47 +28,20 @@ public class LambdaHandler implements RequestHandler<Map<String, Object>, Map<St
     @Override
     public Map<String, Object> handleRequest(Map<String, Object> event, Context context) {
         /**
-         * Self-contained Lambda function that generates internal traffic.
-         * 
-         * Runs for ~10 minutes, calling application functions in a loop.
+         * Lambda function that performs S3 bucket operations.
          */
-        System.out.println("Starting self-contained traffic generation");
+        System.out.println("Starting Lambda execution");
         
-        int duration = 600; // Run for 10 minutes (600 seconds)
-        int interval = 2; // Call every 2 seconds
-        
-        long startTime = System.currentTimeMillis();
-        int iteration = 0;
-        
-        while ((System.currentTimeMillis() - startTime) / 1000 < duration) {
-            iteration++;
-            String timestamp = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            
-            System.out.println(String.format("[%s] Iteration %d: Generating traffic...", timestamp, iteration));
-            
-            // Call buckets logic
-            Map<String, Object> bucketsResult = listBuckets();
-            System.out.println(String.format("[%s] Buckets check: %s buckets found", timestamp, bucketsResult.get("bucket_count")));
-            
-            // Sleep between requests
-            try {
-                Thread.sleep(interval * 1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-        
-        double elapsed = (System.currentTimeMillis() - startTime) / 1000.0;
-        System.out.println(String.format("Traffic generation completed. Total iterations: %d, Elapsed time: %.2fs", iteration, elapsed));
+        // Call buckets logic
+        Map<String, Object> bucketsResult = listBuckets();
+        System.out.println(String.format("Buckets check: %s buckets found", bucketsResult.get("bucket_count")));
         
         Map<String, Object> response = new HashMap<>();
         response.put("statusCode", 200);
         
         Map<String, Object> body = new HashMap<>();
-        body.put("message", "Traffic generation completed");
-        body.put("iterations", iteration);
-        body.put("elapsed_seconds", elapsed);
+        body.put("message", "Execution completed");
+        body.put("buckets", bucketsResult);
         response.put("body", body);
         
         return response;
