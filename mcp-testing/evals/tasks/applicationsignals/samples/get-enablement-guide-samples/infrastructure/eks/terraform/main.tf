@@ -140,11 +140,21 @@ resource "aws_eks_node_group" "app_nodes" {
     min_size     = 1
   }
 
-  instance_types = ["t3.medium"]
+  instance_types = [var.platform == "windows" ? "t3.large" : "t3.medium"]
+  ami_type       = var.platform == "windows" ? "WINDOWS_CORE_2022_x86_64" : "AL2_x86_64"
 
   launch_template {
     id      = aws_launch_template.node_template.id
     version = "$Latest"
+  }
+
+  dynamic "taint" {
+    for_each = var.platform == "windows" ? [1] : []
+    content {
+      key    = "os"
+      value  = "windows"
+      effect = "NO_SCHEDULE"
+    }
   }
 
   depends_on = [
@@ -167,6 +177,62 @@ provider "kubernetes" {
     command     = "aws"
     args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.app_cluster.name]
   }
+}
+
+# Manually manage aws-auth ConfigMap to ensure Windows nodes can join
+resource "kubernetes_config_map" "aws_auth" {
+  count = var.platform == "windows" ? 1 : 0
+  
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    # This maps the generic IAM Role (aws_iam_role.node_role) to the necessary RBAC groups
+    mapRoles = jsonencode([
+      {
+        # ARN of the role used by all worker nodes (Linux and Windows)
+        rolearn  = aws_iam_role.node_role.arn
+        username = "system:node:{{EC2PrivateDNSName}}"
+        # Crucial: Must include 'eks:kube-proxy-windows' group
+        groups   = ["system:bootstrappers", "system:nodes", "eks:kube-proxy-windows"]
+      }
+    ])
+  }
+
+  # Ensure the cluster and the kubernetes provider are available first
+  depends_on = [
+    aws_eks_cluster.app_cluster,
+    aws_eks_node_group.app_nodes, # Wait for the initial node group creation to stabilize the default config map
+  ]
+}
+
+# Attach the required policy for the VPC Resource Controller (needed for Windows IPAM)
+resource "aws_iam_role_policy_attachment" "cluster_vpc_resource_controller_policy" {
+  count      = var.platform == "windows" ? 1 : 0
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+  role       = aws_iam_role.cluster_role.name
+}
+
+# Explicitly configure the CNI to enable Windows IP address management
+resource "kubernetes_config_map" "vpc_cni_windows_ipam" {
+  count = var.platform == "windows" ? 1 : 0
+  
+  metadata {
+    name      = "amazon-vpc-cni"
+    namespace = "kube-system"
+  }
+
+  data = {
+    "enable-windows-ipam" = "true"
+  }
+
+  depends_on = [
+    aws_eks_cluster.app_cluster,
+    # This dependency ensures the controller has permission before the configmap is modified
+    aws_iam_role_policy_attachment.cluster_vpc_resource_controller_policy
+  ]
 }
 
 # Kubernetes Deployment
@@ -192,6 +258,19 @@ resource "kubernetes_deployment" "app" {
       }
 
       spec {
+        node_selector = {
+          "kubernetes.io/os" = var.platform
+        }
+
+        dynamic "toleration" {
+          for_each = var.platform == "windows" ? [1] : []
+          content {
+            key    = "os"
+            value  = "windows"
+            effect = "NoSchedule"
+          }
+        }
+
         container {
           image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${var.image_name}:latest"
           name  = var.app_name
@@ -213,7 +292,10 @@ resource "kubernetes_deployment" "app" {
           lifecycle {
             post_start {
               exec {
-                command = ["sh", "-c", "nohup bash /app/generate-traffic.sh > /dev/null 2>&1 &"]
+                command = var.platform == "windows" ? [
+                  "powershell", "-Command", 
+                  "Start-Process powershell -ArgumentList '-File C:\\app\\generate-traffic.ps1' -WindowStyle Hidden"
+                ] : ["sh", "-c", "nohup bash /app/generate-traffic.sh > /dev/null 2>&1 &"]
               }
             }
           }

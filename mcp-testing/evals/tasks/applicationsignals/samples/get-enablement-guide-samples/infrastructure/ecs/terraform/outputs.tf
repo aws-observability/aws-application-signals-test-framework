@@ -17,3 +17,8 @@ output "language" {
   description = "Application language"
   value       = var.language
 }
+
+output "platform" {
+  description = "Application platform (linux/windows)"
+  value       = var.platform
+}

@@ -28,6 +28,12 @@ export class EKSAppStack extends cdk.Stack {
       isDefault: true,
     });
 
+    // Filter out problematic AZs that don't support EKS
+    const eksUnsupportedAzs = ['us-east-1e'];
+    const availableSubnets = vpc.publicSubnets.filter(subnet =>
+      !eksUnsupportedAzs.includes(subnet.availabilityZone)
+    );
+
     // IAM role for EKS nodes with same permissions as EC2
     const nodeRole = new iam.Role(this, 'NodeRole', {
       assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
@@ -43,11 +49,10 @@ export class EKSAppStack extends cdk.Stack {
     const cluster = new eks.Cluster(this, 'AppCluster', {
       vpc,
       version: eks.KubernetesVersion.V1_30,
-      defaultCapacity: 0,
+      defaultCapacity: isWindows ? 1 : 0, // Windows requires Linux nodes for system pods
       kubectlLayer: new KubectlV30Layer(this, 'KubectlLayer'),
       vpcSubnets: [{
-        subnetType: ec2.SubnetType.PUBLIC,
-        onePerAz: true,
+        subnets: availableSubnets,
       }],
     });
 
@@ -60,11 +65,35 @@ export class EKSAppStack extends cdk.Stack {
       groups: ['system:authenticated'],
     });
 
+    if (isWindows) {
+      cluster.awsAuth.addRoleMapping(nodeRole, {
+        groups: ['system:bootstrappers', 'system:nodes', 'eks:kube-proxy-windows'],
+        username: 'system:node:{{EC2PrivateDNSName}}'
+      });
+
+      // Configure the VPC CNI Add-on using the native CfnAddon
+      new eks.CfnAddon(this, 'VpcCniAddonWindowsConfig', {
+        addonName: 'vpc-cni',
+        clusterName: cluster.clusterName,
+        // The configurationValues must be a JSON string of the configuration schema
+        configurationValues: JSON.stringify({
+          "enableWindowsIpam": "true"
+        }),
+        // Overwrite any default settings if necessary
+        resolveConflicts: "OVERWRITE",
+      });
+
+      cluster.role.addManagedPolicy(
+        iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEKSVPCResourceController')
+      );
+    }
+
+
     // Create launch template with IMDSv2 hop limit configuration
     const launchTemplate = new ec2.CfnLaunchTemplate(this, 'NodeGroupLaunchTemplate', {
       launchTemplateData: {
         metadataOptions: {
-          httpPutResponseHopLimit: 2,
+          httpPutResponseHopLimit: 3,
           httpTokens: 'required',
         },
       },
@@ -74,8 +103,8 @@ export class EKSAppStack extends cdk.Stack {
     const nodeGroup = new eks.CfnNodegroup(this, 'DefaultNodeGroup', {
       clusterName: cluster.clusterName,
       nodeRole: nodeRole.roleArn,
-      subnets: vpc.publicSubnets.map(subnet => subnet.subnetId),
-      instanceTypes: ['t3.medium'],
+      subnets: availableSubnets.map(subnet => subnet.subnetId),
+      instanceTypes: isWindows ? ['t3.large'] : ['t3.medium'], // Windows needs larger instances
       scalingConfig: {
         minSize: 1,
         maxSize: 1,
@@ -87,9 +116,14 @@ export class EKSAppStack extends cdk.Stack {
       },
       // Set AMI type based on platform
       amiType: isWindows ? 'WINDOWS_CORE_2022_x86_64' : 'AL2_x86_64',
+      ...(isWindows && {
+        taints: [{
+          key: 'os',
+          value: 'windows',
+          effect: 'NO_SCHEDULE',
+        }],
+      }),
     });
-
-    nodeGroup.addDependency(cluster.node.defaultChild as cdk.CfnResource);
 
     const deployment = {
       apiVersion: 'apps/v1',
@@ -107,6 +141,13 @@ export class EKSAppStack extends cdk.Stack {
             nodeSelector: {
               'kubernetes.io/os': platform
             },
+            ...(isWindows && {
+              tolerations: [{
+                key: 'os',
+                value: 'windows',
+                effect: 'NoSchedule',
+              }],
+            }),
             containers: [{
               name: config.appName,
               image: ecrImageUri,
