@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Traffic generator script for .NET Framework application
-$BaseUrl = "http://localhost"
+# Traffic generator script for ASP.NET Core application
+$Port = if ($env:PORT) { $env:PORT } else { "5000" }
+$BaseUrl = "http://localhost:$Port"
 
 Write-Host "Starting continuous traffic generation to $BaseUrl"
 
@@ -23,7 +24,7 @@ while ($true) {
 
     try {
         # Health check
-        $response = Invoke-WebRequest -Uri "$BaseUrl/health.aspx" -UseBasicParsing -TimeoutSec 5
+        $response = Invoke-WebRequest -Uri "$BaseUrl/Health.aspx" -UseBasicParsing -TimeoutSec 5
         if ($response.StatusCode -ne 200) {
             Write-Host "[$timestamp] ERROR: Health check failed with status $($response.StatusCode)!"
         }

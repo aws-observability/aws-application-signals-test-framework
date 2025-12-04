@@ -16,10 +16,15 @@ FROM mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2022
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
+# Install .NET Framework 4.8 Developer Pack
+RUN Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=2088517' -OutFile 'C:\ndp48-devpack-enu.exe'; \
+    Start-Process 'C:\ndp48-devpack-enu.exe' -ArgumentList '/quiet' -Wait; \
+    Remove-Item 'C:\ndp48-devpack-enu.exe'
+
 # Install NuGet and restore packages
 RUN Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile 'C:\nuget.exe'
 
-WORKDIR /inetpub/wwwroot
+WORKDIR /app
 
 # Copy project files
 COPY FrameworkApp.csproj .
@@ -34,18 +39,21 @@ COPY . .
 # Build the application
 RUN C:\Windows\Microsoft.NET\Framework64\v4.0.30319\MSBuild.exe FrameworkApp.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=bin\
 
-# Install curl for health checks and traffic generation
-RUN Invoke-WebRequest -Uri 'https://curl.se/windows/dl-8.4.0_6/curl-8.4.0_6-win64-mingw.zip' -OutFile 'curl.zip'; \
-    Expand-Archive curl.zip -DestinationPath C:\; \
-    Move-Item 'C:\curl-8.4.0_6-win64-mingw\bin\curl.exe' 'C:\Windows\System32\curl.exe'; \
-    Remove-Item curl.zip, 'C:\curl-8.4.0_6-win64-mingw' -Recurse -Force
+# Copy built application to IIS wwwroot
+RUN Copy-Item -Path "C:\app\*" -Destination "C:\inetpub\wwwroot" -Recurse -Force
 
-EXPOSE 80
+EXPOSE 5000
+
+# Configure IIS application pool and port
+RUN Import-Module WebAdministration; \
+    Set-ItemProperty -Path 'IIS:\AppPools\DefaultAppPool' -Name processModel.identityType -Value ApplicationPoolIdentity; \
+    Set-ItemProperty -Path 'IIS:\AppPools\DefaultAppPool' -Name recycling.periodicRestart.time -Value '00:00:00'; \
+    Remove-WebBinding -Name 'Default Web Site' -Port 80; \
+    New-WebBinding -Name 'Default Web Site' -Port 5000 -Protocol http
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/health.aspx || exit 1
+    CMD powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:5000/Health.aspx' -UseBasicParsing -TimeoutSec 3 | Out-Null; exit 0 } catch { exit 1 }"
 
-# Copy traffic generation script
-COPY generate-traffic.ps1 C:\generate-traffic.ps1
+# Traffic generation script is already in /app from earlier COPY
 
-CMD ["powershell", "-Command", "Start-Process powershell -ArgumentList '-File C:\\generate-traffic.ps1' -WindowStyle Hidden; C:\\ServiceMonitor.exe w3svc"]
+CMD ["C:\\ServiceMonitor.exe", "w3svc"]
