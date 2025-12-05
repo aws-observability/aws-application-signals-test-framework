@@ -28,6 +28,9 @@ The testing flow is:
 - Docker with buildx support for multi-platform builds
 - AWS ECR repository access
 
+### For EC2 Native Deployments
+- AWS S3 bucket access for application package storage
+
 ### Build and Push Images to ECR
 
 ```bash
@@ -66,6 +69,34 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 | java-springboot    | docker-apps/java/spring-boot  | java-springboot   |
 | nodejs-express     | docker-apps/nodejs/express    | nodejs-express    |
 
+### Build and Push Images to S3
+
+```bash
+# Navigate to app directory (see table above)
+cd <app-directory>
+
+# Create zip file of all contents
+zip -r app.zip .
+
+# Set variables
+export AWS_REGION=$(aws configure get region || echo "us-east-1")
+export S3_BUCKET_NAME="<your-bucket-name>" # Choose your bucket name
+
+# Create S3 bucket (if it doesn't exist)
+aws s3 mb s3://$S3_BUCKET_NAME --region $AWS_REGION 2>/dev/null || true
+
+# Upload zip file to S3
+aws s3 cp app.zip s3://$S3_BUCKET_NAME/
+
+# Clean up local zip file
+rm app.zip
+```
+
+| Language-Framework | App Directory                 |
+|--------------------|-------------------------------|
+| dotnet-aspnetcore  | docker-apps/dotnet/aspnetcore |
+| dotnet-framework   | docker-apps/dotnet/framework  |
+
 ## Deployment Platforms
 
 ### EC2 Deployment
@@ -73,7 +104,11 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 #### Using CDK
 
 ```bash
+# For containerized EC2 deployments:
 cd infrastructure/ec2/cdk
+
+# For native EC2 deployments:
+cd infrastructure/ec2/cdk-native
 
 # Install dependencies (first time only)
 npm install
@@ -82,6 +117,8 @@ cdk deploy <stack-name>
 
 cdk destroy <stack-name>
 ```
+
+Below are the available stacks for Containerized EC2 deployments:
 
 | Language-Framework | Stack Name               |
 |--------------------|--------------------------|
@@ -92,10 +129,22 @@ cdk destroy <stack-name>
 | java-springboot    | JavaSpringBootCdkStack   |
 | nodejs-express     | NodejsExpressCdkStack    |
 
+Below are the available stacks for Native EC2 deployments:
+
+| Language-Framework         | Stack Name                         |
+|----------------------------|------------------------------------|
+| dotnet-aspnetcore-windows  | DotnetAspnetcoreWindowsNativeStack |
+| dotnet-framework-windows   | DotnetFrameworkWindowsNativeStack  |
+
+
 #### Using Terraform
 
 ```bash
+# For containerized EC2 deployments:
 cd infrastructure/ec2/terraform
+
+# For native EC2 deployments:
+cd infrastructure/ec2/terraform-native
 
 terraform init
 
@@ -104,13 +153,23 @@ terraform apply -var-file="<var-file>"
 terraform destroy -var-file="<var-file>"
 ```
 
+Below are the available variables files for Containerized EC2 deployments:
+
 | Language-Framework | Variables File                   |
 |--------------------|----------------------------------|
 | dotnet-aspnetcore  | config/dotnet-aspnetcore.tfvars  |
+| dotnet-framework   | config/dotnet-framework.tfvars   |
 | python-flask       | config/python-flask.tfvars       |
 | python-django      | config/python-django.tfvars      |
 | java-springboot    | config/java-springboot.tfvars    |
 | nodejs-express     | config/nodejs-express.tfvars     |
+
+Below are the available variables files for Native EC2 deployments:
+
+| Language-Framework         | Variables File                            |
+|----------------------------|-------------------------------------------|
+| dotnet-aspnetcore-windows  | config/dotnet-aspnetcore-windows.tfvars   |
+| dotnet-framework-windows   | config/dotnet-aspnetcore-framework.tfvars |
 
 ### EKS Deployment
 
