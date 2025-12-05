@@ -186,10 +186,19 @@ resource "aws_ecs_task_definition" "app" {
   family                   = var.app_name
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "512"
-  memory                   = "1024"
+  cpu                      = var.platform == "windows" ? "1024" : "512"
+  memory                   = var.platform == "windows" ? "2048" : "1024"
   execution_role_arn       = aws_iam_role.task_execution_role.arn
   task_role_arn           = aws_iam_role.task_role.arn
+
+  # Windows-specific runtime platform
+  dynamic "runtime_platform" {
+    for_each = var.platform == "windows" ? [1] : []
+    content {
+      operating_system_family = "WINDOWS_SERVER_2022_CORE"
+      cpu_architecture        = "X86_64"
+    }
+  }
 
   volume {
     name = "tmp"
@@ -200,9 +209,9 @@ resource "aws_ecs_task_definition" "app" {
       name                = "application"
       image               = local.ecr_image_uri
       essential           = true
-      memory              = 512
+      memory              = var.platform == "windows" ? 1024 : 512
       readonlyRootFilesystem = false
-      user                = "0:0"
+      user                = var.platform == "windows" ? null : "0:0"
 
       environment = [
         {
@@ -237,11 +246,14 @@ resource "aws_ecs_task_definition" "app" {
     },
     {
       name      = "curl-sidecar"
-      image     = "curlimages/curl:8.1.2"
+      image     = var.platform == "windows" ? "mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2022" : "curlimages/curl:8.1.2"
       essential = false
-      memory    = 128
+      memory    = var.platform == "windows" ? 256 : 128
 
-      command = [
+      command = var.platform == "windows" ? [
+        "powershell", "-Command",
+        "Write-Host 'Starting PowerShell sidecar...'; Start-Sleep 30; while ($$true) { Write-Host \"$$(Get-Date): Curling localhost:${var.port}/api/buckets\"; try { Invoke-WebRequest -Uri \"http://localhost:${var.port}/api/buckets\" -UseBasicParsing } catch { Write-Host 'Curl failed' }; Start-Sleep 60 }"
+      ] : [
         "sh", "-c",
         "echo 'Starting curl sidecar...'; sleep 30; while true; do echo \"$(date): Curling localhost:${var.port}/api/buckets\"; curl -f localhost:${var.port}/api/buckets || echo 'Curl failed'; sleep 60; done"
       ]

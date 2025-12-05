@@ -39,3 +39,13 @@ variable "health_check_path" {
   type        = string
   default     = "/health"
 }
+
+variable "platform" {
+  description = "Application platform (linux or windows)"
+  type        = string
+  default     = "linux"
+  validation {
+    condition     = contains(["linux", "windows"], var.platform)
+    error_message = "Platform must be either 'linux' or 'windows'."
+  }
+}
