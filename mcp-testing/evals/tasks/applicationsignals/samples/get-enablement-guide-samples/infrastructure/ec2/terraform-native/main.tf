@@ -26,9 +26,7 @@ provider "aws" {
 }
 
 locals {
-  user_data = var.windows_type == "framework" ? local.framework_user_data : local.aspnetcore_user_data
-  
-  framework_user_data = <<-EOF
+  user_data = <<-EOF
 <powershell>
 Start-Transcript -Path "C:\deployment.log" -Append
 Write-Host "Starting application deployment..."
@@ -45,6 +43,7 @@ Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "dotnet-
 powershell -ExecutionPolicy Bypass -File dotnet-install.ps1 -Channel 9.0 -InstallDir "C:\Program Files\dotnet"
 Remove-Item "dotnet-install.ps1"
 
+%{ if var.windows_type == "framework" ~}
 # Install NuGet CLI
 Write-Host "Installing NuGet CLI..."
 Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "C:\nuget.exe"
@@ -55,6 +54,7 @@ Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2088517" -OutFil
 Start-Process "C:\ndp48-devpack-enu.exe" -ArgumentList "/quiet" -Wait
 Remove-Item "C:\ndp48-devpack-enu.exe"
 Write-Host ".NET Framework 4.8 Developer Pack installed"
+%{ endif ~}
 
 # Install IIS and ASP.NET features
 Write-Host "Installing IIS and ASP.NET features..."
@@ -75,6 +75,10 @@ Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementConsole -All
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-IIS6ManagementCompatibility -All
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-Metabase -All
 Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45 -All
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-NetFxExtensibility -All
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIExtensions -All
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIFilter -All
+Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementService -All
 
 # Refresh PATH environment variable
 $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User") + ";C:\Program Files\dotnet"
@@ -96,27 +100,32 @@ Expand-Archive -Path C:\app\app.zip -DestinationPath C:\app -Force
 [Environment]::SetEnvironmentVariable("PORT", "${var.port}", "Process")
 [Environment]::SetEnvironmentVariable("AWS_REGION", "${var.aws_region}", "Process")
 
-# Start .NET Framework application
-Write-Host "Starting .NET Framework application..."
-Import-Module WebAdministration
+# Wait for IIS features to be fully installed
+Start-Sleep -Seconds 30
+Import-Module WebAdministration -Force
 
-# Build the application first
+%{ if var.windows_type == "framework" ~}
+# Build .NET Framework application
 Write-Host "Building .NET Framework application..."
 Set-Location "C:\app"
-
-# Install NuGet packages directly
-Write-Host "Installing NuGet packages..."
 C:\nuget.exe install packages.config -OutputDirectory packages
-
-# Build the application
-Write-Host "Building application with MSBuild..."
 C:\Windows\Microsoft.NET\Framework64\v4.0.30319\MSBuild.exe FrameworkApp.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=bin\
-
-# Ensure IIS is running
-Start-Service W3SVC
-
-# Copy application to IIS wwwroot
 Copy-Item -Path "C:\app\*" -Destination "C:\inetpub\wwwroot" -Recurse -Force
+%{ else ~}
+# Install ASP.NET Core Hosting Bundle
+Write-Host "Installing ASP.NET Core Hosting Bundle..."
+Invoke-WebRequest -Uri "https://dotnetcli.azureedge.net/dotnet/aspnetcore/Runtime/9.0.0/dotnet-hosting-9.0.0-win.exe" -OutFile "C:\dotnet-hosting.exe"
+Start-Process "C:\dotnet-hosting.exe" -ArgumentList "/quiet" -Wait
+Remove-Item "C:\dotnet-hosting.exe"
+
+# Build and publish ASP.NET Core application
+Write-Host "Building ASP.NET Core application..."
+Set-Location "C:\app"
+dotnet publish --configuration Release --output "C:\inetpub\wwwroot"
+%{ endif ~}
+
+# Start IIS and configure
+Start-Service W3SVC
 
 # Configure IIS port
 if ($env:PORT -and $env:PORT -ne "80") {
@@ -125,76 +134,19 @@ if ($env:PORT -and $env:PORT -ne "80") {
     Write-Host "IIS configured to use port $env:PORT"
 }
 
-# Create application pool if it doesn't exist
-if (!(Get-IISAppPool -Name "DefaultAppPool" -ErrorAction SilentlyContinue)) {
-    New-WebAppPool -Name "DefaultAppPool"
+# Configure application pool
+if (Get-IISAppPool -Name "DefaultAppPool" -ErrorAction SilentlyContinue) {
+    Remove-WebAppPool -Name "DefaultAppPool"
 }
-
-# Start the application pool
+New-WebAppPool -Name "DefaultAppPool"
+Set-ItemProperty -Path "IIS:\AppPools\DefaultAppPool" -Name "processModel.identityType" -Value "ApplicationPoolIdentity"
+%{ if var.windows_type != "framework" ~}
+Set-ItemProperty -Path "IIS:\AppPools\DefaultAppPool" -Name "managedRuntimeVersion" -Value ""
+iisreset
+%{ endif ~}
 Start-WebAppPool -Name "DefaultAppPool"
 
-Write-Host "IIS application deployed and started"
-
-# Wait for application to start
-Start-Sleep -Seconds 10
-
-# Start traffic generator
-Write-Host "Starting traffic generator..."
-Start-Process powershell -ArgumentList "-File C:\app\generate-traffic.ps1" -WindowStyle Hidden
-
-Write-Host "Application deployed and traffic generation started"
-</powershell>
-EOF
-
-  aspnetcore_user_data = <<-EOF
-<powershell>
-Start-Transcript -Path "C:\deployment.log" -Append
-Write-Host "Starting application deployment..."
-
-# Install AWS CLI
-Write-Host "Installing AWS CLI..."
-Invoke-WebRequest -Uri "https://awscli.amazonaws.com/AWSCLIV2.msi" -OutFile "C:\AWSCLIV2.msi"
-Start-Process msiexec.exe -Wait -ArgumentList "/i C:\AWSCLIV2.msi /quiet"
-Remove-Item "C:\AWSCLIV2.msi"
-
-# Install .NET SDK
-Write-Host "Installing .NET SDK..."
-Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "dotnet-install.ps1"
-powershell -ExecutionPolicy Bypass -File dotnet-install.ps1 -Channel 9.0 -InstallDir "C:\Program Files\dotnet"
-Remove-Item "dotnet-install.ps1"
-
-# Refresh PATH environment variable
-$env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User") + ";C:\Program Files\dotnet"
-Write-Host "All installations complete, PATH updated"
-
-# Create application directory
-New-Item -ItemType Directory -Force -Path C:\app
-Set-Location C:\app
-
-# Download application from S3
-Write-Host "Downloading application from s3://${var.s3_bucket_name}/${var.s3_object_key}"
-aws s3 cp s3://${var.s3_bucket_name}/${var.s3_object_key} C:\app\app.zip
-
-# Extract application
-Write-Host "Extracting application..."
-Expand-Archive -Path C:\app\app.zip -DestinationPath C:\app -Force
-
-# Set environment variables
-[Environment]::SetEnvironmentVariable("PORT", "${var.port}", "Process")
-[Environment]::SetEnvironmentVariable("AWS_REGION", "${var.aws_region}", "Process")
-
-# Start .NET Core/ASP.NET Core application
-Write-Host "Starting ASP.NET Core application..."
-if (Test-Path "C:\app\*.csproj") {
-    Write-Host "Building ASP.NET Core application..."
-    dotnet build --configuration Release
-    Write-Host "Starting ASP.NET Core application..."
-    $process = Start-Process -FilePath "dotnet" -ArgumentList "run --configuration Release" -WorkingDirectory "C:\app" -PassThru -WindowStyle Hidden
-    Write-Host "Application started with PID: $($process.Id)"
-} else {
-    Write-Error "No .NET project file found"
-    exit 1
-}
+Write-Host "Application deployed and started"
 
 # Wait for application to start
 Start-Sleep -Seconds 10

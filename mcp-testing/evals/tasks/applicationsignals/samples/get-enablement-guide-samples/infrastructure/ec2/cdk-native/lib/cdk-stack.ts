@@ -78,16 +78,18 @@ export class EC2NativeWindowsAppStack extends cdk.Stack {
       'powershell -ExecutionPolicy Bypass -File dotnet-install.ps1 -Channel 9.0 -InstallDir "C:\\Program Files\\dotnet"',
       'Remove-Item "dotnet-install.ps1"',
       '',
-      '# Install NuGet CLI',
-      'Write-Host "Installing NuGet CLI..."',
-      'Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "C:\\nuget.exe"',
-      '',
-      '# Install .NET Framework 4.8 Developer Pack',
-      'Write-Host "Installing .NET Framework 4.8 Developer Pack..."',
-      'Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2088517" -OutFile "C:\\ndp48-devpack-enu.exe"',
-      'Start-Process "C:\\ndp48-devpack-enu.exe" -ArgumentList "/quiet" -Wait',
-      'Remove-Item "C:\\ndp48-devpack-enu.exe"',
-      'Write-Host ".NET Framework 4.8 Developer Pack installed"',
+      ...(config.windowsType === 'framework' ? [
+        '# Install NuGet CLI',
+        'Write-Host "Installing NuGet CLI..."',
+        'Invoke-WebRequest -Uri "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile "C:\\nuget.exe"',
+        '',
+        '# Install .NET Framework 4.8 Developer Pack',
+        'Write-Host "Installing .NET Framework 4.8 Developer Pack..."',
+        'Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2088517" -OutFile "C:\\ndp48-devpack-enu.exe"',
+        'Start-Process "C:\\ndp48-devpack-enu.exe" -ArgumentList "/quiet" -Wait',
+        'Remove-Item "C:\\ndp48-devpack-enu.exe"',
+        'Write-Host ".NET Framework 4.8 Developer Pack installed"',
+      ] : []),
       '',
       '# Install IIS and ASP.NET features',
       'Write-Host "Installing IIS and ASP.NET features..."',
@@ -108,6 +110,10 @@ export class EC2NativeWindowsAppStack extends cdk.Stack {
       'Enable-WindowsOptionalFeature -Online -FeatureName IIS-IIS6ManagementCompatibility -All',
       'Enable-WindowsOptionalFeature -Online -FeatureName IIS-Metabase -All',
       'Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45 -All',
+      'Enable-WindowsOptionalFeature -Online -FeatureName IIS-NetFxExtensibility -All',
+      'Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIExtensions -All',
+      'Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIFilter -All',
+      'Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementService -All',
       '',
       '# Refresh PATH environment variable for all installed tools',
       '$env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User") + ";C:\\Program Files\\dotnet"',
@@ -129,8 +135,53 @@ export class EC2NativeWindowsAppStack extends cdk.Stack {
       `[Environment]::SetEnvironmentVariable("PORT", "${config.port}", "Process")`,
       `[Environment]::SetEnvironmentVariable("AWS_REGION", "${this.region}", "Process")`,
       '',
-      '# Start application based on language',
-      this.getStartCommand(config),
+      '# Wait for IIS features to be fully installed',
+      'Start-Sleep -Seconds 30',
+      'Import-Module WebAdministration -Force',
+      '',
+      ...(config.windowsType === 'framework' ? [
+        '# Build .NET Framework application',
+        'Write-Host "Building .NET Framework application..."',
+        'Set-Location "C:\\app"',
+        'C:\\nuget.exe install packages.config -OutputDirectory packages',
+        'C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe FrameworkApp.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=bin\\\\',
+        'Copy-Item -Path "C:\\app\\*" -Destination "C:\\inetpub\\wwwroot" -Recurse -Force',
+      ] : [
+        '# Install ASP.NET Core Hosting Bundle',
+        'Write-Host "Installing ASP.NET Core Hosting Bundle..."',
+        'Invoke-WebRequest -Uri "https://dotnetcli.azureedge.net/dotnet/aspnetcore/Runtime/9.0.0/dotnet-hosting-9.0.0-win.exe" -OutFile "C:\\dotnet-hosting.exe"',
+        'Start-Process "C:\\dotnet-hosting.exe" -ArgumentList "/quiet" -Wait',
+        'Remove-Item "C:\\dotnet-hosting.exe"',
+        '',
+        '# Build and publish ASP.NET Core application',
+        'Write-Host "Building ASP.NET Core application..."',
+        'Set-Location "C:\\app"',
+        'dotnet publish --configuration Release --output "C:\\inetpub\\wwwroot"',
+      ]),
+      '',
+      '# Start IIS and configure',
+      'Start-Service W3SVC',
+      '',
+      '# Configure IIS port',
+      'if ($env:PORT -and $env:PORT -ne "80") {',
+      '    Remove-WebBinding -Name "Default Web Site" -Port 80 -ErrorAction SilentlyContinue',
+      '    New-WebBinding -Name "Default Web Site" -Port $env:PORT -Protocol http',
+      '    Write-Host "IIS configured to use port $env:PORT"',
+      '}',
+      '',
+      '# Configure application pool',
+      'if (Get-IISAppPool -Name "DefaultAppPool" -ErrorAction SilentlyContinue) {',
+      '    Remove-WebAppPool -Name "DefaultAppPool"',
+      '}',
+      'New-WebAppPool -Name "DefaultAppPool"',
+      'Set-ItemProperty -Path "IIS:\\AppPools\\DefaultAppPool" -Name "processModel.identityType" -Value "ApplicationPoolIdentity"',
+      ...(config.windowsType !== 'framework' ? [
+        'Set-ItemProperty -Path "IIS:\\AppPools\\DefaultAppPool" -Name "managedRuntimeVersion" -Value ""',
+        'iisreset',
+      ] : []),
+      'Start-WebAppPool -Name "DefaultAppPool"',
+      '',
+      'Write-Host "Application deployed and started"',
       '',
       '# Wait for application to start',
       'Start-Sleep -Seconds 10',
@@ -195,61 +246,5 @@ export class EC2NativeWindowsAppStack extends cdk.Stack {
     });
   }
 
-  private getStartCommand(config: AppConfig): string {
-    if (config.windowsType === 'framework') {
-      return `
-# Start .NET Framework application
-Write-Host "Starting .NET Framework application..."
-Import-Module WebAdministration
 
-# Build the application first
-Write-Host "Building .NET Framework application..."
-Set-Location "C:\\app"
-
-# Install NuGet packages directly
-Write-Host "Installing NuGet packages..."
-C:\\nuget.exe install packages.config -OutputDirectory packages
-
-# Build the application
-Write-Host "Building application with MSBuild..."
-C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe FrameworkApp.csproj /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=bin\\
-
-# Ensure IIS is running
-Start-Service W3SVC
-
-# Copy application to IIS wwwroot
-Copy-Item -Path "C:\\app\\*" -Destination "C:\\inetpub\\wwwroot" -Recurse -Force
-
-# Configure IIS port
-if ($env:PORT -and $env:PORT -ne "80") {
-    Remove-WebBinding -Name "Default Web Site" -Port 80 -ErrorAction SilentlyContinue
-    New-WebBinding -Name "Default Web Site" -Port $env:PORT -Protocol http
-    Write-Host "IIS configured to use port $env:PORT"
-}
-
-# Create application pool if it doesn't exist
-if (!(Get-IISAppPool -Name "DefaultAppPool" -ErrorAction SilentlyContinue)) {
-    New-WebAppPool -Name "DefaultAppPool"
-}
-
-# Start the application pool
-Start-WebAppPool -Name "DefaultAppPool"
-
-Write-Host "IIS application deployed and started"`;
-    } else {
-      return `
-# Start .NET Core/ASP.NET Core application
-Write-Host "Starting ASP.NET Core application..."
-if (Test-Path "C:\\app\\*.csproj") {
-    Write-Host "Building ASP.NET Core application..."
-    dotnet build --configuration Release
-    Write-Host "Starting ASP.NET Core application..."
-    $process = Start-Process -FilePath "dotnet" -ArgumentList "run --configuration Release" -WorkingDirectory "C:\\app" -PassThru -WindowStyle Hidden
-    Write-Host "Application started with PID: $($process.Id)"
-} else {
-    Write-Error "No .NET project file found"
-    exit 1
-}`;
-    }
-  }
 }

@@ -61,12 +61,15 @@
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="AWSSDK.Core">
       <HintPath>packages\AWSSDK.Core.3.7.500\lib\net45\AWSSDK.Core.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="AWSSDK.S3">
       <HintPath>packages\AWSSDK.S3.3.7.500\lib\net45\AWSSDK.S3.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
     </Reference>
   </ItemGroup>
 
