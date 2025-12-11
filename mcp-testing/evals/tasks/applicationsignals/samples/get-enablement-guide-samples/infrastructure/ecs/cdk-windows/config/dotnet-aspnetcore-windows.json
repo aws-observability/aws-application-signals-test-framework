@@ -1,0 +1,7 @@
+{
+  "appName": "dotnet-aspnetcore-windows-ecs-cdk",
+  "healthCheckPath": "/health",
+  "imageName": "dotnet-aspnetcore-windows",
+  "language": "dotnet",
+  "port": 5000
+}

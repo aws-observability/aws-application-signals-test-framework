@@ -301,4 +301,56 @@ ECS_TASKS = [
             DOTNET_OTEL_ENV_VARS_RUBRIC
         ),
     ),
+
+    # CDK - .NET Windows
+    EnablementTask(
+        id='ecs_dotnet_windows_cdk',
+        prompt_template=ENABLEMENT_PROMPT,
+        git_paths=[
+            'infrastructure/ecs/cdk-windows',
+            'docker-apps/dotnet/aspnetcore',
+        ],
+        iac_dir='infrastructure/ecs/cdk-windows',
+        app_dir='docker-apps/dotnet/aspnetcore',
+        language='dotnet',
+        framework='aspnetcore',
+        platform='ecs',
+        build_command='npm install && npm run build',
+        build_working_dir='infrastructure/ecs/cdk-windows',
+        expected_tools=['get_enablement_guide'],
+        modifies_code=True,
+        validation_rubric=(
+            CLOUDWATCH_AGENT_RUBRIC +
+            ADOT_SDK_RUBRIC +
+            APPLICATION_RUBIC +
+            COMMON_OTEL_ENV_VARS_RUBRIC +
+            DOTNET_OTEL_ENV_VARS_RUBRIC
+        ),
+    ),
+
+    # Terraform - .NET Windows
+    EnablementTask(
+        id='ecs_dotnet_windows_terraform',
+        prompt_template=ENABLEMENT_PROMPT,
+        git_paths=[
+            'infrastructure/ecs/terraform-windows',
+            'docker-apps/dotnet/aspnetcore',
+        ],
+        iac_dir='infrastructure/ecs/terraform-windows',
+        app_dir='docker-apps/dotnet/aspnetcore',
+        language='dotnet',
+        framework='aspnetcore',
+        platform='ecs',
+        build_command='terraform init && terraform validate',
+        build_working_dir='infrastructure/ecs/terraform-windows',
+        expected_tools=['get_enablement_guide'],
+        modifies_code=True,
+        validation_rubric=(
+            CLOUDWATCH_AGENT_RUBRIC +
+            ADOT_SDK_RUBRIC +
+            APPLICATION_RUBIC +
+            COMMON_OTEL_ENV_VARS_RUBRIC +
+            DOTNET_OTEL_ENV_VARS_RUBRIC
+        ),
+    ),
 ]

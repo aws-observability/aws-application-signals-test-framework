@@ -25,7 +25,6 @@ export interface AppConfig {
   language: string;
   port: number;
   healthCheckPath: string;
-  serviceName: string;
 }
 
 export class ECSAppStack extends cdk.Stack {
@@ -79,22 +78,21 @@ export class ECSAppStack extends cdk.Stack {
 
     // Task definition
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-      memoryLimitMiB: 1024,
-      cpu: 512,
+      memoryLimitMiB: 8192, // Large Windows image needs more memory
+      cpu: 4096, // Large Windows image needs more CPU
       executionRole: taskExecutionRole,
       taskRole: taskRole,
-    });
-
-    // Add volume for tmp directory
-    taskDefinition.addVolume({
-      name: 'tmp',
+      runtimePlatform: {
+        operatingSystemFamily: ecs.OperatingSystemFamily.WINDOWS_SERVER_2022_CORE,
+        cpuArchitecture: ecs.CpuArchitecture.X86_64,
+      },
     });
 
     // Add application container
     const appContainer = taskDefinition.addContainer('Application', {
       image: ecs.ContainerImage.fromRegistry(ecrImageUri),
       essential: true,
-      memoryReservationMiB: 512,
+      memoryReservationMiB: 2048,
       readonlyRootFilesystem: false,
       environment: {
         PORT: config.port.toString(),
@@ -111,21 +109,14 @@ export class ECSAppStack extends cdk.Stack {
       protocol: ecs.Protocol.TCP,
     });
 
-    // Add mount point for tmp volume
-    appContainer.addMountPoints({
-      sourceVolume: 'tmp',
-      containerPath: '/tmp',
-      readOnly: false,
-    });
-
-    // Add curl sidecar container
-    const curlContainer = taskDefinition.addContainer('CurlSidecar', {
-      image: ecs.ContainerImage.fromRegistry('curlimages/curl:8.1.2'),
+    // Add PowerShell sidecar container (Windows)
+    const curlContainer = taskDefinition.addContainer('PowerShellSidecar', {
+      image: ecs.ContainerImage.fromRegistry('mcr.microsoft.com/powershell:lts-nanoserver-ltsc2022'),
       essential: false,
-      memoryReservationMiB: 128,
+      memoryReservationMiB: 512,
       command: [
-        'sh', '-c',
-        `echo 'Starting curl sidecar...'; sleep 30; while true; do echo "$(date): Curling localhost:${config.port}/api/buckets"; curl -f localhost:${config.port}/api/buckets || echo 'Curl failed'; sleep 60; done`
+        'pwsh', '-Command',
+        `Write-Host 'Starting PowerShell sidecar...'; Start-Sleep 30; while (1) { Write-Host "$(Get-Date): Curling localhost:${config.port}/api/buckets"; try { Invoke-WebRequest -Uri "http://localhost:${config.port}/api/buckets" -UseBasicParsing } catch { Write-Host 'Curl failed' }; Start-Sleep 60 }`
       ],
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: 'curl',
@@ -225,6 +216,11 @@ export class ECSAppStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'SubnetType', {
       value: usePrivateSubnets ? 'Private' : 'Public',
       description: 'Type of subnets used for ECS tasks',
+    });
+
+    new cdk.CfnOutput(this, 'Platform', {
+      value: 'windows',
+      description: 'Application platform (windows)',
     });
   }
 }
