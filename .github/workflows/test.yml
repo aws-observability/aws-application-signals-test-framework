@@ -1,0 +1,24 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# Test workflow for IAM cleanup fix
+# This file should be removed after testing
+name: Test
+on:
+  push:
+    branches:
+      - test-iam-cleanup-fix
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  java-eks-otlp-ocb:
+    uses: ./.github/workflows/java-eks-otlp-ocb-test.yml
+    secrets: inherit
+    with:
+      aws-region: 'us-east-1'
+      test-cluster-name: 'e2e-playground'
+      caller-workflow-name: 'test'
+      java-version: '11'
