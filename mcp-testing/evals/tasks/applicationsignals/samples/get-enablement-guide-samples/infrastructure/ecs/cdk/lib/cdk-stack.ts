@@ -228,7 +228,3 @@ export class ECSAppStack extends cdk.Stack {
     });
   }
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> windowsIaC
