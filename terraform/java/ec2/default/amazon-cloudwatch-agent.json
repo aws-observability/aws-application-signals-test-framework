@@ -10,11 +10,7 @@
   },
   "logs": {
     "metrics_collected": {
-      "application_signals": {},
-      "otlp": {
-        "grpc_endpoint": "0.0.0.0:4317",
-        "http_endpoint": "0.0.0.0:4318"
-      }
+      "application_signals": {}
     }
   }
 }
