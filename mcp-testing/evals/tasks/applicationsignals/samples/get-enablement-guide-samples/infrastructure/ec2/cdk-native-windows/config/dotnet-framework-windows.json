@@ -1,0 +1,9 @@
+{
+  "appName": "dotnet-framework-windows",
+  "s3BucketName": "dotnet-app-bucket",
+  "s3ObjectKey": "framework-app.zip",
+  "language": "dotnet",
+  "port": 5000,
+  "healthCheckPath": "/Health.aspx",
+  "windowsType": "framework"
+}
