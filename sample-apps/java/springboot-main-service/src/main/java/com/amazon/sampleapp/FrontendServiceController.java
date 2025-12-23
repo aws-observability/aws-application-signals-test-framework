@@ -183,7 +183,7 @@ public class FrontendServiceController {
     
     agentBasedGauge.add(gaugeValue, Attributes.of(AttributeKey.stringKey("Operation"), "gauge"));
 
-    // Only record pipeline metrics if pipeline exists (matching Python logic)
+    // Only record pipeline metrics if pipeline exists
     if (customPipelineCounter != null) {
         int pipelineHistogramValue = random(100,1000);
         int pipelineGaugeValue = random(-10,10);
