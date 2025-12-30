@@ -150,7 +150,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       SERVICE_NAME='sample-application-${var.test_id}' \
       DEPLOYMENT_ENVIRONMENT_NAME='ec2:default' \
