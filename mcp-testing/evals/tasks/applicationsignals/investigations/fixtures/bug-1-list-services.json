@@ -1,0 +1,82 @@
+{
+    "ServiceSummaries": [
+        {
+            "KeyAttributes": {
+                "Environment": "ec2:default",
+                "Name": "document-manager",
+                "Type": "Service"
+            },
+            "AttributeMaps": [
+                {
+                    "PlatformType": "AWS::EC2"
+                },
+                {
+                    "InstrumentationType": "INSTRUMENTED"
+                }
+            ],
+            "MetricReferences": [
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "LATENCY",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Latency"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "ERROR",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Error"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "FAULT",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Fault"
+                }
+            ],
+            "ServiceGroups": [
+                {
+                    "GroupName": "Related",
+                    "GroupValue": "document-manager",
+                    "GroupSource": "Default",
+                    "GroupIdentifier": "group/source:inferred/groupType:Related/name:document-manager"
+                },
+                {
+                    "GroupName": "Environment",
+                    "GroupValue": "ec2:default",
+                    "GroupSource": "Telemetry",
+                    "GroupIdentifier": "group/source:inferred/groupType:Environment/name:ec2:default"
+                }
+            ]
+        }
+    ],
+    "StartTime": "2026-01-13T14:00:00-08:00",
+    "EndTime": "2026-01-14T15:00:01-08:00"
+}

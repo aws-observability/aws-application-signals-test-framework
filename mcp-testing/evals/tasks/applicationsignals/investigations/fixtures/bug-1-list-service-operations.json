@@ -1,0 +1,254 @@
+{
+    "StartTime": "2026-01-13 14:00:00-08:00",
+    "EndTime": "2026-01-14 15:00:01-08:00",
+    "ServiceOperations": [
+        {
+            "Name": "GET /documents/{document_id}/download",
+            "MetricReferences": [
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "LATENCY",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "GET /documents/{document_id}/download"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Latency"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "ERROR",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "GET /documents/{document_id}/download"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Error"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "FAULT",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "GET /documents/{document_id}/download"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Fault"
+                }
+            ]
+        },
+        {
+            "Name": "GET /health",
+            "MetricReferences": [
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "LATENCY",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "GET /health"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Latency"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "ERROR",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "GET /health"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Error"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "FAULT",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "GET /health"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Fault"
+                }
+            ]
+        },
+        {
+            "Name": "POST /documents",
+            "MetricReferences": [
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "LATENCY",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "POST /documents"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Latency"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "ERROR",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "POST /documents"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Error"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "FAULT",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "POST /documents"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Fault"
+                }
+            ]
+        },
+        {
+            "Name": "InternalOperation",
+            "MetricReferences": [
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "LATENCY",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "InternalOperation"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Latency"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "ERROR",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "InternalOperation"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Error"
+                },
+                {
+                    "Namespace": "ApplicationSignals",
+                    "MetricType": "FAULT",
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ec2:default"
+                        },
+                        {
+                            "Name": "Operation",
+                            "Value": "InternalOperation"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "document-manager"
+                        }
+                    ],
+                    "MetricName": "Fault"
+                }
+            ]
+        }
+    ]
+}
