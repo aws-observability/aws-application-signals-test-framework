@@ -63,7 +63,6 @@ resource "aws_instance" "main_service_instance" {
   instance_initiated_shutdown_behavior  = "terminate"
 
   metadata_options {
-    http_endpoint = "enabled"
     http_tokens   = "required"
   }
 

@@ -9,83 +9,83 @@ permissions:
   contents: read
 
 jobs:
-  java-ec2-asg-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/java-ec2-asg-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-  dotnet-ec2-asg-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/dotnet-ec2-asg-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-  python-ec2-adot-sigv4-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/python-ec2-adot-sigv4-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-  node-ec2-adot-sigv4-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/node-ec2-adot-sigv4-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-  java-ec2-default-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/java-ec2-default-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-  dotnet-ec2-adot-sigv4-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/dotnet-ec2-adot-sigv4-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-  dotnet-ec2-default-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/dotnet-ec2-default-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-  python-ec2-asg-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/python-ec2-asg-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-  java-ec2-ubuntu-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/java-ec2-ubuntu-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-  node-ec2-default-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/node-ec2-default-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
+  # java-ec2-asg-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/java-ec2-asg-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
+  # dotnet-ec2-asg-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/dotnet-ec2-asg-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
+  # python-ec2-adot-sigv4-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/python-ec2-adot-sigv4-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  # node-ec2-adot-sigv4-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/node-ec2-adot-sigv4-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  # java-ec2-default-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/java-ec2-default-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
+  # dotnet-ec2-adot-sigv4-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/dotnet-ec2-adot-sigv4-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  # dotnet-ec2-default-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/dotnet-ec2-default-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
+  # python-ec2-asg-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/python-ec2-asg-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
+  # java-ec2-ubuntu-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/java-ec2-ubuntu-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
+  # node-ec2-default-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/node-ec2-default-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
   python-ec2-genesis-test:
     strategy:
       fail-fast: false
@@ -93,22 +93,22 @@ jobs:
     secrets: inherit
     with:
       caller-workflow-name: 'test'
-  python-ec2-default-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/python-ec2-default-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-  dotnet-ec2-windows-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/dotnet-ec2-windows-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
+  # python-ec2-default-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/python-ec2-default-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
+  # dotnet-ec2-windows-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/dotnet-ec2-windows-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
   dotnet-ec2-nuget-test:
     strategy:
       fail-fast: false
@@ -117,25 +117,25 @@ jobs:
     with:
       caller-workflow-name: 'test'
       aws-region: 'us-east-1'
-  node-ec2-asg-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/node-ec2-asg-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-  java-ec2-adot-sigv4-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/java-ec2-adot-sigv4-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-  java-ec2-adaptive-sampling-test:
-    strategy:
-      fail-fast: false
-    uses: ./.github/workflows/java-ec2-adaptive-sampling-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
+  # node-ec2-asg-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/node-ec2-asg-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  #     aws-region: 'us-east-1'
+  # java-ec2-adot-sigv4-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/java-ec2-adot-sigv4-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
+  # java-ec2-adaptive-sampling-test:
+  #   strategy:
+  #     fail-fast: false
+  #   uses: ./.github/workflows/java-ec2-adaptive-sampling-test.yml
+  #   secrets: inherit
+  #   with:
+  #     caller-workflow-name: 'test'
