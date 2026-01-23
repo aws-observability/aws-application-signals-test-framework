@@ -132,9 +132,9 @@ jobs:
         run: |
           # For Java 8, springboot must be lower than version 3
           # For Java 11,17,21, they are compatible with both springboot version
-          # For Java 23 and above, springboot must be version 3 or higher
+          # For Java 25 and above, springboot must be version 3.5.5 or higher
           if [ "${{ matrix.java-version }}" = "25" ]; then
-            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
+            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.5.5"/' build.gradle.kts
             cat build.gradle.kts
           fi
           
@@ -171,9 +171,9 @@ jobs:
         run: |
           # For Java 8, springboot must be lower than version 3
           # For Java 11,17,21, they are compatible with both springboot version
-          # For Java 23 and above, springboot must be version 3 or higher
+          # For Java 25 and above, springboot must be version 3 or higher
           if [ "${{ matrix.java-version }}" = "25" ]; then
-            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
+            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.5.5"/' build.gradle.kts
             cat build.gradle.kts
           fi
           
