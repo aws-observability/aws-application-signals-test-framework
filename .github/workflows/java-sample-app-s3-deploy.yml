@@ -122,11 +122,11 @@ jobs:
         with:
           gradle-version: '8.14'
 
-      - name: Setup Gradle 9.1 for Java 25+
+      - name: Setup Gradle 9.1.0 for Java 25+
         if: matrix.java-version == '25'
         uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 #5.0.0
         with:
-          gradle-version: '9.1'
+          gradle-version: '9.1.0'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -168,11 +168,11 @@ jobs:
         with:
           gradle-version: '8.14'
 
-      - name: Setup Gradle 9.1 for Java 25+
+      - name: Setup Gradle 9.1.0 for Java 25+
         if: matrix.java-version == '25'
         uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 #5.0.0
         with:
-          gradle-version: '9.1'
+          gradle-version: '9.1.0'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
