@@ -116,10 +116,17 @@ jobs:
           java-version: ${{ matrix.java-version }}
           check-latest: true
 
-      - name: Setup Gradle 8.14
-        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a #4.4.3
+      - name: Setup Gradle 8.14 For Java <25
+        if: matrix.java-version != '25'
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
         with:
           gradle-version: '8.14'
+
+      - name: Setup Gradle 9.1 for Java 25+
+        if: matrix.java-version == '25'
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2
+        with:
+          gradle-version: '9.1'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -155,10 +162,17 @@ jobs:
           java-version: ${{ matrix.java-version }}
           check-latest: true
 
-      - name: Setup Gradle 8.14
-        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a #4.4.3
+      - name: Setup Gradle 8.14 For Java <25
+        if: matrix.java-version != '25'
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a
         with:
           gradle-version: '8.14'
+
+      - name: Setup Gradle 9.1 for Java 25+
+        if: matrix.java-version == '25'
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2
+        with:
+          gradle-version: '9.1'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
