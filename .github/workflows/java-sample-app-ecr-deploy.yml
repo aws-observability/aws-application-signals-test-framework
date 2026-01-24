@@ -132,10 +132,12 @@ jobs:
           secret-ids: |
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
 
-      - name: Setup Gradle 8.14
+      
+      # For Java 8-24, gradle 8.14 works, but starting from Java 25, 9.1 is required.
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a #4.4.3
         with:
-          gradle-version: '8.14'
+          gradle-version: ${{ matrix.java-version == '25' && '9.1' || '8.14' }}
 
       - name: Build and Upload Main Service Image
         working-directory: sample-apps/java/springboot-main-service
@@ -177,10 +179,11 @@ jobs:
           secret-ids: |
             JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
 
-      - name: Setup Gradle 8.14
+      # For Java 8-24, gradle 8.14 works, but starting from Java 25, 9.1 is required.
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a #4.4.3
         with:
-          gradle-version: '8.14'
+          gradle-version: ${{ matrix.java-version == '25' && '9.1' || '8.14' }}
 
       - name: Build and Upload Remote Service Image
         working-directory: sample-apps/java/springboot-remote-service
