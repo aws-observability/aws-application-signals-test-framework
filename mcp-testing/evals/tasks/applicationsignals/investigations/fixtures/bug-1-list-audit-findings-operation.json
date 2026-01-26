@@ -1,0 +1,96 @@
+{
+    "AuditFindings": [
+        {
+            "KeyAttributes": {
+                "Environment": "ec2:default",
+                "Name": "document-manager",
+                "Type": "Service"
+            },
+            "AuditorResults": [
+                {
+                    "Auditor": "TRACE",
+                    "Description": "Traces show the faults are caused by a dependency invocation with `ParamValidationError`, see a [sample trace](<#xray:transaction-search/1-6968040b-65067692f81f4b41eb05efd5~Node2?~(context~(timeRange~(start~'2026-01-14T20*3A51*3A00Z~end~'2026-01-14T21*3A01*3A00Z)))&segmentName=S3>).  \n* **Dependency**: AWS::S3::Bucket *document-manager-1768424082*  \n* **Invoked operation**: `HeadObject`&nbsp;\n\n**Exception message**:\n```\nParameter validation failed:\n```\n**Stack trace**:\n```\nserialize_to_request /usr/local/lib/python3.11/site-packages/botocore/validate.py:381)\n_convert_to_request_dict /usr/local/lib/python3.11/site-packages/botocore/client.py:1102)\n_make_api_call /usr/local/lib/python3.11/site-packages/botocore/client.py:1035)\nwrapper /usr/local/lib/python3.11/site-packages/botocore/context.py:123)\npatched_api_call /usr/local/lib/python3.11/site-packages/amazon/opentelemetry/distro/patches/_botocore_patches.py:510)\nstart_as_current_span /usr/local/lib/python3.11/site-packages/opentelemetry/sdk/trace/__init__.py:1105)\nuse_span /usr/local/lib/python3.11/site-packages/opentelemetry/trace/__init__.py:587)\n```",
+                    "Severity": "HIGH"
+                }
+            ],
+            "Operation": "GET /documents/{document_id}/download",
+            "MetricGraph": {
+                "MetricDataQueries": [
+                    {
+                        "Id": "e1",
+                        "Expression": "m1*100",
+                        "Label": "Fault Rate"
+                    },
+                    {
+                        "Id": "m1",
+                        "MetricStat": {
+                            "Metric": {
+                                "Namespace": "ApplicationSignals",
+                                "MetricName": "Fault",
+                                "Dimensions": [
+                                    {
+                                        "Name": "Service",
+                                        "Value": "document-manager"
+                                    },
+                                    {
+                                        "Name": "Environment",
+                                        "Value": "ec2:default"
+                                    },
+                                    {
+                                        "Name": "Operation",
+                                        "Value": "GET /documents/{document_id}/download"
+                                    }
+                                ]
+                            },
+                            "Period": 600,
+                            "Stat": "Average"
+                        },
+                        "ReturnData": false,
+                        "Period": 600,
+                        "AccountId": "779099542948"
+                    }
+                ],
+                "StartTime": "2026-01-14T12:51:00-08:00",
+                "EndTime": "2026-01-14T12:51:00-08:00"
+            },
+            "DependencyGraph": {
+                "Nodes": [
+                    {
+                        "KeyAttributes": {
+                            "Environment": "ec2:default",
+                            "Name": "document-manager",
+                            "Type": "Service"
+                        },
+                        "Name": "document-manager",
+                        "NodeId": "Node1",
+                        "Operation": "GET /documents/{document_id}/download",
+                        "Type": "Service",
+                        "Duration": 0.006760597229003906,
+                        "Status": "Fault"
+                    },
+                    {
+                        "KeyAttributes": {
+                            "Identifier": "document-manager-1768424082",
+                            "ResourceType": "AWS::S3::Bucket",
+                            "Type": "AWS::Resource"
+                        },
+                        "Name": "S3",
+                        "NodeId": "Node2",
+                        "Operation": "HeadObject",
+                        "Type": "AWS::Resource",
+                        "Duration": 0.0007729530334472656,
+                        "Status": "Fault"
+                    }
+                ],
+                "Edges": [
+                    {
+                        "SourceNodeId": "Node1",
+                        "DestinationNodeId": "Node2",
+                        "ConnectionType": "DIRECT"
+                    }
+                ]
+            },
+            "Type": "Availability"
+        }
+    ]
+}

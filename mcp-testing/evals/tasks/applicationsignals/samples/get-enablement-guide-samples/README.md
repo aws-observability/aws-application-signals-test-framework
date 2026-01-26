@@ -28,6 +28,9 @@ The testing flow is:
 - Docker with buildx support for multi-platform builds
 - AWS ECR repository access
 
+### For EC2 Native Deployments
+- AWS S3 bucket access for application package storage
+
 ### Build and Push Images to ECR
 
 ```bash
@@ -50,8 +53,14 @@ aws ecr get-login-password --region $AWS_REGION | \
 # Create ECR repository (if it doesn't exist)
 aws ecr create-repository --repository-name <repo-name> --region $AWS_REGION 2>/dev/null || true
 
-# Build multi-platform and push to ECR
+# Build multi-platform and push to ECR (Linux images)
 docker buildx build --platform linux/amd64,linux/arm64 \
+  -t $ECR_URI \
+  --push \
+  .
+
+# Build and push to ECR (Windows images)
+docker buildx build --platform windows/amd64 -f Dockerfile.Windows \
   -t $ECR_URI \
   --push \
   .
@@ -60,10 +69,47 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 | Language-Framework | App Directory                 | ECR Repo          |
 |--------------------|-------------------------------|-------------------|
 | dotnet-aspnetcore  | docker-apps/dotnet/aspnetcore | dotnet-aspnetcore |
+| dotnet-framework   | docker-apps/dotnet/framework  | dotnet-framework  |
 | python-flask       | docker-apps/python/flask      | python-flask      |
 | python-django      | docker-apps/python/django     | python-django     |
 | java-springboot    | docker-apps/java/spring-boot  | java-springboot   |
 | nodejs-express     | docker-apps/nodejs/express    | nodejs-express    |
+
+### Build and Push Native Application ZIP files to S3
+
+If you are deploying applications to EC2 natively without containers, you will have to upload the application as a zip file to S3
+
+```bash
+# Navigate to app directory (see table above)
+cd <app-directory>
+
+# Create zip file of all contents
+zip -r <app-name>.zip .
+
+# Set variables
+export AWS_REGION=$(aws configure get region || echo "us-east-1")
+export S3_BUCKET_NAME="<your-bucket-name>" # Choose your bucket name
+
+# Create S3 bucket (if it doesn't exist)
+aws s3 mb s3://$S3_BUCKET_NAME --region $AWS_REGION 2>/dev/null || true
+
+# Upload zip file to S3
+aws s3 cp <app-name>.zip s3://$S3_BUCKET_NAME/
+
+# Clean up local zip file
+rm <app-name>.zip
+```
+
+**Important:** After creating the S3 bucket and uploading your application:
+1. Update `s3_bucket_name` in your `.tfvars` file to match the bucket name you created
+2. Update `s3BucketName` in your CDK config JSON file to match the bucket name you created
+3. Update `s3_object_key` in your `.tfvars` file to match your zip file name (e.g., `aspnetcore-app.zip`)
+4. Update `s3ObjectKey` in your CDK config JSON file to match your zip file name (e.g., `aspnetcore-app.zip`)
+
+| Language-Framework | App Directory                 |
+|--------------------|-------------------------------|
+| dotnet-aspnetcore  | docker-apps/dotnet/aspnetcore |
+| dotnet-framework   | docker-apps/dotnet/framework  |
 
 ## Deployment Platforms
 
@@ -72,7 +118,11 @@ docker buildx build --platform linux/amd64,linux/arm64 \
 #### Using CDK
 
 ```bash
+# For containerized EC2 deployments:
 cd infrastructure/ec2/cdk
+
+# For native EC2 deployments:
+cd infrastructure/ec2/cdk-native-*
 
 # Install dependencies (first time only)
 npm install
@@ -82,6 +132,8 @@ cdk deploy <stack-name>
 cdk destroy <stack-name>
 ```
 
+Below are the available stacks for Containerized EC2 deployments:
+
 | Language-Framework | Stack Name               |
 |--------------------|--------------------------|
 | dotnet-aspnetcore  | DotnetAspnetcoreCdkStack |
@@ -90,10 +142,22 @@ cdk destroy <stack-name>
 | java-springboot    | JavaSpringBootCdkStack   |
 | nodejs-express     | NodejsExpressCdkStack    |
 
+Below are the available stacks for Native EC2 deployments:
+
+| Language-Framework         | Stack Name                         |
+|----------------------------|------------------------------------|
+| dotnet-aspnetcore-windows  | DotnetAspnetcoreWindowsNativeStack |
+| dotnet-framework-windows   | DotnetFrameworkWindowsNativeStack  |
+
+
 #### Using Terraform
 
 ```bash
+# For containerized EC2 deployments:
 cd infrastructure/ec2/terraform
+
+# For native EC2 deployments:
+cd infrastructure/ec2/terraform-native-*
 
 terraform init
 
@@ -102,6 +166,8 @@ terraform apply -var-file="<var-file>"
 terraform destroy -var-file="<var-file>"
 ```
 
+Below are the available variables files for Containerized EC2 deployments:
+
 | Language-Framework | Variables File                   |
 |--------------------|----------------------------------|
 | dotnet-aspnetcore  | config/dotnet-aspnetcore.tfvars  |
@@ -109,6 +175,13 @@ terraform destroy -var-file="<var-file>"
 | python-django      | config/python-django.tfvars      |
 | java-springboot    | config/java-springboot.tfvars    |
 | nodejs-express     | config/nodejs-express.tfvars     |
+
+Below are the available variables files for Native EC2 deployments:
+
+| Language-Framework         | Variables File                            |
+|----------------------------|-------------------------------------------|
+| dotnet-aspnetcore-windows  | config/dotnet-aspnetcore-windows.tfvars   |
+| dotnet-framework-windows   | config/dotnet-framework-windows.tfvars |
 
 ### EKS Deployment
 
@@ -128,13 +201,15 @@ cdk deploy <stack-name>
 cdk destroy <stack-name>
 ```
 
-| Language-Framework | Stack Name                   |
-|--------------------|------------------------------|
-| dotnet-aspnetcore  | DotnetAspnetcoreEksCdkStack  |
-| python-flask       | PythonFlaskEksCdkStack       |
-| python-django      | PythonDjangoEksCdkStack      |
-| java-springboot    | JavaSpringBootEksCdkStack    |
-| nodejs-express     | NodejsExpressEksCdkStack     |
+| Language-Framework         | Stack Name                          |
+|----------------------------|-------------------------------------|
+| dotnet-aspnetcore          | DotnetAspnetcoreEksCdkStack         |
+| dotnet-aspnetcore-windows  | DotnetAspnetcoreWindowsEksCdkStack  |
+| dotnet-framework-windows   | DotnetFrameworkWindowsEksCdkStack   |
+| python-flask               | PythonFlaskEksCdkStack              |
+| python-django              | PythonDjangoEksCdkStack             |
+| java-springboot            | JavaSpringBootEksCdkStack           |
+| nodejs-express             | NodejsExpressEksCdkStack            |
 
 #### Using Terraform
 
@@ -179,13 +254,15 @@ terraform destroy -var-file="<var-file>"
 
 ##### Configuration Reference
 
-| Language-Framework | Variables File                   |
-|--------------------|----------------------------------|
-| dotnet-aspnetcore  | config/dotnet-aspnetcore.tfvars |
-| python-flask       | config/python-flask.tfvars      |
-| python-django      | config/python-django.tfvars     |
-| java-springboot    | config/java-springboot.tfvars   |
-| nodejs-express     | config/nodejs-express.tfvars    |
+| Language-Framework         | Variables File                          |
+|----------------------------|-----------------------------------------|
+| dotnet-aspnetcore          | config/dotnet-aspnetcore.tfvars         |
+| dotnet-aspnetcore-windows  | config/dotnet-aspnetcore-windows.tfvars |
+| dotnet-framework-windows   | config/dotnet-framework-windows.tfvars  |
+| python-flask               | config/python-flask.tfvars              |
+| python-django              | config/python-django.tfvars             |
+| java-springboot            | config/java-springboot.tfvars           |
+| nodejs-express             | config/nodejs-express.tfvars            |
 
 ### Lambda
 

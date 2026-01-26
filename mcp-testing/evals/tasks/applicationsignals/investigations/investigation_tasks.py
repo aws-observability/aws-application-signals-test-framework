@@ -114,15 +114,19 @@ class InvestigationTask(ApplicationSignalsTask):
 # Task definitions
 TASKS = [
     InvestigationTask(
-        id='bug-1-investigation',
+        id='bug-1-investigation-slo',
         prompt='Is there anything wrong with my SLOs?',
         validation_rubric=[
-            'Agent identifies that the problem is that we are seeing elevated latency in GET /documents/{document_id}/download',
+            'Agent identifies that the problem is that we are seeing elevated faults in GET /documents/{document_id}/download',
             'Agent identifies that the root cause is that we are getting ParamValidationError errors as the s3_key is not persisted in upload_document',
             'Agent makes a fix that would prevent ParamValidationError by storing s3_key in upload_document or by checking s3_key presence before get_document',
         ],
        # Sometimes the agent will call audit_slos with "default auditors" then with "all auditors second", and other times it will call with "all auditors" only.
         expected_tool_calls=[
+            [
+                'list_slos',
+                'audit_slos',
+            ],
             [
                 'list_slos',
                 'get_slo',
@@ -165,7 +169,45 @@ TASKS = [
         },
     ),
     InvestigationTask(
-        id='bug-3-investigation',
+        id='bug-1-investigation-service-operation',
+        prompt='Are there availability problems with the GET /documents/{document_id}/download operation?',
+        validation_rubric=[
+            'Agent identifies that the problem is that we are seeing elevated faults in GET /documents/{document_id}/download',
+            'Agent identifies that the root cause is that we are getting ParamValidationError errors as the s3_key is not persisted in upload_document',
+            'Agent makes a fix that would prevent ParamValidationError by storing s3_key in upload_document or by checking s3_key presence before get_document',
+        ],
+        expected_tool_calls=[
+            [
+                'audit_service_operations',
+            ],
+        ],
+        mock_config={
+            'boto3': {
+                'application-signals': {
+                    'list_services': [
+                        {
+                            'request': {}, 'response':
+                            'bug-1-list-services.json'
+                        }
+                    ],
+                    'list_service_operations' : [
+                        {
+                            'request': {"KeyAttributes": {"Environment": "ec2:default", "Name": "document-manager", "Type": "Service"}}, 'response':
+                            'bug-1-list-service-operations.json'
+                        }
+                    ],
+                    'list_audit_findings': [
+                        {
+                            'request': {'AuditTargets': [{"Type": "service_operation", "Data": {"ServiceOperation": {"Service": {"Type": "Service", "Name": "document-manager", "Environment": "ec2:default"}, "Operation": "GET /documents/{document_id}/download", "MetricType": "Availability"}}}]},
+                            'response': 'bug-1-list-audit-findings-operation.json',
+                        },
+                    ],
+                }
+            }
+        },
+    ),
+    InvestigationTask(
+        id='bug-3-investigation-slo',
         prompt='Is there anything wrong with my SLOs?',
         validation_rubric=[
             'Agent identifies that the problem is that we are seeing elevated latency in POST /documents',
@@ -216,7 +258,7 @@ TASKS = [
         },
     ),
     InvestigationTask(
-        id='bug-4-investigation',
+        id='bug-4-investigation-service',
         prompt='Is there anything wrong with my services?',
         validation_rubric=[
             'Agent identifies that the problem is that we are seeing elevated latency in GET /documents/{document_id}',

@@ -87,7 +87,8 @@ resource "aws_instance" "main_service_instance" {
   instance_initiated_shutdown_behavior  = "terminate"
 
   metadata_options {
-    http_tokens = "required"
+    http_endpoint = "enabled"
+    http_tokens   = "required"
   }
 
   root_block_device {
@@ -153,13 +154,20 @@ resource "null_resource" "main_service_setup" {
       # Get ADOT instrumentation and install it
       ${var.get_adot_instrumentation_command}
 
-      # Set up application tmux screen so it keeps running after closing the SSH connection
-      tmux new-session -d -s frontend
+      # Set up environment variables like Python does
+      export SERVICE_NAME='node-sample-application-${var.test_id}'
+      export DEPLOYMENT_ENVIRONMENT_NAME='ec2:default'
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME}"
+      export AWS_REGION='${var.aws_region}'
+      export TESTING_ID='${var.test_id}'
+
+      # Set up application tmux screen with bash shell
+      tmux new-session -d -s frontend bash
 
       # Export environment variables for instrumentation
       # Note: We use OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express to avoid
       # having to validate around the telemetry generated for middleware
-      tmux send-keys -t frontend 'export OTEL_METRICS_EXPORTER=none' C-m
+      tmux send-keys -t frontend 'export OTEL_METRICS_EXPORTER=otlp' C-m
       tmux send-keys -t frontend 'export OTEL_TRACES_EXPORTER=otlp' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false' C-m
@@ -167,8 +175,15 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_METRICS_INSECURE=true' C-m
+      tmux send-keys -t frontend 'export SERVICE_NAME="$${SERVICE_NAME}"' C-m
+      tmux send-keys -t frontend 'export DEPLOYMENT_ENVIRONMENT_NAME="$${DEPLOYMENT_ENVIRONMENT_NAME}"' C-m
+      tmux send-keys -t frontend 'export OTEL_RESOURCE_ATTRIBUTES="$${OTEL_RESOURCE_ATTRIBUTES}"' C-m
+      tmux send-keys -t frontend 'export AWS_REGION="$${AWS_REGION}"' C-m
+      tmux send-keys -t frontend 'export TESTING_ID="$${TESTING_ID}"' C-m
       tmux send-keys -t frontend 'export OTEL_NODE_DISABLED_INSTRUMENTATIONS=fs,dns,express' C-m
-      tmux send-keys -t frontend 'export OTEL_SERVICE_NAME=node-sample-application-${var.test_id}' C-m
+      tmux send-keys -t frontend 'export OTEL_SERVICE_NAME="$${SERVICE_NAME}"' C-m
       tmux send-keys -t frontend 'export OTEL_TRACES_SAMPLER=always_on' C-m
       tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js' C-m
 
@@ -204,7 +219,8 @@ resource "aws_instance" "remote_service_instance" {
   instance_initiated_shutdown_behavior  = "terminate"
 
   metadata_options {
-    http_tokens = "required"
+    http_endpoint = "enabled"
+    http_tokens   = "required"
   }
 
   root_block_device {
