@@ -26,7 +26,7 @@ jobs:
 
     env:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
-      DOTNET-VERSION: ${{ github.event.inputs.dotnet-version }}
+      DOTNET_VERSION: ${{ github.event.inputs.dotnet-version }}
   
     steps:
     - name: Configure AWS Credentials
@@ -44,7 +44,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
       with:
-        dotnet-version: ${{ env.DOTNET-VERSION }}
+        dotnet-version: ${{ env.DOTNET_VERSION }}
     
     - name: Setup AWS Lambda Tools
       run: dotnet tool install -g Amazon.Lambda.Tools
