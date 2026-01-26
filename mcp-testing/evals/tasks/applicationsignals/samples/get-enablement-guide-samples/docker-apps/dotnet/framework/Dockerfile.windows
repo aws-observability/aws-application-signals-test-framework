@@ -1,0 +1,59 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2022
+
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+# Install .NET Framework 4.8 Developer Pack
+RUN Invoke-WebRequest -Uri 'https://go.microsoft.com/fwlink/?linkid=2088517' -OutFile 'C:\ndp48-devpack-enu.exe'; \
+    Start-Process 'C:\ndp48-devpack-enu.exe' -ArgumentList '/quiet' -Wait; \
+    Remove-Item 'C:\ndp48-devpack-enu.exe'
+
+# Install NuGet and restore packages
+RUN Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile 'C:\nuget.exe'
+
+WORKDIR /app
+
+# Copy project files
+COPY FrameworkApp.csproj .
+COPY packages.config .
+
+# Restore NuGet packages
+RUN C:\nuget.exe restore FrameworkApp.csproj -PackagesDirectory packages
+
+# Copy application files
+COPY . .
+
+# Build the application
+RUN C:\Windows\Microsoft.NET\Framework64\v4.0.30319\MSBuild.exe FrameworkApp.csproj /p:Configuration=Release /p:Platform=\"Any CPU\" /p:OutputPath=bin
+
+# Copy built application to IIS wwwroot
+RUN Copy-Item -Path "C:\app\*" -Destination "C:\inetpub\wwwroot" -Recurse -Force
+
+EXPOSE 5000
+
+# Configure IIS application pool and port
+RUN Import-Module WebAdministration; \
+    Set-ItemProperty -Path 'IIS:\AppPools\DefaultAppPool' -Name processModel.identityType -Value ApplicationPoolIdentity; \
+    Set-ItemProperty -Path 'IIS:\AppPools\DefaultAppPool' -Name recycling.periodicRestart.time -Value '00:00:00'; \
+    Remove-WebBinding -Name 'Default Web Site' -Port 80; \
+    New-WebBinding -Name 'Default Web Site' -Port 5000 -Protocol http
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:5000/Health.aspx' -UseBasicParsing -TimeoutSec 3 | Out-Null; exit 0 } catch { exit 1 }"
+
+# Traffic generation script is already in /app from earlier COPY
+
+CMD ["C:\\ServiceMonitor.exe", "w3svc"]
