@@ -152,9 +152,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics \
       OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
-      SERVICE_NAME='sample-application-${var.test_id}' \
-      DEPLOYMENT_ENVIRONMENT_NAME='ec2:default' \
-      OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME},Telemetry.Source=RuntimeMetric,aws.application_signals.metric_resource_keys=all_attributes" \
+      OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME},aws.application_signals.metric_resource_keys=all_attributes" \
       AWS_REGION='${var.aws_region}' \
       nohup java -Dotel.java.global-autoconfigure.enabled=true -XX:+UseG1GC -jar main-service-delete-me.jar &> nohup.out &
 
