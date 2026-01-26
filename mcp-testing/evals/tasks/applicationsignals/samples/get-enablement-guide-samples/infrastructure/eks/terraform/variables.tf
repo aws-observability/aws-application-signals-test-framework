@@ -33,3 +33,13 @@ variable "language" {
   type        = string
   default     = "python"
 }
+
+variable "platform" {
+  description = "Application platform (linux or windows)"
+  type        = string
+  default     = "linux"
+  validation {
+    condition     = contains(["linux", "windows"], var.platform)
+    error_message = "Platform must be either 'linux' or 'windows'."
+  }
+}

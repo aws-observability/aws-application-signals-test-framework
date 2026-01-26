@@ -422,6 +422,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_EC2_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/node/ec2/default/aws-sdk-call-metric.mustache"),
   NODE_EC2_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/node/ec2/default/aws-sdk-call-trace.mustache"),
 
+  /** Node EC2 Default Custom Metrics Test Case Validations */
+  NODE_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC("/expected-data-template/node/ec2/default/aws-otel-custom-metrics.mustache"),
+
   NODE_EC2_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/node/ec2/default/remote-service-log.mustache"),
   NODE_EC2_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/node/ec2/default/remote-service-metric.mustache"),
   NODE_EC2_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/node/ec2/default/remote-service-trace.mustache"),
