@@ -24,7 +24,7 @@ jobs:
         contents: read   
 
     env:
-      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}\
+      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
       PYTHON_VERSION: ${{ github.event.inputs.python_version }}
   
     steps:
