@@ -24,7 +24,8 @@ jobs:
         contents: read   
 
     env:
-      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
+      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}\
+      PYTHON_VERSION: ${{ github.event.inputs.python_version }}
   
     steps:
     - name: Configure AWS Credentials
@@ -42,7 +43,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
       with:
-        python-version: ${{ github.event.inputs.python_version }}
+        python-version: ${{ env.PYTHON_VERSION }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #v3.1.2
