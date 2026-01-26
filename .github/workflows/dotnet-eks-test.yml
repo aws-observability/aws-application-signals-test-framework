@@ -43,6 +43,7 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
   CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   dotnet-eks:
@@ -273,11 +274,11 @@ jobs:
 
       - name: Get ECR to Patch
         run: |
-          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
             echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent-operator" ]; then
+          elif [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent-operator" ]; then
             echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.repository.name }}" = "aws-otel-dotnet-instrumentation" ]; then
+          elif [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-dotnet-instrumentation" ]; then
             echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
           fi
 
@@ -285,7 +286,7 @@ jobs:
         id: patch-image
         uses: ./.github/workflows/actions/patch_image_and_check_diff
         with:
-          repository: ${{ github.event.repository.name }}
+          repository: ${{ env.REPOSITORY_NAME }}
           patch-image-arn: ${{ env.PATCH_IMAGE_ARN }}
           sample-app-namespace: ${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}
 

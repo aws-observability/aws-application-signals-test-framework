@@ -35,6 +35,7 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   STAGING_S3_BUCKET: ${{ secrets.STAGING_BUCKET_NAME }}
   IS_CANARY: false
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   java-lambda-default:
@@ -82,7 +83,7 @@ jobs:
             ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Configure AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
@@ -203,7 +204,7 @@ jobs:
           --rollup'
 
       - name: Refresh AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}

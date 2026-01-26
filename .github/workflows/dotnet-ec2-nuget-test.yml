@@ -37,6 +37,7 @@ env:
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   dotnet-ec2-nuget:
@@ -89,7 +90,7 @@ jobs:
 
       - name: Set Get CW Agent command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
             # Get cloudwatch agent staging file if triggered by cw-a repo
             echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
           else
@@ -230,7 +231,7 @@ jobs:
           --rollup'
 
       - name: Refresh AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}

@@ -44,6 +44,7 @@ env:
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   node-eks:
@@ -112,7 +113,7 @@ jobs:
 
       # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
       - name: Configure AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
@@ -312,11 +313,11 @@ jobs:
 
       - name: Get ECR to Patch
         run: |
-          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
             echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent-operator" ]; then
+          elif [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent-operator" ]; then
             echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
+          elif [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-js-instrumentation" ]; then
             echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
           fi
 
@@ -324,7 +325,7 @@ jobs:
         id: patch-image
         uses: ./.github/workflows/actions/patch_image_and_check_diff
         with:
-          repository: ${{ github.event.repository.name }}
+          repository: ${{ env.REPOSITORY_NAME }}
           patch-image-arn: ${{ env.PATCH_IMAGE_ARN }}
           sample-app-namespace: ${{ env.SAMPLE_APP_NAMESPACE }}
 

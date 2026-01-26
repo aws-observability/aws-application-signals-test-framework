@@ -43,6 +43,7 @@ env:
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   LOG_GROUP_NAME: aws/spans
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   java-ec2-adot-sigv4:
@@ -86,7 +87,7 @@ jobs:
 
       - name: Set ADOT getter command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
+          if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-java-instrumentation" ]; then
             echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
           else
             echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
@@ -230,7 +231,7 @@ jobs:
           --rollup'
 
       - name: Refresh AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
