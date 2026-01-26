@@ -1,0 +1,8 @@
+{
+  "artifactPath": "../builds/dotnet-lambda.zip",
+  "functionName": "DotnetLambdaCdk",
+  "handler": "DotnetLambda::DotnetLambda.Function::FunctionHandler",
+  "memorySize": 512,
+  "runtime": "dotnet8",
+  "timeout": 30
+}
