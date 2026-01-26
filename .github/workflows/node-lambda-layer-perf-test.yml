@@ -25,6 +25,7 @@ jobs:
 
     env:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
+      NODE_VERSION: ${{ github.event.inputs.node_version }}
   
     steps:
     - name: Configure AWS Credentials
@@ -42,7 +43,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
       with:
-        node-version: ${{ github.event.inputs.node_version }}
+        node-version: ${{ env.NODE_VERSION }}
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #v3.1.2

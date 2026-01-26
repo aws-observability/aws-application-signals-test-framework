@@ -35,6 +35,7 @@ env:
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   java-ec2-ubuntu:
@@ -83,7 +84,7 @@ jobs:
 
       # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
       - name: Configure AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
@@ -91,7 +92,7 @@ jobs:
 
       - name: Set Get ADOT JAR command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "aws-otel-java-instrumentation" ]; then
+          if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-java-instrumentation" ]; then
             echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
           else
             echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
@@ -99,7 +100,7 @@ jobs:
 
       - name: Set Get CW Agent command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
             echo GET_CW_AGENT_DEB_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/linux/amd64/amazon-cloudwatch-agent.deb ./cw-agent.deb" >> $GITHUB_ENV
           else
             echo GET_CW_AGENT_DEB_COMMAND="wget -O cw-agent.deb https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb" >> $GITHUB_ENV
@@ -242,7 +243,7 @@ jobs:
           --rollup'
 
       - name: Refresh AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
