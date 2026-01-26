@@ -1,0 +1,30 @@
+{
+    "ResponseMetadata": {
+        "RequestId": "0831ec9a-f582-4ec3-86fa-a3d2f001df75",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Fri, 14 Nov 2024 21:13:39 GMT",
+            "content-type": "application/json",
+            "content-length": "436",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "0831ec9a-f582-4ec3-86fa-a3d2f001df75"
+        },
+        "RetryAttempts": 0
+    },
+    "SloSummaries": [
+        {
+            "Arn": "arn:aws:application-signals:us-east-1:123456789012:slo/upload-latency",
+            "Name": "upload-latency",
+            "KeyAttributes": {
+                "AwsAccountId": "123456789012",
+                "Environment": "ec2:default",
+                "Name": "document-manager",
+                "Type": "Service"
+            },
+            "OperationName": "POST /documents",
+            "CreatedTime": "2024-11-14 11:41:52.469000-08:00",
+            "EvaluationType": "PeriodBased",
+            "MetricSourceType": "ServiceOperation"
+        }
+    ]
+}

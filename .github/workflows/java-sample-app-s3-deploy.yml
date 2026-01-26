@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# This workflow is for building and uploading the Java sample application to S3 bucket. Java 11 will be built and uploaded to all regions to be used by the canary while other versions (8, 17, 21, 23)
+# This workflow is for building and uploading the Java sample application to S3 bucket. Java 11 will be built and uploaded to all regions to be used by the canary while other versions (8, 17, 21, 25)
 # will be uploaded to us-east-1 for the purpose of testing ADOT Java
 name: Sample App Deployment - Java S3
 on:
@@ -106,7 +106,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [ '8', '17', '21', '23' ]
+        java-version: [ '8', '17', '21', '25' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -116,10 +116,17 @@ jobs:
           java-version: ${{ matrix.java-version }}
           check-latest: true
 
-      - name: Setup Gradle 8.14
+      - name: Setup Gradle 8.14 For Java <25
+        if: matrix.java-version != '25'
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a #4.4.3
         with:
           gradle-version: '8.14'
+
+      - name: Setup Gradle 9.1.0 for Java 25+
+        if: matrix.java-version == '25'
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 #5.0.0
+        with:
+          gradle-version: '9.1.0'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -132,9 +139,9 @@ jobs:
         run: |
           # For Java 8, springboot must be lower than version 3
           # For Java 11,17,21, they are compatible with both springboot version
-          # For Java 23 and above, springboot must be version 3 or higher
-          if [ "${{ matrix.java-version }}" = "23" ]; then
-            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
+          # For Java 25 and above, springboot must be version 3.5.5 or higher
+          if [ "${{ matrix.java-version }}" = "25" ]; then
+            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.5.5"/' build.gradle.kts
             cat build.gradle.kts
           fi
           
@@ -145,7 +152,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [ '8', '17', '21', '23' ]
+        java-version: [ '8', '17', '21', '25' ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -155,10 +162,17 @@ jobs:
           java-version: ${{ matrix.java-version }}
           check-latest: true
 
-      - name: Setup Gradle 8.14
+      - name: Setup Gradle 8.14 For Java <25
+        if: matrix.java-version != '25'
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a #4.4.3
         with:
           gradle-version: '8.14'
+
+      - name: Setup Gradle 9.1.0 for Java 25+
+        if: matrix.java-version == '25'
+        uses: gradle/actions/setup-gradle@4d9f0ba0025fe599b4ebab900eb7f3a1d93ef4c2 #5.0.0
+        with:
+          gradle-version: '9.1.0'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -171,9 +185,9 @@ jobs:
         run: |
           # For Java 8, springboot must be lower than version 3
           # For Java 11,17,21, they are compatible with both springboot version
-          # For Java 23 and above, springboot must be version 3 or higher
-          if [ "${{ matrix.java-version }}" = "23" ]; then
-            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.3.4"/' build.gradle.kts
+          # For Java 25 and above, springboot must be version 3 or higher
+          if [ "${{ matrix.java-version }}" = "25" ]; then
+            sed -i 's/id("org.springframework.boot")/id("org.springframework.boot") version "3.5.5"/' build.gradle.kts
             cat build.gradle.kts
           fi
           

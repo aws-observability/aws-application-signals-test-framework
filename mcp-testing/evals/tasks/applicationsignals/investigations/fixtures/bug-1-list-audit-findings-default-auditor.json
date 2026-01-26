@@ -1,0 +1,71 @@
+{
+    "ResponseMetadata": {
+        "RequestId": "715b166d-0f35-4ce3-913b-92884a29b288",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Fri, 14 Nov 2024 17:40:32 GMT",
+            "content-type": "application/json",
+            "content-length": "1224",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "715b166d-0f35-4ce3-913b-92884a29b288"
+        },
+        "RetryAttempts": 0
+    },
+    "AuditFindings": [
+        {
+            "KeyAttributes": {
+                "Environment": "ec2:default",
+                "Name": "document-manager",
+                "Type": "Service"
+            },
+            "AuditorResults": [
+                {
+                    "Auditor": "SLO",
+                    "Description": "SLO download-availability is in breach.",
+                    "Severity": "HIGH"
+                }
+            ],
+            "Operation": "GET /documents/{document_id}/download",
+            "MetricGraph": {
+                "MetricDataQueries": [
+                    {
+                        "Id": "e1",
+                        "Expression": "m1*100",
+                        "Label": "Fault Rate"
+                    },
+                    {
+                        "Id": "m1",
+                        "MetricStat": {
+                            "Metric": {
+                                "Namespace": "ApplicationSignals",
+                                "MetricName": "Fault",
+                                "Dimensions": [
+                                    {
+                                        "Name": "Operation",
+                                        "Value": "GET /documents/{document_id}/download"
+                                    },
+                                    {
+                                        "Name": "Service",
+                                        "Value": "document-manager"
+                                    },
+                                    {
+                                        "Name": "Environment",
+                                        "Value": "ec2:default"
+                                    }
+                                ]
+                            },
+                            "Period": 600,
+                            "Stat": "Average"
+                        },
+                        "ReturnData": false,
+                        "Period": 600,
+                        "AccountId": "123456789012"
+                    }
+                ],
+                "StartTime": "2024-11-14 08:40:00-08:00",
+                "EndTime": "2024-11-14 08:40:00-08:00"
+            },
+            "Type": "Availability"
+        }
+    ]
+}

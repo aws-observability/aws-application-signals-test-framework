@@ -1,0 +1,355 @@
+# Get Enablement Guide Samples
+
+## Overview
+
+These baseline applications are used to test an AI agent's ability to automatically enable AWS Application Signals across different platforms and languages via our `get_enablement_guide` MCP tool.
+
+The testing flow is:
+1. **Baseline Setup:** Deploy infrastructure without Application Signals
+2. **Agent Modification:** AI agent modifies code to enable Application Signals
+3. **Verification:** Re-deploy and verify Application Signals is enabled
+
+## Prerequisites
+
+### General
+- AWS CLI configured with appropriate credentials and permissions
+- Access to AWS services: Lambda, API Gateway, ECR, EC2, IAM
+- kubectl installed (for EKS deployments)
+- Terraform installed (for Terraform deployments)
+
+### For Lambda Deployments
+
+**Build Requirements:**
+- **Docker:** Required for building Lambda deployment packages
+  - Uses official AWS Lambda runtime images to ensure consistent build environment
+  - Matches Lambda execution environment exactly
+
+### For EC2 Containerized Deployments
+- Docker with buildx support for multi-platform builds
+- AWS ECR repository access
+
+### For EC2 Native Deployments
+- AWS S3 bucket access for application package storage
+
+### Build and Push Images to ECR
+
+```bash
+# Navigate to app directory (see table below)
+cd <app-directory>
+
+# Set variables
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+export AWS_REGION=$(aws configure get region || echo "us-east-1")
+export ECR_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/<repo-name>" # See table below
+
+# Authenticate with ECR Public (for base images)
+aws ecr-public get-login-password --region us-east-1 | \
+  docker login --username AWS --password-stdin public.ecr.aws
+
+# Authenticate Docker with ECR
+aws ecr get-login-password --region $AWS_REGION | \
+  docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+# Create ECR repository (if it doesn't exist)
+aws ecr create-repository --repository-name <repo-name> --region $AWS_REGION 2>/dev/null || true
+
+# Build multi-platform and push to ECR (Linux images)
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t $ECR_URI \
+  --push \
+  .
+
+# Build and push to ECR (Windows images)
+docker buildx build --platform windows/amd64 -f Dockerfile.Windows \
+  -t $ECR_URI \
+  --push \
+  .
+```
+
+| Language-Framework | App Directory                 | ECR Repo          |
+|--------------------|-------------------------------|-------------------|
+| dotnet-aspnetcore  | docker-apps/dotnet/aspnetcore | dotnet-aspnetcore |
+| dotnet-framework   | docker-apps/dotnet/framework  | dotnet-framework  |
+| python-flask       | docker-apps/python/flask      | python-flask      |
+| python-django      | docker-apps/python/django     | python-django     |
+| java-springboot    | docker-apps/java/spring-boot  | java-springboot   |
+| nodejs-express     | docker-apps/nodejs/express    | nodejs-express    |
+
+### Build and Push Native Application ZIP files to S3
+
+If you are deploying applications to EC2 natively without containers, you will have to upload the application as a zip file to S3
+
+```bash
+# Navigate to app directory (see table above)
+cd <app-directory>
+
+# Create zip file of all contents
+zip -r <app-name>.zip .
+
+# Set variables
+export AWS_REGION=$(aws configure get region || echo "us-east-1")
+export S3_BUCKET_NAME="<your-bucket-name>" # Choose your bucket name
+
+# Create S3 bucket (if it doesn't exist)
+aws s3 mb s3://$S3_BUCKET_NAME --region $AWS_REGION 2>/dev/null || true
+
+# Upload zip file to S3
+aws s3 cp <app-name>.zip s3://$S3_BUCKET_NAME/
+
+# Clean up local zip file
+rm <app-name>.zip
+```
+
+**Important:** After creating the S3 bucket and uploading your application:
+1. Update `s3_bucket_name` in your `.tfvars` file to match the bucket name you created
+2. Update `s3BucketName` in your CDK config JSON file to match the bucket name you created
+3. Update `s3_object_key` in your `.tfvars` file to match your zip file name (e.g., `aspnetcore-app.zip`)
+4. Update `s3ObjectKey` in your CDK config JSON file to match your zip file name (e.g., `aspnetcore-app.zip`)
+
+| Language-Framework | App Directory                 |
+|--------------------|-------------------------------|
+| dotnet-aspnetcore  | docker-apps/dotnet/aspnetcore |
+| dotnet-framework   | docker-apps/dotnet/framework  |
+
+## Deployment Platforms
+
+### EC2 Deployment
+
+#### Using CDK
+
+```bash
+# For containerized EC2 deployments:
+cd infrastructure/ec2/cdk
+
+# For native EC2 deployments:
+cd infrastructure/ec2/cdk-native-*
+
+# Install dependencies (first time only)
+npm install
+
+cdk deploy <stack-name>
+
+cdk destroy <stack-name>
+```
+
+Below are the available stacks for Containerized EC2 deployments:
+
+| Language-Framework | Stack Name               |
+|--------------------|--------------------------|
+| dotnet-aspnetcore  | DotnetAspnetcoreCdkStack |
+| python-flask       | PythonFlaskCdkStack      |
+| python-django      | PythonDjangoCdkStack     |
+| java-springboot    | JavaSpringBootCdkStack   |
+| nodejs-express     | NodejsExpressCdkStack    |
+
+Below are the available stacks for Native EC2 deployments:
+
+| Language-Framework         | Stack Name                         |
+|----------------------------|------------------------------------|
+| dotnet-aspnetcore-windows  | DotnetAspnetcoreWindowsNativeStack |
+| dotnet-framework-windows   | DotnetFrameworkWindowsNativeStack  |
+
+
+#### Using Terraform
+
+```bash
+# For containerized EC2 deployments:
+cd infrastructure/ec2/terraform
+
+# For native EC2 deployments:
+cd infrastructure/ec2/terraform-native-*
+
+terraform init
+
+terraform apply -var-file="<var-file>"
+
+terraform destroy -var-file="<var-file>"
+```
+
+Below are the available variables files for Containerized EC2 deployments:
+
+| Language-Framework | Variables File                   |
+|--------------------|----------------------------------|
+| dotnet-aspnetcore  | config/dotnet-aspnetcore.tfvars  |
+| python-flask       | config/python-flask.tfvars       |
+| python-django      | config/python-django.tfvars      |
+| java-springboot    | config/java-springboot.tfvars    |
+| nodejs-express     | config/nodejs-express.tfvars     |
+
+Below are the available variables files for Native EC2 deployments:
+
+| Language-Framework         | Variables File                            |
+|----------------------------|-------------------------------------------|
+| dotnet-aspnetcore-windows  | config/dotnet-aspnetcore-windows.tfvars   |
+| dotnet-framework-windows   | config/dotnet-framework-windows.tfvars |
+
+### EKS Deployment
+
+#### Using CDK
+
+```bash
+# Navigate to the CDK directory
+cd infrastructure/eks/cdk
+
+# Install dependencies
+npm install
+
+# Deploy the stack
+cdk deploy <stack-name>
+
+# Clean up when done
+cdk destroy <stack-name>
+```
+
+| Language-Framework         | Stack Name                          |
+|----------------------------|-------------------------------------|
+| dotnet-aspnetcore          | DotnetAspnetcoreEksCdkStack         |
+| dotnet-aspnetcore-windows  | DotnetAspnetcoreWindowsEksCdkStack  |
+| dotnet-framework-windows   | DotnetFrameworkWindowsEksCdkStack   |
+| python-flask               | PythonFlaskEksCdkStack              |
+| python-django              | PythonDjangoEksCdkStack             |
+| java-springboot            | JavaSpringBootEksCdkStack           |
+| nodejs-express             | NodejsExpressEksCdkStack            |
+
+#### Using Terraform
+
+##### Deployment Instructions
+
+1. **Navigate to the terraform directory:**
+   ```bash
+   cd infrastructure/eks/terraform
+   ```
+
+2. **Initialize Terraform:**
+   ```bash
+   terraform init
+   ```
+
+3. **Plan the deployment:**
+   ```bash
+   terraform plan -var-file="<var-file>"
+   ```
+
+4. **Deploy the infrastructure:**
+   ```bash
+   terraform apply -var-file="<var-file>"
+   ```
+
+5. **Configure kubectl:**
+   ```bash
+   aws eks update-kubeconfig --region <region> --name <cluster-name>
+   ```
+
+6. **Verify deployment:**
+   ```bash
+   kubectl get pods
+   kubectl get services
+   ```
+
+##### Clean Up
+
+```bash
+terraform destroy -var-file="<var-file>"
+```
+
+##### Configuration Reference
+
+| Language-Framework         | Variables File                          |
+|----------------------------|-----------------------------------------|
+| dotnet-aspnetcore          | config/dotnet-aspnetcore.tfvars         |
+| dotnet-aspnetcore-windows  | config/dotnet-aspnetcore-windows.tfvars |
+| dotnet-framework-windows   | config/dotnet-framework-windows.tfvars  |
+| python-flask               | config/python-flask.tfvars              |
+| python-django              | config/python-django.tfvars             |
+| java-springboot            | config/java-springboot.tfvars           |
+| nodejs-express             | config/nodejs-express.tfvars            |
+
+### Lambda
+
+#### Serverless Deployment
+
+Lambda functions are self-contained - each invocation performs S3 bucket listing.
+
+**Deployment is a three-step process:**
+1. **Build**: Package Lambda code with dependencies into a deployment artifact
+2. **Deploy**: Deploy the packaged artifact using Terraform or CDK
+3. **Invoke**: Manually trigger the Lambda to generate traffic
+
+##### Step 1: Build Lambda Deployment Package
+
+Each Lambda function has a `build.sh` script that uses Docker to build the deployment package:
+- Uses official AWS Lambda runtime images (e.g., `public.ecr.aws/lambda/python:3.13`)
+- Installs dependencies in the exact Lambda execution environment
+- Packages the code and dependencies into a zip file
+- Outputs the deployment artifact to `infrastructure/lambda/builds/`
+
+```bash
+cd infrastructure/lambda/<language>-lambda
+./build.sh
+```
+
+**Output:** `infrastructure/lambda/builds/{function-name}.zip`
+
+##### Step 2: Deploy Lambda Infrastructure
+
+**Using CDK:**
+
+```bash
+cd infrastructure/lambda/cdk
+
+# Install dependencies (first time only)
+npm install
+
+cdk deploy <stack-name>
+
+cdk destroy <stack-name>
+```
+
+| Language | Config File  | Stack Name           | Function Name   | Build Output              |
+|----------|--------------|----------------------|-----------------|---------------------------|
+| python   | python.json  | PythonLambdaCdkStack | PythonLambdaCdk | builds/python-lambda.zip  |
+| nodejs   | nodejs.json  | NodejsLambdaCdkStack | NodejsLambdaCdk | builds/nodejs-lambda.zip  |
+| java     | java.json    | JavaLambdaCdkStack   | JavaLambdaCdk   | builds/java-lambda.zip    |
+| dotnet   | dotnet.json  | DotnetLambdaCdkStack | DotnetLambdaCdk | builds/dotnet-lambda.zip  |
+
+**Using Terraform:**
+
+```bash
+cd infrastructure/lambda/terraform
+
+# Initialize Terraform (first time only)
+terraform init
+
+terraform apply -var="config_file=<config-file>"
+
+terraform destroy -var="config_file=<config-file>"
+```
+
+| Language | Config File  | Function Name          | Build Output              |
+|----------|--------------|------------------------|---------------------------|
+| python   | python.json  | PythonLambdaTerraform  | builds/python-lambda.zip  |
+| nodejs   | nodejs.json  | NodejsLambdaTerraform  | builds/nodejs-lambda.zip  |
+| java     | java.json    | JavaLambdaTerraform    | builds/java-lambda.zip    |
+| dotnet   | dotnet.json  | DotnetLambdaTerraform  | builds/dotnet-lambda.zip  |
+
+**Note:** You must run the build script before deploying. If you modify Lambda code or dependencies, rebuild before redeploying.
+
+##### Step 3: Invoke Lambda to Generate Traffic
+
+After deployment, manually invoke the Lambda function to start generating internal traffic:
+
+```bash
+# For CDK:
+aws lambda invoke --function-name PythonLambdaCdk --invocation-type Event /dev/stdout
+aws lambda invoke --function-name NodejsLambdaCdk --invocation-type Event /dev/stdout
+aws lambda invoke --function-name JavaLambdaCdk --invocation-type Event /dev/stdout
+aws lambda invoke --function-name DotnetLambdaCdk --invocation-type Event /dev/stdout
+
+# For Terraform:
+aws lambda invoke --function-name PythonLambdaTerraform --invocation-type Event /dev/stdout
+aws lambda invoke --function-name NodejsLambdaTerraform --invocation-type Event /dev/stdout
+aws lambda invoke --function-name JavaLambdaTerraform --invocation-type Event /dev/stdout
+aws lambda invoke --function-name DotnetLambdaTerraform --invocation-type Event /dev/stdout
+```
+
+Each invocation executes quickly, listing S3 buckets. Invoke multiple times to generate more traffic. Execution logs can be monitored in CloudWatch Logs.
