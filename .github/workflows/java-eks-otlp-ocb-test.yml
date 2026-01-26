@@ -342,17 +342,37 @@ jobs:
             echo "validation-result=failure" >> $GITHUB_OUTPUT
           fi
 
-      - name: Clean up
+      # IAM service accounts must be deleted BEFORE the namespace is deleted,
+      # otherwise eksctl cannot find the K8s ServiceAccount and leaves the IAM role orphaned
+      - name: Remove aws access service account
         if: always()
         continue-on-error: true
-        timeout-minutes: 5
-        working-directory: terraform/java/eks-otlp-ocb/util
         run: |
-          aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
-          kubectl delete ns ${{ env.SAMPLE_APP_NAMESPACE }}
-          eksctl delete iamserviceaccount --name cloudwatch-agent --namespace amazon-cloudwatch --cluster ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
-          kubectl delete ns opentelemetry-operator-system
-          aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+          eksctl delete iamserviceaccount \
+            --name sa-${{ env.TESTING_ID }} \
+            --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
+            --cluster ${{ env.CLUSTER_NAME }} \
+            --region ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Remove Application Signals Collector IAM service account
+        if: always()
+        continue-on-error: true
+        run: |
+          eksctl delete iamserviceaccount \
+            --name appsignals-collector \
+            --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
+            --cluster ${{ env.CLUSTER_NAME }} \
+            --region ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Remove cloudwatch-agent IAM service account
+        if: always()
+        continue-on-error: true
+        run: |
+          eksctl delete iamserviceaccount \
+            --name cloudwatch-agent \
+            --namespace amazon-cloudwatch \
+            --cluster ${{ env.CLUSTER_NAME }} \
+            --region ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Terraform destroy
         if: always()
@@ -370,22 +390,11 @@ jobs:
             -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
             -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
 
-      - name: Remove aws access service account
+      - name: Clean up namespaces
         if: always()
         continue-on-error: true
+        timeout-minutes: 5
         run: |
-          eksctl delete iamserviceaccount \
-          --name sa-${{ env.TESTING_ID }} \
-          --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
-          --cluster ${{ env.CLUSTER_NAME }} \
-          --region ${{ env.E2E_TEST_AWS_REGION }}
-
-      - name: Remove Application Signals Collector IAM service account
-        if: always()
-        continue-on-error: true
-        run: |
-          eksctl delete iamserviceaccount \
-            --name appsignals-collector \
-            --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
-            --cluster ${{ env.CLUSTER_NAME }} \
-            --region ${{ env.E2E_TEST_AWS_REGION }}
+          aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+          kubectl delete ns ${{ env.SAMPLE_APP_NAMESPACE }}
+          kubectl delete ns opentelemetry-operator-system
