@@ -42,6 +42,7 @@ env:
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: aws/spans
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   node-ec2-adot-sigv4:
@@ -80,7 +81,7 @@ jobs:
 
       - name: Set Get ADOT Instrumentation command environment variable
         run: |
-          if [ "${{ github.event.repository.name }}" = "aws-otel-js-instrumentation" ]; then
+          if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-js-instrumentation" ]; then
             echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} --region us-east-1 && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
           else
             echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV

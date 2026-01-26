@@ -51,6 +51,7 @@ env:
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   python-k8s:
@@ -98,15 +99,15 @@ jobs:
             ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
             PYTHON_MAIN_SAMPLE_APP_IMAGE, e2e-test/python-main-sample-app-image
             PYTHON_REMOTE_SAMPLE_APP_IMAGE, e2e-test/python-remote-sample-app-image
-            RELEASE_TESTING_ECR_ACCOUNT, e2e-test/${{ github.event.repository.name }}/python-k8s-release-testing-account
+            RELEASE_TESTING_ECR_ACCOUNT, e2e-test/${{ env.REPOSITORY_NAME }}/python-k8s-release-testing-account
 
       - name: Retrieve K8s EC2 Secrets
         if: ${{ env.CALLER_WORKFLOW_NAME != 'k8s-os-patching' }}
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids: |
-            MAIN_SERVICE_ENDPOINT, e2e-test/${{ github.event.repository.name }}/python-k8s-master-node-endpoint
-            MASTER_NODE_SSH_KEY, e2e-test/${{ github.event.repository.name }}/python-k8s-ssh-key
+            MAIN_SERVICE_ENDPOINT, e2e-test/${{ env.REPOSITORY_NAME }}/python-k8s-master-node-endpoint
+            MASTER_NODE_SSH_KEY, e2e-test/${{ env.REPOSITORY_NAME }}/python-k8s-ssh-key
 
       - name: Retrieve K8s EC2 OS Patching Secrets
         if: ${{ env.CALLER_WORKFLOW_NAME == 'k8s-os-patching' }}
@@ -144,11 +145,11 @@ jobs:
 
       - name: Get ECR to Patch
         run: |
-          if [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent" ]; then
+          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
             echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.repository.name }}" = "amazon-cloudwatch-agent-operator" ]; then
+          elif [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent-operator" ]; then
             echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> $GITHUB_ENV
-          elif [ "${{ github.event.repository.name }}" = "aws-otel-python-instrumentation" ]; then
+          elif [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-python-instrumentation" ]; then
             echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
           fi
 
@@ -160,7 +161,7 @@ jobs:
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="ssh_key=${{ env.MASTER_NODE_SSH_KEY }}" \
             -var="host=${{ env.MAIN_SERVICE_ENDPOINT }}" \
-            -var="repository=${{ github.event.repository.name }}" \
+            -var="repository=${{ env.REPOSITORY_NAME }}" \
             -var="patch_image_arn=${{ env.PATCH_IMAGE_ARN }}" \
             -var="release_testing_ecr_account=${{ env.RELEASE_TESTING_ECR_ACCOUNT }}"
 

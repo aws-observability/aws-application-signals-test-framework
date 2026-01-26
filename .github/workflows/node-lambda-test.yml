@@ -39,6 +39,7 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   STAGING_S3_BUCKET: ${{ secrets.STAGING_BUCKET_NAME }}
   IS_CANARY: false
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   node-lambda-default:
@@ -87,7 +88,7 @@ jobs:
 
       # If the workflow is running as a canary, then we want to log in to the aws account in the appropriate region
       - name: Configure AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
@@ -194,7 +195,7 @@ jobs:
           --rollup'
 
       - name: Refresh AWS Credentials
-        if: ${{ always() && github.event.repository.name == 'aws-application-signals-test-framework' }}
+        if: ${{ always() && env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
