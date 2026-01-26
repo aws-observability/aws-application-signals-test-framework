@@ -71,7 +71,8 @@ resource "aws_instance" "main_service_instance" {
   instance_initiated_shutdown_behavior = "terminate"
   
   metadata_options {
-    http_tokens = "required"
+    http_endpoint = "enabled"
+    http_tokens   = "required"
   }
   get_password_data = true
 
@@ -118,7 +119,8 @@ resource "aws_instance" "remote_service_instance" {
   instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
-    http_tokens = "required"
+    http_endpoint = "enabled"
+    http_tokens   = "required"
   }
   get_password_data = true
 
