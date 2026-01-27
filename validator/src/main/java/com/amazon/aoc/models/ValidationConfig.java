@@ -76,38 +76,24 @@ public class ValidationConfig {
   public FileConfig getExpectedMetricTemplate() {
     String templatePath = this.expectedMetricTemplate;
     
-    System.out.println("DEBUG: Initial templatePath = " + templatePath);
-    System.out.println("DEBUG: context = " + context);
-    if (context != null) {
-      System.out.println("DEBUG: context.getLanguage() = " + context.getLanguage());
-      System.out.println("DEBUG: context.getLanguageVersion() = " + context.getLanguageVersion());
-    }
-    
     // Dynamic template selection for Java EC2 custom metrics based on Java version
     if (context != null && "java".equalsIgnoreCase(context.getLanguage()) 
         && context.getLanguageVersion() != null) {
-      System.out.println("DEBUG: Entered version selection logic");
       if ("JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC".equals(templatePath)
-          || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V8".equals(templatePath)
-          || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V11PLUS".equals(templatePath)
-          || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V23PLUS".equals(templatePath)) {
+          || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V8".equals(templatePath)) {
         
         int javaVersion = parseJavaVersion(context.getLanguageVersion());
-        System.out.println("DEBUG: Parsed Java version = " + javaVersion);
         
-        if (javaVersion >= 11) {
-          // Java 11+ all use process.command_args (including Java 23)
-          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V11PLUS";
-          System.out.println("DEBUG: Selected V11PLUS template");
-        } else if (javaVersion == 8) {
+        if (javaVersion == 8) {
           // Java 8 uses process.command_line
           templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V8";
-          System.out.println("DEBUG: Selected V8 template");
+        } else if (javaVersion >= 11) {
+          // Java 11+ all use process.command_args (base template)
+          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC";
         }
       }
     }
     
-    System.out.println("DEBUG: Final templatePath = " + templatePath);
     return this.getTemplate(templatePath);
   }
   
