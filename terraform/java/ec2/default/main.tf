@@ -147,7 +147,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_RESOURCE_ATTRIBUTES="service.name=sample-application-${var.test_id},Internal_Org=Financial,Business Unit=Payments,Region=us-east-1,aws.application_signals.metric_resource_keys=Business Unit&Region&Organization" \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
-      nohup java -XX:+UseG1GC -jar main-service.jar &> nohup.out &
+      nohup java -XX:+UseG1GC $(if [[ "${var.language_version}" == "25" ]]; then echo "--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"; fi) -jar main-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -246,7 +246,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_RESOURCE_ATTRIBUTES=service.name=sample-remote-application-${var.test_id} \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
-      nohup java -XX:+UseG1GC -jar remote-service.jar &> nohup.out &
+      nohup java -XX:+UseG1GC $(if [[ "${var.language_version}" == "25" ]]; then echo "--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED"; fi) -jar remote-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
