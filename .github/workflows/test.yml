@@ -16,8 +16,13 @@ permissions:
 
 jobs:
   java-ec2-default-test:
+    strategy:
+      matrix:
+        java-version: ['8', '11', '17', '21', '23']
+      fail-fast: false
     uses: ./.github/workflows/java-ec2-default-test.yml
     secrets: inherit
     with:
       caller-workflow-name: 'test'
       aws-region: 'us-east-1'
+      java-version: ${{ matrix.java-version }}

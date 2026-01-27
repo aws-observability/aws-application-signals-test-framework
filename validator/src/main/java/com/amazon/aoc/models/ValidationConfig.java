@@ -37,6 +37,13 @@ public class ValidationConfig {
   String expectedTraceTemplate;
   String expectedLogStructureTemplate;
 
+  // Context for dynamic template selection
+  private Context context;
+
+  public void setContext(Context context) {
+    this.context = context;
+  }
+
   /** alarm related. */
   Integer pullingDuration;
 
@@ -67,7 +74,38 @@ public class ValidationConfig {
   String negativeSoaking;
 
   public FileConfig getExpectedMetricTemplate() {
-    return this.getTemplate(this.expectedMetricTemplate);
+    String templatePath = this.expectedMetricTemplate;
+    
+    // Dynamic template selection for Java EC2 custom metrics based on Java version
+    if (context != null && "java".equalsIgnoreCase(context.getLanguage()) 
+        && context.getLanguageVersion() != null) {
+      if ("JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC".equals(templatePath)
+          || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V8".equals(templatePath)
+          || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V11PLUS".equals(templatePath)) {
+        
+        int javaVersion = parseJavaVersion(context.getLanguageVersion());
+        
+        if (javaVersion >= 23) {
+          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V23PLUS";
+        } else if (javaVersion >= 11) {
+          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V11PLUS";
+        } else if (javaVersion == 8) {
+          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V8";
+        }
+      }
+    }
+    
+    return this.getTemplate(templatePath);
+  }
+  
+  private int parseJavaVersion(String version) {
+    try {
+      // Handle versions like "8", "11", "17", "21", "23"
+      return Integer.parseInt(version.trim());
+    } catch (NumberFormatException e) {
+      // If parsing fails, return 0 to indicate unknown version
+      return 0;
+    }
   }
 
   public FileConfig getExpectedTraceTemplate() {

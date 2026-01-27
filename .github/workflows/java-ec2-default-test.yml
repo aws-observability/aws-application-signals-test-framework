@@ -44,7 +44,7 @@ env:
   JAVA_VERSION: ${{ inputs.java-version }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
-  SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/main-service-delete-me.jar
+  SAMPLE_APP_FRONTEND_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/main-service-delete-me-v${{ inputs.java-version }}.jar
   SAMPLE_APP_REMOTE_SERVICE_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/java-remote-service-v${{ inputs.java-version }}.jar
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
@@ -268,6 +268,8 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --language java
+          --language-version ${{ inputs.java-version }}
           --rollup'
 
       - name: Validate generated traces
@@ -299,6 +301,7 @@ jobs:
         if: always()
         id: validation-result
         run: |
+          # All validations must pass for all Java versions
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.cwagent-metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> $GITHUB_OUTPUT
           else
