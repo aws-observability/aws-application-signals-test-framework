@@ -316,8 +316,8 @@ class ToolCallValidator(Validator):
             }
 
 
-class ToolCallSetValidator(Validator):
-    """Validator that checks if specific tools were called, regardless of order."""
+class ToolPresenceValidator(Validator):
+    """Validator that checks if specific tools were called, regardless of order and other tools being called."""
 
     def __init__(self, expected_tools: List[str], ignore_file_tools: bool = False):
         """Initialize tool call set validator.
