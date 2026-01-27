@@ -26,3 +26,18 @@ jobs:
       caller-workflow-name: 'test'
       aws-region: 'us-east-1'
       java-version: ${{ matrix.java-version }}
+
+  java-ec2-asg-test:
+    uses: ./.github/workflows/java-ec2-asg-test.yml
+    secrets: inherit
+    with:
+      caller-workflow-name: 'test'
+      aws-region: 'us-east-1'
+      java-version: '11'
+
+  java-ec2-adot-sigv4-test:
+    uses: ./.github/workflows/java-ec2-adot-sigv4-test.yml
+    secrets: inherit
+    with:
+      caller-workflow-name: 'test'
+      java-version: '11'
