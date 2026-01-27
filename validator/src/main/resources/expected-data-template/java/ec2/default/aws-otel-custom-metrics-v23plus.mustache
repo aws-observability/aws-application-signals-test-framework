@@ -1,5 +1,5 @@
-# OpenTelemetry Custom Metrics Validation Templates - Java 8 Specific
-# Java 8 uses process.command_args instead of process.command_line
+# OpenTelemetry Custom Metrics Validation Templates - Java 23+ Specific
+# Java 23 does NOT emit service.version dimension
 # ANY_VALUE defines a string to = 'ANY_VALUE' to pass validation testing
 # Custom export templates
 -
@@ -18,9 +18,6 @@
     -
       name: service.name
       value: {{serviceName}}
-    -
-      name: service.version
-      value: ANY_VALUE
     -
       name: Operation
       value: counter
@@ -113,9 +110,6 @@
       name: service.name
       value: {{serviceName}}
     -
-      name: service.version
-      value: ANY_VALUE
-    -
       name: Operation
       value: histogram
     -
@@ -206,9 +200,6 @@
     -
       name: service.name
       value: {{serviceName}}
-    -
-      name: service.version
-      value: ANY_VALUE
     -
       name: Operation
       value: gauge

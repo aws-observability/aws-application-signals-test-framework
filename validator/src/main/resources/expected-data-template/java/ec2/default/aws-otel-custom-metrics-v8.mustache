@@ -1,5 +1,5 @@
 # OpenTelemetry Custom Metrics Validation Templates - Java 8 Specific
-# Java 8 uses process.command_args instead of process.command_line
+# Java 8 uses process.command_line instead of process.command_args
 # ANY_VALUE defines a string to = 'ANY_VALUE' to pass validation testing
 # Custom export templates
 -
@@ -64,7 +64,7 @@
       name: os.type
       value: linux
     -
-      name: process.command_args
+      name: process.command_line
       value: ANY_VALUE
     -
       name: process.executable.path
@@ -155,7 +155,7 @@
       name: os.type
       value: linux
     -
-      name: process.command_args
+      name: process.command_line
       value: ANY_VALUE
     -
       name: process.executable.path
@@ -246,7 +246,7 @@
       name: os.type
       value: linux
     -
-      name: process.command_args
+      name: process.command_line
       value: ANY_VALUE
     -
       name: process.executable.path
