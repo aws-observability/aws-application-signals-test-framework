@@ -1,0 +1,20 @@
+[{
+  "name": "^{{serviceName}}$",
+  "trace_id": "^{{traceId}}$",
+  "http": {
+    "request": {
+      "url": "^.*/ai-chat$",
+      "method": "^POST$"
+    }
+  },
+  "aws": {
+    "service.type": "^gen_ai_agent$"
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^POST /ai-chat$"
+  },
+  "metadata": {
+    "service.name": "^{{serviceName}}$"  
+  }
+}]

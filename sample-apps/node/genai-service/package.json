@@ -1,0 +1,30 @@
+{
+  "name": "test",
+  "version": "1.0.0",
+  "description": "",
+  "type": "commonjs",
+  "private": false,
+  "engines": {
+    "node": ">= 14.0.0",
+    "npm": ">= 6.0.0"
+  },
+  "homepage": "",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": "",
+  "keywords": [],
+  "contributors": [],
+  "dependencies": {
+    "@langchain/anthropic": "^0.3.20",
+    "@langchain/community": "^0.3.43",
+    "@langchain/core": "^0.3.56",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/instrumentation": "^0.201.0",
+    "@opentelemetry/instrumentation-http": "^0.201.0",
+    "@traceloop/instrumentation-langchain": "^0.13.0",
+    "@traceloop/node-server-sdk": "^0.13.3",
+    "pino": "^9.6.0"
+  }
+}

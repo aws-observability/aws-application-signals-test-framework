@@ -1,0 +1,6 @@
+-
+  validationType: "cw-metric"
+  httpPath: "ai-chat"
+  httpMethod: "post"
+  callingType: "http"
+  expectedMetricTemplate: "NODE_EC2_ADOT_GENAI_METRIC"
