@@ -28,14 +28,6 @@ on:
         required: false
         type: string
         default: 'github'
-      sample-app-jar:
-        required: false
-        type: string
-        default: ''
-      sample-remote-app-jar:
-        required: false
-        type: string
-        default: ''
     outputs:
       job-started:
         value: ${{ jobs.java-ec2-default.outputs.job-started }}
@@ -52,8 +44,8 @@ env:
   JAVA_VERSION: ${{ inputs.java-version }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
-  SAMPLE_APP_FRONTEND_SERVICE_JAR: ${{ inputs.sample-app-jar != '' && inputs.sample-app-jar || format('s3://aws-appsignals-sample-app-prod-{0}/java-main-service-v{1}.jar', inputs.aws-region, inputs.java-version) }}
-  SAMPLE_APP_REMOTE_SERVICE_JAR: ${{ inputs.sample-remote-app-jar != '' && inputs.sample-remote-app-jar || format('s3://aws-appsignals-sample-app-prod-{0}/java-remote-service-v{1}.jar', inputs.aws-region, inputs.java-version) }}
+  SAMPLE_APP_FRONTEND_SERVICE_JAR: ${{ format('s3://aws-appsignals-sample-app-prod-{0}/java-main-service-v{1}.jar', inputs.aws-region, inputs.java-version) }}
+  SAMPLE_APP_REMOTE_SERVICE_JAR: ${{ format('s3://aws-appsignals-sample-app-prod-{0}/java-remote-service-v{1}.jar', inputs.aws-region, inputs.java-version) }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
   METRIC_NAMESPACE: ApplicationSignals
