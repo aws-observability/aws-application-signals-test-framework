@@ -283,6 +283,10 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_RUNTIME_METRIC_LOG("/expected-data-template/python/runtime/runtime-log.mustache"),
   PYTHON_RUNTIME_METRIC("/expected-data-template/python/runtime/runtime-metric.mustache"),
 
+  /** Python EC2 X-Ray Adaptive Sampling Test Case Validation */
+  PYTHON_EC2_ADAPTIVE_SAMPLING_FULL_TRACE("/expected-data-template/python/ec2/adaptive-sampling/full-trace.mustache"),
+  PYTHON_EC2_ADAPTIVE_SAMPLING_PARTIAL_TRACE("/expected-data-template/python/ec2/adaptive-sampling/partial-trace.mustache"),
+
   /** DotNet EC2 Default Test Case Validations */
   DOTNET_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/dotnet/ec2/default/outgoing-http-call-log.mustache"),
