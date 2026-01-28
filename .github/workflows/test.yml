@@ -16,11 +16,15 @@ permissions:
 
 jobs:
   java-ec2-default:
+    strategy:
+      matrix:
+        java-version: ['8', '11', '17', '21', '22', '25']
+      fail-fast: false
     uses: ./.github/workflows/java-ec2-default-test.yml
     secrets: inherit
     with:
       aws-region: us-east-1
       caller-workflow-name: 'test'
-      java-version: '25'
-      sample-app-jar: s3://ec2-java25-test/springboot-main-service-0.0.1-SNAPSHOT.jar
-      sample-remote-app-jar: s3://ec2-java25-test/springboot-remote-service-0.0.1-SNAPSHOT.jar
+      java-version: ${{ matrix.java-version }}
+      sample-app-jar: ${{ matrix.java-version == '25' && 's3://ec2-java25-test/springboot-main-service-0.0.1-SNAPSHOT.jar' || '' }}
+      sample-remote-app-jar: ${{ matrix.java-version == '25' && 's3://ec2-java25-test/springboot-remote-service-0.0.1-SNAPSHOT.jar' || '' }}
