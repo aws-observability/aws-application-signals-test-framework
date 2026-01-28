@@ -152,13 +152,6 @@ resource "null_resource" "main_service_setup" {
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
 
-      # Debug: Check if process is running and show logs if failing
-      if ! pgrep -f main-service.jar > /dev/null; then
-        echo "Application process not running. Showing nohup.out:"
-        cat nohup.out
-        exit 1
-      fi
-
       # Check if the application is up. If it is not up, then exit 1.
       attempt_counter=0
       max_attempts=30
@@ -257,13 +250,6 @@ resource "null_resource" "remote_service_setup" {
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
-
-      # Debug: Check if process is running and show logs if failing
-      if ! pgrep -f remote-service.jar > /dev/null; then
-        echo "Application process not running. Showing nohup.out:"
-        cat nohup.out
-        exit 1
-      fi
 
       # Check if the application is up. If it is not up, then exit 1.
       attempt_counter=0
