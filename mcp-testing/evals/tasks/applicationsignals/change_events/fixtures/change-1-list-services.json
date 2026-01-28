@@ -1,0 +1,22 @@
+{
+    "ServiceSummaries": [
+        {
+            "KeyAttributes": {
+                "Type": "Service",
+                "Name": "payments-service",
+                "Environment": "eks:production"
+            },
+            "MetricReferences": [
+                {
+                    "Namespace": "AWS/ApplicationSignals",
+                    "MetricType": "Latency",
+                    "MetricName": "Latency",
+                    "Dimensions": [
+                        {"Name": "Service", "Value": "payments-service"},
+                        {"Name": "Environment", "Value": "eks:production"}
+                    ]
+                }
+            ]
+        }
+    ]
+}

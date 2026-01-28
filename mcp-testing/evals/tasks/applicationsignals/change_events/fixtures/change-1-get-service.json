@@ -1,0 +1,54 @@
+{
+    "Service": {
+        "KeyAttributes": {
+            "Type": "Service",
+            "Name": "payments-service",
+            "Environment": "eks:production"
+        },
+        "AttributeMaps": [
+            {
+                "Type": "Service",
+                "Name": "payments-service",
+                "Environment": "eks:production"
+            }
+        ],
+        "MetricReferences": [
+            {
+                "AccountId": "123456789012",
+                "Namespace": "AWS/ApplicationSignals",
+                "MetricName": "Latency",
+                "MetricType": "GAUGE",
+                "Dimensions": [
+                    {
+                        "Name": "Service",
+                        "Value": "payments-service"
+                    },
+                    {
+                        "Name": "Environment",
+                        "Value": "eks:production"
+                    }
+                ]
+            }
+        ],
+        "LogGroupReferences": [
+            {
+                "LogGroup": "/aws/application-signals/payments-service"
+            }
+        ],
+        "ServiceGroups": [
+            {
+                "GroupIdentifier": "sg-12345",
+                "GroupName": "production-services",
+                "GroupSource": "USER_DEFINED",
+                "GroupValue": "payments"
+            }
+        ]
+    },
+    "StartTime": 1704067200000,
+    "EndTime": 1704153600000,
+    "LogGroupReferences": [
+        {
+            "LogGroup": "/aws/application-signals/payments-service"
+        }
+    ]
+}

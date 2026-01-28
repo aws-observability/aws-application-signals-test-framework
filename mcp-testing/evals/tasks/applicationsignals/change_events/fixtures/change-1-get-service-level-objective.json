@@ -1,0 +1,71 @@
+{
+    "Slo": {
+        "Arn": "arn:aws:application-signals:us-east-1:123456789012:slo/payments-latency",
+        "Name": "payments-latency",
+        "Description": "Latency SLO for payments service to ensure fast payment processing",
+        "CreatedTime": 1737667200,
+        "LastUpdatedTime": 1737667200,
+        "Sli": {
+            "SliMetric": {
+                "KeyAttributes": {
+                    "Type": "Service",
+                    "Name": "payments-service",
+                    "Environment": "eks:production"
+                },
+                "OperationName": "POST /payments/process",
+                "MetricType": "LATENCY",
+                "MetricDataQueries": [
+                    {
+                        "Id": "latency_p99",
+                        "MetricStat": {
+                            "Metric": {
+                                "Namespace": "AWS/ApplicationSignals",
+                                "MetricName": "Latency",
+                                "Dimensions": [
+                                    {
+                                        "Name": "Service",
+                                        "Value": "payments-service"
+                                    },
+                                    {
+                                        "Name": "Environment",
+                                        "Value": "eks:production"
+                                    },
+                                    {
+                                        "Name": "Operation",
+                                        "Value": "POST /payments/process"
+                                    }
+                                ]
+                            },
+                            "Period": 60,
+                            "Stat": "p99"
+                        },
+                        "ReturnData": true,
+                        "Period": 60
+                    }
+                ]
+            },
+            "MetricThreshold": 500,
+            "ComparisonOperator": "LessThanOrEqualTo"
+        },
+        "EvaluationType": "PeriodBased",
+        "Goal": {
+            "Interval": {
+                "RollingInterval": {
+                    "DurationUnit": "DAY",
+                    "Duration": 7
+                }
+            },
+            "AttainmentGoal": 99.9,
+            "WarningThreshold": 99.5
+        },
+        "BurnRateConfigurations": [
+            {
+                "LookBackWindowMinutes": 60
+            },
+            {
+                "LookBackWindowMinutes": 360
+            }
+        ],
+        "MetricSourceType": "ServiceOperation"
+    }
+}

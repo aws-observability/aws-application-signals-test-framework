@@ -1,0 +1,21 @@
+{
+    "ChangeEvents": [
+        {
+            "EventId": "evt-deploy-123",
+            "EventName": "ServiceDeployment",
+            "ChangeEventType": "DEPLOYMENT",
+            "Timestamp": 1737667500,
+            "AccountId": "123456789012",
+            "Region": "us-east-1",
+            "UserName": "deploy-pipeline",
+            "Entity": {
+                "Type": "Service",
+                "Name": "payments-service",
+                "Environment": "eks:production"
+            }
+        }
+    ],
+    "StartTime": 1737667200,
+    "EndTime": 1737667800,
+    "NextToken": null
+}
