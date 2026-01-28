@@ -186,3 +186,13 @@ def mysql(request):
         logger.error("Could not complete http request to RDS database:" + str(e))
     finally:
         return get_xray_trace_id()
+
+def status(request, code):
+    ip = request.GET.get('ip', 'localhost')
+    ip = ip.replace("/", "")
+    try:
+        requests.get(f"http://{ip}:8001/status/{code}")
+    except Exception:
+        pass  # Ignore exception
+    logger.info(f"Service A requested status code {code} from Service B")
+    return get_xray_trace_id()
