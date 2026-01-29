@@ -76,6 +76,7 @@ jobs:
           else
             echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
           fi
+          echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://aws-appsignals-sample-app-prod-us-west-2-adap/pre-release/aws-opentelemetry-agent-2.20.0-SNAPSHOT.jar ./adot.jar" >> $GITHUB_ENV
 
       - name: Set Get CW Agent command environment variable
         run: |

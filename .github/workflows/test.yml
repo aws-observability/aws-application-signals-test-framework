@@ -1,0 +1,22 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# This is a reusable workflow for running the Enablement test for App Signals.
+# It is meant to be called from another workflow.
+# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
+name: Test
+on:
+  push:
+    branches:
+      - adap-java
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  java-ec2-adaptive-sampling:
+    uses: ./.github/workflows/java-ec2-adaptive-sampling-test.yml
+    secrets: inherit
+    with:
+      caller-workflow-name: 'test'
