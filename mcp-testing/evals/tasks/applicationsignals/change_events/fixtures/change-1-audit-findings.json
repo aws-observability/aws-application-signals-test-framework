@@ -1,23 +1,7 @@
 {
     "AuditFindings": [
-        {
-            "AuditTarget": {
-                "Type": "service",
-                "Data": {
-                    "Service": {
-                        "Type": "Service",
-                        "Name": "payments-service",
-                        "Environment": "eks:production"
-                    }
-                }
-            },
-            "Auditor": "operation_metric",
-            "Findings": [
-                {
-                    "Severity": "HIGH",
-                    "Message": "Elevated latency detected in payment-service starting at 2026-01-23T22:00:00Z"
-                }
-            ]
-        }
-    ]
+    ],
+    "EndTime": 1769639400,
+    "NextToken": null,
+    "StartTime": 1769628600
 }

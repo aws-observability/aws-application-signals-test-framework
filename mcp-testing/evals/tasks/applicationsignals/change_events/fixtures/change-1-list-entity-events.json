@@ -1,18 +1,18 @@
 {
     "ChangeEvents": [
         {
-            "EventId": "evt-deploy-123",
-            "EventName": "ServiceDeployment",
-            "ChangeEventType": "DEPLOYMENT",
-            "Timestamp": 1737667500,
             "AccountId": "123456789012",
-            "Region": "us-east-1",
-            "UserName": "deploy-pipeline",
+            "ChangeEventType": "DEPLOYMENT",
             "Entity": {
-                "Type": "Service",
-                "Name": "payments-service",
-                "Environment": "eks:production"
-            }
+                "Identifier": "payments-service",
+                "ResourceType": "AWS::ECS::Cluster",
+                "Type": "AWS::Resource"
+            },
+            "EventId": "eventId-1",
+            "EventName": "UpdateService",
+            "Region": "us-east-1",
+            "Timestamp": 1.769631544E9,
+            "UserName": "dataGenerationLambda"
         }
     ],
     "StartTime": 1737667200,

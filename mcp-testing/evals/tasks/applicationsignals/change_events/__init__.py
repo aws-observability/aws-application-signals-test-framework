@@ -13,7 +13,3 @@
 # limitations under the License.
 
 """Change event tasks for Application Signals MCP evaluation."""
-
-from evals.tasks.applicationsignals.change_events.change_event_tasks import TASKS
-
-__all__ = ['TASKS']

@@ -3,13 +3,13 @@
         "KeyAttributes": {
             "Type": "Service",
             "Name": "payments-service",
-            "Environment": "eks:production"
+            "Environment": "ecs:payments-service"
         },
         "AttributeMaps": [
             {
                 "Type": "Service",
                 "Name": "payments-service",
-                "Environment": "eks:production"
+                "Environment": "ecs:payments-service"
             }
         ],
         "MetricReferences": [
@@ -25,7 +25,7 @@
                     },
                     {
                         "Name": "Environment",
-                        "Value": "eks:production"
+                        "Value": "ecs:payments-service"
                     }
                 ]
             }
@@ -37,10 +37,34 @@
         ],
         "ServiceGroups": [
             {
-                "GroupIdentifier": "sg-12345",
-                "GroupName": "production-services",
-                "GroupSource": "USER_DEFINED",
-                "GroupValue": "payments"
+                "GroupIdentifier": "group/source:inferred/groupType:Related/name:payments-service",
+                "GroupName": "Related",
+                "GroupSource": "Default",
+                "GroupValue": "pet-clinic-vets-service"
+            },
+            {
+                "GroupIdentifier": "group/source:inferred/groupType:Environment/name:ecs:payments-service",
+                "GroupName": "Environment",
+                "GroupSource": "Telemetry",
+                "GroupValue": "ecs:payments-service"
+            },
+            {
+                "GroupIdentifier": "group/source:declared/groupType:Team/name:Frontend",
+                "GroupName": "Team",
+                "GroupSource": "Telemetry",
+                "GroupValue": "Frontend"
+            },
+            {
+                "GroupIdentifier": "group/source:declared/groupType:BusinessUnit/name:E-commerce",
+                "GroupName": "BusinessUnit",
+                "GroupSource": "Telemetry",
+                "GroupValue": "E-commerce"
+            },
+            {
+                "GroupIdentifier": "group/source:declared/groupType:Organization/name:Marketplace",
+                "GroupName": "Organization",
+                "GroupSource": "Telemetry",
+                "GroupValue": "Marketplace"
             }
         ]
     },

@@ -10,7 +10,7 @@
                 "KeyAttributes": {
                     "Type": "Service",
                     "Name": "payments-service",
-                    "Environment": "eks:production"
+                    "Environment": "ecs:payments-service"
                 },
                 "OperationName": "POST /payments/process",
                 "MetricType": "LATENCY",
@@ -28,7 +28,7 @@
                                     },
                                     {
                                         "Name": "Environment",
-                                        "Value": "eks:production"
+                                        "Value": "ecs:payments-service"
                                     },
                                     {
                                         "Name": "Operation",

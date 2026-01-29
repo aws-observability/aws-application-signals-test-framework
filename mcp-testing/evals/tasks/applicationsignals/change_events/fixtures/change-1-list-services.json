@@ -1,20 +1,101 @@
 {
     "ServiceSummaries": [
-        {
+                {
+            "AttributeMaps": [
+                {
+                    "ECS.Cluster": "payments-service",
+                    "ECS.TaskDefinitionFamily": "payments-service",
+                    "PlatformType": "AWS::ECS"
+                },
+                {
+                    "InstrumentationType": "INSTRUMENTED"
+                }
+            ],
             "KeyAttributes": {
-                "Type": "Service",
+                "Environment": "ecs:payments-service",
                 "Name": "payments-service",
-                "Environment": "eks:production"
+                "Type": "Service"
             },
             "MetricReferences": [
                 {
-                    "Namespace": "AWS/ApplicationSignals",
-                    "MetricType": "Latency",
-                    "MetricName": "Latency",
+                    "AccountId": null,
                     "Dimensions": [
-                        {"Name": "Service", "Value": "payments-service"},
-                        {"Name": "Environment", "Value": "eks:production"}
-                    ]
+                        {
+                            "Name": "Environment",
+                            "Value": "ecs:payments-service"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "payments-service"
+                        }
+                    ],
+                    "MetricName": "Latency",
+                    "MetricType": "LATENCY",
+                    "Namespace": "ApplicationSignals"
+                },
+                {
+                    "AccountId": null,
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ecs:payments-service"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "payments-service"
+                        }
+                    ],
+                    "MetricName": "Error",
+                    "MetricType": "ERROR",
+                    "Namespace": "ApplicationSignals"
+                },
+                {
+                    "AccountId": null,
+                    "Dimensions": [
+                        {
+                            "Name": "Environment",
+                            "Value": "ecs:payments-service"
+                        },
+                        {
+                            "Name": "Service",
+                            "Value": "payments-service"
+                        }
+                    ],
+                    "MetricName": "Fault",
+                    "MetricType": "FAULT",
+                    "Namespace": "ApplicationSignals"
+                }
+            ],
+            "ServiceGroups": [
+                {
+                    "GroupIdentifier": "group/source:inferred/groupType:Related/name:payments-service",
+                    "GroupName": "Related",
+                    "GroupSource": "Default",
+                    "GroupValue": "pet-clinic-vets-service"
+                },
+                {
+                    "GroupIdentifier": "group/source:inferred/groupType:Environment/name:ecs:payments-service",
+                    "GroupName": "Environment",
+                    "GroupSource": "Telemetry",
+                    "GroupValue": "ecs:payments-service"
+                },
+                {
+                    "GroupIdentifier": "group/source:declared/groupType:Team/name:Frontend",
+                    "GroupName": "Team",
+                    "GroupSource": "Telemetry",
+                    "GroupValue": "Frontend"
+                },
+                {
+                    "GroupIdentifier": "group/source:declared/groupType:BusinessUnit/name:E-commerce",
+                    "GroupName": "BusinessUnit",
+                    "GroupSource": "Telemetry",
+                    "GroupValue": "E-commerce"
+                },
+                {
+                    "GroupIdentifier": "group/source:declared/groupType:Organization/name:Marketplace",
+                    "GroupName": "Organization",
+                    "GroupSource": "Telemetry",
+                    "GroupValue": "Marketplace"
                 }
             ]
         }

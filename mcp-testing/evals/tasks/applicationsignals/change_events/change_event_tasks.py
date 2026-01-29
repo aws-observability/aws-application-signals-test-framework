@@ -123,9 +123,9 @@ TASKS = [
     ),
     ChangeEventTask(
         id='slo-changes-deployment-correlation',
-        prompt='My payements-latency SLO is breaching. Can you invesitgate the root cause?',
+        prompt='My payments-latency SLO is breaching. Can you investigate the root cause?',
         validation_rubric=[
-            'Agent sees that there is 1 deployment event'
+            'Agent sees that there is 1 deployment event and uses information in the event to complete root cause.'
         ],
         expected_tools_set=[
             'get_slo',
