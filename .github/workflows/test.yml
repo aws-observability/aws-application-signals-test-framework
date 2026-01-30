@@ -5,7 +5,7 @@ name: Test
 on:
   push:
     branches:
-      - Java_V25_Fix
+      - vherremi/Java_V25_Fix
 
 permissions:
   id-token: write
