@@ -70,7 +70,7 @@ public class FrontendServiceController {
   private AtomicBoolean shouldSendLocalRootClientCall = new AtomicBoolean(false);
 
   @Bean
-  private void runLocalRootClientCallRecurringService() { // run the service
+  private ScheduledExecutorService runLocalRootClientCallRecurringService() { // run the service
     ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     Runnable runnableTask =
@@ -90,6 +90,7 @@ public class FrontendServiceController {
             };
     // Run with initial 0.1s delay, every 1 second
     executorService.scheduleAtFixedRate(runnableTask, 100, 1000, TimeUnit.MILLISECONDS);
+    return executorService;
   }
 
   // Agent-based metrics using GlobalOpenTelemetry

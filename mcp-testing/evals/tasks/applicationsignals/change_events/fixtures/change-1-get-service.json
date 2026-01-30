@@ -1,0 +1,78 @@
+{
+    "Service": {
+        "KeyAttributes": {
+            "Type": "Service",
+            "Name": "payments-service",
+            "Environment": "ecs:payments-service"
+        },
+        "AttributeMaps": [
+            {
+                "Type": "Service",
+                "Name": "payments-service",
+                "Environment": "ecs:payments-service"
+            }
+        ],
+        "MetricReferences": [
+            {
+                "AccountId": "123456789012",
+                "Namespace": "AWS/ApplicationSignals",
+                "MetricName": "Latency",
+                "MetricType": "GAUGE",
+                "Dimensions": [
+                    {
+                        "Name": "Service",
+                        "Value": "payments-service"
+                    },
+                    {
+                        "Name": "Environment",
+                        "Value": "ecs:payments-service"
+                    }
+                ]
+            }
+        ],
+        "LogGroupReferences": [
+            {
+                "LogGroup": "/aws/application-signals/payments-service"
+            }
+        ],
+        "ServiceGroups": [
+            {
+                "GroupIdentifier": "group/source:inferred/groupType:Related/name:payments-service",
+                "GroupName": "Related",
+                "GroupSource": "Default",
+                "GroupValue": "pet-clinic-vets-service"
+            },
+            {
+                "GroupIdentifier": "group/source:inferred/groupType:Environment/name:ecs:payments-service",
+                "GroupName": "Environment",
+                "GroupSource": "Telemetry",
+                "GroupValue": "ecs:payments-service"
+            },
+            {
+                "GroupIdentifier": "group/source:declared/groupType:Team/name:Frontend",
+                "GroupName": "Team",
+                "GroupSource": "Telemetry",
+                "GroupValue": "Frontend"
+            },
+            {
+                "GroupIdentifier": "group/source:declared/groupType:BusinessUnit/name:E-commerce",
+                "GroupName": "BusinessUnit",
+                "GroupSource": "Telemetry",
+                "GroupValue": "E-commerce"
+            },
+            {
+                "GroupIdentifier": "group/source:declared/groupType:Organization/name:Marketplace",
+                "GroupName": "Organization",
+                "GroupSource": "Telemetry",
+                "GroupValue": "Marketplace"
+            }
+        ]
+    },
+    "StartTime": 1704067200000,
+    "EndTime": 1704153600000,
+    "LogGroupReferences": [
+        {
+            "LogGroup": "/aws/application-signals/payments-service"
+        }
+    ]
+}
