@@ -79,7 +79,7 @@ public class ValidationConfig {
     // Dynamic template selection for Java EC2 custom metrics based on Java version
     if (context != null && "java".equalsIgnoreCase(context.getLanguage()) 
         && context.getLanguageVersion() != null) {
-      if ("JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC".equals(templatePath)
+      if ("JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V11_23".equals(templatePath)
           || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V8".equals(templatePath)
           || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V25".equals(templatePath)) {
         
@@ -93,7 +93,7 @@ public class ValidationConfig {
           templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V25";
         } else if (javaVersion >= 11) {
           // Java 11-23 use process.command_args (base template)
-          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC";
+          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V11_23";
         }
       }
     }
