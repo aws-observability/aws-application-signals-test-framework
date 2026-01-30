@@ -1,0 +1,40 @@
+# This is a reusable workflow for running the Enablement test for App Signals.
+# It is meant to be called from another workflow.
+# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
+name: Test
+on:
+  push:
+    branches:
+      - Java_Custom_Metrics_Update
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  java-ec2-default-test:
+    strategy:
+      matrix:
+        java-version: ['8', '11', '17', '21', '23', '25']
+      fail-fast: false
+    uses: ./.github/workflows/java-ec2-default-test.yml
+    secrets: inherit
+    with:
+      caller-workflow-name: 'test'
+      aws-region: 'us-east-1'
+      java-version: ${{ matrix.java-version }}
+
+  java-ec2-asg-test:
+    uses: ./.github/workflows/java-ec2-asg-test.yml
+    secrets: inherit
+    with:
+      caller-workflow-name: 'test'
+      aws-region: 'us-east-1'
+      java-version: '11'
+
+  java-ec2-adot-sigv4-test:
+    uses: ./.github/workflows/java-ec2-adot-sigv4-test.yml
+    secrets: inherit
+    with:
+      caller-workflow-name: 'test'
+      java-version: '11'
