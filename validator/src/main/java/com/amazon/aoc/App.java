@@ -49,6 +49,9 @@ public class App implements Callable<Integer> {
   @CommandLine.Option(names = {"--language"})
   private String language;
 
+  @CommandLine.Option(names = {"--language-version"})
+  private String languageVersion;
+
   @CommandLine.Option(
       names = {"--metric-namespace"},
       defaultValue = "AWSObservability/CloudWatchOTService")
@@ -196,6 +199,7 @@ public class App implements Callable<Integer> {
     context.setCortexInstanceEndpoint(this.cortexInstanceEndpoint);
     context.setTestcase(testcase);
     context.setLanguage(language);
+    context.setLanguageVersion(languageVersion);
     context.setInstanceAmi(this.instanceAmi);
     context.setInstanceId(this.instanceId);
     context.setPrivateDnsName(this.privateDnsName);

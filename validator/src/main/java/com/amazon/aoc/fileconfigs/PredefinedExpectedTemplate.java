@@ -71,6 +71,10 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/java/ec2/default/aws-sdk-call-metric.mustache"),
   JAVA_EC2_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/java/ec2/default/aws-sdk-call-trace.mustache"),
 
+    /** Java EC2 Default Custom Metrics Test Case Validations */
+  JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC("/expected-data-template/java/ec2/default/aws-otel-custom-metrics.mustache"),
+  JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V8("/expected-data-template/java/ec2/default/aws-otel-custom-metrics-v8.mustache"),
+
   JAVA_EC2_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/java/ec2/default/remote-service-log.mustache"),
   JAVA_EC2_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/java/ec2/default/remote-service-metric.mustache"),
   JAVA_EC2_DEFAULT_REMOTE_SERVICE_TRACE("/expected-data-template/java/ec2/default/remote-service-trace.mustache"),

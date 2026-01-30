@@ -37,6 +37,9 @@ public class ValidatorFactory {
    * @throws Exception when there's no matched validator
    */
   public IValidator launchValidator(ValidationConfig validationConfig) throws Exception {
+    // Set context on validation config for dynamic template selection
+    validationConfig.setContext(this.context);
+    
     // get validator
     IValidator validator;
     FileConfig expectedData = null;
