@@ -123,9 +123,6 @@ resource "null_resource" "main_service_setup" {
         sudo yum install java-${var.language_version}-amazon-corretto -y
       fi
 
-      # enable ec2 instance connect for debug
-      sudo yum install ec2-instance-connect -y
-
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
@@ -141,21 +138,16 @@ resource "null_resource" "main_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_app_jar} ./main-service.jar
 
-      export SERVICE_NAME="sample-application-${var.test_id}"
-      export DEPLOYMENT_ENVIRONMENT_NAME="ec2:default"
-
       JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
-      OTEL_METRICS_EXPORTER=otlp \
+      OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
       OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
-      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics \
       OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
+      OTEL_RESOURCE_ATTRIBUTES="service.name=sample-application-${var.test_id},Internal_Org=Financial,Business Unit=Payments,Region=us-east-1,aws.application_signals.metric_resource_keys=Business Unit&Region&Organization" \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
-      OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME},aws.application_signals.metric_resource_keys=all_attributes" \
-      AWS_REGION='${var.aws_region}' \
-      nohup java -Dotel.java.global-autoconfigure.enabled=true -XX:+UseG1GC -jar main-service.jar &> nohup.out &
+      nohup java -XX:+UseG1GC -jar main-service.jar &> nohup.out &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
