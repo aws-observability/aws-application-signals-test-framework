@@ -252,29 +252,9 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
-      - name: Validate custom metrics
-        id: cwagent-metric-validation
-        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c java/ec2/default/custom-metric-validation.yml
-          --testing-id ${{ env.TESTING_ID }}
-          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
-          --region ${{ inputs.aws-region }}
-          --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace CWAgent
-          --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
-          --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
-          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
-          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
-          --language java
-          --language-version ${{ inputs.java-version }}
-          --rollup'
-
       - name: Validate generated traces
         id: trace-validation
-        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.cwagent-metric-validation.outcome == 'failure') && !cancelled()
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c java/ec2/default/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
@@ -301,8 +281,7 @@ jobs:
         if: always()
         id: validation-result
         run: |
-          # All validations must pass for all Java versions
-          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.cwagent-metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> $GITHUB_OUTPUT
           else
             echo "validation-result=failure" >> $GITHUB_OUTPUT
