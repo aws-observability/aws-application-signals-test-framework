@@ -237,6 +237,20 @@ jobs:
             echo "validation-result=failure" >> $GITHUB_OUTPUT
           fi
 
+      - name: Fail workflow if any validation step failed
+        if: always()
+        run: |
+          if [ "${{ steps.trace-validation.outcome }}" = "failure" ] || [ "${{ steps.log-validation.outcome }}" = "failure" ] || [ "${{ steps.metric-validation.outcome }}" = "failure" ]; then
+            echo "One or more validation steps failed:"
+            echo "  - Trace validation: ${{ steps.trace-validation.outcome }}"
+            echo "  - Log validation: ${{ steps.log-validation.outcome }}"
+            echo "  - Metric validation: ${{ steps.metric-validation.outcome }}"
+            echo ""
+            exit 1
+          else
+            echo "All validation steps passed"
+          fi
+
       # Clean up Procedures
       - name: Terraform destroy
         if: always()
