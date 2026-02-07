@@ -177,8 +177,6 @@ jobs:
 
       - name: Validate generated traces
         id: trace-validation
-        # will be removed after data quality bug fixed
-        continue-on-error: true
         run: ./gradlew validator:run --args='-c python/lambda/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
@@ -193,8 +191,6 @@ jobs:
       - name: Validate generated EMF logs
         id: log-validation
         if: (success() || steps.trace-validation.outcome == 'failure') && !cancelled()
-        # will be removed after data quality bug fixed
-        continue-on-error: true
         run: ./gradlew validator:run --args='-c python/lambda/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
@@ -207,8 +203,6 @@ jobs:
 
       - name: Validate generated metrics
         id: metric-validation
-        # will be removed after data quality bug fixed
-        continue-on-error: true
         if: (success() || steps.trace-validation.outcome == 'failure' || steps.log-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c python/lambda/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
