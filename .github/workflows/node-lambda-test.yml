@@ -151,8 +151,6 @@ jobs:
 
       - name: Validate generated traces
         id: trace-validation
-        # will be removed after data quality bug fixed
-        continue-on-error: true
         run: ./gradlew validator:run --args='-c node/lambda/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
@@ -167,8 +165,6 @@ jobs:
       - name: Validate generated EMF logs
         id: log-validation
         if: (success() || steps.trace-validation.outcome == 'failure') && !cancelled()
-        # will be removed after data quality bug fixed
-        continue-on-error: true
         run: ./gradlew validator:run --args='-c node/lambda/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
@@ -182,8 +178,6 @@ jobs:
       - name: Validate generated metrics
         id: metric-validation
         if: (success() || steps.trace-validation.outcome == 'failure' || steps.log-validation.outcome == 'failure') && !cancelled()
-        # will be removed after data quality bug fixed
-        continue-on-error: true
         run: ./gradlew validator:run --args='-c node/lambda/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
@@ -209,20 +203,6 @@ jobs:
             echo "validation-result=success" >> $GITHUB_OUTPUT
           else
             echo "validation-result=failure" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Fail workflow if any validation step failed
-        if: always()
-        run: |
-          if [ "${{ steps.trace-validation.outcome }}" = "failure" ] || [ "${{ steps.log-validation.outcome }}" = "failure" ] || [ "${{ steps.metric-validation.outcome }}" = "failure" ]; then
-            echo "One or more validation steps failed:"
-            echo "  - Trace validation: ${{ steps.trace-validation.outcome }}"
-            echo "  - Log validation: ${{ steps.log-validation.outcome }}"
-            echo "  - Metric validation: ${{ steps.metric-validation.outcome }}"
-            echo ""
-            exit 1
-          else
-            echo "All validation steps passed"
           fi
 
       # Clean up Procedures
