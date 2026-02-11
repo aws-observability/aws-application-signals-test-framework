@@ -23,6 +23,11 @@ on:
         required: false
         type: string
         default: '8.0'
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
+        required: false
+        type: string
+        default: "x86_64"
     outputs:
       job-started:
         value: ${{ jobs.dotnet-ec2-default.outputs.job-started }}
@@ -96,12 +101,13 @@ jobs:
 
       - name: Set Get ADOT Distro command environment variable
         run: |
+          ARCH_SUFFIX=${{ inputs.cpu-architecture == 'arm64' && 'arm64' || 'x64' }}
           if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-dotnet-instrumentation" ]; then
             # Get staging distro file from staging bucket
             echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
           else
             # After Release will switch to latest tag instead of hard code version for canary purpose
-            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-${ARCH_SUFFIX}.zip" >> $GITHUB_ENV
           fi
 
       - name: Set Get CW Agent command environment variable
@@ -149,6 +155,7 @@ jobs:
               -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
               -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
               -var="language_version=${{ env.DOTNET_VERSION }}" \
+              -var="cpu_architecture=${{ inputs.cpu-architecture }}" \
             || deployment_failed=$?
           
             if [ $deployment_failed -eq 1 ]; then
