@@ -2,7 +2,7 @@
 ## SPDX-License-Identifier: Apache-2.0
 
 # Use the official Node.js image as the base
-FROM node:20-alpine
+FROM node:24-alpine
 
 # Set working directory
 WORKDIR /app
