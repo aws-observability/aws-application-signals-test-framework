@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -54,7 +54,7 @@ data "aws_ami" "ami" {
   }
   filter {
     name   = "architecture"
-    values = ["x86_64"]
+    values = [var.cpu_architecture]
   }
   filter {
     name   = "image-type"
@@ -79,7 +79,7 @@ data "aws_ami" "ami" {
 
 resource "aws_instance" "main_service_instance" {
   ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                        = "t3.small"
+  instance_type                        = var.cpu_architecture == "x86_64" ? "t3.small" : "t4g.small"
   key_name                             = local.ssh_key_name
   iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
@@ -140,12 +140,15 @@ resource "null_resource" "main_service_setup" {
       current_dir=$(pwd)
       echo $current_dir
 
+      # Set architecture-specific path
+      ARCH_PATH="${var.cpu_architecture == "x86_64" ? "linux-x64" : "linux-arm64"}"
+
       # Export environment variables for instrumentation
       cd ./asp_frontend_service
       dotnet build
       export CORECLR_ENABLE_PROFILING=1
       export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
-      export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/$ARCH_PATH/OpenTelemetry.AutoInstrumentation.Native.so
       export DOTNET_ADDITIONAL_DEPS=$current_dir/dotnet-distro/AdditionalDeps
       export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
       export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
@@ -188,7 +191,7 @@ resource "null_resource" "main_service_setup" {
 
 resource "aws_instance" "remote_service_instance" {
   ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                        = "t3.small"
+  instance_type                        = var.cpu_architecture == "x86_64" ? "t3.small" : "t4g.small"
   key_name                             = local.ssh_key_name
   iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
@@ -249,12 +252,15 @@ resource "null_resource" "remote_service_setup" {
       current_dir=$(pwd)
       echo $current_dir
 
+      # Set architecture-specific path
+      ARCH_PATH="${var.cpu_architecture == "x86_64" ? "linux-x64" : "linux-arm64"}"
+
       # Export environment variables for instrumentation
       cd ./asp_remote_service
       dotnet build
       export CORECLR_ENABLE_PROFILING=1
       export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
-      export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
+      export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/$ARCH_PATH/OpenTelemetry.AutoInstrumentation.Native.so
       export DOTNET_ADDITIONAL_DEPS=$current_dir/dotnet-distro/AdditionalDeps
       export DOTNET_SHARED_STORE=$current_dir/dotnet-distro/store
       export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
