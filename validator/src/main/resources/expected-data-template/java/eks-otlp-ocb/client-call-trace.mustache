@@ -1,9 +1,10 @@
+# TODO: Remove Environment: generic:default and Platform: Generic support once backend fully rolls out eks:default and AWS::EKS support
 [{
   "name": "^{{serviceName}}$",
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
     "aws.local.operation": "^InternalOperation$",
-    "aws.local.environment": "^generic:default$"
+    "aws.local.environment": "^(generic|eks):default$"
   },
   "metadata": {
     "k8s.cluster.name": "^{{platformInfo}}$"
@@ -22,13 +23,13 @@
         "aws.local.operation": "^InternalOperation$",
         "aws.remote.service": "^local-root-client-call$",
         "aws.remote.operation": "GET /",
-        "aws.local.environment": "^generic:default$"
+        "aws.local.environment": "^(generic|eks):default$"
       },
       "metadata": {
         "EC2.AutoScalingGroup": "^eks-.+",
         "EKS.Cluster": "^{{platformInfo}}$",
         "K8s.Namespace": "^{{appNamespace}}$",
-        "PlatformType": "^Generic$"
+        "PlatformType": "^(Generic|AWS::EKS)$"
       },
       "namespace": "^remote$"
     }

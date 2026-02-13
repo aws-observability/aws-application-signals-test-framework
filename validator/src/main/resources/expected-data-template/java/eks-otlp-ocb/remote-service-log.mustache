@@ -1,8 +1,9 @@
+# TODO: Remove Environment: generic:default and Platform: Generic support once backend fully rolls out eks:default and AWS::EKS support
 [{
   "EC2.AutoScalingGroup": "^eks-.+",
   "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
-  "Environment": "^generic:default$",
-  "PlatformType": "^Generic$",
+  "Environment": "^(generic|eks):default$",
+  "PlatformType": "^(Generic|AWS::EKS)$",
   "Service": "^{{serviceName}}$",
   "Operation": "GET /remote-service",
   "Host": "^ip(-[0-9]{1,3}){4}.*$"
@@ -10,8 +11,8 @@
 {
   "EC2.AutoScalingGroup": "^eks-.+",
   "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
-  "Environment": "^generic:default$",
-  "PlatformType": "^Generic$",
+  "Environment": "^(generic|eks):default$",
+  "PlatformType": "^(Generic|AWS::EKS)$",
   "Service": "^{{serviceName}}$",
   "Operation": "GET /remote-service",
   "RemoteService": "{{remoteServiceDeploymentName}}",
