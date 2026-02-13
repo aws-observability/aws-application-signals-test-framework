@@ -183,7 +183,7 @@ jobs:
             exit 1
           fi
           
-          # Extract all job names from THIS workflow (excluding this gate job)
+          # Extract all job names from workflow (excluding this gate job)
           all_jobs=$(yq eval '.jobs | keys | .[]' .github/workflows/pr-build.yml | grep -v "all-pr-checks-pass" | sort)
           
           # Extract job names from needs array

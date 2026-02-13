@@ -13,8 +13,17 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-public class MustacheHelperTest {
+/**
+ * Validates template and configuration files to catch syntax errors before they reach production.
+ * These tests prevent issues like PR #556/#557 where comments in mustache files broke parsing.
+ */
+public class TemplateValidationTest {
 
+    /**
+     * Validates that all mustache template files can be compiled.
+     * Mustache templates must start with valid JSON/YAML, not comments.
+     * Uses the same MustacheFactory that production code uses to ensure consistency.
+     */
     @Test
     public void testAllMustacheFilesCompile() throws Exception {
         MustacheFactory mf = new DefaultMustacheFactory();
@@ -37,6 +46,10 @@ public class MustacheHelperTest {
         }
     }
 
+    /**
+     * Validates that all YAML configuration files parse correctly.
+     * Catches syntax errors in validation config files before they cause runtime failures.
+     */
     @Test
     public void testAllYamlFilesParseCorrectly() throws Exception {
         Yaml yaml = new Yaml();
