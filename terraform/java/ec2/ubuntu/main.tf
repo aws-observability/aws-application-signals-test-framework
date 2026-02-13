@@ -28,11 +28,11 @@ resource "aws_default_vpc" "default" {}
 
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "aws_ssh_key" {
-  key_name = "instance_key-${var.test_id}"
+  key_name   = "instance_key-${var.test_id}"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
@@ -42,8 +42,8 @@ locals {
 }
 
 data "aws_ami" "ami" {
-  owners = ["amazon"]
-  most_recent      = true
+  owners      = ["amazon"]
+  most_recent = true
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
@@ -52,7 +52,7 @@ data "aws_ami" "ami" {
     name   = "state"
     values = ["available"]
   }
-  
+
   filter {
     name   = "image-type"
     values = ["machine"]
@@ -75,13 +75,13 @@ data "aws_ami" "ami" {
 }
 
 resource "aws_instance" "main_service_instance" {
-  ami                                   = data.aws_ami.ami.id 
-  instance_type                         = "t3.micro" 
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id
+  instance_type                        = "t3.micro"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
     http_endpoint = "enabled"
@@ -99,10 +99,10 @@ resource "aws_instance" "main_service_instance" {
 
 resource "null_resource" "main_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
@@ -178,13 +178,13 @@ resource "null_resource" "main_service_setup" {
 }
 
 resource "aws_instance" "remote_service_instance" {
-  ami                                   = data.aws_ami.ami.id 
-  instance_type                         = "t3.micro"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id
+  instance_type                        = "t3.micro"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
     http_endpoint = "enabled"
@@ -202,10 +202,10 @@ resource "aws_instance" "remote_service_instance" {
 
 resource "null_resource" "remote_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.remote_service_instance.public_ip
+    host        = aws_instance.remote_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
@@ -284,10 +284,10 @@ resource "null_resource" "remote_service_setup" {
 
 resource "null_resource" "traffic_generator_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {

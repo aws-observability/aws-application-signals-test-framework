@@ -285,10 +285,10 @@ resource "null_resource" "remote_service_setup" {
 
 resource "null_resource" "traffic_generator_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {

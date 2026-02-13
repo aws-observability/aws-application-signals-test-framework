@@ -18,7 +18,7 @@ variable "test_id" {
 }
 
 variable "kube_directory_path" {
-    default = "./.kube"
+  default = "./.kube"
 }
 
 variable "aws_region" {

@@ -19,11 +19,11 @@ resource "aws_default_vpc" "default" {
 
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "aws_ssh_key" {
-  key_name = "instance_key-${var.test_id}"
+  key_name   = "instance_key-${var.test_id}"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
@@ -33,10 +33,10 @@ locals {
 }
 
 data "aws_ami" "ami" {
-  owners = ["amazon"]
+  owners      = ["amazon"]
   most_recent = true
   filter {
-    name = "name"
+    name   = "name"
     values = ["al2023-ami-*-x86_64"]
   }
   filter {
@@ -54,13 +54,13 @@ data "aws_ami" "ami" {
 }
 
 resource "aws_instance" "main_service_instance" {
-  ami                                   = data.aws_ami.ami.id
-  instance_type                         = "t3.medium"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id
+  instance_type                        = "t3.medium"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
     http_endpoint = "enabled"
@@ -70,7 +70,7 @@ resource "aws_instance" "main_service_instance" {
   root_block_device {
     volume_size = 30
   }
-  
+
   user_data = base64encode(<<-EOF
 #!/bin/bash
 yum update -y
