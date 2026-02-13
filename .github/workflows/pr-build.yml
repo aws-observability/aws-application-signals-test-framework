@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       # Run validation in parallel across all terraform directories for speed
-      # Without matrix: ~14 minutes serial, With matrix: ~2-3 minutes parallel
+      # Without matrix: ~14 minutes serial, With matrix: ~15 seconds per directory in parallel
       fail-fast: false
       matrix:
         dir: ${{ fromJson(needs.find-terraform-dirs.outputs.dirs) }}
