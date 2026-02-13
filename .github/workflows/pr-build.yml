@@ -15,6 +15,8 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+
       - name: Check for versioned GitHub actions
         if: always()
         run: |
@@ -58,6 +60,30 @@ jobs:
           
           echo "No github.event.inputs usage found in run steps"
 
+      - name: Check Terraform formatting
+        if: always()
+        run: |
+          if ! command -v terraform &> /dev/null; then
+            echo "❌ ERROR: Terraform not installed in CI"
+            exit 1
+          fi
+          
+          if ! terraform fmt -check -recursive terraform/; then
+            echo ""
+            echo "❌ Terraform files are not formatted correctly"
+            echo ""
+            echo "To fix this, run:"
+            echo "  terraform fmt -recursive terraform/"
+            echo ""
+            echo "Or install pre-commit to auto-format on commit:"
+            echo "  pip install pre-commit"
+            echo "  pre-commit install"
+            echo ""
+            exit 1
+          fi
+          
+          echo "✅ All Terraform files are properly formatted"
+
   find-terraform-dirs:
     runs-on: ubuntu-latest
     outputs:
@@ -95,7 +121,6 @@ jobs:
   verify-terraform-dirs:
     needs: [find-terraform-dirs, terraform-validate]
     runs-on: ubuntu-latest
-    if: always()
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       
@@ -175,11 +200,3 @@ jobs:
           fi
           
           echo "All checks passed and no jobs missing from gate!"
-      
-      - name: Verify terraform validation ran
-        run: |
-          if [ "${{ needs.verify-terraform-dirs.result }}" != "success" ]; then
-            echo "❌ Terraform validation did not pass"
-            exit 1
-          fi
-          echo "✅ Terraform validation passed"
