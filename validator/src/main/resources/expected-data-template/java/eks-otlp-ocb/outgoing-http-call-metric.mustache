@@ -1,3 +1,4 @@
+# TODO: Remove Environment: ANY_VALUE with eks:default once backend fully rolls out eks:default and AWS::EKS support
 -
   metricName: Latency
   namespace: {{metricNamespace}}
@@ -10,7 +11,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
 
 -
   metricName: Latency
@@ -24,35 +25,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
-    -
-      name: RemoteOperation
-      value: GET /
-    -
-      name: RemoteService
-      value: www.amazon.com
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: generic:default
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: generic:default
+      value: ANY_VALUE
     -
       name: RemoteOperation
       value: GET /
@@ -69,7 +42,35 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ANY_VALUE
+    -
+      name: RemoteOperation
+      value: GET /
+    -
+      name: RemoteService
+      value: www.amazon.com
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: ANY_VALUE
     -
       name: RemoteService
       value: www.amazon.com
@@ -86,7 +87,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
 
 -
   metricName: Error
@@ -100,7 +101,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
     -
       name: RemoteOperation
       value: GET /
@@ -117,7 +118,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
 
 -
   metricName: Error
@@ -128,7 +129,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
     -
       name: RemoteOperation
       value: GET /
@@ -145,7 +146,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
     -
       name: RemoteService
       value: www.amazon.com
@@ -162,7 +163,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
 
 -
   metricName: Fault
@@ -176,7 +177,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
     -
       name: RemoteOperation
       value: GET /
@@ -193,7 +194,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
 
 -
   metricName: Fault
@@ -204,7 +205,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
     -
       name: RemoteOperation
       value: GET /
@@ -221,7 +222,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: generic:default
+      value: ANY_VALUE
     -
       name: RemoteService
       value: www.amazon.com
