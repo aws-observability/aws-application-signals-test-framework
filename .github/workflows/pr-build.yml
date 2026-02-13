@@ -95,6 +95,9 @@ jobs:
       - name: Find all terraform directories
         id: find-dirs
         run: |
+          # Find all directories containing .tf files, excluding downloaded modules in .terraform/
+          # Process: find .tf files -> get their directories -> sort unique -> convert to JSON array
+          # The jq command: read lines (-R), slurp into array (-s), compact (-c), split on newlines and remove last empty element
           DIRS=$(find terraform -name "*.tf" -not -path "*/.terraform/*" -exec dirname {} \; | sort -u | jq -R -s -c 'split("\n")[:-1]')
           echo "dirs=$DIRS" >> $GITHUB_OUTPUT
           echo "Found $(echo $DIRS | jq 'length') terraform directories"
@@ -127,13 +130,17 @@ jobs:
       
       - name: Verify all directories were validated
         run: |
+          # Count expected directories by finding all .tf files and getting unique directory names
           EXPECTED_DIRS=$(find terraform -name "*.tf" -not -path "*/.terraform/*" -exec dirname {} \; | sort -u | wc -l)
+          
+          # Get count of directories that were actually validated from the matrix
           VALIDATED_DIRS='${{ needs.find-terraform-dirs.outputs.dirs }}' 
           VALIDATED_COUNT=$(echo $VALIDATED_DIRS | jq 'length')
           
           echo "Expected directories: $EXPECTED_DIRS"
           echo "Validated directories: $VALIDATED_COUNT"
           
+          # Fail if counts don't match - this catches new terraform directories that weren't validated
           if [ "$EXPECTED_DIRS" != "$VALIDATED_COUNT" ]; then
             echo "❌ Mismatch in terraform directory count!"
             echo "This likely means new terraform directories were added but not validated."
