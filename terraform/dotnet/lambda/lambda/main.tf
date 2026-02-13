@@ -9,7 +9,7 @@ resource "aws_lambda_layer_version" "sdk_layer" {
   compatible_runtimes = ["dotnet6", "dotnet8"]
   license_info        = "Apache-2.0"
   source_code_hash    = filebase64sha256("${var.layer_artifacts_directory}/layer.zip")
-#   filename = "${var.kube_directory_path}/config"
+  #   filename = "${var.kube_directory_path}/config"
 }
 
 module "hello-lambda-function" {
@@ -30,8 +30,8 @@ module "hello-lambda-function" {
   layers = var.is_canary ? [local.sdk_layer_arns[var.region]] : [aws_lambda_layer_version.sdk_layer[0].arn]
 
   environment_variables = {
-    AWS_LAMBDA_EXEC_WRAPPER     = "/opt/otel-instrument"
-    OTEL_SERVICE_NAME           = "${var.function_name}"
+    AWS_LAMBDA_EXEC_WRAPPER = "/opt/otel-instrument"
+    OTEL_SERVICE_NAME       = "${var.function_name}"
   }
 
   tracing_mode = var.tracing_mode

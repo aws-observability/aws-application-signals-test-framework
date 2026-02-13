@@ -35,11 +35,11 @@ data "aws_subnets" "default_subnets" {
 
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "aws_ssh_key" {
-  key_name = "instance_key-${var.test_id}"
+  key_name   = "instance_key-${var.test_id}"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
@@ -49,8 +49,8 @@ locals {
 }
 
 data "aws_ami" "ami" {
-  owners = ["amazon"]
-  most_recent      = true
+  owners      = ["amazon"]
+  most_recent = true
   filter {
     name   = "name"
     values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
@@ -85,12 +85,12 @@ data "aws_ami" "ami" {
 }
 
 resource "aws_launch_configuration" "launch_configuration" {
-  image_id      = data.aws_ami.ami.id
-  instance_type = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
-  key_name = local.ssh_key_name
+  image_id                    = data.aws_ami.ami.id
+  instance_type               = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
+  key_name                    = local.ssh_key_name
   associate_public_ip_address = true
-  iam_instance_profile = "APP_SIGNALS_EC2_TEST_ROLE"
-  security_groups = [aws_default_vpc.default.default_security_group_id]
+  iam_instance_profile        = "APP_SIGNALS_EC2_TEST_ROLE"
+  security_groups             = [aws_default_vpc.default.default_security_group_id]
 
   root_block_device {
     volume_size = 5
@@ -161,23 +161,23 @@ resource "aws_launch_configuration" "launch_configuration" {
 }
 
 resource "aws_autoscaling_group" "asg" {
-  name = "ec2-single-asg-${var.test_id}"
-  min_size = 1
-  max_size = 1
-  launch_configuration = aws_launch_configuration.launch_configuration.name
-  vpc_zone_identifier = [data.aws_subnets.default_subnets.ids.0]
-  health_check_type = "EC2"
+  name                      = "ec2-single-asg-${var.test_id}"
+  min_size                  = 1
+  max_size                  = 1
+  launch_configuration      = aws_launch_configuration.launch_configuration.name
+  vpc_zone_identifier       = [data.aws_subnets.default_subnets.ids.0]
+  health_check_type         = "EC2"
   health_check_grace_period = 180
 }
 
 resource "aws_instance" "remote_service_instance" {
-  ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
+  instance_type                        = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
     http_endpoint = "enabled"
@@ -195,10 +195,10 @@ resource "aws_instance" "remote_service_instance" {
 
 resource "null_resource" "remote_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.remote_service_instance.public_ip
+    host        = aws_instance.remote_service_instance.public_ip
   }
 
   provisioner "remote-exec" {

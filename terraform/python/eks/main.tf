@@ -37,17 +37,17 @@ provider "aws" {
 
 # get eks cluster
 data "aws_eks_cluster" "testing_cluster" {
-    name = var.eks_cluster_name
+  name = var.eks_cluster_name
 }
 data "aws_eks_cluster_auth" "testing_cluster" {
-    name = var.eks_cluster_name
+  name = var.eks_cluster_name
 }
 
 # set up kubectl
 provider "kubernetes" {
-  host = data.aws_eks_cluster.testing_cluster.endpoint
+  host                   = data.aws_eks_cluster.testing_cluster.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.testing_cluster.certificate_authority[0].data)
-  token = data.aws_eks_cluster_auth.testing_cluster.token
+  token                  = data.aws_eks_cluster_auth.testing_cluster.token
 }
 
 provider "kubectl" {
@@ -70,7 +70,7 @@ data "template_file" "kubeconfig_file" {
 }
 
 resource "local_file" "kubeconfig" {
-  content = data.template_file.kubeconfig_file.rendered
+  content  = data.template_file.kubeconfig_file.rendered
   filename = "${var.kube_directory_path}/config"
 }
 
@@ -81,7 +81,7 @@ resource "kubernetes_deployment" "python_app_deployment" {
   metadata {
     name      = "python-app-deployment-${var.test_id}"
     namespace = var.test_namespace
-    labels    = {
+    labels = {
       app = "python-app"
     }
   }
@@ -106,33 +106,33 @@ resource "kubernetes_deployment" "python_app_deployment" {
       spec {
         service_account_name = var.service_account_aws_access
         container {
-          name = "back-end"
-          image = var.python_app_image
+          name              = "back-end"
+          image             = var.python_app_image
           image_pull_policy = "Always"
-          args = ["sh", "-c", "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8000 --noreload"]
+          args              = ["sh", "-c", "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8000 --noreload"]
           env {
-              #inject the test id to service name for unique App Signals metrics
-              name = "OTEL_SERVICE_NAME"
-              value = "python-application-${var.test_id}"
-            }
+            #inject the test id to service name for unique App Signals metrics
+            name  = "OTEL_SERVICE_NAME"
+            value = "python-application-${var.test_id}"
+          }
           env {
-              name = "DJANGO_SETTINGS_MODULE"
-              value = "django_frontend_service.settings"
-            }
+            name  = "DJANGO_SETTINGS_MODULE"
+            value = "django_frontend_service.settings"
+          }
           env {
-            name = "RDS_MYSQL_CLUSTER_ENDPOINT"
+            name  = "RDS_MYSQL_CLUSTER_ENDPOINT"
             value = var.rds_mysql_cluster_endpoint
           }
           env {
-            name = "RDS_MYSQL_CLUSTER_DATABASE"
+            name  = "RDS_MYSQL_CLUSTER_DATABASE"
             value = var.rds_mysql_cluster_database
           }
           env {
-            name = "RDS_MYSQL_CLUSTER_USERNAME"
+            name  = "RDS_MYSQL_CLUSTER_USERNAME"
             value = var.rds_mysql_cluster_username
           }
           env {
-            name = "RDS_MYSQL_CLUSTER_PASSWORD"
+            name  = "RDS_MYSQL_CLUSTER_PASSWORD"
             value = var.rds_mysql_cluster_password
           }
           port {
@@ -145,22 +145,22 @@ resource "kubernetes_deployment" "python_app_deployment" {
 }
 
 resource "kubernetes_service" "python_app_service" {
-  depends_on = [ kubernetes_deployment.python_app_deployment ]
+  depends_on = [kubernetes_deployment.python_app_deployment]
 
   metadata {
-    name = "python-app-service"
+    name      = "python-app-service"
     namespace = var.test_namespace
   }
   spec {
     type = "NodePort"
     selector = {
-        app = "python-app"
+      app = "python-app"
     }
     port {
-      protocol = "TCP"
-      port = 8080
+      protocol    = "TCP"
+      port        = 8080
       target_port = 8000
-      node_port = 30100
+      node_port   = 30100
     }
   }
 }
@@ -172,7 +172,7 @@ resource "kubernetes_deployment" "python_r_app_deployment" {
   metadata {
     name      = "python-remote-${var.test_id}"
     namespace = var.test_namespace
-    labels    = {
+    labels = {
       app = "remote-app"
     }
   }
@@ -197,13 +197,13 @@ resource "kubernetes_deployment" "python_r_app_deployment" {
       spec {
         service_account_name = var.service_account_aws_access
         container {
-          name = "back-end"
-          image = var.python_remote_app_image
+          name              = "back-end"
+          image             = var.python_remote_app_image
           image_pull_policy = "Always"
-          args = ["sh", "-c", "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8001 --noreload"]
+          args              = ["sh", "-c", "python3 manage.py migrate --noinput && python3 manage.py collectstatic --noinput && python3 manage.py runserver 0.0.0.0:8001 --noreload"]
           env {
-              name = "DJANGO_SETTINGS_MODULE"
-              value = "django_remote_service.settings"
+            name  = "DJANGO_SETTINGS_MODULE"
+            value = "django_remote_service.settings"
           }
           port {
             container_port = 8001
@@ -215,10 +215,10 @@ resource "kubernetes_deployment" "python_r_app_deployment" {
 }
 
 resource "kubernetes_service" "python_r_app_service" {
-  depends_on = [ kubernetes_deployment.python_r_app_deployment ]
+  depends_on = [kubernetes_deployment.python_r_app_deployment]
 
   metadata {
-    name = "python-r-app-service"
+    name      = "python-r-app-service"
     namespace = var.test_namespace
   }
   spec {
@@ -227,17 +227,17 @@ resource "kubernetes_service" "python_r_app_service" {
       app = "remote-app"
     }
     port {
-      protocol = "TCP"
-      port = 8001
+      protocol    = "TCP"
+      port        = 8001
       target_port = 8001
-      node_port = 30101
+      node_port   = 30101
     }
   }
 }
 
 resource "kubernetes_deployment" "traffic_generator" {
   metadata {
-    name = "traffic-generator"
+    name      = "traffic-generator"
     namespace = var.test_namespace
     labels = {
       app = "traffic-generator"
@@ -258,8 +258,8 @@ resource "kubernetes_deployment" "traffic_generator" {
       }
       spec {
         container {
-          name  = "traffic-generator"
-          image = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
+          name              = "traffic-generator"
+          image             = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
           image_pull_policy = "Always"
           env {
             name  = "ID"

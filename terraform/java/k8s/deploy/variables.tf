@@ -26,12 +26,12 @@ variable "user" {
 }
 
 variable "ssh_key" {
-  default = "<MASTER_NODE_SSH_KEY>"
+  default     = "<MASTER_NODE_SSH_KEY>"
   description = "This variable is responsible for providing the SSH key of the master node to allow terraform to interact with the cluster"
 }
 
 variable "host" {
-  default = "<HOST_IP_OR_DNS>"
+  default     = "<HOST_IP_OR_DNS>"
   description = "This variable is responsible for defining which host (ec2 instance) we connect to for the K8s-on-EC2 test"
 }
 
@@ -44,6 +44,6 @@ variable "patch_image_arn" {
 }
 
 variable "release_testing_ecr_account" {
-  default = "<aws-account-id>"
+  default     = "<aws-account-id>"
   description = "This variable is to give the k8s cluster ecr secret to pull image from the staging image ecr"
 }

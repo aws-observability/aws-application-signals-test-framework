@@ -42,6 +42,6 @@ variable "region" {
 
 variable "layer_artifacts_directory" {
   type        = string
-  default = "./layer_artifacts"
+  default     = "./layer_artifacts"
   description = "Lambda layer and function artifacts directory"
 }
