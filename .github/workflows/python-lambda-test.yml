@@ -166,7 +166,7 @@ jobs:
         run: sleep 30s; curl -sS ${{ env.API_GATEWAY_URL }}
 
       - name: Initiate Gradlew Daemon
-        if: steps.initiate-gradlew == 'failure'
+        if: steps.initiate-gradlew.outcome == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:

@@ -165,7 +165,7 @@ jobs:
           echo REMOTE_SERVICE_IP="$(aws ssm get-parameter --region us-east-1 --name dotnet-remote-service-ip-${{ env.TESTING_ID }} | jq -r '.Parameter.Value')" >> $GITHUB_ENV
 
       - name: Initiate Gradlew Daemon
-        if: steps.initiate-gradlew == 'failure'
+        if: steps.initiate-gradlew.outcome == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:

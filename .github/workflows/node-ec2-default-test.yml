@@ -200,7 +200,7 @@ jobs:
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
 
       - name: Initiate Gradlew Daemon
-        if: steps.initiate-gradlew == 'failure'
+        if: steps.initiate-gradlew.outcome == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:
