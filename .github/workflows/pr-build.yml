@@ -109,3 +109,5 @@ jobs:
           fi
           
           echo "All checks passed and no jobs missing from gate!"
+          echo ""
+          echo "Note: Terraform validation runs in a separate workflow (.github/workflows/terraform-validate.yml)"
