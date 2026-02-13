@@ -58,6 +58,30 @@ jobs:
           
           echo "No github.event.inputs usage found in run steps"
 
+      - name: Check Terraform formatting
+        if: always()
+        run: |
+          if ! command -v terraform &> /dev/null; then
+            echo "Terraform not installed, skipping check"
+            exit 0
+          fi
+          
+          if ! terraform fmt -check -recursive terraform/; then
+            echo ""
+            echo "❌ Terraform files are not formatted correctly"
+            echo ""
+            echo "To fix this, run:"
+            echo "  terraform fmt -recursive terraform/"
+            echo ""
+            echo "Or install pre-commit to auto-format on commit:"
+            echo "  pip install pre-commit"
+            echo "  pre-commit install"
+            echo ""
+            exit 1
+          fi
+          
+          echo "All Terraform files are properly formatted"
+
   build:
     name: Gradle Build
     runs-on: ubuntu-latest

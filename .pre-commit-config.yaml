@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: terraform-fmt
+        name: Terraform fmt
+        entry: terraform fmt
+        language: system
+        files: \.tf$
+        pass_filenames: true
