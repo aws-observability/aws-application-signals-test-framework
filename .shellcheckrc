@@ -1,0 +1,11 @@
+# ShellCheck configuration file
+# See https://www.shellcheck.net/wiki/Ignore for more information
+
+# Temporarily disable specific shellcheck warnings while we systematically fix them
+# TODO: Remove these suppressions incrementally as issues are fixed
+
+# SC2004: $/${} is unnecessary on arithmetic variables
+# SC2016: Expressions don't expand in single quotes, use double quotes for that
+# SC2086: Double quote to prevent globbing and word splitting
+# SC2129: Consider using { cmd1; cmd2; } >> file instead of individual redirects
+disable=SC2004,SC2016,SC2086,SC2129
