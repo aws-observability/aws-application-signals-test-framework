@@ -91,7 +91,7 @@ resource "aws_launch_configuration" "launch_configuration" {
   associate_public_ip_address = true
   iam_instance_profile        = "APP_SIGNALS_EC2_TEST_ROLE"
   security_groups             = [aws_default_vpc.default.default_security_group_id]
-  
+
   root_block_device {
     volume_size = 5
   }
@@ -172,12 +172,12 @@ resource "aws_launch_configuration" "launch_configuration" {
 }
 
 resource "aws_autoscaling_group" "asg" {
-  name                 = "dotnet-ec2-single-asg-${var.test_id}"
-  min_size             = 1
-  max_size             = 1
-  launch_configuration = aws_launch_configuration.launch_configuration.name
-  vpc_zone_identifier  = [data.aws_subnets.default_subnets.ids.0]
-  health_check_type = "EC2"
+  name                      = "dotnet-ec2-single-asg-${var.test_id}"
+  min_size                  = 1
+  max_size                  = 1
+  launch_configuration      = aws_launch_configuration.launch_configuration.name
+  vpc_zone_identifier       = [data.aws_subnets.default_subnets.ids.0]
+  health_check_type         = "EC2"
   health_check_grace_period = 180
 }
 

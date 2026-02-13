@@ -29,8 +29,8 @@ module "hello-lambda-function" {
   layers = var.is_canary ? [local.sdk_layer_arns[var.region]] : [aws_lambda_layer_version.sdk_layer[0].arn]
 
   environment_variables = {
-    AWS_LAMBDA_EXEC_WRAPPER     = "/opt/otel-instrument"
-    OTEL_SERVICE_NAME           = var.function_name
+    AWS_LAMBDA_EXEC_WRAPPER = "/opt/otel-instrument"
+    OTEL_SERVICE_NAME       = var.function_name
   }
 
   tracing_mode = var.tracing_mode

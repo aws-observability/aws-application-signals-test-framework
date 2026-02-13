@@ -65,6 +65,7 @@ jobs:
         run: |
           if ! command -v terraform &> /dev/null; then
             echo "❌ ERROR: Terraform not installed in CI"
+            echo "This is a CI configuration error - terraform should be available"
             exit 1
           fi
           
@@ -148,7 +149,6 @@ jobs:
             exit 1
           fi
           echo "✅ All terraform validations passed"
-
   build:
     name: Gradle Build
     runs-on: ubuntu-latest
