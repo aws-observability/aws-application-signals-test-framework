@@ -18,16 +18,21 @@ permissions:
   contents: read
 
 jobs:
-  e2e-eks-test:
-    uses: ./.github/workflows/appsignals-e2e-eks-test.yml
-    secrets: inherit
-    with:
-      aws-region: 'us-east-1'
-      test-cluster-name: 'e2e-canary-test'
-      caller-workflow-name: 'appsignals-e2e-gamma-test'
-  e2e-ec2-test:
-    uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
-    secrets: inherit
-    with:
-      aws-region: 'us-east-1'
-      caller-workflow-name: 'appsignals-e2e-gamma-test'
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Placeholder job - workflows commented out until files are available"
+  # TODO: Uncomment when appsignals-e2e-eks-test.yml is available
+  # e2e-eks-test:
+  #   uses: ./.github/workflows/appsignals-e2e-eks-test.yml
+  #   secrets: inherit
+  #   with:
+  #     aws-region: 'us-east-1'
+  #     test-cluster-name: 'e2e-canary-test'
+  #     caller-workflow-name: 'appsignals-e2e-gamma-test'
+  # e2e-ec2-test:
+  #   uses: ./.github/workflows/appsignals-e2e-ec2-test.yml
+  #   secrets: inherit
+  #   with:
+  #     aws-region: 'us-east-1'
+  #     caller-workflow-name: 'appsignals-e2e-gamma-test'

@@ -2,6 +2,7 @@
 # Outputs the value of the patched version afterwords, run this so that the e2e workflows do not get clogged up
 # by multiple logging steps.
 name: Patch Image and Check Difference
+description: Composite action for patching image with release version and checking if they were patched properly
 
 inputs:
   repository:

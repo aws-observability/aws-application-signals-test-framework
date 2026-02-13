@@ -205,7 +205,7 @@ jobs:
       - name: Delete Key Pair and EC2 Instance
         run: |
           PENDING_SECRET_KEYS=(
-            "e2e-test/${{ matrix.instance.repo_name }}/${{ matrix.instance.language }}-k8s-master-node-endpoint-pending-value"
+            "e2e-test/${{ inputs.repo_name }}/${{ inputs.language }}-k8s-master-node-endpoint-pending-value"
           )
           endpoint_secret=$(aws secretsmanager get-secret-value --secret-id "${PENDING_SECRET_KEYS[0]}" --query SecretString --output text)
 
@@ -217,10 +217,10 @@ jobs:
           if [ -n "$instance_name" ]; then
             prev_testing_id=$(echo $instance_name | awk -F'-' '{print $(NF-1)"-"$NF}')
 
-            aws ec2 delete-key-pair --key-name "k8s-on-ec2-${{ matrix.instance.ec2_name }}-${{ matrix.instance.language }}-key-pair-$prev_testing_id"
+            aws ec2 delete-key-pair --key-name "k8s-on-ec2-${{ inputs.ec2_name }}-${{ inputs.language }}-key-pair-$prev_testing_id"
 
-            main_instance_name=k8s-on-ec2-${{ matrix.instance.ec2_name }}-${{ matrix.instance.language }}-master-$prev_testing_id
-            worker_instance_name=k8s-on-ec2-${{ matrix.instance.ec2_name }}-${{ matrix.instance.language }}-worker-$prev_testing_id
+            main_instance_name=k8s-on-ec2-${{ inputs.ec2_name }}-${{ inputs.language }}-master-$prev_testing_id
+            worker_instance_name=k8s-on-ec2-${{ inputs.ec2_name }}-${{ inputs.language }}-worker-$prev_testing_id
             main_instance_id=$(aws ec2 describe-instances \
             --filters "Name=tag:Name,Values=$main_instance_name" \
             --query "Reservations[*].Instances[*].InstanceId" \
