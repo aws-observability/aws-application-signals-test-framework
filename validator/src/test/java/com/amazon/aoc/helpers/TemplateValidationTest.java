@@ -21,7 +21,6 @@ public class TemplateValidationTest {
 
     /**
      * Validates that all mustache template files can be compiled.
-     * Mustache templates must start with valid JSON/YAML, not comments.
      * Uses the same MustacheFactory that production code uses to ensure consistency.
      */
     @Test
