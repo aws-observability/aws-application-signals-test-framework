@@ -27,10 +27,6 @@ public class TemplateValidationTest {
     public void testAllMustacheFilesCompile() throws Exception {
         MustacheFactory mf = new DefaultMustacheFactory();
         Path resourcesPath = Paths.get("src/main/resources");
-        
-        if (!Files.exists(resourcesPath)) {
-            return;
-        }
 
         try (Stream<Path> paths = Files.walk(resourcesPath)) {
             paths.filter(Files::isRegularFile)
@@ -53,10 +49,6 @@ public class TemplateValidationTest {
     public void testAllYamlFilesParseCorrectly() throws Exception {
         Yaml yaml = new Yaml();
         Path resourcesPath = Paths.get("src/main/resources");
-        
-        if (!Files.exists(resourcesPath)) {
-            return;
-        }
 
         try (Stream<Path> paths = Files.walk(resourcesPath)) {
             paths.filter(Files::isRegularFile)
