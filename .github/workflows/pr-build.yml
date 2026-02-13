@@ -60,6 +60,15 @@ jobs:
           
           echo "No github.event.inputs usage found in run steps"
 
+      # This action wrapper by raven-actions provides cross-platform support and caching
+      # Catches the same issues as GitHub's web editor: syntax errors, type mismatches,
+      # undefined inputs/secrets, circular dependencies, and more
+      - name: Validate GitHub Actions workflows
+        if: always()
+        uses: raven-actions/actionlint@4d809bd1ddd157d45a828bcdc46a4d0c5d0a39ca # v2.1.1
+        with:
+          files: .github/workflows/*.yml, .github/actions/*/*.yml
+
       - name: Check Terraform formatting
         if: always()
         run: |
