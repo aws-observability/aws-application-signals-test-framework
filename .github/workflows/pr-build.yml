@@ -73,7 +73,6 @@ jobs:
           # SC2086: Double quote to prevent globbing and word splitting (212 occurrences)
           # SC2004: $/${} is unnecessary on arithmetic variables (14 occurrences)
           # SC2129: Consider using { cmd1; cmd2; } >> file instead of individual redirects (10 occurrences)
-          # SC2016: Expressions don't expand in single quotes, use double quotes for that (8 occurrences)
           # SC2010: Don't use ls | grep. Use a glob or a for loop with a condition (5 occurrences)
           # SC2015: Note that A && B || C is not if-then-else. C may run when A is true (5 occurrences)
           # SC2046: Quote this to prevent word splitting (2 occurrences)
@@ -83,7 +82,6 @@ jobs:
             -ignore SC2086
             -ignore SC2004
             -ignore SC2129
-            -ignore SC2016
             -ignore SC2010
             -ignore SC2015
             -ignore SC2260
