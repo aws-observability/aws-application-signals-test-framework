@@ -133,10 +133,12 @@ jobs:
       - name: Get the sample app and EC2 instance information
         working-directory: terraform/java/ec2/adaptive-sampling
         run: |
-          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
+          {
+            echo "MAIN_SERVICE_ENDPOINT=localhost:8080"
+            echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)"
+            echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)"
+            echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)"
+          } >> $GITHUB_ENV
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew.outcome == 'failure'
