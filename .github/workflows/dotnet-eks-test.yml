@@ -260,7 +260,7 @@ jobs:
                 -var="dotnet_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
                 -var="dotnet_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
 
-              retry_counter=$(($retry_counter+1))
+              retry_counter=$((retry_counter+1))
             else
               # If deployment succeeded, then exit the loop
               break

@@ -186,7 +186,7 @@ jobs:
                 -var="adot_instrumentation_image=${{ env.ADOT_INSTRUMENTATION_IMAGE_URI }}" \
                 -var="cwagent_image=${{ env.CWAGENT_IMAGE_URI }}"
           
-              retry_counter=$(($retry_counter+1))
+              retry_counter=$((retry_counter+1))
             else
               # If deployment succeeded, then exit the loop
               break
