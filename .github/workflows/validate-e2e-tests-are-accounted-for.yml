@@ -32,7 +32,7 @@ jobs:
           cd ${{ env.TEST_RESOURCES_FOLDER }}/aws-application-signals-test-framework/.github/workflows/
           EXCLUSIONS="${{ env.EXCLUSIONS }}"
           [[ -n "$EXCLUSIONS" ]] && echo "Applying exclusions to TESTS_EXPECTED: $EXCLUSIONS"
-          echo "TESTS_EXPECTED=$(ls | grep -E '(^java-)|(^metric-limiter-)' | grep -Ev '(lambda-layer-perf-test|otlp-ocb)' | grep -E 'test\.ya?ml$' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
+          echo "TESTS_EXPECTED=$(find . -maxdepth 1 \( -name 'java-*test.yml' -o -name 'java-*test.yaml' -o -name 'metric-limiter-*test.yml' -o -name 'metric-limiter-*test.yaml' \) ! -name '*lambda-layer-perf-test*' ! -name '*otlp-ocb*' | sed 's|^\./||' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
 
       - name: Determine workflow files expected to be used by ADOT JavaScript
         if: contains(github.repository, 'aws-otel-js-instrumentation')
@@ -40,7 +40,7 @@ jobs:
           cd ${{ env.TEST_RESOURCES_FOLDER }}/aws-application-signals-test-framework/.github/workflows/
           EXCLUSIONS="${{ env.EXCLUSIONS }}"
           [[ -n "$EXCLUSIONS" ]] && echo "Applying exclusions to TESTS_EXPECTED: $EXCLUSIONS"
-          echo "TESTS_EXPECTED=$(ls | grep -E '^node-' | grep -v 'lambda-layer-perf-test' | grep -E 'test\.ya?ml$' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
+          echo "TESTS_EXPECTED=$(find . -maxdepth 1 \( -name 'node-*test.yml' -o -name 'node-*test.yaml' \) ! -name '*lambda-layer-perf-test*' | sed 's|^\./||' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
 
       - name: Determine workflow files expected to be used by ADOT Python
         if: contains(github.repository, 'aws-otel-python-instrumentation')
@@ -48,7 +48,7 @@ jobs:
           cd ${{ env.TEST_RESOURCES_FOLDER }}/aws-application-signals-test-framework/.github/workflows/
           EXCLUSIONS="${{ env.EXCLUSIONS }}"
           [[ -n "$EXCLUSIONS" ]] && echo "Applying exclusions to TESTS_EXPECTED: $EXCLUSIONS"
-          echo "TESTS_EXPECTED=$(ls | grep -E '^python-' | grep -v 'lambda-layer-perf-test' | grep -E 'test\.ya?ml$' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
+          echo "TESTS_EXPECTED=$(find . -maxdepth 1 \( -name 'python-*test.yml' -o -name 'python-*test.yaml' \) ! -name '*lambda-layer-perf-test*' | sed 's|^\./||' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
 
       - name: Determine workflow files expected to be used by ADOT .NET
         if: contains(github.repository, 'aws-otel-dotnet-instrumentation')
@@ -56,7 +56,7 @@ jobs:
           cd ${{ env.TEST_RESOURCES_FOLDER }}/aws-application-signals-test-framework/.github/workflows/
           EXCLUSIONS="${{ env.EXCLUSIONS }}"
           [[ -n "$EXCLUSIONS" ]] && echo "Applying exclusions to TESTS_EXPECTED: $EXCLUSIONS"
-          echo "TESTS_EXPECTED=$(ls | grep -E '^dotnet-' | grep -v 'lambda-layer-perf-test' | grep -E 'test\.ya?ml$' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
+          echo "TESTS_EXPECTED=$(find . -maxdepth 1 \( -name 'dotnet-*test.yml' -o -name 'dotnet-*test.yaml' \) ! -name '*lambda-layer-perf-test*' | sed 's|^\./||' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
 
       - name: Determine workflow files expected to be used by CloudWatch Agent
         if: contains(github.repository, 'amazon-cloudwatch-agent')
@@ -64,7 +64,7 @@ jobs:
           cd ${{ env.TEST_RESOURCES_FOLDER }}/aws-application-signals-test-framework/.github/workflows/
           EXCLUSIONS="${{ env.EXCLUSIONS }}"
           [[ -n "$EXCLUSIONS" ]] && echo "Applying exclusions to TESTS_EXPECTED: $EXCLUSIONS"
-          echo "TESTS_EXPECTED=$(ls | grep -E '(^java-)|(^node-)|(^python-)|(^dotnet-)|(^metric-limiter-)' | grep -Ev '(sigv4|lambda-test|lambda-layer-perf-test|ocb|genesis)' | grep -E 'test\.ya?ml$' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
+          echo "TESTS_EXPECTED=$(find . -maxdepth 1 \( -name 'java-*test.yml' -o -name 'java-*test.yaml' -o -name 'node-*test.yml' -o -name 'node-*test.yaml' -o -name 'python-*test.yml' -o -name 'python-*test.yaml' -o -name 'dotnet-*test.yml' -o -name 'dotnet-*test.yaml' -o -name 'metric-limiter-*test.yml' -o -name 'metric-limiter-*test.yaml' \) ! -name '*sigv4*' ! -name '*lambda-test*' ! -name '*lambda-layer-perf-test*' ! -name '*ocb*' ! -name '*genesis*' | sed 's|^\./||' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> $GITHUB_ENV
 
       - name: Determine workflow files actually being used by ${{ github.repository }}
         run: |
