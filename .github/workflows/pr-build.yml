@@ -71,7 +71,6 @@ jobs:
           # Temporarily ignore specific shellcheck codes while we systematically fix them
           # TODO: Remove these suppressions incrementally as issues are fixed
           # SC2086: Double quote to prevent globbing and word splitting (212 occurrences)
-          # SC2004: $/${} is unnecessary on arithmetic variables (14 occurrences)
           # SC2129: Consider using { cmd1; cmd2; } >> file instead of individual redirects (10 occurrences)
           # SC2016: Expressions don't expand in single quotes, use double quotes for that (8 occurrences)
           # SC2010: Don't use ls | grep. Use a glob or a for loop with a condition (5 occurrences)
@@ -81,7 +80,6 @@ jobs:
           # SC2260: This redirection overrides the output pipe (1 occurrence)
           flags: |
             -ignore SC2086
-            -ignore SC2004
             -ignore SC2129
             -ignore SC2016
             -ignore SC2010
