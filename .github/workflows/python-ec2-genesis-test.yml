@@ -75,9 +75,11 @@ jobs:
           XRAY_TRACE_ID="1-${ID_1}-${ID_2}"
           PARENT_ID="$(openssl rand -hex 8)"
           TRACE_ID_HEADER="Root=${XRAY_TRACE_ID};Parent=${PARENT_ID};Sampled=1"
-          echo "XRAY_TRACE_ID=${XRAY_TRACE_ID}" >> $GITHUB_ENV
-          echo "W3C_TRACE_ID=${W3C_TRACE_ID}" >> $GITHUB_ENV
-          echo "TRACE_ID_HEADER=${TRACE_ID_HEADER}" >> $GITHUB_ENV
+          {
+            echo "XRAY_TRACE_ID=${XRAY_TRACE_ID}"
+            echo "W3C_TRACE_ID=${W3C_TRACE_ID}"
+            echo "TRACE_ID_HEADER=${TRACE_ID_HEADER}"
+          } >> $GITHUB_ENV
           echo "Generated XRay Trace ID: ${XRAY_TRACE_ID}"
           echo "Generated W3C Trace ID: ${W3C_TRACE_ID}"
           echo "Generated Trace ID Header: ${TRACE_ID_HEADER}"

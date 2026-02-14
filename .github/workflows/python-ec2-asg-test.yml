@@ -215,10 +215,12 @@ jobs:
         working-directory: terraform/python/ec2/asg
         run: |
           main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids ${{ env.MAIN_SERVICE_INSTANCE_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
-          echo "MAIN_SERVICE_ENDPOINT=localhost:8000" >> $GITHUB_ENV
-          echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> $GITHUB_ENV
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
+          {
+            echo "MAIN_SERVICE_ENDPOINT=localhost:8000"
+            echo "PRIVATE_DNS_NAME=$main_service_private_dns_name"
+            echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)"
+            echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)"
+          } >> $GITHUB_ENV
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew.outcome == 'failure'

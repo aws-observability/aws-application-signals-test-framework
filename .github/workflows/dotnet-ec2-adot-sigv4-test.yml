@@ -142,9 +142,11 @@ jobs:
       - name: Get the sample app endpoint
         working-directory: terraform/dotnet/ec2/adot-sigv4
         run: |
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
+          {
+            echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)"
+            echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)"
+            echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)"
+          } >> $GITHUB_ENV
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew.outcome == 'failure'
