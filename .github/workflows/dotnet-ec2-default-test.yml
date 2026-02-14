@@ -55,7 +55,7 @@ jobs:
     steps:
       - name: Check if the job started
         id: job-started
-        run: echo "job-started=true" >> $GITHUB_OUTPUT
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -74,7 +74,7 @@ jobs:
           sleep_time: 60
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -98,20 +98,20 @@ jobs:
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-dotnet-instrumentation" ]; then
             # Get staging distro file from staging bucket
-            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> "$GITHUB_ENV"
           else
             # After Release will switch to latest tag instead of hard code version for canary purpose
-            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> "$GITHUB_ENV"
           fi
 
       - name: Set Get CW Agent command environment variable
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
             # Get cloudwatch agent staging file if triggered by cw-a repo
-            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
+            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> "$GITHUB_ENV"
           else
             # Otherwise get latest release version
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
           fi
 
       - name: Set up terraform
@@ -176,14 +176,14 @@ jobs:
 
       - name: Get the ec2 instance ami id
         run: |
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
         working-directory: terraform/dotnet/ec2/default
 
       - name: Get the sample app endpoint
         run: |
-          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> "$GITHUB_ENV"
+          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> "$GITHUB_ENV"
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
         working-directory: terraform/dotnet/ec2/default
 
       - name: Initiate Gradlew Daemon
@@ -260,9 +260,9 @@ jobs:
         id: validation-result
         run: |
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "validation-result=success" >> $GITHUB_OUTPUT
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
-            echo "validation-result=failure" >> $GITHUB_OUTPUT
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
 
       # Clean up Procedures

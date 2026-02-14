@@ -58,10 +58,10 @@ jobs:
     steps:
       - name: Check if the job started
         id: job-started
-        run: echo "job-started=true" >> $GITHUB_OUTPUT
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -105,21 +105,21 @@ jobs:
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-java-instrumentation" ]; then
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
-            echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> $GITHUB_ENV
+            echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> "$GITHUB_ENV"
           else
-            echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> $GITHUB_ENV
+            echo GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar" >> "$GITHUB_ENV"
           fi
 
       - name: Set Get CW Agent command environment variable
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
             # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
-            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
+            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> "$GITHUB_ENV"
           else
             if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
-              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
             elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
-              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
             fi
           fi
 
@@ -192,11 +192,11 @@ jobs:
           max_retry=90
           while [ $retry_counter -lt $max_retry ]; do
             instance_id=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names ec2-single-asg-${{ env.TESTING_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "AutoScalingGroups[].Instances[0].InstanceId" --output text)
-            status_ok=$(aws ec2 describe-instance-status --instance-ids $instance_id | jq '(.InstanceStatuses[] | select(.InstanceStatus.Status == "ok" and .SystemStatus.Status == "ok")) != {}')
+            status_ok=$(aws ec2 describe-instance-status --instance-ids "$instance_id" | jq '(.InstanceStatuses[] | select(.InstanceStatus.Status == "ok" and .SystemStatus.Status == "ok")) != {}')
             
             if [ "$status_ok" == "true" ]; then
               echo "The instance $instance_id is ready."
-              echo "MAIN_SERVICE_INSTANCE_ID=$instance_id" >> $GITHUB_ENV
+              echo "MAIN_SERVICE_INSTANCE_ID=$instance_id" >> "$GITHUB_ENV"
               break
             fi
           
@@ -212,10 +212,10 @@ jobs:
         working-directory: terraform/java/ec2/asg
         run: |
           main_service_private_dns_name=$(aws ec2 describe-instances --instance-ids ${{ env.MAIN_SERVICE_INSTANCE_ID }} --region ${{ env.E2E_TEST_AWS_REGION }} --query "Reservations[].Instances[].PrivateDnsName" --output text)
-          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
-          echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> $GITHUB_ENV
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> "$GITHUB_ENV"
+          echo "PRIVATE_DNS_NAME=$main_service_private_dns_name" >> "$GITHUB_ENV"
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
+          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> "$GITHUB_ENV"
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew.outcome == 'failure'
@@ -299,9 +299,9 @@ jobs:
         id: validation-result
         run: |
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "validation-result=success" >> $GITHUB_OUTPUT
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
-            echo "validation-result=failure" >> $GITHUB_OUTPUT
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi      
 
       # Clean up Procedures

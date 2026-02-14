@@ -25,7 +25,7 @@ jobs:
           
           if [ -n "$CHANGED_FILES" ]; then
             # Check for any versioned actions, excluding comments and this validation script
-            VIOLATIONS=$(grep -Hn "uses:.*@v" $CHANGED_FILES | grep -v "grep.*uses:.*@v" | grep -v "#.*@v" || true)
+            VIOLATIONS=$(grep -Hn "uses:.*@v" "$CHANGED_FILES" | grep -v "grep.*uses:.*@v" | grep -v "#.*@v" || true)
             if [ -n "$VIOLATIONS" ]; then
               echo "Found versioned GitHub actions. Use commit SHAs instead:"
               echo "$VIOLATIONS"
@@ -70,7 +70,6 @@ jobs:
           files: .github/workflows/*.yml, .github/actions/*/*.yml
           # Temporarily ignore specific shellcheck codes while we systematically fix them
           # TODO: Remove these suppressions incrementally as issues are fixed
-          # SC2086: Double quote to prevent globbing and word splitting (212 occurrences)
           # SC2004: $/${} is unnecessary on arithmetic variables (14 occurrences)
           # SC2129: Consider using { cmd1; cmd2; } >> file instead of individual redirects (10 occurrences)
           # SC2016: Expressions don't expand in single quotes, use double quotes for that (8 occurrences)
@@ -80,7 +79,6 @@ jobs:
           # SC2181: Check exit code directly with e.g. 'if ! mycmd;', not indirectly with $? (1 occurrence)
           # SC2260: This redirection overrides the output pipe (1 occurrence)
           flags: |
-            -ignore SC2086
             -ignore SC2004
             -ignore SC2129
             -ignore SC2016
@@ -129,8 +127,8 @@ jobs:
           # Process: find .tf files -> get their directories -> sort unique -> convert to JSON array
           # The jq command: read lines (-R), slurp into array (-s), compact (-c), split on newlines and remove last empty element
           DIRS=$(find terraform -name "*.tf" -not -path "*/.terraform/*" -exec dirname {} \; | sort -u | jq -R -s -c 'split("\n")[:-1]')
-          echo "dirs=$DIRS" >> $GITHUB_OUTPUT
-          echo "Found $(echo $DIRS | jq 'length') terraform directories"
+          echo "dirs=$DIRS" >> "$GITHUB_OUTPUT"
+          echo "Found $(echo "$DIRS" | jq 'length') terraform directories"
 
   terraform-validate:
     needs: find-terraform-dirs
