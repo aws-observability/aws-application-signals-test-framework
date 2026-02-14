@@ -69,7 +69,7 @@ jobs:
         
       - name: Generate XRay and W3C trace ID
         run: |
-          ID_1="$(printf '%08x' $(date +%s))"
+          ID_1="$(printf '%08x' "$(date +%s)")"
           ID_2="$(openssl rand -hex 12)"
           W3C_TRACE_ID="${ID_1}${ID_2}"
           XRAY_TRACE_ID="1-${ID_1}-${ID_2}"

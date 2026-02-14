@@ -140,7 +140,7 @@ jobs:
       - name: Extract endpoint
         id: extract-endpoint
         shell: bash
-        run: cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && echo API_GATEWAY_URL=$(terraform output -raw api-gateway-url) >> $GITHUB_ENV
+        run: cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && echo API_GATEWAY_URL="$(terraform output -raw api-gateway-url)" >> $GITHUB_ENV
       - name: Send request to endpoint
         shell: bash
         run: sleep 30s; curl -sS ${{ env.API_GATEWAY_URL }}
