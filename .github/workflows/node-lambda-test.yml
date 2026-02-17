@@ -106,7 +106,7 @@ jobs:
       - name: Set Canary Environment Variable
         if: ${{ env.CALLER_WORKFLOW_NAME == 'appsignals-node-e2e-lambda-canary-test' }}
         run: | 
-          echo IS_CANARY=true >> $GITHUB_ENV |
+          echo IS_CANARY=true >> $GITHUB_ENV
           aws s3 cp ${{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/jsfunction.zip
 
       - name: Set up terraform
