@@ -58,11 +58,11 @@ jobs:
     steps:
       - name: Check if the job started
         id: job-started
-        run: echo "job-started=true" >> $GITHUB_OUTPUT
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
       - name: Generate testing id and sample app namespace
         run: |
-          echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+          echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -122,26 +122,26 @@ jobs:
 
       - name: Set Sample App Image
         run: |
-          echo MAIN_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
-          echo REMOTE_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> $GITHUB_ENV
+          echo MAIN_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
+          echo REMOTE_SAMPLE_APP_IMAGE_URI="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
 
       - name: Set ADOT Java image environment variable
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-java-instrumentation" ]; then
             # Use the staging image build by the ADOT Java repo
-            echo ADOT_INSTRUMENTATION_IMAGE_URI="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
+            echo ADOT_INSTRUMENTATION_IMAGE_URI="${{ env.ADOT_IMAGE_NAME }}" >> "$GITHUB_ENV"
           else
             ADOT_INSTRUMENTATION_IMAGE_TAG=$(curl -s -I -L 'https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest' | grep -i Location | awk -F'/tag/' '{print $2}' | tr -d '\r')
-            echo ADOT_INSTRUMENTATION_IMAGE_URI="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$ADOT_INSTRUMENTATION_IMAGE_TAG" >> $GITHUB_ENV
+            echo ADOT_INSTRUMENTATION_IMAGE_URI="public.ecr.aws/aws-observability/adot-autoinstrumentation-java:$ADOT_INSTRUMENTATION_IMAGE_TAG" >> "$GITHUB_ENV"
           fi
 
       # Switch to use the public image for CW Agent
       - name: Set Get CW Agent command environment variable
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
-            echo CWAGENT_IMAGE_URI="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
+            echo CWAGENT_IMAGE_URI="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> "$GITHUB_ENV"
           else
-            echo CWAGENT_IMAGE_URI="public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest" >> $GITHUB_ENV
+            echo CWAGENT_IMAGE_URI="public.ecr.aws/cloudwatch-agent/cloudwatch-agent:latest" >> "$GITHUB_ENV"
           fi
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
@@ -266,9 +266,9 @@ jobs:
         id: validation-result
         run: |
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "validation-result=success" >> $GITHUB_OUTPUT
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
-            echo "validation-result=failure" >> $GITHUB_OUTPUT
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
 
       # Clean up Procedures

@@ -51,10 +51,10 @@ jobs:
     steps:
       - name: Check if the job started
         id: job-started
-        run: echo "job-started=true" >> $GITHUB_OUTPUT
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -95,7 +95,7 @@ jobs:
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Set Lambda Layer artifact directory path
-        run: echo ARTIFACTS_DIR="${{ github.workspace }}/lambda_artifacts" >> $GITHUB_ENV
+        run: echo ARTIFACTS_DIR="${{ github.workspace }}/lambda_artifacts" >> "$GITHUB_ENV"
 
       - name: Download Lambda Layer and Function artifacts for E2E Test
         if: ${{ env.CALLER_WORKFLOW_NAME != 'appsignals-node-e2e-lambda-canary-test' }}
@@ -106,7 +106,7 @@ jobs:
       - name: Set Canary Environment Variable
         if: ${{ env.CALLER_WORKFLOW_NAME == 'appsignals-node-e2e-lambda-canary-test' }}
         run: | 
-          echo IS_CANARY=true >> $GITHUB_ENV |
+          echo IS_CANARY=true >> "$GITHUB_ENV" |
           aws s3 cp ${{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/jsfunction.zip
 
       - name: Set up terraform
@@ -129,7 +129,7 @@ jobs:
         shell: bash
         run: |
           echo TERRAFORM_LAMBDA_FUNCTION_NAME="AdotLambdaNodeJsSampleApp-${{ github.run_id }}"|
-          tee --append $GITHUB_ENV
+          tee --append "$GITHUB_ENV"
       - name: Apply terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
@@ -144,7 +144,7 @@ jobs:
       - name: Extract endpoint
         id: extract-endpoint
         shell: bash
-        run: cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/node/lambda/lambda && echo API_GATEWAY_URL=$(terraform output -raw api-gateway-url) >> $GITHUB_ENV
+        run: cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/node/lambda/lambda && echo API_GATEWAY_URL=$(terraform output -raw api-gateway-url) >> "$GITHUB_ENV"
       - name: Send request to endpoint
         shell: bash
         run: sleep 30s; curl -sS ${{ env.API_GATEWAY_URL }}
@@ -200,9 +200,9 @@ jobs:
         id: validation-result
         run: |
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "validation-result=success" >> $GITHUB_OUTPUT
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
-            echo "validation-result=failure" >> $GITHUB_OUTPUT
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
 
       # Clean up Procedures
