@@ -71,7 +71,7 @@ jobs:
           --query 'LayerVersionArn' \
           --output text)
         
-        echo "LAYER_VERSION_ARN=$LAYER_VERSION_ARN" >> $GITHUB_ENV
+        echo "LAYER_VERSION_ARN=$LAYER_VERSION_ARN" >> "$GITHUB_ENV"
         echo "Published layer ARN $LAYER_VERSION_ARN"
 
     - name: Build and Deploy Sample Application with Lambda Layer

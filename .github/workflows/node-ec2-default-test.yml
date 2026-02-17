@@ -63,10 +63,10 @@ jobs:
     steps:
       - name: Check if the job started
         id: job-started
-        run: echo "job-started=true" >> $GITHUB_OUTPUT
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ inputs.node-version }}-${{ inputs.cpu-architecture }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}-${{ inputs.node-version }}-${{ inputs.cpu-architecture }}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -109,21 +109,21 @@ jobs:
       - name: Set Get ADOT Instrumentation command environment variable
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-js-instrumentation" ]; then
-            echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> "$GITHUB_ENV"
           else
-            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> $GITHUB_ENV
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> "$GITHUB_ENV"
           fi
 
       - name: Set Get CW Agent command environment variable
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
-            echo GET_CW_AGENT_RPM_COMMAND="aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> $GITHUB_ENV
+            echo GET_CW_AGENT_RPM_COMMAND="aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> "$GITHUB_ENV"
           else
             architecture="amd64"
             if [ "${{ inputs.cpu-architecture }}" = "arm64" ]; then
               architecture="arm64" 
             fi
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/${architecture}/latest/amazon-cloudwatch-agent.rpm" >> $GITHUB_ENV
+            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ env.E2E_TEST_AWS_REGION }}.s3.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/amazon_linux/${architecture}/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
           fi
 
       - name: Set up terraform
@@ -190,14 +190,14 @@ jobs:
       - name: Get the ec2 instance ami id
         working-directory: terraform/node/ec2/default
         run: |
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
 
       - name: Get the sample app and EC2 instance information
         working-directory: terraform/node/ec2/default
         run: |
-          echo "MAIN_SERVICE_ENDPOINT=localhost:8000" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_ENDPOINT=localhost:8000" >> "$GITHUB_ENV"
+          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> "$GITHUB_ENV"
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew.outcome == 'failure'
@@ -293,9 +293,9 @@ jobs:
         id: validation-result
         run: |
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.cwagent-metric-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "validation-result=success" >> $GITHUB_OUTPUT
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
-            echo "validation-result=failure" >> $GITHUB_OUTPUT
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
 
       # Clean up Procedures

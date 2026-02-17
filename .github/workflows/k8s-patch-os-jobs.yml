@@ -41,7 +41,7 @@ jobs:
 
       - name: Generate Testing ID
         run: |
-          echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+          echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
 
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -72,11 +72,11 @@ jobs:
             echo "Checking secret: $SECRET_NAME"
 
 
-            if aws secretsmanager describe-secret --secret-id $SECRET_NAME; then
+            if aws secretsmanager describe-secret --secret-id "$SECRET_NAME"; then
               echo "Secret $SECRET_NAME already exists."
             else
               echo "Secret $SECRET_NAME does not exist. Creating it now"
-              aws secretsmanager create-secret --name $SECRET_NAME --secret-string "empty"
+              aws secretsmanager create-secret --name "$SECRET_NAME" --secret-string "empty"
             fi
           done
 
@@ -215,7 +215,7 @@ jobs:
             --output text)
 
           if [ -n "$instance_name" ]; then
-            prev_testing_id=$(echo $instance_name | awk -F'-' '{print $(NF-1)"-"$NF}')
+            prev_testing_id=$(echo "$instance_name" | awk -F'-' '{print $(NF-1)"-"$NF}')
 
             aws ec2 delete-key-pair --key-name "k8s-on-ec2-${{ inputs.ec2_name }}-${{ inputs.language }}-key-pair-$prev_testing_id"
 
@@ -231,6 +231,6 @@ jobs:
             --query "Reservations[*].Instances[*].InstanceId" \
             --output text)
 
-            aws ec2 terminate-instances --instance-ids $main_instance_id
-            aws ec2 terminate-instances --instance-ids $worker_instance_id
+            aws ec2 terminate-instances --instance-ids "$main_instance_id"
+            aws ec2 terminate-instances --instance-ids "$worker_instance_id"
           fi
