@@ -62,12 +62,10 @@ jobs:
               
               # Update TargetFramework in csproj files
               if [[ $file == *.csproj ]]; then
-                sed -i "s/<TargetFramework>netcoreapp${DEFAULT_VERSION}<\/TargetFramework>/<TargetFramework>netcoreapp${DOTNET_VERSION}<\/TargetFramework>/g" "$file"
-              fi
-
-              if [ $? -ne 0 ]; then
-                echo "Error: Failed to update version in $file"
-                exit 1
+                if ! sed -i "s/<TargetFramework>netcoreapp${DEFAULT_VERSION}<\/TargetFramework>/<TargetFramework>netcoreapp${DOTNET_VERSION}<\/TargetFramework>/g" "$file"; then
+                  echo "Error: Failed to update version in $file"
+                  exit 1
+                fi
               fi
               echo "Successfully updated $file"
             }
