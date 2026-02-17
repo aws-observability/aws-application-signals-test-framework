@@ -37,7 +37,7 @@ jobs:
     steps:
       # Sleep 20 seconds between each job's start
       - name: Sleep to avoid throttling limits
-        run: sleep $((${{ env.JITTER_INDEX }} * 20))
+        run: sleep $(( ${{ env.JITTER_INDEX }} * 20 ))
 
       - name: Generate Testing ID
         run: |

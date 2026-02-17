@@ -126,7 +126,7 @@ jobs:
               echo "Destroying terraform"
               terraform destroy -auto-approve \
                 -var="test_id=${{ env.TESTING_ID }}"
-              retry_counter=$(($retry_counter+1))
+              retry_counter=$((retry_counter+1))
             else
               break
             fi
