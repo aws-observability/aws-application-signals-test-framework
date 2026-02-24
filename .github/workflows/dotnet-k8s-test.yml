@@ -114,10 +114,10 @@ jobs:
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/dotnet/k8s/deploy/resources
         run: |
-          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' dotnet-frontend-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_MAIN_SAMPLE_APP_IMAGE }}#' dotnet-frontend-service-depl.yaml
-          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' dotnet-remote-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_REMOTE_SAMPLE_APP_IMAGE }}#' dotnet-remote-service-depl.yaml
+          sed -i "s#\${TESTING_ID}#${{ env.TESTING_ID }}#" dotnet-frontend-service-depl.yaml
+          sed -i "s#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_MAIN_SAMPLE_APP_IMAGE }}#" dotnet-frontend-service-depl.yaml
+          sed -i "s#\${TESTING_ID}#${{ env.TESTING_ID }}#" dotnet-remote-service-depl.yaml
+          sed -i "s#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_REMOTE_SAMPLE_APP_IMAGE }}#" dotnet-remote-service-depl.yaml
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key dotnet-frontend-service-depl-${{ env.TESTING_ID }}.yaml --body dotnet-frontend-service-depl.yaml
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key dotnet-remote-service-depl-${{ env.TESTING_ID }}.yaml --body dotnet-remote-service-depl.yaml
 
