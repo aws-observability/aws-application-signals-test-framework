@@ -111,6 +111,8 @@ resource "null_resource" "main_service_setup" {
       #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
+      export DEBIAN_FRONTEND=noninteractive
+      export NEEDRESTART_MODE=a
       # Install wget and Java based on OS
       # Ubuntu commands
       sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
@@ -214,6 +216,8 @@ resource "null_resource" "remote_service_setup" {
       #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
+      export DEBIAN_FRONTEND=noninteractive
+      export NEEDRESTART_MODE=a
       # Install wget and Java 
       # Ubuntu commands
       sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
@@ -294,6 +298,8 @@ resource "null_resource" "traffic_generator_setup" {
     inline = [
       <<-EOF
       #!/bin/bash
+        export DEBIAN_FRONTEND=noninteractive
+        export NEEDRESTART_MODE=a
         # Ubuntu commands
         sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
         # Install curl first if not already installed
