@@ -111,22 +111,20 @@ resource "null_resource" "main_service_setup" {
       #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      export DEBIAN_FRONTEND=noninteractive
-      export NEEDRESTART_MODE=a
       # Install wget and Java based on OS
       # Ubuntu commands
-      sudo apt-get update
-      sudo apt-get install -y software-properties-common
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y software-properties-common
       sudo add-apt-repository -y ppa:openjdk-r/ppa
-      sudo apt-get update
-      sudo apt-get install wget -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install wget -y
       # Try to fix broken packages if any
-      sudo apt-get install -y -f
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y -f
       # Clean apt cache
-      sudo apt-get clean
-      sudo apt-get autoremove -y
-      sudo apt-get install -y openjdk-11-jdk 
-      sudo apt-get install -y awscli
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get clean
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get autoremove -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y openjdk-11-jdk 
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y awscli
       
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -216,24 +214,22 @@ resource "null_resource" "remote_service_setup" {
       #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
-      export DEBIAN_FRONTEND=noninteractive
-      export NEEDRESTART_MODE=a
       # Install wget and Java 
       # Ubuntu commands
-      sudo apt-get update
-      sudo apt-get install -y software-properties-common
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y software-properties-common
       sudo add-apt-repository -y ppa:openjdk-r/ppa
-      sudo apt-get update
-      sudo apt-get install wget -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install wget -y
       # Try to fix broken packages if any
-      sudo apt-get install -y -f
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y -f
       # Clean apt cache
-      sudo apt-get clean
-      sudo apt-get autoremove -y
-      sudo apt-get install -y openjdk-11-jdk
-      sudo apt-get install -y awscli
-      sudo apt-get update
-      sudo apt-get install ec2-instance-connect -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get clean
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get autoremove -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y openjdk-11-jdk
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y awscli
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install ec2-instance-connect -y
       
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -298,17 +294,15 @@ resource "null_resource" "traffic_generator_setup" {
     inline = [
       <<-EOF
       #!/bin/bash
-        export DEBIAN_FRONTEND=noninteractive
-        export NEEDRESTART_MODE=a
         # Ubuntu commands
-        sudo apt-get update
+        sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
         # Install curl first if not already installed
-        sudo apt-get install -y curl
+        sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y curl
         # Install Node.js and npm using NodeSource
         curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-        sudo apt-get install -y nodejs
+        sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y nodejs
         # Install other required packages
-        sudo apt-get install -y awscli unzip tmux
+        sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y awscli unzip tmux
 
         # Bring in the traffic generator files to EC2 Instance
         aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip
