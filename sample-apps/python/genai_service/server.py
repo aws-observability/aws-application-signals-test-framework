@@ -40,7 +40,7 @@ app = FastAPI(title="LangChain Bedrock OpenInference API", version="1.0.0")
 
 # Initialize the LLM with AWS Bedrock
 llm = ChatBedrock(
-    model_id="anthropic.claude-3-haiku-20240307-v1:0",
+    model_id="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
     model_kwargs={
         "temperature": 0.7,
         "max_tokens": 500
