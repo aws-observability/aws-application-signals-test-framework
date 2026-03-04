@@ -5,8 +5,8 @@ name: Sample App Deployment - Python S3
 on:
   workflow_dispatch:
     inputs:
-      deploy-main:
-        description: 'Deploy main Python sample apps'
+      deploy-main-remote-sample-apps:
+        description: 'Deploy main and remote Python sample apps'
         required: false
         default: true
         type: boolean
