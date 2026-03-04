@@ -6,22 +6,12 @@ on:
   workflow_dispatch:
     inputs:
       deploy-main:
-        description: 'Deploy main Python sample app'
+        description: 'Deploy main Python sample apps'
         required: false
         default: true
         type: boolean
       deploy-genai:
         description: 'Deploy GenAI LangChain sample app'
-        required: false
-        default: true
-        type: boolean
-      deploy-lambda:
-        description: 'Deploy Lambda sample app'
-        required: false
-        default: true
-        type: boolean
-      deploy-adaptive-sampling:
-        description: 'Deploy adaptive sampling sample app'
         required: false
         default: true
         type: boolean
@@ -88,23 +78,23 @@ jobs:
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-gen-ai-sample-app.zip --key python-genai-sample-app.zip
 
       - name: Build Lambda Sample App
-        if: inputs.deploy-lambda != false
+        if: inputs.deploy-main != false
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-otel-python-instrumentation'
       - name: Build sample lambda function
-        if: inputs.deploy-lambda != false
+        if: inputs.deploy-main != false
         shell: bash
         run: ./package-lambda-function.sh
         working-directory: lambda-layer/sample-apps
 
       - name: Upload to Lambda Sample App to S3
-        if: inputs.deploy-lambda != false
+        if: inputs.deploy-main != false
         working-directory: lambda-layer/sample-apps
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/function.zip --key pyfunction.zip
 
   python-zip-adaptive-sampling:
-    if: inputs.deploy-adaptive-sampling != false
+    if: inputs.deploy-main != false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
