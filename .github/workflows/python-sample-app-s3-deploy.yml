@@ -58,12 +58,12 @@ jobs:
           aws-region: ${{ matrix.aws-region }}
 
       - name: Build Sample App Zip
-        if: inputs.deploy-main != false
+        if: inputs.deploy-main-remote-sample-apps != false
         working-directory: sample-apps/python
         run: zip -r python-sample-app.zip .
 
       - name: Upload to S3
-        if: inputs.deploy-main != false
+        if: inputs.deploy-main-remote-sample-apps != false
         working-directory: sample-apps/python
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
 
@@ -78,23 +78,23 @@ jobs:
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-gen-ai-sample-app.zip --key python-genai-sample-app.zip
 
       - name: Build Lambda Sample App
-        if: inputs.deploy-main != false
+        if: inputs.deploy-main-remote-sample-apps != false
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-otel-python-instrumentation'
       - name: Build sample lambda function
-        if: inputs.deploy-main != false
+        if: inputs.deploy-main-remote-sample-apps != false
         shell: bash
         run: ./package-lambda-function.sh
         working-directory: lambda-layer/sample-apps
 
       - name: Upload to Lambda Sample App to S3
-        if: inputs.deploy-main != false
+        if: inputs.deploy-main-remote-sample-apps != false
         working-directory: lambda-layer/sample-apps
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/function.zip --key pyfunction.zip
 
   python-zip-adaptive-sampling:
-    if: inputs.deploy-main != false
+    if: inputs.deploy-main-remote-sample-apps != false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
