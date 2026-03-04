@@ -10,7 +10,7 @@ on:
         required: false
         default: true
         type: boolean
-      deploy-genai:
+      deploy-genai-test-app:
         description: 'Deploy GenAI LangChain sample app'
         required: false
         default: true
@@ -68,12 +68,12 @@ jobs:
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
 
       - name: Build Gen AI Sample App Zip
-        if: inputs.deploy-genai != false
+        if: inputs.deploy-genai-test-app != false
         working-directory: sample-apps/python/genai_service
         run: zip -r python-gen-ai-sample-app.zip .
 
       - name: Upload Gen AI Sample App to S3
-        if: inputs.deploy-genai != false
+        if: inputs.deploy-genai-test-app != false
         working-directory: sample-apps/python/genai_service
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-gen-ai-sample-app.zip --key python-genai-sample-app.zip
 
