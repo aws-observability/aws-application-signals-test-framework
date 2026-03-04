@@ -3,7 +3,18 @@
 
 name: Sample App Deployment - Python S3
 on:
-  workflow_dispatch: # be able to run the workflow on demand
+  workflow_dispatch:
+    inputs:
+      deploy-base-test-apps:
+        description: 'Deploy main and remote Python sample apps'
+        required: false
+        default: true
+        type: boolean
+      deploy-genai-test-app:
+        description: 'Deploy GenAI LangChain sample app'
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   id-token: write
@@ -47,35 +58,43 @@ jobs:
           aws-region: ${{ matrix.aws-region }}
 
       - name: Build Sample App Zip
+        if: inputs.deploy-base-test-apps != false
         working-directory: sample-apps/python
         run: zip -r python-sample-app.zip .
 
       - name: Upload to S3
+        if: inputs.deploy-base-test-apps != false
         working-directory: sample-apps/python
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
 
       - name: Build Gen AI Sample App Zip
+        if: inputs.deploy-genai-test-app != false
         working-directory: sample-apps/python/genai_service
         run: zip -r python-gen-ai-sample-app.zip .
 
       - name: Upload Gen AI Sample App to S3
+        if: inputs.deploy-genai-test-app != false
         working-directory: sample-apps/python/genai_service
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-gen-ai-sample-app.zip --key python-genai-sample-app.zip
 
       - name: Build Lambda Sample App
+        if: inputs.deploy-base-test-apps != false
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-otel-python-instrumentation'
       - name: Build sample lambda function
+        if: inputs.deploy-base-test-apps != false
         shell: bash
         run: ./package-lambda-function.sh
         working-directory: lambda-layer/sample-apps
 
       - name: Upload to Lambda Sample App to S3
+        if: inputs.deploy-base-test-apps != false
         working-directory: lambda-layer/sample-apps
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/function.zip --key pyfunction.zip
 
   python-zip-adaptive-sampling:
+    if: inputs.deploy-base-test-apps != false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
