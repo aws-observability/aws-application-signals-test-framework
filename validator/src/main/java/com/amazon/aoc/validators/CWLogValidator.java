@@ -69,7 +69,13 @@ public class CWLogValidator implements IValidator {
           log.info("Searching for expected log: {}", expectedAttributes);
           Map<String, Object> actualLog;
 
-          if (isAwsOtlpLog(expectedAttributes)) {
+          if (validationConfig.getCwLogFilterPattern() != null) {
+            // Use custom filter pattern from validation config
+            String customPattern = validationConfig.getCwLogFilterPattern()
+                .replace("{{serviceName}}", context.getServiceName())
+                .replace("{{traceId}}", context.getTraceId() != null ? context.getTraceId() : "");
+            actualLog = this.getActualAwsOtlpLog(Arrays.asList(customPattern));
+          } else if (isAwsOtlpLog(expectedAttributes)) {
             String otlpLogFilterPattern = String.format(
                 "{ ($.resource.attributes.['service.name'] = \"%s\") && ($.body = \"This is a custom log for validation testing\") }",
                 context.getServiceName()
