@@ -1,0 +1,44 @@
+[{
+  "name": "^{{serviceName}}$",
+  "trace_id": ".*",
+  "http": {
+    "request": {
+      "method": "^POST$"
+    }
+  },
+  "aws": {
+    "span.kind": "^SERVER$"
+  },
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^POST /chat$"
+  },
+  "metadata": {
+    "service.name": "^{{serviceName}}$",
+    "telemetry.sdk.language": "^python$"
+  },
+  "subsegments": [
+    {
+      "name": ".*"
+    },
+    {
+      "name": "^LangGraph$",
+      "subsegments": [
+        {
+          "name": "^agent$",
+          "subsegments": [
+            {
+              "name": "^call_model$",
+              "annotations": {
+                "span.kind": "^INTERNAL$"
+              },
+              "metadata": {
+                "gen_ai.usage.input_tokens": "^[0-9]+$"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}]

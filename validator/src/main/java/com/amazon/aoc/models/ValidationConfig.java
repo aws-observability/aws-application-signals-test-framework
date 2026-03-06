@@ -36,6 +36,7 @@ public class ValidationConfig {
   String expectedMetricTemplate;
   String expectedTraceTemplate;
   String expectedLogStructureTemplate;
+  String cwLogFilterPattern;
 
   /** alarm related. */
   Integer pullingDuration;
