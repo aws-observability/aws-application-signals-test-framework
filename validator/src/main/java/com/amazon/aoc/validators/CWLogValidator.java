@@ -119,7 +119,9 @@ public class CWLogValidator implements IValidator {
                 this.getActualLog(operation, remoteService, remoteOperation, remoteResourceType, remoteResourceIdentifier);
             }
           }
-          log.info("Value of an actual log: {}", actualLog);
+          String actualLogStr = actualLog != null ? actualLog.toString() : "null";
+          log.info("Value of an actual log: {}", actualLogStr.length() > 2000 ? actualLogStr.substring(0, 2000) + "...(truncated)" : actualLogStr);
+          log.debug("Value of an actual log: {}", actualLogStr);
 
           if (actualLog == null) throw new BaseException(ExceptionCode.EXPECTED_LOG_NOT_FOUND);
 
