@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
+import random
 
+from opentelemetry import metrics
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
@@ -101,6 +103,13 @@ async def chat(request):
 
     logger.info("X" * 1_200_000)
 
+    # Emit OTel Metrics
+    meter = metrics.get_meter("genai-meter", "1.0.0")
+    token_counter = meter.create_histogram(
+        name="GenAI_FakeTokenUsage", description="Fake Gen AI token usage for testing", unit="tokens"
+    )
+    token_counter.record(150 + int(350 * random.random()), {"model": "claude", "operation": "chat"})
+
     response = agent.invoke({"messages": [("human", message)]})
     return JSONResponse({"response": response["messages"][-1].content})
 
@@ -110,6 +119,6 @@ async def health(request):
 
 
 app = Starlette(routes=[
-    Route("/chat", chat, methods=["POST"]),
+    Route("/ai-chat", chat, methods=["POST"]),
     Route("/health", health, methods=["GET"]),
 ])
