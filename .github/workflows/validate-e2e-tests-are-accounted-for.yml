@@ -64,7 +64,7 @@ jobs:
           cd ${{ env.TEST_RESOURCES_FOLDER }}/aws-application-signals-test-framework/.github/workflows/
           EXCLUSIONS="${{ env.EXCLUSIONS }}"
           [[ -n "$EXCLUSIONS" ]] && echo "Applying exclusions to TESTS_EXPECTED: $EXCLUSIONS"
-          echo "TESTS_EXPECTED=$(ls | grep -E '(^java-)|(^node-)|(^python-)|(^dotnet-)|(^metric-limiter-)' | grep -Ev '(sigv4|lambda-test|lambda-layer-perf-test|ocb|genesis)' | grep -E 'test\.ya?ml$' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> "$GITHUB_ENV"
+          echo "TESTS_EXPECTED=$(ls | grep -E '(^java-)|(^node-)|(^python-)|(^dotnet-)|(^metric-limiter-)' | grep -Ev '(sigv4|lambda-test|lambda-layer-perf-test|ocb|genai)' | grep -E 'test\.ya?ml$' | { [[ -n "$EXCLUSIONS" ]] && grep -v -F -f <(echo "$EXCLUSIONS" | tr ',' '\n') || cat; } | sort | tr '\n' ' ' | sed 's/ $//')" >> "$GITHUB_ENV"
 
       - name: Determine workflow files actually being used by ${{ github.repository }}
         run: |
