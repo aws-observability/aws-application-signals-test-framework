@@ -97,7 +97,7 @@ export OTEL_PYTHON_CONFIGURATOR=aws_configurator
 export OTEL_EXPORTER_OTLP_LOGS_HEADERS="x-aws-log-group=test/genesis,x-aws-log-stream=default,x-aws-metric-namespace=genesis"
 export OTEL_RESOURCE_ATTRIBUTES="service.name=langchain-openinference-app"
 export AGENT_OBSERVABILITY_ENABLED="true"
-export OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=http,sqlalchemy,psycopg2,pymysql,sqlite3,aiopg,asyncpg,mysql_connector,urllib3,requests,system_metrics,google-genai
+export OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=http,sqlalchemy,psycopg2,pymysql,sqlite3,aiopg,asyncpg,mysql_connector,urllib3,requests,system_metrics,google-genai,aws_crewai,aws_langchain
 
 nohup opentelemetry-instrument python3.12 server.py > /var/log/langchain-service.log 2>&1 &
 
