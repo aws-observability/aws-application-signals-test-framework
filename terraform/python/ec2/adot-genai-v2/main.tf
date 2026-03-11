@@ -109,6 +109,7 @@ export OTEL_PYTHON_CONFIGURATOR=aws_configurator
 export OTEL_RESOURCE_ATTRIBUTES="service.name=genai-service-v2-${var.test_id}"
 export AGENT_OBSERVABILITY_ENABLED=true
 export AGENT_OBSERVABILITY_VERSION=2
+export OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=http,sqlalchemy,psycopg2,pymysql,sqlite3,aiopg,asyncpg,mysql_connector,urllib3,requests,system_metrics,google-genai,aws_crewai,aws_langchain
 
 nohup opentelemetry-instrument python3.12 -m uvicorn server:app --host 0.0.0.0 --port 8000 > /var/log/genai-service.log 2>&1 &
 
