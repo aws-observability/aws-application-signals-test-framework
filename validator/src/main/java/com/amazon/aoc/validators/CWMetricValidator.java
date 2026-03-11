@@ -92,11 +92,9 @@ public class CWMetricValidator implements IValidator {
         maxRetryCount,
         () -> {
           String httpPath = validationConfig.getHttpPath();
-          // Special handling for Genesis path - just check if any metrics exists in namespace
-          // since ADOT will just capture any OTel Metrics emitted from the instrumentation library used
-          // and convert them into EMF metrics, it's impossible to create a validation template for this.
+          // Special handling for Gen AI path - validate specific metric exists in namespace
           if (httpPath != null && httpPath.contains("ai-chat")) {
-            validateAnyMetricExists();
+            validateCustomGenAIMetrics();
             return;
           }
           // We will query the Service, RemoteService, and RemoteTarget dimensions to ensure we
@@ -229,13 +227,13 @@ public class CWMetricValidator implements IValidator {
      }
   }
   
-  private void validateAnyMetricExists() throws Exception {
-    // This will grab all metrics from last 3 hours
-    // See: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_ListMetrics.html
-    List<Metric> allMetricsInNamespace = cloudWatchService.listMetrics(context.getMetricNamespace(), null, null, null);
-    log.info("Found {} metrics in namespace {}", allMetricsInNamespace.size(), context.getMetricNamespace());
-    if (allMetricsInNamespace.isEmpty()) {
-      throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND, "No metrics found in namespace: " + context.getMetricNamespace());
+  private void validateCustomGenAIMetrics() throws Exception {
+    String expectedMetricName = "GenAI_FakeTokenUsage";
+    List<Metric> metrics = cloudWatchService.listMetrics(context.getMetricNamespace(), expectedMetricName, null, null);
+    log.info("Found {} metrics matching '{}' in namespace {}", metrics.size(), expectedMetricName, context.getMetricNamespace());
+    if (metrics.isEmpty()) {
+      throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND,
+          "Metric '" + expectedMetricName + "' not found in namespace: " + context.getMetricNamespace());
     }
     log.info("validation is passed for path {}", validationConfig.getHttpPath());
   }

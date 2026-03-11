@@ -144,6 +144,17 @@ jobs:
           --instance-id ${{ env.INSTANCE_ID }}
           --trace-id ${{ env.W3C_TRACE_ID }}'
 
+      - name: Validate generated metrics
+        if: (success() || failure()) && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ec2/adot-genai-v2/metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.INSTANCE_IP }}:8000
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name genai-service-v2-${{ env.TESTING_ID }}
+          --instance-id ${{ env.INSTANCE_ID }}'
+
       - name: Cleanup
         if: always()
         continue-on-error: true

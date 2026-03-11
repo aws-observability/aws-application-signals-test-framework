@@ -98,12 +98,12 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/adot-genai && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/adot-genai-v1 && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
 
       - name: Deploy service via terraform
-        working-directory: terraform/python/ec2/adot-genai
+        working-directory: terraform/python/ec2/adot-genai-v1
         run: |
           terraform apply -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
@@ -114,7 +114,7 @@ jobs:
 
 
       - name: Get deployment info
-        working-directory: terraform/python/ec2/adot-genai
+        working-directory: terraform/python/ec2/adot-genai-v1
         run: |
           echo "INSTANCE_IP=$(terraform output langchain_service_public_ip)" >> "$GITHUB_ENV"
           echo "INSTANCE_ID=$(terraform output langchain_service_instance_id)" >> "$GITHUB_ENV"
@@ -123,7 +123,7 @@ jobs:
         run: sleep 300
 
       - name: Validate generated logs
-        run: ./gradlew validator:run --args='-c python/ec2/adot-genai/log-validation.yml
+        run: ./gradlew validator:run --args='-c python/ec2/adot-genai-v1/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.INSTANCE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
@@ -135,7 +135,7 @@ jobs:
 
       - name: Validate generated traces
         if: (success() || failure()) && !cancelled()
-        run: ./gradlew validator:run --args='-c python/ec2/adot-genai/trace-validation.yml
+        run: ./gradlew validator:run --args='-c python/ec2/adot-genai-v1/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.INSTANCE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
@@ -146,7 +146,7 @@ jobs:
 
       - name: Validate generated metrics
         if: (success() || failure()) && !cancelled()
-        run: ./gradlew validator:run --args='-c python/ec2/adot-genai/metric-validation.yml
+        run: ./gradlew validator:run --args='-c python/ec2/adot-genai-v1/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.INSTANCE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
@@ -158,7 +158,7 @@ jobs:
       - name: Cleanup
         if: always()
         continue-on-error: true
-        working-directory: terraform/python/ec2/adot-genai
+        working-directory: terraform/python/ec2/adot-genai-v1
         run: |
           terraform destroy -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
