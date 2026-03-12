@@ -55,12 +55,6 @@ jobs:
             && python3.12 -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
           fi
 
-      - name: Debug - Print ADOT Wheel Command
-        run: |
-          echo "REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}"
-          echo "OTEL_SOURCE: ${{ env.OTEL_SOURCE }}"
-          echo "GET_ADOT_WHEEL_COMMAND: ${{ env.GET_ADOT_WHEEL_COMMAND }}"
-
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
