@@ -51,8 +51,15 @@ jobs:
           else
             latest_release_version=$(curl -sL https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest | grep -oP '/releases/tag/v\K[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
             echo "The latest version is $latest_release_version"
-            echo "GET_ADOT_WHEEL_COMMAND=wget -O ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-${latest_release_version}-py3-none-any.whl && python3.12 -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
+            echo GET_ADOT_WHEEL_COMMAND="wget -O ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-${latest_release_version}-py3-none-any.whl \
+            && python3.12 -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
           fi
+
+      - name: Debug - Print ADOT Wheel Command
+        run: |
+          echo "REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}"
+          echo "OTEL_SOURCE: ${{ env.OTEL_SOURCE }}"
+          echo "GET_ADOT_WHEEL_COMMAND: ${{ env.GET_ADOT_WHEEL_COMMAND }}"
 
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
