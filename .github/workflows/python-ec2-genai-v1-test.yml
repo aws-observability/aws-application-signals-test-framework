@@ -129,7 +129,7 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name langchain-traceloop-app
+          --service-name langchain-openinference-app
           --instance-id ${{ env.INSTANCE_ID }}
           --trace-id ${{ env.W3C_TRACE_ID }}'
 
@@ -140,7 +140,7 @@ jobs:
           --endpoint http://${{ env.INSTANCE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --service-name langchain-traceloop-app
+          --service-name langchain-openinference-app
           --instance-id ${{ env.INSTANCE_ID }}
           --trace-id ${{ env.XRAY_TRACE_ID }}'
 
@@ -152,7 +152,7 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name langchain-traceloop-app
+          --service-name langchain-openinference-app
           --instance-id ${{ env.INSTANCE_ID }}'
 
       - name: Cleanup
