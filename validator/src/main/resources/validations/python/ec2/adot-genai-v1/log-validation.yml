@@ -4,3 +4,10 @@
   httpMethod: "post"
   callingType: "http"
   expectedLogStructureTemplate: "PYTHON_EC2_ADOT_GENAI_LOG"
+-
+  validationType: "cw-log"
+  httpPath: "ai-chat"
+  httpMethod: "post"
+  callingType: "http"
+  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_GENAI_TRUNCATED_LOG"
+  cwLogFilterPattern: "{ ($.scope.name = \"server\") && ($.attributes.['code.function.name'] = \"chat\") && ($.traceId = \"{{traceId}}\") }"
