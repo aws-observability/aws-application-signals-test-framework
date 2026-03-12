@@ -92,7 +92,7 @@ public class CWMetricValidator implements IValidator {
         maxRetryCount,
         () -> {
           String httpPath = validationConfig.getHttpPath();
-          // Special handling for Gen AI path - validate specific metric exists in namespace
+          // Special handling for Gen AI path to validate specific metric exists in namespace
           if (httpPath != null && httpPath.contains("ai-chat")) {
             validateCustomGenAIMetrics();
             return;
