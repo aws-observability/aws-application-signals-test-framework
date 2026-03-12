@@ -74,28 +74,21 @@ resource "aws_instance" "main_service_instance" {
   user_data = base64encode(<<-EOF
 #!/bin/bash
 yum update -y
-yum install -y python3.12 python3.12-pip unzip bc
+yum install -y python3.12 python3.12-pip unzip bc wget
 
 mkdir -p /app
 cd /app
 aws s3 cp ${var.service_zip_url} genai-service.zip
 unzip genai-service.zip
 
-# Having issues installing dependencies from ec2-requirements.txt as these dependencies are quite large and cause timeouts/memory issues on EC2, manually installing instead
-python3.12 -m pip install fastapi uvicorn[standard] --no-cache-dir
-python3.12 -m pip install boto3 botocore setuptools --no-cache-dir
-python3.12 -m pip install opentelemetry-api opentelemetry-sdk opentelemetry-semantic-conventions --no-cache-dir
-
-python3.12 -m pip install langchain langchain-classic langchain-community langchain_aws --no-cache-dir
-python3.12 -m pip install python-dotenv openlit --no-cache-dir
-python3.12 -m pip install openinference-instrumentation-langchain --no-cache-dir
+python3.12 -m pip install -r ec2-requirements.txt --no-cache-dir
 ${var.get_adot_wheel_command}
 
 export AWS_REGION=${var.aws_region}
 export OTEL_PYTHON_DISTRO=aws_distro
 export OTEL_PYTHON_CONFIGURATOR=aws_configurator
 export OTEL_EXPORTER_OTLP_LOGS_HEADERS="x-aws-log-group=test/genesis,x-aws-log-stream=default,x-aws-metric-namespace=genesis"
-export OTEL_RESOURCE_ATTRIBUTES="service.name=langchain-openinference-app"
+export OTEL_RESOURCE_ATTRIBUTES="service.name=genai-service-v1-${var.test_id}"
 export AGENT_OBSERVABILITY_ENABLED="true"
 export OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=http,sqlalchemy,psycopg2,pymysql,sqlite3,aiopg,asyncpg,mysql_connector,urllib3,requests,system_metrics,google-genai,aws_crewai,aws_langchain
 

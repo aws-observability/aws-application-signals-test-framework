@@ -1,13 +1,13 @@
 -
   validationType: "cw-log"
-  httpPath: "/chat"
+  httpPath: "/ai-chat"
   httpMethod: "post"
   callingType: "http"
   expectedLogStructureTemplate: "PYTHON_EC2_ADOT_GENAI_V2_LLO_SPAN_ATTRIBUTE_LOG"
   cwLogFilterPattern: "{ ($.scope.name = \"openinference.instrumentation.langchain\") && ($.body.input.messages[0].content = \"*clinic hours*\") && ($.traceId = \"{{traceId}}\") }"
 -
   validationType: "cw-log"
-  httpPath: "/chat"
+  httpPath: "/ai-chat"
   httpMethod: "post"
   callingType: "http"
   expectedLogStructureTemplate: "PYTHON_EC2_ADOT_GENAI_V2_TRUNCATED_LOG"
