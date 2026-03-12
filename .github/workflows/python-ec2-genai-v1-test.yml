@@ -51,7 +51,7 @@ jobs:
           else
             latest_release_version=$(curl -sL https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest | grep -oP '/releases/tag/v\K[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
             echo "The latest version is $latest_release_version"
-            echo GET_ADOT_WHEEL_COMMAND="wget -O ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-$latest_release_version-py3-none-any.whl \
+            echo GET_ADOT_WHEEL_COMMAND="curl -sL -o ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-$latest_release_version-py3-none-any.whl \
             && python3.12 -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
           fi
 
@@ -129,7 +129,7 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name langchain-openinference-app
+          --service-name genai-service-v1-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID }}
           --trace-id ${{ env.W3C_TRACE_ID }}'
 
@@ -140,7 +140,7 @@ jobs:
           --endpoint http://${{ env.INSTANCE_IP }}:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --service-name langchain-openinference-app
+          --service-name genai-service-v1-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID }}
           --trace-id ${{ env.XRAY_TRACE_ID }}'
 
@@ -152,7 +152,7 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name langchain-openinference-app
+          --service-name genai-service-v1-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID }}'
 
       - name: Cleanup

@@ -88,7 +88,7 @@ export AWS_REGION=${var.aws_region}
 export OTEL_PYTHON_DISTRO=aws_distro
 export OTEL_PYTHON_CONFIGURATOR=aws_configurator
 export OTEL_EXPORTER_OTLP_LOGS_HEADERS="x-aws-log-group=test/genesis,x-aws-log-stream=default,x-aws-metric-namespace=genesis"
-export OTEL_RESOURCE_ATTRIBUTES="service.name=langchain-openinference-app"
+export OTEL_RESOURCE_ATTRIBUTES="service.name=genai-service-v1-${var.test_id}"
 export AGENT_OBSERVABILITY_ENABLED="true"
 export OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=http,sqlalchemy,psycopg2,pymysql,sqlite3,aiopg,asyncpg,mysql_connector,urllib3,requests,system_metrics,google-genai,aws_crewai,aws_langchain
 

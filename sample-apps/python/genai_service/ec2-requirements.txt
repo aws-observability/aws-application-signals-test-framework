@@ -9,5 +9,6 @@ langchain-community
 opentelemetry-api
 opentelemetry-sdk
 opentelemetry-semantic-conventions
+opentelemetry-exporter-otlp-proto-http
 python-dotenv
 openinference-instrumentation-langchain
