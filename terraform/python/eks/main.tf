@@ -76,7 +76,7 @@ resource "local_file" "kubeconfig" {
 
 ### Setting up the sample app on the cluster
 
-resource "kubernetes_deployment" "python_app_deployment" {
+resource "kubernetes_deployment_v1" "python_app_deployment" {
 
   metadata {
     name      = "python-app-deployment-${var.test_id}"
@@ -145,7 +145,7 @@ resource "kubernetes_deployment" "python_app_deployment" {
 }
 
 resource "kubernetes_service" "python_app_service" {
-  depends_on = [kubernetes_deployment.python_app_deployment]
+  depends_on = [kubernetes_deployment_v1.python_app_deployment]
 
   metadata {
     name      = "python-app-service"
@@ -167,7 +167,7 @@ resource "kubernetes_service" "python_app_service" {
 
 # Set up the remote service
 
-resource "kubernetes_deployment" "python_r_app_deployment" {
+resource "kubernetes_deployment_v1" "python_r_app_deployment" {
 
   metadata {
     name      = "python-remote-${var.test_id}"
@@ -215,7 +215,7 @@ resource "kubernetes_deployment" "python_r_app_deployment" {
 }
 
 resource "kubernetes_service" "python_r_app_service" {
-  depends_on = [kubernetes_deployment.python_r_app_deployment]
+  depends_on = [kubernetes_deployment_v1.python_r_app_deployment]
 
   metadata {
     name      = "python-r-app-service"
@@ -235,7 +235,7 @@ resource "kubernetes_service" "python_r_app_service" {
   }
 }
 
-resource "kubernetes_deployment" "traffic_generator" {
+resource "kubernetes_deployment_v1" "traffic_generator" {
   metadata {
     name      = "traffic-generator"
     namespace = var.test_namespace
