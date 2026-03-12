@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from langchain_aws import ChatBedrock
-from langchain.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_classic.chains import LLMChain
 from opentelemetry import trace, metrics
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter

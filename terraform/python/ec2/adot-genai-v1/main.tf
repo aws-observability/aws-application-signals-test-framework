@@ -86,7 +86,7 @@ python3.12 -m pip install fastapi uvicorn[standard] --no-cache-dir
 python3.12 -m pip install boto3 botocore setuptools --no-cache-dir
 python3.12 -m pip install opentelemetry-api opentelemetry-sdk opentelemetry-semantic-conventions --no-cache-dir
 
-python3.12 -m pip install langchain langchain-community langchain_aws --no-cache-dir
+python3.12 -m pip install langchain langchain-classic langchain-community langchain_aws --no-cache-dir
 python3.12 -m pip install python-dotenv openlit --no-cache-dir
 python3.12 -m pip install openinference-instrumentation-langchain --no-cache-dir
 ${var.get_adot_wheel_command}

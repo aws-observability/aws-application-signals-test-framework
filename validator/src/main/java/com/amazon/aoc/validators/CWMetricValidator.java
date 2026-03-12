@@ -228,12 +228,13 @@ public class CWMetricValidator implements IValidator {
   }
   
   private void validateCustomGenAIMetrics() throws Exception {
-    String expectedMetricName = "GenAI_FakeTokenUsage";
-    List<Metric> metrics = cloudWatchService.listMetrics(context.getMetricNamespace(), expectedMetricName, null, null);
-    log.info("Found {} metrics matching '{}' in namespace {}", metrics.size(), expectedMetricName, context.getMetricNamespace());
+    String expectedMetricName = "genai_faketokenusage";
+    String namespace = context.getMetricNamespace();
+    List<Metric> metrics = cloudWatchService.listMetrics(namespace, expectedMetricName, null, null);
+    log.info("Found {} metrics matching '{}' in namespace {}", metrics.size(), expectedMetricName, namespace);
     if (metrics.isEmpty()) {
       throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND,
-          "Metric '" + expectedMetricName + "' not found in namespace: " + context.getMetricNamespace());
+          "Metric '" + expectedMetricName + "' not found in namespace: " + namespace);
     }
     log.info("validation is passed for path {}", validationConfig.getHttpPath());
   }
