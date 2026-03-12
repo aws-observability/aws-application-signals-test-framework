@@ -171,6 +171,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
       export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
       export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true \
+      export OTEL_PYTHON_LOG_CORRELATION=true \
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
       python${var.language_version} manage.py migrate
@@ -296,6 +297,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
       export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
       export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true \
+      export OTEL_PYTHON_LOG_CORRELATION=true \
       export OTEL_SERVICE_NAME=python-sample-remote-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
       python${var.language_version} manage.py migrate
