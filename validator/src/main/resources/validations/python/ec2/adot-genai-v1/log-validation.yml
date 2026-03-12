@@ -1,6 +1,14 @@
 -
   validationType: "cw-log"
-  httpPath: "ai-chat"
+  httpPath: "/ai-chat"
   httpMethod: "post"
   callingType: "http"
   expectedLogStructureTemplate: "PYTHON_EC2_ADOT_GENAI_LOG"
+  cwLogFilterPattern: "{ ($.scope.name = \"openinference.instrumentation.langchain\") && ($.body.input.messages[0].content = \"*weather*\") && ($.traceId = \"{{traceId}}\") }"
+-
+  validationType: "cw-log"
+  httpPath: "/ai-chat"
+  httpMethod: "post"
+  callingType: "http"
+  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_GENAI_TRUNCATED_LOG"
+  cwLogFilterPattern: "{ ($.scope.name = \"server\") && ($.attributes.['code.function.name'] = \"chat\") && ($.traceId = \"{{traceId}}\") }"

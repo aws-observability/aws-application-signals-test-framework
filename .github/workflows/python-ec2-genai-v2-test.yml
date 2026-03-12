@@ -142,7 +142,7 @@ jobs:
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --service-name genai-service-v2-${{ env.TESTING_ID }}
           --instance-id ${{ env.INSTANCE_ID }}
-          --trace-id ${{ env.W3C_TRACE_ID }}'
+          --trace-id ${{ env.XRAY_TRACE_ID }}'
 
       - name: Validate generated metrics
         if: (success() || failure()) && !cancelled()
