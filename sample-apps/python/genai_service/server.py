@@ -12,6 +12,9 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from openinference.instrumentation.langchain import LangChainInstrumentor
 import random
+import logging
+
+logger = logging.getLogger("server")
 
 # Load environment variables
 load_dotenv()
@@ -95,6 +98,8 @@ async def chat(request: ChatRequest):
     """
 
     try:
+        logger.info("X" * 1_200_000)
+
         # Emit OTel Metrics
         meter = metrics.get_meter("genai-meter", "1.0.0")
         token_counter = meter.create_histogram(

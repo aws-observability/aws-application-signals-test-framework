@@ -257,6 +257,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ADOT_GENAI_LOG("/expected-data-template/python/ec2/adot-genai-v1/genai-log.mustache"),
   PYTHON_EC2_ADOT_GENAI_TRACE("/expected-data-template/python/ec2/adot-genai-v1/genai-trace.mustache"),
   PYTHON_EC2_ADOT_GENAI_METRIC("/expected-data-template/python/ec2/adot-genai-v1/genai-metric.mustache"),
+  PYTHON_EC2_ADOT_GENAI_TRUNCATED_LOG("/expected-data-template/python/ec2/adot-genai-v1/genai-log-truncated.mustache"),
 
   /** Python EC2 GenAI v2 (AgentCore Collector) Test Case Validations */
   PYTHON_EC2_ADOT_GENAI_V2_TRACE("/expected-data-template/python/ec2/adot-genai-v2/genai-trace.mustache"),
