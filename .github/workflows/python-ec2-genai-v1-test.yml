@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-name: Python EC2 Gen AI Use Case
+name: Python EC2 Gen AI v1 Use Case
 on:
   workflow_dispatch: # be able to run the workflow on demand
 
@@ -31,7 +31,7 @@ env:
   REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
-  python-ec2-adot-genai:
+  python-ec2-adot-genai-v1:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
