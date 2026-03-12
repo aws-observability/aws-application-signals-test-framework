@@ -14,6 +14,7 @@ from openinference.instrumentation.langchain import LangChainInstrumentor
 import random
 import logging
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("server")
 
 # Load environment variables
