@@ -74,7 +74,7 @@ resource "aws_instance" "main_service_instance" {
   user_data = base64encode(<<-EOF
 #!/bin/bash
 yum update -y
-yum install -y python3.12 python3.12-pip unzip bc
+yum install -y python3.12 python3.12-pip unzip bc wget
 
 mkdir -p /app
 cd /app
