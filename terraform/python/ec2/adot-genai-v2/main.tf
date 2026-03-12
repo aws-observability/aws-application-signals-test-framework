@@ -130,7 +130,7 @@ nohup bash -c '
 for i in {1..9}; do
     message="What are your clinic hours?"
     echo "[$(date)] Request $i: $message"
-    curl -s -X POST http://localhost:8000/chat \
+    curl -s -X POST http://localhost:8000/ai-chat \
         -H "Content-Type: application/json" \
         -H "X-Amzn-Trace-Id: ${var.trace_id}" \
         -d "{\"message\": \"$message\"}" \

@@ -96,11 +96,11 @@ async def chat(request: ChatRequest):
 
     try:
         # Emit OTel Metrics
-        meter = metrics.get_meter("genesis-meter", "1.0.0")
-        request_duration = meter.create_histogram(
-            name="Genesis_TestMetrics", description="Genesis request duration", unit="s"
+        meter = metrics.get_meter("genai-meter", "1.0.0")
+        token_counter = meter.create_histogram(
+            name="GenAI_FakeTokenUsage", description="Fake Gen AI token usage for testing", unit="tokens"
         )
-        request_duration.record(0.1 + (0.5 * random.random()), {"method": "GET", "status": "200"})
+        token_counter.record(150 + int(350 * random.random()), {"model": "claude", "operation": "chat"})
 
         # Process the input through the chain
         result = await chain.ainvoke({"input": request.message})

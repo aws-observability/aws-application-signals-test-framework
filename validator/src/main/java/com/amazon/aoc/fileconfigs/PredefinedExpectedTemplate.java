@@ -253,15 +253,16 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   /** Python EC2 ADOT SigV4 Log Exporter Test Case Validation */
   PYTHON_EC2_ADOT_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/application-log.mustache"),
 
-  /** Python EC2 ADOT Gen AI Test Case Validation */
-  PYTHON_EC2_ADOT_GENAI_LOG("/expected-data-template/python/ec2/adot-genai/genai-log.mustache"),
-  PYTHON_EC2_ADOT_GENAI_TRACE("/expected-data-template/python/ec2/adot-genai/genai-trace.mustache"),
-  PYTHON_EC2_ADOT_GENAI_METRIC("/expected-data-template/python/ec2/adot-genai/genai-metric.mustache"),
+  /** Python EC2 ADOT Gen AI v1 Test Case Validation */
+  PYTHON_EC2_ADOT_GENAI_LOG("/expected-data-template/python/ec2/adot-genai-v1/genai-log.mustache"),
+  PYTHON_EC2_ADOT_GENAI_TRACE("/expected-data-template/python/ec2/adot-genai-v1/genai-trace.mustache"),
+  PYTHON_EC2_ADOT_GENAI_METRIC("/expected-data-template/python/ec2/adot-genai-v1/genai-metric.mustache"),
 
   /** Python EC2 GenAI v2 (AgentCore Collector) Test Case Validations */
   PYTHON_EC2_ADOT_GENAI_V2_TRACE("/expected-data-template/python/ec2/adot-genai-v2/genai-trace.mustache"),
   PYTHON_EC2_ADOT_GENAI_V2_LLO_SPAN_ATTRIBUTE_LOG("/expected-data-template/python/ec2/adot-genai-v2/genai-log-llo-span-attribute.mustache"),
   PYTHON_EC2_ADOT_GENAI_V2_TRUNCATED_LOG("/expected-data-template/python/ec2/adot-genai-v2/genai-log-truncated.mustache"),
+  PYTHON_EC2_ADOT_GENAI_V2_METRIC("/expected-data-template/python/ec2/adot-genai-v2/genai-metric.mustache"),
 
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
