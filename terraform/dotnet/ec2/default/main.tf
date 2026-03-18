@@ -119,6 +119,7 @@ resource "null_resource" "main_service_setup" {
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
       if ! sudo dnf install -y dotnet-sdk-${var.language_version}; then
         echo "dnf install failed, falling back to dotnet-install.sh"
+        sudo dnf install -y icu
         curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel ${var.language_version}
         export PATH="$HOME/.dotnet:$PATH"
       fi
@@ -231,6 +232,7 @@ resource "null_resource" "remote_service_setup" {
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
       if ! sudo dnf install -y dotnet-sdk-${var.language_version}; then
         echo "dnf install failed, falling back to dotnet-install.sh"
+        sudo dnf install -y icu
         curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel ${var.language_version}
         export PATH="$HOME/.dotnet:$PATH"
       fi
