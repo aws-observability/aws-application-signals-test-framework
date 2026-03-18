@@ -114,11 +114,14 @@ resource "null_resource" "main_service_setup" {
       #!/bin/bash
 
       # Install DotNet and wget
-      sudo yum install -y wget
+      sudo yum install -y wget unzip
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-${var.language_version}
-      sudo yum install unzip -y
+      if ! sudo dnf install -y dotnet-sdk-${var.language_version}; then
+        echo "dnf install failed, falling back to dotnet-install.sh"
+        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel ${var.language_version}
+        export PATH="$HOME/.dotnet:$PATH"
+      fi
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -223,11 +226,14 @@ resource "null_resource" "remote_service_setup" {
       #!/bin/bash
 
       # Install DotNet and wget
-      sudo yum install -y wget
+      sudo yum install -y wget unzip
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-${var.language_version}
-      sudo yum install unzip -y
+      if ! sudo dnf install -y dotnet-sdk-${var.language_version}; then
+        echo "dnf install failed, falling back to dotnet-install.sh"
+        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel ${var.language_version}
+        export PATH="$HOME/.dotnet:$PATH"
+      fi
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
