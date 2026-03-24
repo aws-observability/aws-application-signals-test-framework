@@ -3,7 +3,7 @@
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
     "aws.local.operation": "^InternalOperation$",
-    "aws.local.environment": "^(generic|eks):default$"
+    "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
   },
   "metadata": {
     "k8s.cluster.name": "^{{platformInfo}}$"
@@ -22,7 +22,7 @@
         "aws.local.operation": "^InternalOperation$",
         "aws.remote.service": "^local-root-client-call$",
         "aws.remote.operation": "GET /",
-        "aws.local.environment": "^(generic|eks):default$"
+        "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
       },
       "metadata": {
         "EC2.AutoScalingGroup": "^eks-.+",

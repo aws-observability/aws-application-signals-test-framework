@@ -11,7 +11,7 @@
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
     "aws.local.operation": "^GET /outgoing-http-call$",
-    "aws.local.environment": "^(generic|eks):default$"
+    "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
   },
   "metadata": {
     "EC2.AutoScalingGroup": "^eks-.+",
@@ -35,7 +35,7 @@
             "aws.local.operation": "^UnmappedOperation$",
             "aws.remote.service": "^www.amazon.com$",
             "aws.remote.operation": "^GET /$",
-            "aws.local.environment": "^(generic|eks):default$"
+            "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
           },
           "metadata": {
             "EC2.AutoScalingGroup": "^eks-.+",

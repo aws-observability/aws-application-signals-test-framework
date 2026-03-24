@@ -1,7 +1,7 @@
 [{
   "EC2.AutoScalingGroup": "^eks-.+",
   "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
-  "Environment": "^(generic|eks):default$",
+  "Environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$",
   "PlatformType": "^(Generic|AWS::EKS)$",
   "Service": "^{{serviceName}}$",
   "Operation": "GET /remote-service",
@@ -10,7 +10,7 @@
 {
   "EC2.AutoScalingGroup": "^eks-.+",
   "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
-  "Environment": "^(generic|eks):default$",
+  "Environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$",
   "PlatformType": "^(Generic|AWS::EKS)$",
   "Service": "^{{serviceName}}$",
   "Operation": "GET /remote-service",

@@ -11,7 +11,7 @@
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
     "aws.local.operation": "^GET /remote-service$",
-    "aws.local.environment": "^(generic|eks):default$"
+    "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
   },
   "metadata": {
     "EC2.AutoScalingGroup": "^eks-.+",
@@ -35,7 +35,7 @@
             "aws.local.operation": "^UnmappedOperation$",
             "aws.remote.service": "^{{remoteServiceIp}}:8080$",
             "aws.remote.operation": "^GET /healthcheck$",
-            "aws.local.environment": "^(generic|eks):default$"
+            "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
           },
           "metadata": {
             "EC2.AutoScalingGroup": "^eks-.+",
@@ -59,7 +59,7 @@
   "annotations": {
     "aws.local.service": "^{{remoteServiceDeploymentName}}$",
     "aws.local.operation": "^GET /healthcheck$",
-    "aws.local.environment": "^(generic|eks):default$"
+    "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
   },
   "metadata": {
     "EC2.AutoScalingGroup": "^eks-.+",
