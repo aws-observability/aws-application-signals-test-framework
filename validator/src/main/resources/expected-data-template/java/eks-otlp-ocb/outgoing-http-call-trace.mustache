@@ -17,7 +17,7 @@
     "EC2.AutoScalingGroup": "^eks-.+",
     "EKS.Cluster": "^{{platformInfo}}$",
     "K8s.Namespace": "^{{appNamespace}}",
-    "PlatformType": "^(Generic|AWS::EKS)$"
+    "PlatformType": "^AWS::EKS$"
   },
   "subsegments": [
     {
@@ -41,7 +41,7 @@
             "EC2.AutoScalingGroup": "^eks-.+",
             "EKS.Cluster": "^{{platformInfo}}$",
             "K8s.Namespace": "^{{appNamespace}}$",
-            "PlatformType": "^(Generic|AWS::EKS)$"
+            "PlatformType": "^AWS::EKS$"
           },
           "namespace": "^remote$"
         }
