@@ -23,7 +23,7 @@
     {
       "subsegments": [
         {
-          "name": "^www.amazon.com:443$",
+          "name": "^www.amazon.com$",
           "http": {
             "request": {
               "url": "^https://www.amazon.com$",
@@ -33,7 +33,7 @@
           "annotations": {
             "aws.local.service": "^{{serviceName}}$",
             "aws.local.operation": "^UnmappedOperation$",
-            "aws.remote.service": "^www.amazon.com:443$",
+            "aws.remote.service": "^www.amazon.com$",
             "aws.remote.operation": "^GET /$",
             "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
           },
@@ -50,5 +50,5 @@
   ]
 },
 {
-  "name": "^www.amazon.com:443$"
+  "name": "^www.amazon.com$"
 }]
