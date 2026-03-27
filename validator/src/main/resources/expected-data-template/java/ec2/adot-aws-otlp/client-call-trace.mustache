@@ -16,7 +16,7 @@
   },
   "subsegments": [
     {
-      "name": "^local-root-client-call$",
+      "name": "^local-root-client-call:80$",
       "http": {
         "request": {
           "url": "^http://local-root-client-call$",
@@ -32,7 +32,7 @@
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
         "aws.local.operation": "^InternalOperation$",
-        "aws.remote.service": "^local-root-client-call$",
+        "aws.remote.service": "^local-root-client-call:80$",
         "aws.remote.operation": "GET /",
         "aws.local.environment": "^ec2:default$",
         "span.name": "^GET$",
@@ -52,7 +52,7 @@
   ]
 },
 {
-  "name": "^local-root-client-call$",
+  "name": "^local-root-client-call:80$",
   "http": {
     "request": {
       "url": "^http://local-root-client-call$",
@@ -60,7 +60,7 @@
     }
   },
   "annotations": {
-    "aws.local.service": "^local-root-client-call$",
+    "aws.local.service": "^local-root-client-call:80$",
     "aws.local.operation": "^GET /$"
   }
 }]
