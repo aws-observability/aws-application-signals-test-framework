@@ -25,8 +25,17 @@
           "name": "^agent$",
           "subsegments": [
             {
+              "name": "^call_model$",
+              "annotations": {
+                "span.kind": "^INTERNAL$"
+              }
+            },
+            {
               "name": "^RunnableSequence$",
               "subsegments": [
+                {
+                  "name": "^Prompt$"
+                },
                 {
                   "name": "^ChatBedrock$",
                   "annotations": {
