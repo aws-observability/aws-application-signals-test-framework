@@ -25,7 +25,10 @@
           "name": "^agent$",
           "subsegments": [
             {
-              "name": "^call_model$"
+              "name": "^call_model$",
+              "annotations": {
+                "span.kind": "^INTERNAL$"
+              }
             },
             {
               "name": "^RunnableSequence$",
