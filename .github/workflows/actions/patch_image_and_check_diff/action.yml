@@ -89,6 +89,7 @@ runs:
         kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager -o json | \
         jq '.spec.template.spec.containers[0].args |= map(if test("^--auto-instrumentation-python-image=") then "--auto-instrumentation-python-image=${{ inputs.patch-image-arn }}" else . end)' | \
         kubectl apply -f -
+        kubectl rollout status deployment/amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch --timeout=120s
         
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
@@ -106,6 +107,7 @@ runs:
         kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager -o json | \
         jq '.spec.template.spec.containers[0].args |= map(if test("^--auto-instrumentation-java-image=") then "--auto-instrumentation-java-image=${{ inputs.patch-image-arn }}" else . end)' | \
         kubectl apply -f -
+        kubectl rollout status deployment/amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch --timeout=120s
         
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
@@ -123,6 +125,7 @@ runs:
         kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager -o json | \
         jq '.spec.template.spec.containers[0].args |= map(if test("^--auto-instrumentation-dotnet-image=") then "--auto-instrumentation-dotnet-image=${{ inputs.patch-image-arn }}" else . end)' | \
         kubectl apply -f -
+        kubectl rollout status deployment/amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch --timeout=120s
         
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
@@ -140,6 +143,7 @@ runs:
         kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager -o json | \
         jq '.spec.template.spec.containers[0].args |= map(if test("^--auto-instrumentation-nodejs-image=") then "--auto-instrumentation-nodejs-image=${{ inputs.patch-image-arn }}" else . end)' | \
         kubectl apply -f -
+        kubectl rollout status deployment/amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch --timeout=120s
         
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
@@ -165,6 +169,7 @@ runs:
       shell: bash
       run: |
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ inputs.patch-image-arn }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
+        kubectl rollout status deployment/amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch --timeout=120s
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready --timeout=120s pod --all -n amazon-cloudwatch
