@@ -92,11 +92,11 @@ runs:
         
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n amazon-cloudwatch
 
         kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n ${{ inputs.sample-app-namespace }}
 
     - name: Patch the Java ADOT image and restart CloudWatch pods
       if: ${{ inputs.repository == 'aws-otel-java-instrumentation' }}
@@ -109,11 +109,11 @@ runs:
         
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n amazon-cloudwatch
 
         kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n ${{ inputs.sample-app-namespace }}
 
     - name: Patch the DotNet ADOT image and restart CloudWatch pods
       if: ${{ inputs.repository == 'aws-otel-dotnet-instrumentation' }}
@@ -126,11 +126,11 @@ runs:
         
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n amazon-cloudwatch
 
         kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n ${{ inputs.sample-app-namespace }}
 
     - name: Patch the Node ADOT image and restart CloudWatch pods
       if: ${{ inputs.repository == 'aws-otel-js-instrumentation' }}
@@ -143,11 +143,11 @@ runs:
         
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n amazon-cloudwatch
 
         kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n ${{ inputs.sample-app-namespace }}
 
     - name: Patch the CloudWatch Agent image and restart CloudWatch pods
       if: ${{ inputs.repository == 'amazon-cloudwatch-agent' }}
@@ -158,7 +158,7 @@ runs:
         kubectl patch amazoncloudwatchagents -n amazon-cloudwatch cloudwatch-agent --type='json' -p='[{"op": "replace", "path": "/spec/image", "value": ${{ inputs.patch-image-arn }}}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n amazon-cloudwatch
 
     - name: Patch the CloudWatch Agent Operator image and restart CloudWatch pods
       if: ${{ inputs.repository == 'amazon-cloudwatch-agent-operator' }}
@@ -167,11 +167,11 @@ runs:
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' -p '[{"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "${{ inputs.patch-image-arn }}"}, {"op": "replace", "path": "/spec/template/spec/containers/0/imagePullPolicy", "value": "Always"}]]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n amazon-cloudwatch
 
         kubectl delete pods --all -n ${{ inputs.sample-app-namespace }}
         sleep 10
-        kubectl wait --for=condition=Ready pod --all -n ${{ inputs.sample-app-namespace }}
+        kubectl wait --for=condition=Ready --timeout=120s pod --all -n ${{ inputs.sample-app-namespace }}
 
     # Log artifacts being used to verify whether the correct versions are being used
     - name: Log CW Agent Operator spec container args after patching
