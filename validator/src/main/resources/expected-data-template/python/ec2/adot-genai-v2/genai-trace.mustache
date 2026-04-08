@@ -25,18 +25,13 @@
           "name": "^agent$",
           "subsegments": [
             {
-              "name": "^RunnableSequence$",
-              "subsegments": [
-                {
-                  "name": "^ChatBedrock$",
-                  "annotations": {
-                    "span.kind": "^INTERNAL$"
-                  },
-                  "metadata": {
-                    "gen_ai.usage.input_tokens": "^[0-9]+$"
-                  }
-                }
-              ]
+              "name": "^call_model$",
+              "annotations": {
+                "span.kind": "^INTERNAL$"
+              },
+              "metadata": {
+                "gen_ai.usage.input_tokens": "^[0-9]+$"
+              }
             }
           ]
         }
