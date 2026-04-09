@@ -34,6 +34,8 @@ module "hello-lambda-function" {
     OTEL_EXPORTER_OTLP_LOGS_ENDPOINT                 = "https://logs.${var.region}.amazonaws.com/v1/logs"
     OTEL_EXPORTER_OTLP_LOGS_HEADERS                  = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
     OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED = "true"
+    OTEL_PYTHON_DISABLED_INSTRUMENTATIONS            = "none"
+    OTEL_PYTHON_LOG_LEVEL                            = "info"
   }
 
   tracing_mode = var.tracing_mode

@@ -37,6 +37,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Set up Java for validator
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165
+        with:
+          java-version: 17
+          distribution: temurin
+
       - name: Build Lambda layer
         working-directory: python-instrumentation/lambda-layer/src
         run: ./build-lambda-layer.sh
@@ -92,6 +98,20 @@ jobs:
               -var="region=us-west-2" \
               -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
 
+      - name: Create OTLP log stream
+        run: |
+          aws logs create-log-stream \
+            --log-group-name /aws/lambda/${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }} \
+            --log-stream-name otlp-logs \
+            --region us-west-2 || true
+
+      - name: Attach CloudWatch Application Signals policy
+        run: |
+          ROLE_NAME=$(cd ${{ github.workspace }}/terraform/python/lambda/lambda && terraform output -raw function_role_name)
+          aws iam attach-role-policy \
+            --role-name "$ROLE_NAME" \
+            --policy-arn arn:aws:iam::aws:policy/CloudWatchLambdaApplicationSignalsExecutionRolePolicy || true
+
       - name: Get API Gateway URL
         run: |
           cd ${{ github.workspace }}/terraform/python/lambda/lambda
@@ -103,20 +123,14 @@ jobs:
           echo "API Gateway URL: ${{ env.API_GATEWAY_URL }}"
           curl -sS "${{ env.API_GATEWAY_URL }}/lambda-invoke"
 
+      - name: Wait for logs to propagate
+        run: sleep 15
+
       - name: Build validator
         run: ./gradlew validator:build
 
       - name: Validate log schema (console + OTLP)
-        run: |
-          ./gradlew validator:run --args='-c java/lambda/log-schema-validation.yml \
-            --testing-id ${{ env.TESTING_ID }} \
-            --endpoint ${{ env.API_GATEWAY_URL }} \
-            --region us-west-2 \
-            --account-id ${{ env.ACCOUNT_ID }} \
-            --metric-namespace ${{ env.METRIC_NAMESPACE }} \
-            --log-group /aws/lambda/${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }} \
-            --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }} \
-            --rollup'
+        run: ./gradlew validator:run --args='-c java/lambda/log-schema-validation.yml --testing-id ${{ env.TESTING_ID }} --endpoint ${{ env.API_GATEWAY_URL }} --region us-west-2 --account-id ${{ env.ACCOUNT_ID }} --metric-namespace ${{ env.METRIC_NAMESPACE }} --log-group /aws/lambda/${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }} --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }} --rollup'
 
       - name: Destroy infrastructure
         if: always()
