@@ -100,7 +100,8 @@ jobs:
       - name: Wait and invoke Lambda
         run: |
           sleep 30
-          curl -sS http://${{ env.API_GATEWAY_URL }}/lambda-invoke
+          echo "API Gateway URL: ${{ env.API_GATEWAY_URL }}"
+          curl -sS "${{ env.API_GATEWAY_URL }}/lambda-invoke"
 
       - name: Build validator
         run: ./gradlew validator:build
@@ -109,7 +110,7 @@ jobs:
         run: |
           ./gradlew validator:run --args='-c java/lambda/log-schema-validation.yml \
             --testing-id ${{ env.TESTING_ID }} \
-            --endpoint http://${{ env.API_GATEWAY_URL }} \
+            --endpoint ${{ env.API_GATEWAY_URL }} \
             --region us-west-2 \
             --account-id ${{ env.ACCOUNT_ID }} \
             --metric-namespace ${{ env.METRIC_NAMESPACE }} \
