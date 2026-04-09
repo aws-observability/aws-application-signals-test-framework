@@ -98,20 +98,6 @@ jobs:
               -var="region=us-west-2" \
               -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
 
-      - name: Create OTLP log stream
-        run: |
-          aws logs create-log-stream \
-            --log-group-name /aws/lambda/${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }} \
-            --log-stream-name otlp-logs \
-            --region us-west-2 || true
-
-      - name: Attach CloudWatch Application Signals policy
-        run: |
-          ROLE_NAME=$(cd ${{ github.workspace }}/terraform/python/lambda/lambda && terraform output -raw function_role_name)
-          aws iam attach-role-policy \
-            --role-name "$ROLE_NAME" \
-            --policy-arn arn:aws:iam::aws:policy/CloudWatchLambdaApplicationSignalsExecutionRolePolicy || true
-
       - name: Get API Gateway URL
         run: |
           cd ${{ github.workspace }}/terraform/python/lambda/lambda

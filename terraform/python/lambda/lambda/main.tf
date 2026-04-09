@@ -72,3 +72,16 @@ resource "aws_iam_role_policy_attachment" "test_xray" {
   role       = module.hello-lambda-function.lambda_function_name
   policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
 }
+
+# Log stream for OTLP log exporter — the CWL OTLP endpoint requires a pre-existing stream
+resource "aws_cloudwatch_log_stream" "otlp_logs" {
+  name           = "otlp-logs"
+  log_group_name = "/aws/lambda/${var.function_name}"
+  depends_on     = [module.hello-lambda-function]
+}
+
+# CloudWatch Application Signals policy for CWL OTLP endpoint access
+resource "aws_iam_role_policy_attachment" "lambda_appsignals" {
+  role       = module.hello-lambda-function.lambda_function_name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLambdaApplicationSignalsExecutionRolePolicy"
+}

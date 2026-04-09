@@ -7,10 +7,10 @@
   httpPath: "/lambda-invoke"
   callingType: "lambda-invoke"
   expectedLogStructureTemplate: "JAVA_LAMBDA_CONSOLE_LOG_SCHEMA_DOTNET"
-  cwLogFilterPattern: "{ ($.body EXISTS) && ($.timestamp EXISTS) }"
+  cwLogFilterPattern: "{ ($.timestamp = \"*\") }"
 -
   validationType: "cw-log"
   httpPath: "/lambda-invoke"
   callingType: "lambda-invoke"
   expectedLogStructureTemplate: "JAVA_LAMBDA_OTLP_LOG_SCHEMA"
-  cwLogFilterPattern: "{ ($.timeUnixNano EXISTS) }"
+  cwLogFilterPattern: "{ ($.timeUnixNano > 0) }"
