@@ -1,4 +1,6 @@
 ## Temporary workflow to test log schema validation on this branch.
+## Builds the Python ADOT layer and sample app locally using the repos' existing
+## build scripts, then deploys to Lambda and runs log schema validation.
 ## Remove before merging to main.
 name: Test Log Schema Validation
 on:
@@ -11,10 +13,132 @@ permissions:
   contents: read
 
 jobs:
-  test-log-schema-python:
-    uses: ./.github/workflows/python-lambda-test.yml
-    secrets: inherit
-    with:
-      aws-region: us-west-2
-      python-version: '3.12'
-      caller-workflow-name: 'test-log-schema'
+  python-lambda-log-schema:
+    runs-on: ubuntu-latest
+    env:
+      E2E_TEST_AWS_REGION: us-west-2
+      METRIC_NAMESPACE: ApplicationSignals
+      LOG_GROUP_NAME: /aws/application-signals/data
+      IS_CANARY: false
+      ARTIFACTS_DIR: ${{ github.workspace }}/lambda_artifacts
+
+    steps:
+      - name: Checkout test framework
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+
+      - name: Checkout Python instrumentation repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          repository: aws-observability/aws-otel-python-instrumentation
+          ref: standardize-compact-console-log-exporter
+          path: python-instrumentation
+
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: '3.12'
+
+      - name: Build Lambda layer
+        working-directory: python-instrumentation/lambda-layer/src
+        run: ./build-lambda-layer.sh
+
+      - name: Build sample Lambda function
+        working-directory: python-instrumentation/lambda-layer/sample-apps
+        run: ./package-lambda-function.sh
+
+      - name: Copy artifacts
+        run: |
+          mkdir -p ${{ env.ARTIFACTS_DIR }}
+          cp python-instrumentation/lambda-layer/src/build/aws-opentelemetry-python-layer.zip ${{ env.ARTIFACTS_DIR }}/layer.zip
+          cp python-instrumentation/lambda-layer/sample-apps/build/function.zip ${{ env.ARTIFACTS_DIR }}/pyfunction.zip
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.E2E_TEST_ROLE_NAME }}
+          aws-region: us-west-2
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Set function name
+        run: echo TERRAFORM_LAMBDA_FUNCTION_NAME="log-schema-test-${{ env.TESTING_ID }}" >> $GITHUB_ENV
+
+      - name: Get account id
+        run: echo ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ github.workspace }}/terraform/python/lambda/lambda && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+
+      - name: Deploy Lambda
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: |
+            cd ${{ github.workspace }}/terraform/python/lambda/lambda && terraform apply -auto-approve \
+              -var="function_name=${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}" \
+              -var="sdk_layer_name=log-schema-test-layer-${{ env.TESTING_ID }}" \
+              -var="runtime=python3.12" \
+              -var="architecture=x86_64" \
+              -var="region=us-west-2" \
+              -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
+
+      - name: Deploy API Gateway
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: |
+            cd ${{ github.workspace }}/terraform/python/lambda/api-gateway-proxy && terraform init && terraform apply -auto-approve \
+              -var="function_name=${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}" \
+              -var="region=us-west-2"
+
+      - name: Get API Gateway URL
+        run: |
+          cd ${{ github.workspace }}/terraform/python/lambda/api-gateway-proxy
+          echo API_GATEWAY_URL="$(terraform output -raw api-gateway-url)" >> $GITHUB_ENV
+
+      - name: Wait for Lambda to be ready
+        run: sleep 30
+
+      - name: Invoke Lambda
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "curl -s http://${{ env.API_GATEWAY_URL }}/lambda-invoke"
+          sleep_time: 10
+
+      - name: Build validator
+        run: ./gradlew validator:build
+
+      - name: Validate log schema (console + OTLP)
+        run: |
+          ./gradlew validator:run --args='-c java/lambda/log-schema-validation.yml \
+            --testing-id ${{ env.TESTING_ID }} \
+            --endpoint http://${{ env.API_GATEWAY_URL }} \
+            --region us-west-2 \
+            --account-id ${{ env.ACCOUNT_ID }} \
+            --metric-namespace ${{ env.METRIC_NAMESPACE }} \
+            --log-group /aws/lambda/${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }} \
+            --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }} \
+            --rollup'
+
+      - name: Destroy infrastructure
+        if: always()
+        run: |
+          cd ${{ github.workspace }}/terraform/python/lambda/api-gateway-proxy && terraform destroy -auto-approve \
+            -var="function_name=${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}" \
+            -var="region=us-west-2" || true
+          cd ${{ github.workspace }}/terraform/python/lambda/lambda && terraform destroy -auto-approve \
+            -var="function_name=${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}" \
+            -var="sdk_layer_name=log-schema-test-layer-${{ env.TESTING_ID }}" \
+            -var="runtime=python3.12" \
+            -var="architecture=x86_64" \
+            -var="region=us-west-2" \
+            -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}" || true
