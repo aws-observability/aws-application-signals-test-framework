@@ -80,7 +80,7 @@ jobs:
           command: "cd ${{ github.workspace }}/terraform/python/lambda/lambda && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
 
-      - name: Deploy Lambda
+      - name: Deploy Lambda and API Gateway
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: |
@@ -92,27 +92,15 @@ jobs:
               -var="region=us-west-2" \
               -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
 
-      - name: Deploy API Gateway
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: |
-            cd ${{ github.workspace }}/terraform/python/lambda/api-gateway-proxy && terraform init && terraform apply -auto-approve \
-              -var="function_name=${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}" \
-              -var="region=us-west-2"
-
       - name: Get API Gateway URL
         run: |
-          cd ${{ github.workspace }}/terraform/python/lambda/api-gateway-proxy
+          cd ${{ github.workspace }}/terraform/python/lambda/lambda
           echo API_GATEWAY_URL="$(terraform output -raw api-gateway-url)" >> $GITHUB_ENV
 
-      - name: Wait for Lambda to be ready
-        run: sleep 30
-
-      - name: Invoke Lambda
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: "curl -s http://${{ env.API_GATEWAY_URL }}/lambda-invoke"
-          sleep_time: 10
+      - name: Wait and invoke Lambda
+        run: |
+          sleep 30
+          curl -sS http://${{ env.API_GATEWAY_URL }}/lambda-invoke
 
       - name: Build validator
         run: ./gradlew validator:build
@@ -132,9 +120,6 @@ jobs:
       - name: Destroy infrastructure
         if: always()
         run: |
-          cd ${{ github.workspace }}/terraform/python/lambda/api-gateway-proxy && terraform destroy -auto-approve \
-            -var="function_name=${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}" \
-            -var="region=us-west-2" || true
           cd ${{ github.workspace }}/terraform/python/lambda/lambda && terraform destroy -auto-approve \
             -var="function_name=${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}" \
             -var="sdk_layer_name=log-schema-test-layer-${{ env.TESTING_ID }}" \
