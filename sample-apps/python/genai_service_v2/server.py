@@ -101,8 +101,6 @@ async def chat(request):
     body = await request.json()
     message = body.get("message", "")
 
-    logger.info("X" * 1_200_000)
-
     # Emit OTel Metrics
     meter = metrics.get_meter("genai-meter", "1.0.0")
     token_counter = meter.create_histogram(
