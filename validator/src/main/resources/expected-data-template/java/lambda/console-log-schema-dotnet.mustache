@@ -1,0 +1,17 @@
+[{
+  "resource.attributes.service.name": "^{{serviceName}}$",
+  "body": ".+",
+  "severityNumber": "^(1|5|9|13|17|21)$",
+  "severityText": "^(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)$",
+  "attributes": ".*",
+  "droppedAttributes": "^\\d+$",
+  "timestamp": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}",
+  "observedTimestamp": "^null$",
+  "traceId": "^[a-f0-9]{32}$",
+  "spanId": "^[a-f0-9]{16}$",
+  "traceFlags": "^[01]$",
+  "instrumentationScope.name": ".+",
+  "instrumentationScope.version": ".*",
+  "instrumentationScope.schemaUrl": ".*",
+  "resource.schemaUrl": ".*"
+}]

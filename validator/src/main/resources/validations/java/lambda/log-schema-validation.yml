@@ -1,0 +1,15 @@
+# Shared log schema validation for Java, Python, and JS.
+# Validates both console and OTLP log formats from the same Lambda invocation.
+# Console logs are identified by $.timestamp (ISO-8601), OTLP logs by $.timeUnixNano (nanoseconds).
+-
+  validationType: "cw-log"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedLogStructureTemplate: "JAVA_LAMBDA_CONSOLE_LOG_SCHEMA"
+  cwLogFilterPattern: "{ ($.body EXISTS) && ($.timestamp EXISTS) }"
+-
+  validationType: "cw-log"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedLogStructureTemplate: "JAVA_LAMBDA_OTLP_LOG_SCHEMA"
+  cwLogFilterPattern: "{ ($.timeUnixNano EXISTS) }"

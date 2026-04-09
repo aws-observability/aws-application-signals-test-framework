@@ -1,0 +1,53 @@
+## Temporary workflow to test log schema validation on this branch.
+## Remove before merging to main.
+name: Test Log Schema Validation
+on:
+  workflow_dispatch:
+    inputs:
+      language:
+        description: 'Language to test'
+        required: true
+        type: choice
+        options:
+          - python
+          - java
+          - node
+          - dotnet
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test-log-schema:
+    if: ${{ inputs.language == 'python' }}
+    uses: ./.github/workflows/python-lambda-test.yml
+    secrets: inherit
+    with:
+      aws-region: us-west-2
+      python-version: '3.12'
+      caller-workflow-name: 'test-log-schema'
+
+  test-log-schema-java:
+    if: ${{ inputs.language == 'java' }}
+    uses: ./.github/workflows/java-lambda-test.yml
+    secrets: inherit
+    with:
+      aws-region: us-west-2
+      caller-workflow-name: 'test-log-schema'
+
+  test-log-schema-node:
+    if: ${{ inputs.language == 'node' }}
+    uses: ./.github/workflows/node-lambda-test.yml
+    secrets: inherit
+    with:
+      aws-region: us-west-2
+      caller-workflow-name: 'test-log-schema'
+
+  test-log-schema-dotnet:
+    if: ${{ inputs.language == 'dotnet' }}
+    uses: ./.github/workflows/dotnet-lambda-test.yml
+    secrets: inherit
+    with:
+      aws-region: us-west-2
+      caller-workflow-name: 'test-log-schema'

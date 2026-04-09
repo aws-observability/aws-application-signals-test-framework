@@ -1,0 +1,11 @@
+[{
+  "resource.attributes.service.name": "^{{serviceName}}$",
+  "body": ".+",
+  "severityNumber": "^(1|5|9|13|17|21)$",
+  "severityText": "^(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)$",
+  "timeUnixNano": "^[0-9]+$",
+  "observedTimeUnixNano": "^[0-9]+$",
+  "traceId": "^[a-f0-9]{32}$",
+  "spanId": "^[a-f0-9]{16}$",
+  "scope.name": ".+"
+}]

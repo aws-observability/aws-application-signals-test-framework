@@ -30,8 +30,11 @@ module "hello-lambda-function" {
   layers = var.is_canary ? [local.sdk_layer_arns[var.region]] : [aws_lambda_layer_version.sdk_layer[0].arn]
 
   environment_variables = {
-    AWS_LAMBDA_EXEC_WRAPPER = "/opt/otel-instrument"
-    OTEL_SERVICE_NAME       = "${var.function_name}"
+    AWS_LAMBDA_EXEC_WRAPPER          = "/opt/otel-instrument"
+    OTEL_SERVICE_NAME                = "${var.function_name}"
+    OTEL_LOGS_EXPORTER               = "otlp,console"
+    OTEL_EXPORTER_OTLP_LOGS_ENDPOINT = "https://logs.${var.region}.amazonaws.com/v1/logs"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS  = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
   }
 
   tracing_mode = var.tracing_mode

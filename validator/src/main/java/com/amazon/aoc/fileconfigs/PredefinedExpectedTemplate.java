@@ -532,6 +532,11 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_LAMBDA_INVOKE_TRACE("/expected-data-template/java/lambda/lambda-invoke-trace.mustache"),
   JAVA_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/java/lambda/aws-sdk-call-log.mustache"),
   JAVA_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/java/lambda/aws-sdk-call-metric.mustache"),
+
+  /** Cross-language log schema validation — shared by all languages for standardization. */
+  JAVA_LAMBDA_CONSOLE_LOG_SCHEMA("/expected-data-template/java/lambda/console-log-schema.mustache"),
+  JAVA_LAMBDA_CONSOLE_LOG_SCHEMA_DOTNET("/expected-data-template/java/lambda/console-log-schema-dotnet.mustache"),
+  JAVA_LAMBDA_OTLP_LOG_SCHEMA("/expected-data-template/java/lambda/otlp-log-schema.mustache"),
   ;
 
   private String path;

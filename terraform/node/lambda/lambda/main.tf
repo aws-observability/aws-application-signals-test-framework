@@ -34,6 +34,10 @@ module "hello-lambda-function" {
     OTEL_AWS_APPLICATION_SIGNALS_ENABLED         = "true"
     OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED = "false"
     OTEL_METRICS_EXPORTER                        = "none"
+    OTEL_LOGS_EXPORTER                           = "otlp,console"
+    OTEL_EXPORTER_OTLP_LOGS_ENDPOINT             = "https://logs.${var.region}.amazonaws.com/v1/logs"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS              = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
+    OTEL_NODE_ENABLED_INSTRUMENTATIONS           = "aws-sdk,aws-lambda,http,winston"
   }
 
   tracing_mode = var.tracing_mode

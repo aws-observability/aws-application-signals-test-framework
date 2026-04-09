@@ -202,9 +202,23 @@ jobs:
           --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
           --rollup'
 
+      # Validate standardized log schema (console + OTLP formats)
+      - name: Validate log schema
+        id: log-schema-validation
+        if: (success() || steps.trace-validation.outcome == 'failure' || steps.log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c java/lambda/log-schema-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.API_GATEWAY_URL }}
+          --region ${{ inputs.aws-region }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group /aws/lambda/${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
+          --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
+          --rollup'
+
       - name: Validate generated metrics
         id: metric-validation
-        if: (success() || steps.trace-validation.outcome == 'failure' || steps.log-validation.outcome == 'failure') && !cancelled()
+        if: (success() || steps.trace-validation.outcome == 'failure' || steps.log-validation.outcome == 'failure' || steps.log-schema-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c python/lambda/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.API_GATEWAY_URL }}
