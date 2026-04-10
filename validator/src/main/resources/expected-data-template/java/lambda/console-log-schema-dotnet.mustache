@@ -8,8 +8,12 @@
   "traceId": "^([a-f0-9]{32})?$",
   "spanId": "^([a-f0-9]{16})?$",
   "traceFlags": "^[01]$",
-  "instrumentationScope.name": ".+",
-  "instrumentationScope.version": ".*",
-  "instrumentationScope.schemaUrl": ".*",
-  "resource.schemaUrl": ".*"
+  "instrumentationScope": {
+    "name": ".+",
+    "version": ".*",
+    "schemaUrl": ".*"
+  },
+  "resource": {
+    "schemaUrl": ".*"
+  }
 }]
