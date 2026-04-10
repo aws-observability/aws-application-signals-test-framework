@@ -30,9 +30,7 @@ module "hello-lambda-function" {
 
   environment_variables = {
     AWS_LAMBDA_EXEC_WRAPPER                          = "/opt/otel-instrument"
-    OTEL_LOGS_EXPORTER                               = "otlp,console"
-    OTEL_EXPORTER_OTLP_LOGS_ENDPOINT                 = "https://logs.${var.region}.amazonaws.com/v1/logs"
-    OTEL_EXPORTER_OTLP_LOGS_HEADERS                  = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
+    OTEL_LOGS_EXPORTER                               = "console"
     OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED = "true"
     OTEL_PYTHON_DISABLED_INSTRUMENTATIONS            = "none"
     OTEL_PYTHON_LOG_LEVEL                            = "info"
@@ -73,15 +71,3 @@ resource "aws_iam_role_policy_attachment" "test_xray" {
   policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
 }
 
-# Log stream for OTLP log exporter — the CWL OTLP endpoint requires a pre-existing stream
-resource "aws_cloudwatch_log_stream" "otlp_logs" {
-  name           = "otlp-logs"
-  log_group_name = "/aws/lambda/${var.function_name}"
-  depends_on     = [module.hello-lambda-function]
-}
-
-# CloudWatch Application Signals policy for CWL OTLP endpoint access
-resource "aws_iam_role_policy_attachment" "lambda_appsignals" {
-  role       = module.hello-lambda-function.lambda_function_name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLambdaApplicationSignalsExecutionRolePolicy"
-}
