@@ -159,7 +159,7 @@ jobs:
           --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
           --rollup'
 
-      # Validate standardized log schema (console + OTLP formats) — .NET uses separate template for observedTimestamp=null
+      # Validatation for  standardized log schema (console + OTLP formats) — .NET uses separate template for observedTimestamp=null
       - name: Validate log schema
         id: log-schema-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
@@ -210,7 +210,7 @@ jobs:
         if: always()
         id: validation-result
         run: |
-          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ] && [ "${{ steps.log-schema-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"

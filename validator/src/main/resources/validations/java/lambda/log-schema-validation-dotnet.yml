@@ -1,9 +1,8 @@
 # Log schema validation for .NET.
-# Uses a separate console template because .NET's observedTimestamp is always null.
-# OTLP validation can be added when the test IAM role has logs:CreateLogStream permission.
+# Uses a separate template because .NET's observedTimeUnixNano is always 0.
 -
   validationType: "cw-log"
   httpPath: "/lambda-invoke"
   callingType: "lambda-invoke"
-  expectedLogStructureTemplate: "JAVA_LAMBDA_CONSOLE_LOG_SCHEMA_DOTNET"
-  cwLogFilterPattern: "{ ($.timestamp = \"*\") }"
+  expectedLogStructureTemplate: "LAMBDA_LOG_SCHEMA_DOTNET"
+  cwLogFilterPattern: "{ ($.timeUnixNano = \"*\") }"

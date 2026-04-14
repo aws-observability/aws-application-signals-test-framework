@@ -1,10 +1,10 @@
 # Shared log schema validation for Java, Python, and JS.
-# Validates console log format from Lambda stdout.
-# Console logs are identified by the presence of a timestamp field (ISO-8601).
-# OTLP validation can be added when the test IAM role has logs:CreateLogStream permission.
+# Console and OTLP now share the same field names — validated with a single template.
+# Console logs are identified by timeUnixNano in the default Lambda log stream.
+# OTLP logs land in the otlp-logs stream via the CloudWatch OTLP endpoint.
 -
   validationType: "cw-log"
   httpPath: "/lambda-invoke"
   callingType: "lambda-invoke"
-  expectedLogStructureTemplate: "JAVA_LAMBDA_CONSOLE_LOG_SCHEMA"
-  cwLogFilterPattern: "{ ($.timestamp = \"*\") }"
+  expectedLogStructureTemplate: "LAMBDA_LOG_SCHEMA"
+  cwLogFilterPattern: "{ ($.timeUnixNano = \"*\") }"

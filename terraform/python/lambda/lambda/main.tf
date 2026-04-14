@@ -30,7 +30,9 @@ module "hello-lambda-function" {
 
   environment_variables = {
     AWS_LAMBDA_EXEC_WRAPPER                          = "/opt/otel-instrument"
-    OTEL_LOGS_EXPORTER                               = "console"
+    OTEL_LOGS_EXPORTER                               = "otlp,console"
+    OTEL_EXPORTER_OTLP_LOGS_ENDPOINT                 = "https://logs.${var.region}.amazonaws.com/v1/logs"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS                  = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
     OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED = "true"
     OTEL_PYTHON_DISABLED_INSTRUMENTATIONS            = "none"
     OTEL_PYTHON_LOG_LEVEL                            = "info"
@@ -59,6 +61,12 @@ module "api-gateway" {
   function_name       = module.hello-lambda-function.lambda_function_name
   function_invoke_arn = module.hello-lambda-function.lambda_function_invoke_arn
   enable_xray_tracing = var.tracing_mode == "Active"
+}
+
+resource "aws_cloudwatch_log_stream" "otlp_logs" {
+  name           = "otlp-logs"
+  log_group_name = "/aws/lambda/${var.function_name}"
+  depends_on     = [module.hello-lambda-function]
 }
 
 resource "aws_iam_role_policy_attachment" "hello-lambda-cloudwatch" {
