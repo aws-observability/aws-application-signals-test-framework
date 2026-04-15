@@ -1,10 +1,15 @@
 # Shared log schema validation for Java, Python, and JS.
-# Console and OTLP now share the same field names — validated with a single template.
-# Console logs are identified by timeUnixNano in the default Lambda log stream.
-# OTLP logs land in the otlp-logs stream via the CloudWatch OTLP endpoint.
+# Validates BOTH console and OTLP export paths independently.
+# Console logs include "exportPath":"console". OTLP logs do not (field not in protobuf schema).
 -
   validationType: "cw-log"
   httpPath: "/lambda-invoke"
   callingType: "lambda-invoke"
   expectedLogStructureTemplate: "LAMBDA_LOG_SCHEMA"
-  cwLogFilterPattern: "{ ($.timeUnixNano = \"*\") }"
+  cwLogFilterPattern: "{ ($.exportPath = \"console\") }"
+-
+  validationType: "cw-log"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedLogStructureTemplate: "LAMBDA_LOG_SCHEMA_OTLP"
+  cwLogFilterPattern: "{ ($.timeUnixNano = \"*\") && ($.exportPath NOT EXISTS) }"

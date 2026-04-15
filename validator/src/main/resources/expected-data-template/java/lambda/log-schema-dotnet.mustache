@@ -12,16 +12,22 @@
       "telemetry.sdk.language": "^dotnet$",
       "telemetry.sdk.name": "^opentelemetry$",
       "telemetry.sdk.version": "^[0-9]+\\.[0-9]+\\.[0-9]+.*$"
-    }
+    },
+    "schemaUrl": "^.*$"
   },
   "scope": {
-    "name": "^.+$"
+    "name": "^.+$",
+    "version": "^.*$",
+    "schemaUrl": "^.*$"
   },
   "body": "^.+$",
   "severityNumber": "^(1|5|9|13|17|21)$",
   "severityText": "^(?i)(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)$",
+  "droppedAttributes": "^[0-9]+$",
   "timeUnixNano": "^[1-9][0-9]+$",
   "observedTimeUnixNano": "^[0-9]+$",
   "traceId": "^([a-f0-9]{32})?$",
-  "spanId": "^([a-f0-9]{16})?$"
+  "spanId": "^([a-f0-9]{16})?$",
+  "flags": "^[0-9]+$",
+  "exportPath": "^console$"
 }]
