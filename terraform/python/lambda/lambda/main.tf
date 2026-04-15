@@ -29,7 +29,13 @@ module "hello-lambda-function" {
   layers = var.is_canary ? [local.sdk_layer_arns_amd64[var.region]] : [aws_lambda_layer_version.sdk_layer[0].arn]
 
   environment_variables = {
-    AWS_LAMBDA_EXEC_WRAPPER = "/opt/otel-instrument"
+    AWS_LAMBDA_EXEC_WRAPPER                          = "/opt/otel-instrument"
+    OTEL_LOGS_EXPORTER                               = "otlp,console"
+    OTEL_EXPORTER_OTLP_LOGS_ENDPOINT                 = "https://logs.${var.region}.amazonaws.com/v1/logs"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS                  = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
+    OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED = "true"
+    OTEL_PYTHON_DISABLED_INSTRUMENTATIONS            = "none"
+    OTEL_PYTHON_LOG_LEVEL                            = "info"
   }
 
   tracing_mode = var.tracing_mode
@@ -57,6 +63,12 @@ module "api-gateway" {
   enable_xray_tracing = var.tracing_mode == "Active"
 }
 
+resource "aws_cloudwatch_log_stream" "otlp_logs" {
+  name           = "otlp-logs"
+  log_group_name = "/aws/lambda/${var.function_name}"
+  depends_on     = [module.hello-lambda-function]
+}
+
 resource "aws_iam_role_policy_attachment" "hello-lambda-cloudwatch" {
   role       = module.hello-lambda-function.lambda_function_name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -66,3 +78,4 @@ resource "aws_iam_role_policy_attachment" "test_xray" {
   role       = module.hello-lambda-function.lambda_function_name
   policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
 }
+

@@ -1,0 +1,16 @@
+# .NET log schema validation.
+# Validates BOTH console and OTLP export paths independently.
+# Console logs include "exportPath":"console". OTLP logs do not (field not in protobuf schema).
+# .NET console template uses observedTimeUnixNano allowing 0.
+-
+  validationType: "cw-log"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedLogStructureTemplate: "LAMBDA_LOG_SCHEMA_DOTNET"
+  cwLogFilterPattern: "{ ($.exportPath = \"console\") }"
+-
+  validationType: "cw-log"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedLogStructureTemplate: "LAMBDA_LOG_SCHEMA_OTLP"
+  cwLogFilterPattern: "{ ($.timeUnixNano = \"*\") && ($.exportPath NOT EXISTS) }"

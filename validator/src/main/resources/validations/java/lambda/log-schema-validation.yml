@@ -1,0 +1,15 @@
+# Shared log schema validation for Java, Python, and JS.
+# Validates BOTH console and OTLP export paths independently.
+# Console logs include "exportPath":"console". OTLP logs do not (field not in protobuf schema).
+-
+  validationType: "cw-log"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedLogStructureTemplate: "LAMBDA_LOG_SCHEMA"
+  cwLogFilterPattern: "{ ($.exportPath = \"console\") }"
+-
+  validationType: "cw-log"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedLogStructureTemplate: "LAMBDA_LOG_SCHEMA_OTLP"
+  cwLogFilterPattern: "{ ($.timeUnixNano = \"*\") && ($.exportPath NOT EXISTS) }"

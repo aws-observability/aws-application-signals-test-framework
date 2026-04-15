@@ -532,6 +532,13 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_LAMBDA_INVOKE_TRACE("/expected-data-template/java/lambda/lambda-invoke-trace.mustache"),
   JAVA_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/java/lambda/aws-sdk-call-log.mustache"),
   JAVA_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/java/lambda/aws-sdk-call-metric.mustache"),
+
+  /** Console log schema — includes droppedAttributes, flags, scope.version, resource.schemaUrl. */
+  LAMBDA_LOG_SCHEMA("/expected-data-template/java/lambda/log-schema.mustache"),
+  /** OTLP log schema — core fields only (backend omits default-value fields). */
+  LAMBDA_LOG_SCHEMA_OTLP("/expected-data-template/java/lambda/log-schema-otlp.mustache"),
+  /** .NET console log schema — observedTimeUnixNano allows 0. */
+  LAMBDA_LOG_SCHEMA_DOTNET("/expected-data-template/java/lambda/log-schema-dotnet.mustache"),
   ;
 
   private String path;
