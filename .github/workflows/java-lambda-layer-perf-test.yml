@@ -12,7 +12,7 @@ on:
         type: number
 
       ADOT-Java-Branch:
-        description: 'ADOT Java branch to use'
+        description: 'ADOT branch to use'
         required: true
         default: 'main'
         type: string

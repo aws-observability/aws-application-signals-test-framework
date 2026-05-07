@@ -96,6 +96,11 @@ resource "aws_launch_configuration" "launch_configuration" {
     volume_size = 5
   }
 
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+  }
+
   user_data = <<-EOF
     #!/bin/bash
     # Make the Terraform fail if any step throws an error

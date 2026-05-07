@@ -16,6 +16,12 @@ on:
         required: true
         default: '8.0.x'
         type: string  
+      
+      ADOT-DotNet-Branch:
+        description: 'ADOT branch to use'
+        required: true
+        default: 'main'
+        type: string
     
 jobs:
   dotnet-lambda-layer-performance-test:
@@ -27,6 +33,7 @@ jobs:
     env:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
       DOTNET_VERSION: ${{ github.event.inputs.dotnet-version }}
+      ADOT_DOTNET_BRANCH: ${{ github.event.inputs.ADOT-DotNet-Branch }}
   
     steps:
     - name: Configure AWS Credentials
@@ -39,7 +46,14 @@ jobs:
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         repository: aws-observability/aws-otel-dotnet-instrumentation
+        ref: ${{ env.ADOT_DOTNET_BRANCH }}
         path: aws-otel-dotnet-instrumentation
+
+    - name: Log branch and commit info
+      run: |
+        cd aws-otel-dotnet-instrumentation
+        echo "ADOT DotNet Branch: ${{ env.ADOT_DOTNET_BRANCH }}"
+        echo "ADOT DotNet Commit Hash: $(git rev-parse HEAD)"
 
     - name: Setup .NET
       uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5.0.0
