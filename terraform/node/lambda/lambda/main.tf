@@ -39,6 +39,7 @@ module "hello-lambda-function" {
     OTEL_EXPORTER_OTLP_LOGS_HEADERS              = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
     OTEL_EXPORTER_OTLP_PROTOCOL                  = "http/protobuf"
     OTEL_NODE_ENABLED_INSTRUMENTATIONS           = "aws-sdk,aws-lambda,http,winston"
+    ADOT_TEST_EXPORT_PATH_ENABLED                = "true"
   }
 
   tracing_mode = var.tracing_mode

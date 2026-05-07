@@ -37,6 +37,7 @@ module "hello-lambda-function" {
     OTEL_EXPORTER_OTLP_LOGS_PROTOCOL               = "http/protobuf"
     OTEL_INSTRUMENTATION_LOGBACK_APPENDER_ENABLED  = "true"
     OTEL_INSTRUMENTATION_JAVA_UTIL_LOGGING_ENABLED = "true"
+    ADOT_TEST_EXPORT_PATH_ENABLED                  = "true"
   }
 
   tracing_mode = var.tracing_mode

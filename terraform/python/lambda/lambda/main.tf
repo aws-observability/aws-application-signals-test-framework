@@ -36,6 +36,7 @@ module "hello-lambda-function" {
     OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED = "true"
     OTEL_PYTHON_DISABLED_INSTRUMENTATIONS            = "none"
     OTEL_PYTHON_LOG_LEVEL                            = "info"
+    ADOT_TEST_EXPORT_PATH_ENABLED                    = "true"
   }
 
   tracing_mode = var.tracing_mode

@@ -36,6 +36,7 @@ module "hello-lambda-function" {
     OTEL_LOGS_EXPORTER               = "otlp,console"
     OTEL_EXPORTER_OTLP_LOGS_ENDPOINT = "https://logs.${var.region}.amazonaws.com/v1/logs"
     OTEL_EXPORTER_OTLP_LOGS_HEADERS  = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
+    ADOT_TEST_EXPORT_PATH_ENABLED    = "true"
   }
   # Note: The following env vars are needed for the OTel .NET auto-instrumentation ILogger bridge.
   # Currently the CLR profiler does not bridge ILogger calls to OTel log records in Lambda.
