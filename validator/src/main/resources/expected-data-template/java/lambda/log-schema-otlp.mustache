@@ -1,0 +1,24 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "^{{serviceName}}$",
+      "cloud.region": "^[a-z]{2}-[a-z]+-[0-9]+$",
+      "cloud.platform": "^aws_lambda$",
+      "cloud.provider": "^aws$",
+      "faas.name": "^{{serviceName}}$",
+      "telemetry.sdk.language": "^(java|python|nodejs|dotnet)$",
+      "telemetry.sdk.name": "^opentelemetry$",
+      "telemetry.sdk.version": "^[0-9]+\\.[0-9]+\\.[0-9]+.*$"
+    }
+  },
+  "scope": {
+    "name": "^.+$"
+  },
+  "body": "^.+$",
+  "severityNumber": "^(1|5|9|13|17|21)$",
+  "severityText": "^(?i)(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)$",
+  "timeUnixNano": "^[1-9][0-9]+$",
+  "observedTimeUnixNano": "^[1-9][0-9]+$",
+  "traceId": "^([a-f0-9]{32})?$",
+  "spanId": "^([a-f0-9]{16})?$"
+}]
