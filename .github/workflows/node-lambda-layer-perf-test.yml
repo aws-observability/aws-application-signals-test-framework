@@ -15,6 +15,12 @@ on:
         required: true
         default: '22'
         type: string  
+
+      ADOT-Js-Branch:
+        description: 'ADOT branch to use'
+        required: true
+        default: 'main'
+        type: string
     
 jobs:
   node-lambda-layer-performance-test:
@@ -26,6 +32,7 @@ jobs:
     env:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
       NODE_VERSION: ${{ github.event.inputs.node_version }}
+      ADOT_JS_BRANCH: ${{ github.event.inputs.ADOT-Js-Branch }}
   
     steps:
     - name: Configure AWS Credentials
@@ -38,7 +45,14 @@ jobs:
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         repository: aws-observability/aws-otel-js-instrumentation
+        ref: ${{ env.ADOT_JS_BRANCH }}
         path: aws-otel-js-instrumentation
+
+    - name: Log branch and commit info
+      run: |
+        cd aws-otel-js-instrumentation
+        echo "ADOT JS Branch: ${{ env.ADOT_JS_BRANCH }}"
+        echo "ADOT JS Commit Hash: $(git rev-parse HEAD)"
 
     - name: Setup Node.js
       uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0

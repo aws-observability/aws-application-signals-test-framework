@@ -4,6 +4,8 @@
 # Use the official Node.js image as the base
 FROM node:24-alpine
 
+RUN apk update && apk upgrade --no-cache
+
 # Set working directory
 WORKDIR /app
 
