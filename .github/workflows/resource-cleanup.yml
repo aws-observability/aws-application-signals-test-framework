@@ -19,7 +19,7 @@ jobs:
       matrix:
         aws-region: ['af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                     'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+                     'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','sa-east-1',
                      'us-east-1','us-east-2', 'us-west-1', 'us-west-2']
     runs-on: ubuntu-latest
     permissions:
@@ -81,13 +81,36 @@ jobs:
           python -m pip install -r requirements.txt
           python cleaner.py
 
+  cleanup-ecs-clusters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: '3.10'
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.RESOURCE_CLEANER_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Cleanup orphaned ECS clusters
+        working-directory: .github/workflows/util/clean/ecs_cluster_cleanup
+        env:
+          AWS_DEFAULT_REGION: 'us-east-1'
+          S3_REPORTS_BUCKET: ${{ secrets.S3_CLEAUP_REPORTS_BUCKET }}-prod-us-east-1
+        run: |
+          python -m pip install -r requirements.txt
+          python cleaner.py
+
   cleanup-lambda-layer:
     strategy:
       fail-fast: false
       matrix:
         aws-region: ['af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
                      'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                     'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+                     'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','sa-east-1',
                      'us-east-1','us-east-2', 'us-west-1', 'us-west-2']
     runs-on: ubuntu-latest
     permissions:
@@ -126,11 +149,11 @@ jobs:
           python cleaner.py
 
   publish-metric:
-    needs: [ cleanup-ec2-instances, cleanup-k8s-cluster, cleanup-lambda-layer ]
+    needs: [ cleanup-ec2-instances, cleanup-k8s-cluster, cleanup-ecs-clusters, cleanup-lambda-layer ]
     if: always()
     uses: ./.github/workflows/enablement-test-publish-result.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
       caller-workflow-name: 'enablement-test-resource-cleanup'
-      validation-result: ${{ (needs.cleanup-ec2-instances.result == 'success' && needs.cleanup-k8s-cluster.result == 'success' && needs.cleanup-lambda-layer.result == 'success') && 'success' || 'failure' }}
+      validation-result: ${{ (needs.cleanup-ec2-instances.result == 'success' && needs.cleanup-k8s-cluster.result == 'success' && needs.cleanup-ecs-clusters.result == 'success' && needs.cleanup-lambda-layer.result == 'success') && 'success' || 'failure' }}
