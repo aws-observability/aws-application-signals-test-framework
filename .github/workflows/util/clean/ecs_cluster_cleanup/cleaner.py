@@ -78,6 +78,11 @@ def _delete_clusters(clusters_to_delete):
                 ecs.update_service(cluster=cluster_arn, service=service_arn, desiredCount=0)
                 ecs.delete_service(cluster=cluster_arn, service=service_arn, force=True)
 
+            tasks = ecs.list_tasks(cluster=cluster_arn).get("taskArns", [])
+            for task_arn in tasks:
+                logging.info(f"Stopping task {task_arn} in cluster {cluster_name}")
+                ecs.stop_task(cluster=cluster_arn, task=task_arn, reason="Orphaned resource cleanup")
+
             logging.info(f"Deleting cluster {cluster_name}")
             ecs.delete_cluster(cluster=cluster_arn)
         except Exception as e:
