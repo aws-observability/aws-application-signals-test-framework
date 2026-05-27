@@ -92,10 +92,8 @@ resource "null_resource" "deploy" {
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
       elif [ "${var.repository}" = "aws-otel-java-instrumentation" ]; then
-        kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager -o json | \
-          jq '.spec.template.spec.containers[0].args |= map(if test("^--auto-instrumentation-java-image=") then "--auto-instrumentation-java-image=${var.patch_image_arn}" else . end)' | \
-          kubectl apply -f -
-        kubectl rollout status deployment/amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch --timeout=120s
+        kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/0", "value": "--auto-instrumentation-java-image=${var.patch_image_arn}"}]'
         kubectl delete pods --all -n amazon-cloudwatch
         sleep 10
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
