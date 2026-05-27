@@ -151,7 +151,7 @@ resource "null_resource" "deploy" {
 
       # Wait for sample app to be reach ready state
       sleep 10
-      kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n sample-app-namespace
+      kubectl wait --for=condition=Ready --timeout=5m pod --all -n sample-app-namespace
 
       # Emit main and remote service pod IP
       echo "LOG: Outputting remote service pod IP to SSM using put-parameter API"
