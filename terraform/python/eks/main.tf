@@ -273,7 +273,7 @@ resource "kubernetes_deployment_v1" "traffic_generator" {
 
 resource "kubernetes_deployment" "mysql" {
   metadata {
-    name      = "mysql-deployment"
+    name      = "sql-deployment"
     namespace = var.test_namespace
     labels = {
       app = "mysql"
