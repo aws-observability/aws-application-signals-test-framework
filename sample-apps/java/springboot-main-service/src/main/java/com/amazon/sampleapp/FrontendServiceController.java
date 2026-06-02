@@ -32,7 +32,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,7 +151,7 @@ public class FrontendServiceController {
   @ResponseBody
   public String mysql() {
     logger.info("mysql received");
-    final String rdsMySQLClusterPassword = new String(new Base64().decode(System.getenv("RDS_MYSQL_CLUSTER_PASSWORD").getBytes()));
+    final String rdsMySQLClusterPassword = System.getenv("RDS_MYSQL_CLUSTER_PASSWORD");
     try {
       Connection connection = DriverManager.getConnection(
               System.getenv("RDS_MYSQL_CLUSTER_CONNECTION_URL"),
