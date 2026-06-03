@@ -113,15 +113,15 @@ resource "kubernetes_deployment" "sample_app_deployment" {
           }
           env {
             name  = "RDS_MYSQL_CLUSTER_CONNECTION_URL"
-            value = "jdbc:mysql://${var.rds_mysql_cluster_endpoint}:3306/information_schema"
+            value = "jdbc:mysql://mysql-service.${var.test_namespace}.svc.cluster.local:3306/information_schema"
           }
           env {
             name  = "RDS_MYSQL_CLUSTER_USERNAME"
-            value = var.rds_mysql_cluster_username
+            value = "root"
           }
           env {
             name  = "RDS_MYSQL_CLUSTER_PASSWORD"
-            value = var.rds_mysql_cluster_password
+            value = "testpassword"
           }
           env {
             name  = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
@@ -261,6 +261,73 @@ resource "kubernetes_deployment" "traffic_generator" {
           }
         }
       }
+    }
+  }
+}
+
+resource "kubernetes_deployment" "mysql" {
+  metadata {
+    name      = "sql-deployment"
+    namespace = var.test_namespace
+    labels = {
+      app = "mysql"
+    }
+  }
+  spec {
+    replicas = 1
+    selector {
+      match_labels = {
+        app = "mysql"
+      }
+    }
+    template {
+      metadata {
+        labels = {
+          app = "mysql"
+        }
+      }
+      spec {
+        container {
+          name  = "mysql"
+          image = "mysql:8.0"
+          port {
+            container_port = 3306
+          }
+          env {
+            name  = "MYSQL_ROOT_PASSWORD"
+            value = "testpassword"
+          }
+          resources {
+            requests = {
+              cpu    = "100m"
+              memory = "256Mi"
+            }
+            limits = {
+              cpu    = "250m"
+              memory = "512Mi"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_service" "mysql" {
+  depends_on = [kubernetes_deployment.mysql]
+
+  metadata {
+    name      = "mysql-service"
+    namespace = var.test_namespace
+  }
+  spec {
+    selector = {
+      app = "mysql"
+    }
+    port {
+      protocol    = "TCP"
+      port        = 3306
+      target_port = 3306
     }
   }
 }
