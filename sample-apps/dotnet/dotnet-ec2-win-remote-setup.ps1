@@ -60,6 +60,9 @@ Write-Host $current_dir
 
 # Config Env variable for Windows EC2
 Set-Location -Path "./asp_remote_service"
+
+dotnet build | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
+
 $env:CORECLR_ENABLE_PROFILING = "1"
 $env:CORECLR_PROFILER = "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
 $env:CORECLR_PROFILER_PATH = "$current_dir\dotnet-distro\win-x64\OpenTelemetry.AutoInstrumentation.Native.dll"
@@ -77,10 +80,6 @@ $env:OTEL_AWS_APPLICATION_SIGNALS_ENABLED = "true"
 $env:OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED = "false"
 $env:OTEL_TRACES_SAMPLER = "always_on"
 $env:ASPNETCORE_URLS = "http://0.0.0.0:8081"
-
-
-dotnet build | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
-
 
 Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_remote_service.dll"
 
