@@ -105,6 +105,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     #!/bin/bash
     set -o errexit
     cd /home/ec2-user
+    export HOME=/home/ec2-user
 
     # Install DotNet and wget
     sudo yum install -y wget
