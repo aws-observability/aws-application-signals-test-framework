@@ -264,6 +264,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ADOT_GENAI_V2_LLO_SPAN_ATTRIBUTE_LOG("/expected-data-template/python/ec2/adot-genai-v2/genai-log-llo-span-attribute.mustache"),
   PYTHON_EC2_ADOT_GENAI_V2_METRIC("/expected-data-template/python/ec2/adot-genai-v2/genai-metric.mustache"),
 
+  /** Python EC2 Dynamic Instrumentation Test Case Validations */
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_LOG("/expected-data-template/python/ec2/adot-di/di-snapshot-log.mustache"),
+
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
   PYTHON_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/k8s/outgoing-http-call-metric.mustache"),

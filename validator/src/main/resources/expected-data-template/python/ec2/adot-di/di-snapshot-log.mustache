@@ -1,0 +1,33 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "telemetry.sdk.language": "python"
+    }
+  },
+  "scope": {
+    "name": "^.+$",
+    "version": "^.+$"
+  },
+  "attributes": {
+    "event.name": "aws.dynamic_instrumentation.snapshot",
+    "aws.di.instrumentation_type": "BREAKPOINT",
+    "aws.di.location_hash": "{{locationHash}}",
+    "aws.di.code_unit": "frontend_service_app.views",
+    "aws.di.method_name": "http_call",
+    "aws.di.file_path": "^.+/frontend_service_app/views\\.py$",
+    "aws.di.line_number": "^[0-9]+$",
+    "aws.di.snapshot_id": "^.+$"
+  },
+  "traceId": "^.+$",
+  "spanId": "^.+$",
+  "body": {
+    "stack": [
+      {
+        "function": "http_call",
+        "line_number": "^[0-9]+$",
+        "file_path": "^.+/frontend_service_app/views\\.py$"
+      }
+    ]
+  }
+}]

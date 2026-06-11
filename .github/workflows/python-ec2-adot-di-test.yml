@@ -1,0 +1,258 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# Reusable workflow for the Python EC2 Dynamic Instrumentation (DI) E2E canary.
+# Closed loop: Create breakpoint via Application Signals control plane → SDK polls
+# and applies → traffic hits breakpoint → snapshot lands in /aws/service-events/<svc>
+# → assert snapshot fields → Delete config.
+name: Python EC2 ADOT Dynamic Instrumentation Use Case
+on:
+  workflow_dispatch:
+
+  workflow_call:
+    inputs:
+      aws-region:
+        required: true
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+      python-version:
+        required: false
+        type: string
+        default: '3.12'
+      cpu-architecture:
+        required: false
+        type: string
+        default: 'x86_64'
+      staging-wheel-name:
+        required: false
+        default: 'aws-opentelemetry-distro'
+        type: string
+      otel-source:
+        required: false
+        type: string
+        default: 'github'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  PYTHON_VERSION: ${{ inputs.python-version }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
+  OTEL_SOURCE: ${{ inputs.otel-source }}
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app.zip
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_DI_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_DI_E2E_TEST_ROLE_NAME }}
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
+  DI_API_URL: https://application-signals-gamma.us-east-1.api.aws
+  # Single source of truth for the service identity. Must match the values terraform
+  # exports as OTEL_SERVICE_NAME / OTEL_RESOURCE_ATTRIBUTES inside the EC2 user-data;
+  # we pass them as terraform vars below so the values stay in sync.
+  SERVICE_NAME_PREFIX: python-sample-application
+  DI_ENVIRONMENT: ec2:python-di-main-service-asg
+
+jobs:
+  python-ec2-adot-di:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Set Get ADOT Wheel command environment variable
+        run: |
+          if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-python-instrumentation" ]; then
+            echo GET_ADOT_WHEEL_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/${{ env.ADOT_WHEEL_NAME }} ./${{ env.ADOT_WHEEL_NAME }} && sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
+          elif [ "${{ env.OTEL_SOURCE }}" == "pypi" ]; then
+            echo GET_ADOT_WHEEL_COMMAND="sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
+          else
+            latest_release_version=$(curl -sL https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest | grep -oP '/releases/tag/v\K[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+            echo "The latest version is $latest_release_version"
+            echo GET_ADOT_WHEEL_COMMAND="wget -O ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-$latest_release_version-py3-none-any.whl \
+            && sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Set Get CW Agent command environment variable
+        run: |
+          if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
+            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+          elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
+            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install awscurl for SigV4-signed control-plane calls
+        run: pip install awscurl
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/ec2/adot-di && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Deploy sample app via terraform
+        working-directory: terraform/python/ec2/adot-di
+        run: |
+          retry_counter=0
+          max_retry=2
+          while [ $retry_counter -lt $max_retry ]; do
+            echo "Attempt $retry_counter"
+            deployment_failed=0
+            terraform apply -auto-approve \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
+              -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
+              -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
+              -var="language_version=${{ env.PYTHON_VERSION }}" \
+              -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="di_api_url=${{ env.DI_API_URL }}" \
+              -var="service_name_prefix=${{ env.SERVICE_NAME_PREFIX }}" \
+              -var="di_environment=${{ env.DI_ENVIRONMENT }}" \
+            || deployment_failed=$?
+
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
+              terraform destroy -auto-approve \
+                -var="test_id=${{ env.TESTING_ID }}"
+              retry_counter=$(($retry_counter+1))
+            else
+              break
+            fi
+
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Max retry reached, failed to deploy terraform and connect to the endpoint."
+              exit 1
+            fi
+          done
+
+      - name: Capture deployment outputs
+        working-directory: terraform/python/ec2/adot-di
+        run: |
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
+          echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
+
+      - name: Create breakpoint via Application Signals control plane
+        run: |
+          # The DI service is gamma-only at the time of writing; the public AWS CLI/SDK does not
+          # ship these operations yet. Use awscurl for SigV4-signed POSTs against the Coral endpoint.
+          # NOTE: ClassName is intentionally NOT set — the SDK builds the function key as
+          # CodeUnit + "." + MethodName, and an extra ClassName for module-level functions like
+          # http_call duplicates the module path and triggers AttributeError on apply.
+          awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+            -X POST -H "Content-Type: application/json" \
+            -d "{
+              \"InstrumentationType\":\"BREAKPOINT\",
+              \"Service\":\"${SERVICE_NAME}\",
+              \"Environment\":\"${{ env.DI_ENVIRONMENT }}\",
+              \"SignalType\":\"SNAPSHOT\",
+              \"CodeLocation\":{
+                \"FilePath\":\"/home/ec2-user/django_frontend_service/frontend_service_app/views.py\",
+                \"LineNumber\":134,
+                \"CodeUnit\":\"frontend_service_app.views\",
+                \"MethodName\":\"http_call\"
+              }
+            }" \
+            ${{ env.DI_API_URL }}/create-instrumentation-configuration
+
+      - name: Resolve LocationHash for the new configuration
+        run: |
+          LOCATION_HASH=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+            -X POST -H "Content-Type: application/json" \
+            -d "{\"Service\":\"${SERVICE_NAME}\",\"Environment\":\"${{ env.DI_ENVIRONMENT }}\",\"InstrumentationType\":\"BREAKPOINT\"}" \
+            ${{ env.DI_API_URL }}/list-instrumentation-configurations \
+            | jq -r '.LatestConfigurations[0].LocationHash')
+          if [ -z "${LOCATION_HASH}" ] || [ "${LOCATION_HASH}" = "null" ]; then
+            echo "Failed to resolve LocationHash from list-instrumentation-configurations response."
+            exit 1
+          fi
+          echo "LOCATION_HASH=${LOCATION_HASH}" >> "$GITHUB_ENV"
+
+      - name: Wait for SDK to poll, apply breakpoint, and emit snapshot
+        # 2x poll interval (15s) + apply latency + traffic-generator interval. The traffic generator
+        # already curls /outgoing-http-call on a loop, so once the breakpoint is applied any
+        # subsequent request will fire it.
+        run: sleep 60
+
+      - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew.outcome == 'failure'
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Validate snapshot record in CW Logs
+        id: snapshot-validation
+        run: ./gradlew validator:run --args='-c python/ec2/adot-di/log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8000
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --location-hash ${{ env.LOCATION_HASH }}'
+
+      - name: Delete instrumentation configuration
+        if: always() && env.LOCATION_HASH != ''
+        continue-on-error: true
+        run: |
+          awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+            -X POST -H "Content-Type: application/json" \
+            -d "{
+              \"InstrumentationType\":\"BREAKPOINT\",
+              \"Service\":\"${SERVICE_NAME}\",
+              \"Environment\":\"${{ env.DI_ENVIRONMENT }}\",
+              \"SignalType\":\"SNAPSHOT\",
+              \"LocationIdentifier\":{\"LocationHash\":\"${LOCATION_HASH}\"}
+            }" \
+            ${{ env.DI_API_URL }}/delete-instrumentation-configuration
+
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        working-directory: terraform/python/ec2/adot-di
+        run: |
+          terraform destroy -auto-approve \
+            -var="test_id=${{ env.TESTING_ID }}"
