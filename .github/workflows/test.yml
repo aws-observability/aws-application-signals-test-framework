@@ -5,7 +5,7 @@
 # Closed loop: Create breakpoint via Application Signals control plane → SDK polls
 # and applies → traffic hits breakpoint → snapshot lands in /aws/service-events/<svc>
 # → assert snapshot fields → Delete config.
-name: Python EC2 ADOT Dynamic Instrumentation Use Case
+name: Test
 on:
   workflow_dispatch:
     inputs:
