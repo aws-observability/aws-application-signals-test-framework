@@ -19,6 +19,10 @@ variable "sample_app_zip" {
   default = "s3://<bucket-name>/<zip>"
 }
 
+variable "traffic_generator_zip" {
+  default = "s3://<bucket-name>/<zip>"
+}
+
 variable "get_adot_wheel_command" {
   default = "aws s3 cp s3://<bucket-name>/<whl> ./<whl> && pip install <whl>"
 }

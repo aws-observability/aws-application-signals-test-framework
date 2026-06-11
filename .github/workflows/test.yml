@@ -72,7 +72,8 @@ env:
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
-  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/python-sample-app.zip
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-di-us-east-1/python-sample-app.zip
+  TRAFFIC_GENERATOR_ZIP: s3://aws-appsignals-sample-app-di-us-east-1/traffic-generator.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_DI_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_DI_E2E_TEST_ROLE_NAME }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
@@ -178,6 +179,7 @@ jobs:
               -var="service_name_prefix=${{ env.SERVICE_NAME_PREFIX }}" \
               -var="di_environment=${{ env.DI_ENVIRONMENT }}" \
               -var="iam_instance_profile=${{ env.IAM_INSTANCE_PROFILE }}" \
+              -var="traffic_generator_zip=${{ env.TRAFFIC_GENERATOR_ZIP }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then
