@@ -77,12 +77,16 @@ env:
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_DI_E2E_TEST_ROLE_NAME }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   REPOSITORY_NAME: ${{ github.event.repository.name }}
-  DI_API_URL: https://application-signals-gamma.us-east-1.api.aws
+  DI_API_URL: https://application-signals.us-east-1.api.aws
   # Single source of truth for the service identity. Must match the values terraform
   # exports as OTEL_SERVICE_NAME / OTEL_RESOURCE_ATTRIBUTES inside the EC2 user-data;
   # we pass them as terraform vars below so the values stay in sync.
   SERVICE_NAME_PREFIX: python-sample-application
   DI_ENVIRONMENT: ec2:python-di-main-service-asg
+  # IAM instance profile used by the EC2 sample-app instance. Overrides the default in
+  # variables.tf — required while the canonical APP_SIGNALS_EC2_TEST_ROLE doesn't exist
+  # in the DI E2E account; this profile already has CW Agent + S3 read + DI permissions.
+  IAM_INSTANCE_PROFILE: di-soak-test-ec2-profile
 
 jobs:
   python-ec2-adot-di:
@@ -173,6 +177,7 @@ jobs:
               -var="di_api_url=${{ env.DI_API_URL }}" \
               -var="service_name_prefix=${{ env.SERVICE_NAME_PREFIX }}" \
               -var="di_environment=${{ env.DI_ENVIRONMENT }}" \
+              -var="iam_instance_profile=${{ env.IAM_INSTANCE_PROFILE }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then

@@ -40,6 +40,13 @@ variable "cpu_architecture" {
   default = "x86_64"
 }
 
+# IAM instance profile attached to the EC2 instance. Default matches the canonical name
+# used across this repo's other python-ec2 canaries; override when running against an
+# account that uses a different profile name.
+variable "iam_instance_profile" {
+  default = "APP_SIGNALS_EC2_TEST_ROLE"
+}
+
 # Application Signals control-plane endpoint the SDK polls for breakpoint configurations.
 # Defaults to gamma; override to the prod endpoint once DI ships.
 variable "di_api_url" {
