@@ -8,6 +8,33 @@
 name: Python EC2 ADOT Dynamic Instrumentation Use Case
 on:
   workflow_dispatch:
+    inputs:
+      aws-region:
+        description: AWS region to deploy the test in
+        required: false
+        type: string
+        default: 'us-east-1'
+      caller-workflow-name:
+        description: Identifier propagated from the caller; use 'manual' for ad-hoc dispatch
+        required: false
+        type: string
+        default: 'manual'
+      python-version:
+        required: false
+        type: string
+        default: '3.12'
+      cpu-architecture:
+        required: false
+        type: string
+        default: 'x86_64'
+      staging-wheel-name:
+        required: false
+        default: 'aws-opentelemetry-distro'
+        type: string
+      otel-source:
+        required: false
+        type: string
+        default: 'github'
 
   workflow_call:
     inputs:
