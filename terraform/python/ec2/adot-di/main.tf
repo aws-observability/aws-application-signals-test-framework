@@ -148,6 +148,9 @@ resource "null_resource" "main_service_setup" {
       export OTEL_PYTHON_CONFIGURATOR=aws_configurator
       export OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED=true
       export OTEL_AWS_DYNAMIC_INSTRUMENTATION_BREAKPOINT_POLL_INTERVAL=15
+      # Default is 600s (10 min); shorten to 15s so the PROBE test path completes
+      # within the same wait window as the BREAKPOINT path.
+      export OTEL_AWS_DYNAMIC_INSTRUMENTATION_PROBE_POLL_INTERVAL=15
       export OTEL_SERVICE_NAME=${var.service_name_prefix}-${var.test_id}
       export OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=${var.di_environment}"
       export AWS_REGION='${var.aws_region}'

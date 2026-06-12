@@ -1,0 +1,87 @@
+{
+  "_comment": "Request bodies for the Application Signals Dynamic Instrumentation control plane, used by .github/workflows/test.yml. Values that vary per run are placeholders ($SERVICE_NAME, $DI_ENVIRONMENT, $LOCATION_HASH, $EXPIRES_AT) and substituted via envsubst at workflow-step time.",
+
+  "createBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "Location": {
+      "CodeLocation": {
+        "Language": "Python",
+        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
+        "LineNumber": 134,
+        "CodeUnit": "frontend_service_app.views",
+        "MethodName": "http_call"
+      }
+    },
+    "CaptureConfiguration": {
+      "CodeCapture": {
+        "CaptureArguments": [],
+        "CaptureLocals": ["status_code", "response", "url"],
+        "CaptureReturn": false,
+        "CaptureStackTrace": true,
+        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
+      }
+    },
+    "Description": "DI E2E line-level breakpoint",
+    "ExpiresAt": "$EXPIRES_AT"
+  },
+
+  "createProbe": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "Location": {
+      "CodeLocation": {
+        "Language": "Python",
+        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
+        "CodeUnit": "frontend_service_app.views",
+        "MethodName": "aws_sdk_call"
+      }
+    },
+    "CaptureConfiguration": {
+      "CodeCapture": {
+        "CaptureArguments": ["request"],
+        "CaptureLocals": [],
+        "CaptureReturn": true,
+        "CaptureStackTrace": true,
+        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
+      }
+    },
+    "Description": "DI E2E function-level probe"
+  },
+
+  "getBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "getProbe": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteProbe": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  }
+}

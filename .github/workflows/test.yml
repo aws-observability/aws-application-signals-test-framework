@@ -198,71 +198,66 @@ jobs:
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
           echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
-      - name: Create breakpoint via Application Signals control plane
+      - name: Create line-level BREAKPOINT and function-level PROBE
+        # The DI control plane isn't in the public AWS CLI/SDK yet — use awscurl
+        # for SigV4-signed POSTs. Request bodies live in
+        # .github/workflows/util/di-api-requests.json; we substitute placeholders
+        # ($SERVICE_NAME, $DI_ENVIRONMENT, $EXPIRES_AT) at step time.
+        # Two configs created in parallel against the same EC2:
+        #   BREAKPOINT (line-level) at http_call:134 -> body.captures.lines[134]
+        #   PROBE      (function-level) at aws_sdk_call -> body.captures.entry/return
+        # Both use the same SDK polling thread; one Wait covers both.
         run: |
-          # The DI service control plane (CreateInstrumentationConfiguration etc.) isn't in
-          # the public AWS CLI/SDK yet — use awscurl for SigV4-signed POSTs.
-          # Wire format locked down by hand-testing against the live endpoint:
-          #   - Location is a union; CodeLocation is the chosen variant and Language is required.
-          #   - CaptureConfiguration is a union; CodeCapture is the chosen variant.
-          #   - CaptureLocals must be a non-empty list when LineNumber is set.
-          #   - ExpiresAt is epoch SECONDS (not millis), max 24h in the future for BREAKPOINT.
-          # NOTE: ClassName is intentionally NOT set — the SDK builds the function key as
-          # CodeUnit + "." + MethodName, and an extra ClassName for module-level functions
-          # duplicates the module path and triggers AttributeError on apply.
-          EXPIRES_AT=$(($(date +%s) + 1800))
-          awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-            -X POST -H "content-type: application/json" \
-            -d "{
-              \"InstrumentationType\":\"BREAKPOINT\",
-              \"Service\":\"${SERVICE_NAME}\",
-              \"Environment\":\"${{ env.DI_ENVIRONMENT }}\",
-              \"SignalType\":\"SNAPSHOT\",
-              \"Location\":{
-                \"CodeLocation\":{
-                  \"Language\":\"Python\",
-                  \"FilePath\":\"/home/ec2-user/django_frontend_service/frontend_service_app/views.py\",
-                  \"LineNumber\":134,
-                  \"CodeUnit\":\"frontend_service_app.views\",
-                  \"MethodName\":\"http_call\"
-                }
-              },
-              \"CaptureConfiguration\":{
-                \"CodeCapture\":{
-                  \"CaptureArguments\":[],
-                  \"CaptureLocals\":[\"status_code\",\"response\",\"url\"],
-                  \"CaptureReturn\":false,
-                  \"CaptureStackTrace\":true,
-                  \"CaptureLimits\":{
-                    \"MaxHits\":100,
-                    \"MaxStringLength\":128,
-                    \"MaxCollectionSize\":10,
-                    \"MaxFieldsPerObject\":10
-                  }
-                }
-              },
-              \"Description\":\"DI E2E canary breakpoint\",
-              \"ExpiresAt\":${EXPIRES_AT}
-            }" \
-            ${{ env.DI_API_URL }}/create-instrumentation-configuration
+          export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
+          export EXPIRES_AT=$(($(date +%s) + 1800))
+          REQS=.github/workflows/util/di-api-requests.json
 
-      - name: Resolve LocationHash for the new configuration
+          BREAK_PAYLOAD=$(jq -c '.createBreakpoint' "$REQS" | envsubst)
+          BREAK_RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+            -X POST -H "content-type: application/json" -d "$BREAK_PAYLOAD" \
+            ${{ env.DI_API_URL }}/create-instrumentation-configuration)
+          echo "BREAKPOINT response: $BREAK_RESP"
+          BREAKPOINT_LOCATION_HASH=$(echo "$BREAK_RESP" | jq -r '.LocationHash // empty')
+          if [ -z "$BREAKPOINT_LOCATION_HASH" ]; then echo "ERROR: BREAKPOINT Create did not return LocationHash"; exit 1; fi
+          echo "BREAKPOINT_LOCATION_HASH=$BREAKPOINT_LOCATION_HASH" >> "$GITHUB_ENV"
+
+          PROBE_PAYLOAD=$(jq -c '.createProbe' "$REQS" | envsubst)
+          PROBE_RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+            -X POST -H "content-type: application/json" -d "$PROBE_PAYLOAD" \
+            ${{ env.DI_API_URL }}/create-instrumentation-configuration)
+          echo "PROBE response: $PROBE_RESP"
+          PROBE_LOCATION_HASH=$(echo "$PROBE_RESP" | jq -r '.LocationHash // empty')
+          if [ -z "$PROBE_LOCATION_HASH" ]; then echo "ERROR: PROBE Create did not return LocationHash"; exit 1; fi
+          echo "PROBE_LOCATION_HASH=$PROBE_LOCATION_HASH" >> "$GITHUB_ENV"
+
+      - name: Verify both Get calls return the created configurations
+        # Confirms Create persisted on the control plane (not just a 200 on the Create call).
         run: |
-          LOCATION_HASH=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-            -X POST -H "Content-Type: application/json" \
-            -d "{\"Service\":\"${SERVICE_NAME}\",\"Environment\":\"${{ env.DI_ENVIRONMENT }}\",\"InstrumentationType\":\"BREAKPOINT\"}" \
-            ${{ env.DI_API_URL }}/list-instrumentation-configurations \
-            | jq -r '.LatestConfigurations[0].LocationHash')
-          if [ -z "${LOCATION_HASH}" ] || [ "${LOCATION_HASH}" = "null" ]; then
-            echo "Failed to resolve LocationHash from list-instrumentation-configurations response."
-            exit 1
-          fi
-          echo "LOCATION_HASH=${LOCATION_HASH}" >> "$GITHUB_ENV"
+          export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
+          REQS=.github/workflows/util/di-api-requests.json
 
-      - name: Wait for SDK to poll, apply breakpoint, and emit snapshot
-        # 90s = ~6x configured poll interval + apply latency + multiple traffic-generator
-        # cycles. The CW Agent's local DI proxy returns Changed:false between polls and only
-        # reports new configs on a sync interval; first-fetch after Create needs a full cycle.
+          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}"; do
+            KIND="${pair%%:*}"; HASH="${pair##*:}"
+            export LOCATION_HASH="$HASH"
+            PAYLOAD=$(jq -c ".get${KIND}" "$REQS" | envsubst)
+            BODY=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+              -X POST -H "content-type: application/json" -d "$PAYLOAD" \
+              ${{ env.DI_API_URL }}/get-instrumentation-configuration)
+            echo "$KIND Get response: $BODY"
+            GOT_HASH=$(echo "$BODY" | jq -r '.Configuration.LocationHash // empty')
+            if [ "$GOT_HASH" != "$HASH" ]; then
+              echo "ERROR: $KIND Get returned hash=$GOT_HASH, expected $HASH"
+              exit 1
+            fi
+            echo "$KIND Get OK"
+          done
+
+      - name: Wait for SDK to poll, apply breakpoints, and emit snapshots
+        # 90s covers ~6x SDK poll interval + agent sync interval + multiple
+        # traffic-generator cycles. Both BREAKPOINT and PROBE configs are
+        # delivered through the same agent local proxy on this same wait;
+        # OTEL_AWS_DYNAMIC_INSTRUMENTATION_PROBE_POLL_INTERVAL=15 (set in
+        # terraform user-data) shortens the SDK PROBE poll from its 600s default.
         run: sleep 90
 
       - name: Initiate Gradlew Daemon
@@ -275,9 +270,9 @@ jobs:
           max_retry: 3
           sleep_time: 60
 
-      - name: Validate snapshot record in CW Logs
-        id: snapshot-validation
-        run: ./gradlew validator:run --args='-c python/ec2/adot-di/log-validation.yml
+      - name: Validate line-level snapshot record in CW Logs
+        id: line-validation
+        run: ./gradlew validator:run --args='-c python/ec2/adot-di/log-validation-line.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --region ${{ env.E2E_TEST_AWS_REGION }}
@@ -285,22 +280,67 @@ jobs:
           --service-name ${{ env.SERVICE_NAME }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
-          --location-hash ${{ env.LOCATION_HASH }}'
+          --location-hash ${{ env.BREAKPOINT_LOCATION_HASH }}'
 
-      - name: Delete instrumentation configuration
-        if: always() && env.LOCATION_HASH != ''
+      - name: Validate function-level snapshot record in CW Logs
+        id: function-validation
+        if: (success() || steps.line-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ec2/adot-di/log-validation-function.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8000
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --location-hash ${{ env.PROBE_LOCATION_HASH }}'
+
+      - name: Delete BREAKPOINT and PROBE configurations
+        id: delete-configs
+        if: always() && (env.BREAKPOINT_LOCATION_HASH != '' || env.PROBE_LOCATION_HASH != '')
         continue-on-error: true
         run: |
-          awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-            -X POST -H "Content-Type: application/json" \
-            -d "{
-              \"InstrumentationType\":\"BREAKPOINT\",
-              \"Service\":\"${SERVICE_NAME}\",
-              \"Environment\":\"${{ env.DI_ENVIRONMENT }}\",
-              \"SignalType\":\"SNAPSHOT\",
-              \"LocationIdentifier\":{\"LocationHash\":\"${LOCATION_HASH}\"}
-            }" \
-            ${{ env.DI_API_URL }}/delete-instrumentation-configuration
+          export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
+          REQS=.github/workflows/util/di-api-requests.json
+
+          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}"; do
+            KIND="${pair%%:*}"; HASH="${pair##*:}"
+            if [ -z "$HASH" ]; then continue; fi
+            export LOCATION_HASH="$HASH"
+            PAYLOAD=$(jq -c ".delete${KIND}" "$REQS" | envsubst)
+            RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+              -X POST -H "content-type: application/json" -d "$PAYLOAD" \
+              ${{ env.DI_API_URL }}/delete-instrumentation-configuration)
+            echo "$KIND Delete response: $RESP"
+            STATUS=$(echo "$RESP" | jq -r '.DeletionStatus // empty')
+            if [ "$STATUS" != "DELETED" ]; then
+              echo "ERROR: $KIND Delete returned DeletionStatus=$STATUS, expected DELETED"
+              exit 1
+            fi
+            echo "$KIND deleted (DeletionStatus=DELETED)"
+          done
+
+      - name: Verify both Get calls return ResourceNotFound after delete
+        if: always() && steps.delete-configs.outcome == 'success'
+        run: |
+          export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
+          REQS=.github/workflows/util/di-api-requests.json
+
+          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}"; do
+            KIND="${pair%%:*}"; HASH="${pair##*:}"
+            if [ -z "$HASH" ]; then continue; fi
+            export LOCATION_HASH="$HASH"
+            PAYLOAD=$(jq -c ".get${KIND}" "$REQS" | envsubst)
+            BODY=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+              -X POST -H "content-type: application/json" -d "$PAYLOAD" \
+              ${{ env.DI_API_URL }}/get-instrumentation-configuration 2>&1 || true)
+            echo "$KIND post-delete Get: $BODY"
+            if ! echo "$BODY" | grep -qiE "ResourceNotFound|not found|does not exist"; then
+              echo "ERROR: $KIND configuration still exists after Delete"
+              exit 1
+            fi
+            echo "$KIND post-delete Get OK (ResourceNotFound confirmed)"
+          done
 
       - name: Terraform destroy
         if: always()
