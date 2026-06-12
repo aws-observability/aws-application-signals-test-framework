@@ -101,6 +101,7 @@ resource "null_resource" "main_service_setup" {
 
       sudo yum install wget -y
       sudo yum install unzip -y
+      sudo yum install git -y
 
       # Python 3.12 is required for Dynamic Instrumentation (sys.monitoring).
       # Dnf does not have the module for python 3.8, 3.10, 3.12, 3.13, therefore we need to manually install it.
@@ -142,14 +143,29 @@ resource "null_resource" "main_service_setup" {
       cd ./django_frontend_service
       sudo python${var.language_version} -m pip install -r ec2-requirements.txt
 
-      # Dynamic Instrumentation only: no App Signals span/metric/log pipeline.
+      # DI DEBUG: install a sitecustomize.py that forces the debugger module's
+      # logger to DEBUG and adds a stderr handler. Without this the DI module's
+      # logger.debug/.warning calls are silently dropped because the SDK only
+      # bumps log level on the aws_opentelemetry_distro module, not on
+      # amazon.opentelemetry.distro.debugger.* sublogger tree.
+      SITE_DIR=$(sudo python${var.language_version} -c "import site; print(site.getsitepackages()[0])")
+      sudo tee "$${SITE_DIR}/sitecustomize.py" > /dev/null <<'EOSITE'
+      import logging, sys
+      _h = logging.StreamHandler(sys.stderr)
+      _h.setFormatter(logging.Formatter("DI_DEBUG %(asctime)s %(levelname)s %(name)s: %(message)s"))
+      for n in ("amazon.opentelemetry.distro", "amazon.opentelemetry.distro.debugger"):
+          lg = logging.getLogger(n)
+          lg.setLevel(logging.DEBUG)
+          lg.addHandler(_h)
+          lg.propagate = False
+      EOSITE
+
       export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
       export OTEL_PYTHON_DISTRO=aws_distro
       export OTEL_PYTHON_CONFIGURATOR=aws_configurator
+      export OTEL_PYTHON_LOG_LEVEL=debug
       export OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED=true
       export OTEL_AWS_DYNAMIC_INSTRUMENTATION_BREAKPOINT_POLL_INTERVAL=15
-      # Default is 600s (10 min); shorten to 15s so the PROBE test path completes
-      # within the same wait window as the BREAKPOINT path.
       export OTEL_AWS_DYNAMIC_INSTRUMENTATION_PROBE_POLL_INTERVAL=15
       export OTEL_SERVICE_NAME=${var.service_name_prefix}-${var.test_id}
       export OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=${var.di_environment}"
@@ -167,7 +183,9 @@ resource "null_resource" "main_service_setup" {
       echo "Using opentelemetry-instrument at $${OTEL_INSTRUMENT}"
       ls -la "$${OTEL_INSTRUMENT}"
       python${var.language_version} manage.py migrate
-      nohup "$${OTEL_INSTRUMENT}" python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
+      # Redirect SDK stdout+stderr to /tmp/sdk.log so we can read DI debug logs
+      # later (sitecustomize installed above sets the debugger module to DEBUG).
+      nohup "$${OTEL_INSTRUMENT}" python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload > /tmp/sdk.log 2>&1 &
 
       sleep 30
 
