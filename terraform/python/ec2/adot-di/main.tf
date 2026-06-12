@@ -151,14 +151,20 @@ resource "null_resource" "main_service_setup" {
       export OTEL_SERVICE_NAME=${var.service_name_prefix}-${var.test_id}
       export OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=${var.di_environment}"
       export AWS_REGION='${var.aws_region}'
-      # Resolve opentelemetry-instrument via the python interpreter to avoid PATH issues
-      # when Python is built from source (binary lands in /usr/local/bin which may not be
-      # on the shell's PATH inside the SSH provisioner's env).
-      OTEL_INSTRUMENT=$(sudo python${var.language_version} -c "import os, opentelemetry.distro; import opentelemetry; print(os.path.join(os.path.dirname(os.path.dirname(opentelemetry.distro.__file__)), 'bin', 'opentelemetry-instrument'))" 2>/dev/null || command -v opentelemetry-instrument || echo /usr/local/bin/opentelemetry-instrument)
+      # Locate opentelemetry-instrument via filesystem search — its install path varies
+      # by how Python was installed (from-source: /usr/local/bin, dnf: /usr/bin, venv:
+      # <venv>/bin), and the SSH provisioner's $PATH may not cover all of them.
+      OTEL_INSTRUMENT=$(sudo find /usr/local/bin /usr/bin /opt -name opentelemetry-instrument -type f 2>/dev/null | head -1)
+      if [ -z "$${OTEL_INSTRUMENT}" ]; then
+        echo "FATAL: opentelemetry-instrument not found"
+        sudo find / -name opentelemetry-instrument -type f 2>/dev/null | head -5
+        sudo python${var.language_version} -m pip show opentelemetry-distro || true
+        exit 1
+      fi
       echo "Using opentelemetry-instrument at $${OTEL_INSTRUMENT}"
-      ls -la $${OTEL_INSTRUMENT} || sudo find / -name opentelemetry-instrument -type f 2>/dev/null | head
+      ls -la "$${OTEL_INSTRUMENT}"
       python${var.language_version} manage.py migrate
-      nohup $${OTEL_INSTRUMENT} python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
+      nohup "$${OTEL_INSTRUMENT}" python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
 
       sleep 30
 
