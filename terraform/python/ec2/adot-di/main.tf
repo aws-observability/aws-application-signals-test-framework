@@ -190,15 +190,20 @@ resource "null_resource" "main_service_setup" {
       if [ -n "$DJANGO_PID" ]; then
         echo "--- ports owned by Django ---"
         sudo ss -tlnp 2>/dev/null | grep "pid=$DJANGO_PID" || echo "no listening ports"
+        echo "--- task count + 2000/4316 connections ---"
+        ls /proc/$DJANGO_PID/task | wc -l
+        sudo ss -tnp 2>/dev/null | grep "pid=$DJANGO_PID" | head
         echo "--- env (DI-related) ---"
         sudo cat /proc/$DJANGO_PID/environ 2>/dev/null | tr '\0' '\n' | grep -iE 'OTEL|DYNAMIC|SERVICE_NAME|RESOURCE' | head -20
-        echo "--- thread names ---"
-        sudo cat /proc/$DJANGO_PID/task/*/comm 2>/dev/null | sort -u | head
+        echo "--- nohup.out tail (Django + DI stderr) ---"
+        sudo find / -name nohup.out -mmin -30 2>/dev/null | head -3 | xargs -I {} sudo tail -50 {} 2>/dev/null | head -80 || true
       fi
       echo "--- CW Agent listening ports ---"
       sudo ss -tlnp 2>/dev/null | grep -E ':2000|:4316' || echo "neither :2000 nor :4316 listening"
-      echo "--- CW Agent log tail ---"
-      sudo tail -40 /opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log 2>/dev/null | tail -25 || echo "no cw-agent log"
+      echo "--- pip show aws-opentelemetry-distro ---"
+      sudo python${var.language_version} -m pip show aws-opentelemetry-distro 2>&1 | head -10
+      echo "--- DI module directly importable? ---"
+      sudo python${var.language_version} -c "from amazon.opentelemetry.distro.debugger.debugger import is_debugger_enabled, initialize_debugger; print('is_enabled=', is_debugger_enabled())" 2>&1 | head
       echo "=== END DI DIAGNOSTICS ==="
 
       EOF
