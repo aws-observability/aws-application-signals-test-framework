@@ -228,7 +228,7 @@ jobs:
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             export LOCATION_HASH="$HASH"
             BODY=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-              -X POST -H "content-type: application/json" -d "$(python3 $P get${KIND})" \
+              -X POST -H "content-type: application/json" -d "$(python3 "$P" "get${KIND}")" \
               ${{ env.DI_API_URL }}/get-instrumentation-configuration)
             echo "$KIND Get response: $BODY"
             GOT_HASH=$(echo "$BODY" | jq -r '.Configuration.LocationHash // empty')
@@ -290,7 +290,7 @@ jobs:
             if [ -z "$HASH" ]; then continue; fi
             export LOCATION_HASH="$HASH"
             RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-              -X POST -H "content-type: application/json" -d "$(python3 $P delete${KIND})" \
+              -X POST -H "content-type: application/json" -d "$(python3 "$P" "delete${KIND}")" \
               ${{ env.DI_API_URL }}/delete-instrumentation-configuration)
             echo "$KIND Delete response: $RESP"
             STATUS=$(echo "$RESP" | jq -r '.DeletionStatus // empty')
@@ -312,7 +312,7 @@ jobs:
             if [ -z "$HASH" ]; then continue; fi
             export LOCATION_HASH="$HASH"
             BODY=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-              -X POST -H "content-type: application/json" -d "$(python3 $P get${KIND})" \
+              -X POST -H "content-type: application/json" -d "$(python3 "$P" "get${KIND}")" \
               ${{ env.DI_API_URL }}/get-instrumentation-configuration 2>&1 || true)
             echo "$KIND post-delete Get: $BODY"
             if ! echo "$BODY" | grep -qiE "ResourceNotFound|not found|does not exist|has been deleted"; then
