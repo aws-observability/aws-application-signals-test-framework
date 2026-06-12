@@ -6,8 +6,7 @@
     }
   },
   "scope": {
-    "name": "^.+$",
-    "version": "^.+$"
+    "name": "aws.dynamic_instrumentation"
   },
   "attributes": {
     "event.name": "aws.dynamic_instrumentation.snapshot",
@@ -15,18 +14,28 @@
     "aws.di.location_hash": "{{locationHash}}",
     "aws.di.code_unit": "frontend_service_app.views",
     "aws.di.method_name": "http_call",
-    "aws.di.file_path": "^.+/frontend_service_app/views\\.py$",
-    "aws.di.line_number": "^[0-9]+$",
     "aws.di.snapshot_id": "^.+$"
   },
   "traceId": "^.+$",
   "spanId": "^.+$",
   "body": {
+    "captures": {
+      "lines": {
+        "134": {
+          "locals": {
+            "url": {
+              "value": "^.+$"
+            },
+            "response": {
+              "type": "^.+$"
+            }
+          }
+        }
+      }
+    },
     "stack": [
       {
-        "function": "http_call",
-        "line_number": "^[0-9]+$",
-        "file_path": "^.+/frontend_service_app/views\\.py$"
+        "function": "http_call"
       }
     ]
   }
