@@ -125,7 +125,7 @@ jobs:
         # DI assets bucket. Once the public release ships DI, fall back to the
         # standard 3-source pattern used by peer python-ec2 canaries.
         run: |
-          echo GET_ADOT_WHEEL_COMMAND="aws s3 cp s3://aws-appsignals-sample-app-di-us-east-1/aws_opentelemetry_distro-py3-none-any.whl ./aws_opentelemetry_distro-py3-none-any.whl && sudo python${{ env.PYTHON_VERSION }} -m pip install ./aws_opentelemetry_distro-py3-none-any.whl" >> "$GITHUB_ENV"
+          echo GET_ADOT_WHEEL_COMMAND="aws s3 cp s3://aws-appsignals-sample-app-di-us-east-1/aws_opentelemetry_distro-0.17.1.dev0-py3-none-any.whl ./aws_opentelemetry_distro-0.17.1.dev0-py3-none-any.whl && sudo python${{ env.PYTHON_VERSION }} -m pip install ./aws_opentelemetry_distro-0.17.1.dev0-py3-none-any.whl" >> "$GITHUB_ENV"
 
       - name: Set Get CW Agent command environment variable
         run: |
