@@ -119,13 +119,11 @@ jobs:
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Set Get ADOT Wheel command environment variable
-        # DI is not in a tagged release yet, and PROBE support requires the
-        # InstrumentationName fix from aws-otel-python-instrumentation PR #768.
-        # Build directly from that PR branch until it merges; once it ships in
-        # a public release, fall back to the standard 3-source pattern used by
-        # peer python-ec2 canaries.
+        # DI is not in a tagged release yet — build from upstream main. Switch
+        # to the standard 3-source pattern (S3 staging / PyPI / GitHub release)
+        # used by peer python-ec2 canaries once a release ships with DI.
         run: |
-          echo GET_ADOT_WHEEL_COMMAND="sudo python${{ env.PYTHON_VERSION }} -m pip install 'git+https://github.com/liustve/aws-otel-python-instrumentation.git@di/optional-instrumentation-name#subdirectory=aws-opentelemetry-distro'" >> "$GITHUB_ENV"
+          echo GET_ADOT_WHEEL_COMMAND="sudo python${{ env.PYTHON_VERSION }} -m pip install 'git+https://github.com/aws-observability/aws-otel-python-instrumentation.git@main#subdirectory=aws-opentelemetry-distro'" >> "$GITHUB_ENV"
 
       - name: Set Get CW Agent command environment variable
         run: |
