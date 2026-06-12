@@ -201,24 +201,49 @@ jobs:
 
       - name: Create breakpoint via Application Signals control plane
         run: |
-          # The DI service is gamma-only at the time of writing; the public AWS CLI/SDK does not
-          # ship these operations yet. Use awscurl for SigV4-signed POSTs against the Coral endpoint.
+          # The DI service control plane (CreateInstrumentationConfiguration etc.) isn't in
+          # the public AWS CLI/SDK yet — use awscurl for SigV4-signed POSTs.
+          # Wire format locked down by hand-testing against the live endpoint:
+          #   - Location is a union; CodeLocation is the chosen variant and Language is required.
+          #   - CaptureConfiguration is a union; CodeCapture is the chosen variant.
+          #   - CaptureLocals must be a non-empty list when LineNumber is set.
+          #   - ExpiresAt is epoch SECONDS (not millis), max 24h in the future for BREAKPOINT.
           # NOTE: ClassName is intentionally NOT set — the SDK builds the function key as
-          # CodeUnit + "." + MethodName, and an extra ClassName for module-level functions like
-          # http_call duplicates the module path and triggers AttributeError on apply.
+          # CodeUnit + "." + MethodName, and an extra ClassName for module-level functions
+          # duplicates the module path and triggers AttributeError on apply.
+          EXPIRES_AT=$(($(date +%s) + 1800))
           awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-            -X POST -H "Content-Type: application/json" \
+            -X POST -H "content-type: application/json" \
             -d "{
               \"InstrumentationType\":\"BREAKPOINT\",
               \"Service\":\"${SERVICE_NAME}\",
               \"Environment\":\"${{ env.DI_ENVIRONMENT }}\",
               \"SignalType\":\"SNAPSHOT\",
-              \"CodeLocation\":{
-                \"FilePath\":\"/home/ec2-user/django_frontend_service/frontend_service_app/views.py\",
-                \"LineNumber\":134,
-                \"CodeUnit\":\"frontend_service_app.views\",
-                \"MethodName\":\"http_call\"
-              }
+              \"Location\":{
+                \"CodeLocation\":{
+                  \"Language\":\"Python\",
+                  \"FilePath\":\"/home/ec2-user/django_frontend_service/frontend_service_app/views.py\",
+                  \"LineNumber\":134,
+                  \"CodeUnit\":\"frontend_service_app.views\",
+                  \"MethodName\":\"http_call\"
+                }
+              },
+              \"CaptureConfiguration\":{
+                \"CodeCapture\":{
+                  \"CaptureArguments\":[],
+                  \"CaptureLocals\":[\"status_code\",\"response\",\"url\"],
+                  \"CaptureReturn\":false,
+                  \"CaptureStackTrace\":true,
+                  \"CaptureLimits\":{
+                    \"MaxHits\":100,
+                    \"MaxStringLength\":128,
+                    \"MaxCollectionSize\":10,
+                    \"MaxFieldsPerObject\":10
+                  }
+                }
+              },
+              \"Description\":\"DI E2E canary breakpoint\",
+              \"ExpiresAt\":${EXPIRES_AT}
             }" \
             ${{ env.DI_API_URL }}/create-instrumentation-configuration
 
@@ -236,10 +261,10 @@ jobs:
           echo "LOCATION_HASH=${LOCATION_HASH}" >> "$GITHUB_ENV"
 
       - name: Wait for SDK to poll, apply breakpoint, and emit snapshot
-        # 2x poll interval (15s) + apply latency + traffic-generator interval. The traffic generator
-        # already curls /outgoing-http-call on a loop, so once the breakpoint is applied any
-        # subsequent request will fire it.
-        run: sleep 60
+        # 90s = ~6x configured poll interval + apply latency + multiple traffic-generator
+        # cycles. The CW Agent's local DI proxy returns Changed:false between polls and only
+        # reports new configs on a sync interval; first-fetch after Create needs a full cycle.
+        run: sleep 90
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew.outcome == 'failure'
