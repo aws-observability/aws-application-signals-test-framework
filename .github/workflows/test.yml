@@ -199,31 +199,21 @@ jobs:
           echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
       - name: Create line-level BREAKPOINT and function-level PROBE
-        # The DI control plane isn't in the public AWS CLI/SDK yet — use awscurl
-        # for SigV4-signed POSTs. Request bodies live in
-        # .github/workflows/util/di-api-requests.json; we substitute placeholders
-        # ($SERVICE_NAME, $DI_ENVIRONMENT, $EXPIRES_AT) at step time.
-        # Two configs created in parallel against the same EC2:
-        #   BREAKPOINT (line-level) at http_call:134 -> body.captures.lines[134]
-        #   PROBE      (function-level) at aws_sdk_call -> body.captures.entry/return
-        # Both use the same SDK polling thread; one Wait covers both.
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
           export EXPIRES_AT=$(($(date +%s) + 1800))
-          REQS=.github/workflows/util/di-api-requests.json
+          P=.github/workflows/util/di-payload.py
 
-          BREAK_PAYLOAD=$(jq -c '.createBreakpoint' "$REQS" | envsubst)
           BREAK_RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-            -X POST -H "content-type: application/json" -d "$BREAK_PAYLOAD" \
+            -X POST -H "content-type: application/json" -d "$(python3 $P createBreakpoint)" \
             ${{ env.DI_API_URL }}/create-instrumentation-configuration)
           echo "BREAKPOINT response: $BREAK_RESP"
           BREAKPOINT_LOCATION_HASH=$(echo "$BREAK_RESP" | jq -r '.LocationHash // empty')
           if [ -z "$BREAKPOINT_LOCATION_HASH" ]; then echo "ERROR: BREAKPOINT Create did not return LocationHash"; exit 1; fi
           echo "BREAKPOINT_LOCATION_HASH=$BREAKPOINT_LOCATION_HASH" >> "$GITHUB_ENV"
 
-          PROBE_PAYLOAD=$(jq -c '.createProbe' "$REQS" | envsubst)
           PROBE_RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-            -X POST -H "content-type: application/json" -d "$PROBE_PAYLOAD" \
+            -X POST -H "content-type: application/json" -d "$(python3 $P createProbe)" \
             ${{ env.DI_API_URL }}/create-instrumentation-configuration)
           echo "PROBE response: $PROBE_RESP"
           PROBE_LOCATION_HASH=$(echo "$PROBE_RESP" | jq -r '.LocationHash // empty')
@@ -231,17 +221,15 @@ jobs:
           echo "PROBE_LOCATION_HASH=$PROBE_LOCATION_HASH" >> "$GITHUB_ENV"
 
       - name: Verify both Get calls return the created configurations
-        # Confirms Create persisted on the control plane (not just a 200 on the Create call).
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
-          REQS=.github/workflows/util/di-api-requests.json
+          P=.github/workflows/util/di-payload.py
 
           for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}"; do
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             export LOCATION_HASH="$HASH"
-            PAYLOAD=$(jq -c ".get${KIND}" "$REQS" | envsubst)
             BODY=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-              -X POST -H "content-type: application/json" -d "$PAYLOAD" \
+              -X POST -H "content-type: application/json" -d "$(python3 $P get${KIND})" \
               ${{ env.DI_API_URL }}/get-instrumentation-configuration)
             echo "$KIND Get response: $BODY"
             GOT_HASH=$(echo "$BODY" | jq -r '.Configuration.LocationHash // empty')
@@ -252,12 +240,7 @@ jobs:
             echo "$KIND Get OK"
           done
 
-      - name: Wait for SDK to poll, apply breakpoints, and emit snapshots
-        # 90s covers ~6x SDK poll interval + agent sync interval + multiple
-        # traffic-generator cycles. Both BREAKPOINT and PROBE configs are
-        # delivered through the same agent local proxy on this same wait;
-        # OTEL_AWS_DYNAMIC_INSTRUMENTATION_PROBE_POLL_INTERVAL=15 (set in
-        # terraform user-data) shortens the SDK PROBE poll from its 600s default.
+      - name: Wait for SDK to poll, apply, and emit snapshots
         run: sleep 90
 
       - name: Initiate Gradlew Daemon
@@ -301,15 +284,14 @@ jobs:
         continue-on-error: true
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
-          REQS=.github/workflows/util/di-api-requests.json
+          P=.github/workflows/util/di-payload.py
 
           for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}"; do
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             if [ -z "$HASH" ]; then continue; fi
             export LOCATION_HASH="$HASH"
-            PAYLOAD=$(jq -c ".delete${KIND}" "$REQS" | envsubst)
             RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-              -X POST -H "content-type: application/json" -d "$PAYLOAD" \
+              -X POST -H "content-type: application/json" -d "$(python3 $P delete${KIND})" \
               ${{ env.DI_API_URL }}/delete-instrumentation-configuration)
             echo "$KIND Delete response: $RESP"
             STATUS=$(echo "$RESP" | jq -r '.DeletionStatus // empty')
@@ -317,29 +299,28 @@ jobs:
               echo "ERROR: $KIND Delete returned DeletionStatus=$STATUS, expected DELETED"
               exit 1
             fi
-            echo "$KIND deleted (DeletionStatus=DELETED)"
+            echo "$KIND deleted"
           done
 
       - name: Verify both Get calls return ResourceNotFound after delete
         if: always() && steps.delete-configs.outcome == 'success'
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
-          REQS=.github/workflows/util/di-api-requests.json
+          P=.github/workflows/util/di-payload.py
 
           for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}"; do
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             if [ -z "$HASH" ]; then continue; fi
             export LOCATION_HASH="$HASH"
-            PAYLOAD=$(jq -c ".get${KIND}" "$REQS" | envsubst)
             BODY=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
-              -X POST -H "content-type: application/json" -d "$PAYLOAD" \
+              -X POST -H "content-type: application/json" -d "$(python3 $P get${KIND})" \
               ${{ env.DI_API_URL }}/get-instrumentation-configuration 2>&1 || true)
             echo "$KIND post-delete Get: $BODY"
-            if ! echo "$BODY" | grep -qiE "ResourceNotFound|not found|does not exist"; then
+            if ! echo "$BODY" | grep -qiE "ResourceNotFound|not found|does not exist|has been deleted"; then
               echo "ERROR: $KIND configuration still exists after Delete"
               exit 1
             fi
-            echo "$KIND post-delete Get OK (ResourceNotFound confirmed)"
+            echo "$KIND post-delete Get OK"
           done
 
       - name: Terraform destroy

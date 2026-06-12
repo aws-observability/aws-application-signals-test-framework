@@ -1,5 +1,5 @@
 {
-  "_comment": "Request bodies for the Application Signals Dynamic Instrumentation control plane, used by .github/workflows/test.yml. Values that vary per run are placeholders ($SERVICE_NAME, $DI_ENVIRONMENT, $LOCATION_HASH, $EXPIRES_AT) and substituted via envsubst at workflow-step time.",
+  "_comment": "Request bodies for the Application Signals Dynamic Instrumentation control plane, used by .github/workflows/test.yml. Placeholders: \"$VAR\" -> replaced with os.environ['VAR'] as a string; \"$INT:VAR\" -> replaced as an integer (used for ExpiresAt which must be epoch seconds). Substitution happens via the inline Python snippet in the workflow steps that source this file.",
 
   "createBreakpoint": {
     "InstrumentationType": "BREAKPOINT",
@@ -25,7 +25,7 @@
       }
     },
     "Description": "DI E2E line-level breakpoint",
-    "ExpiresAt": "$EXPIRES_AT"
+    "ExpiresAt": "$INT:EXPIRES_AT"
   },
 
   "createProbe": {
