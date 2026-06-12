@@ -233,6 +233,12 @@ resource "null_resource" "traffic_generator_setup" {
 
         tmux new -s traffic-generator -d
         tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8000\"" C-m
+        # The traffic generator's index.js gates on REMOTE_ENDPOINT being set even
+        # though the DI test has no remote service. Set it to something non-empty so
+        # the generator unblocks and starts hitting /outgoing-http-call (the breakpoint
+        # target). The remote-service URL will fail with ECONNREFUSED, which is fine —
+        # axios sends all URLs in parallel and only logs errors per URL.
+        tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"localhost\"" C-m
         tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
         tmux send-keys -t traffic-generator "npm start" C-m
 
