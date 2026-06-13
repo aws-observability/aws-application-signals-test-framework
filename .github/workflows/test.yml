@@ -119,11 +119,14 @@ jobs:
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Set Get ADOT Wheel command environment variable
-        # DI is not in a tagged release yet — build from upstream main. Switch
-        # to the standard 3-source pattern (S3 staging / PyPI / GitHub release)
-        # used by peer python-ec2 canaries once a release ships with DI.
+        # DI PROBE on Django requires the function-entry instrumentation engine
+        # work on liustve/aws-otel-python-instrumentation@di/probe-py-start-engine
+        # — sys.monitoring PY_START on 3.12+, bytecode entry/exit injection on
+        # 3.11. Once that branch merges to upstream main and ships in a tagged
+        # release, switch back to the standard 3-source pattern (S3 staging /
+        # PyPI / GitHub release).
         run: |
-          echo GET_ADOT_WHEEL_COMMAND="sudo python${{ env.PYTHON_VERSION }} -m pip install 'git+https://github.com/aws-observability/aws-otel-python-instrumentation.git@main#subdirectory=aws-opentelemetry-distro'" >> "$GITHUB_ENV"
+          echo GET_ADOT_WHEEL_COMMAND="sudo python${{ env.PYTHON_VERSION }} -m pip install 'git+https://github.com/liustve/aws-otel-python-instrumentation.git@di/probe-py-start-engine#subdirectory=aws-opentelemetry-distro'" >> "$GITHUB_ENV"
 
       - name: Set Get CW Agent command environment variable
         run: |
