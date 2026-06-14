@@ -87,9 +87,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 3.11 uses BytecodeInjectionEngine; 3.12+ uses SysMonitoringEngine.
-        # Run both so each engine gets exercised.
-        python-version: ['3.11', '3.12']
+        # 3.10/3.11 use BytecodeInjectionEngine; 3.12+ uses SysMonitoringEngine.
+        # 3.10 exercises the SETUP_WITH-based pre-3.11 wrapping path; 3.11 the
+        # disjoint TryBegin/TryEnd path; 3.12 sys.monitoring.
+        python-version: ['3.10', '3.11', '3.12']
     env:
       PYTHON_VERSION: ${{ matrix.python-version }}
     steps:
