@@ -53,6 +53,32 @@
     "Description": "DI E2E function-level probe"
   },
 
+  "createExceptionProbe": {
+    "_comment": "Targets views.mysql, which raises KeyError uncaught when RDS_MYSQL_CLUSTER_PASSWORD is unset (the DI test env never sets it). Validates that PROBE snapshots fire on the exception-tail path: 3.10 SETUP_WITH/WITH_EXCEPT_START, 3.11 disjoint TryBegin/TryEnd, 3.12 sys.monitoring PY_RETURN with exception.",
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "Location": {
+      "CodeLocation": {
+        "Language": "Python",
+        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
+        "CodeUnit": "frontend_service_app.views",
+        "MethodName": "mysql"
+      }
+    },
+    "CaptureConfiguration": {
+      "CodeCapture": {
+        "CaptureArguments": ["request"],
+        "CaptureLocals": [],
+        "CaptureReturn": false,
+        "CaptureStackTrace": true,
+        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
+      }
+    },
+    "Description": "DI E2E exception-path PROBE on views.mysql"
+  },
+
   "getBreakpoint": {
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
@@ -69,6 +95,14 @@
     "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
   },
 
+  "getExceptionProbe": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
   "deleteBreakpoint": {
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
@@ -78,6 +112,14 @@
   },
 
   "deleteProbe": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteExceptionProbe": {
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",

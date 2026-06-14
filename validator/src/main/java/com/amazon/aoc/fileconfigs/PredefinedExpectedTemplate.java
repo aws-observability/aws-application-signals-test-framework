@@ -267,6 +267,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   /** Python EC2 Dynamic Instrumentation Test Case Validations */
   PYTHON_EC2_ADOT_DI_SNAPSHOT_LINE("/expected-data-template/python/ec2/adot-di/di-snapshot-line.mustache"),
   PYTHON_EC2_ADOT_DI_SNAPSHOT_FUNCTION("/expected-data-template/python/ec2/adot-di/di-snapshot-function.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_EXCEPTION_FUNCTION(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-exception-function.mustache"),
 
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),

@@ -201,7 +201,7 @@ jobs:
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
           echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
-      - name: Create line-level BREAKPOINT and function-level PROBE
+      - name: Create line-level BREAKPOINT and function-level PROBEs
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
           export EXPIRES_AT=$(($(date +%s) + 1800))
@@ -223,12 +223,23 @@ jobs:
           if [ -z "$PROBE_LOCATION_HASH" ]; then echo "ERROR: PROBE Create did not return LocationHash"; exit 1; fi
           echo "PROBE_LOCATION_HASH=$PROBE_LOCATION_HASH" >> "$GITHUB_ENV"
 
-      - name: Verify both Get calls return the created configurations
+          # Exception-path PROBE on views.mysql — exercises the engine's
+          # exception tail (3.10 WITH_EXCEPT_START, 3.11 disjoint-segment
+          # exception_table, 3.12 sys.monitoring exception event).
+          EXC_PROBE_RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+            -X POST -H "content-type: application/json" -d "$(python3 $P createExceptionProbe)" \
+            ${{ env.DI_API_URL }}/create-instrumentation-configuration)
+          echo "Exception PROBE response: $EXC_PROBE_RESP"
+          EXC_PROBE_LOCATION_HASH=$(echo "$EXC_PROBE_RESP" | jq -r '.LocationHash // empty')
+          if [ -z "$EXC_PROBE_LOCATION_HASH" ]; then echo "ERROR: Exception PROBE Create did not return LocationHash"; exit 1; fi
+          echo "EXC_PROBE_LOCATION_HASH=$EXC_PROBE_LOCATION_HASH" >> "$GITHUB_ENV"
+
+      - name: Verify all Get calls return the created configurations
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
           P=.github/workflows/util/di-payload.py
 
-          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}"; do
+          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}" "ExceptionProbe:${EXC_PROBE_LOCATION_HASH}"; do
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             export LOCATION_HASH="$HASH"
             BODY=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
@@ -281,15 +292,28 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --location-hash ${{ env.PROBE_LOCATION_HASH }}'
 
+      - name: Validate exception-path snapshot record in CW Logs
+        id: exception-validation
+        if: (success() || steps.function-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ec2/adot-di/log-validation-exception-function.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8000
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --location-hash ${{ env.EXC_PROBE_LOCATION_HASH }}'
+
       - name: Delete BREAKPOINT and PROBE configurations
         id: delete-configs
-        if: always() && (env.BREAKPOINT_LOCATION_HASH != '' || env.PROBE_LOCATION_HASH != '')
+        if: always() && (env.BREAKPOINT_LOCATION_HASH != '' || env.PROBE_LOCATION_HASH != '' || env.EXC_PROBE_LOCATION_HASH != '')
         continue-on-error: true
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
           P=.github/workflows/util/di-payload.py
 
-          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}"; do
+          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}" "ExceptionProbe:${EXC_PROBE_LOCATION_HASH}"; do
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             if [ -z "$HASH" ]; then continue; fi
             export LOCATION_HASH="$HASH"
@@ -305,13 +329,13 @@ jobs:
             echo "$KIND deleted"
           done
 
-      - name: Verify both Get calls return ResourceNotFound after delete
+      - name: Verify all Get calls return ResourceNotFound after delete
         if: always() && steps.delete-configs.outcome == 'success'
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
           P=.github/workflows/util/di-payload.py
 
-          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}"; do
+          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}" "ExceptionProbe:${EXC_PROBE_LOCATION_HASH}"; do
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             if [ -z "$HASH" ]; then continue; fi
             export LOCATION_HASH="$HASH"
