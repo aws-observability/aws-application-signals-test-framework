@@ -120,16 +120,14 @@ jobs:
           aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Set Get ADOT Wheel command environment variable
-        # DI PROBE on Django requires the function-level instrumentation engine
-        # on liustve/aws-otel-python-instrumentation@di/probe-py-start-engine-rebuild
-        # — surgical rebuild of PR #770 that fixes the throwable-capture
-        # regression. Engine path: sys.monitoring PY_START/PY_RETURN/PY_UNWIND
-        # on 3.12+; SETUP_FINALLY-based bytecode rewrite on 3.9/3.10. 3.11
-        # currently falls back to the setattr wrapper. Once this branch merges
-        # to upstream main and ships in a tagged release, switch back to the
+        # DI PROBE on Django requires _patch_django_url_patterns so the wrapper
+        # reaches Django's URLPattern.callback cache (PR #776). Without it,
+        # setattr-replacing the views module doesn't update Django's resolver
+        # tree and breakpoints silently never fire. Once #776 merges to
+        # upstream main and ships in a tagged release, switch back to the
         # standard 3-source pattern (S3 staging / PyPI / GitHub release).
         run: |
-          echo GET_ADOT_WHEEL_COMMAND="sudo python${{ env.PYTHON_VERSION }} -m pip install 'git+https://github.com/liustve/aws-otel-python-instrumentation.git@di/probe-py-start-engine-rebuild#subdirectory=aws-opentelemetry-distro'" >> "$GITHUB_ENV"
+          echo GET_ADOT_WHEEL_COMMAND="sudo python${{ env.PYTHON_VERSION }} -m pip install 'git+https://github.com/liustve/aws-otel-python-instrumentation.git@di/django-url-patcher#subdirectory=aws-opentelemetry-distro'" >> "$GITHUB_ENV"
 
       - name: Set Get CW Agent command environment variable
         run: |
