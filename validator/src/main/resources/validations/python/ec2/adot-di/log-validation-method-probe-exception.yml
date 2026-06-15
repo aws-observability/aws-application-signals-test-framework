@@ -1,7 +1,7 @@
 -
   validationType: "cw-log"
-  httpPath: "/outgoing-http-call"
+  httpPath: "/mysql"
   httpMethod: "get"
   callingType: "http"
-  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_DI_SNAPSHOT_PROBE_LINE"
+  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE_EXCEPTION"
   cwLogFilterPattern: "{ ($.attributes.['event.name'] = \"aws.dynamic_instrumentation.snapshot\") && ($.attributes.['aws.di.location_hash'] = \"{{locationHash}}\") }"

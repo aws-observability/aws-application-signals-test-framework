@@ -265,14 +265,14 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ADOT_GENAI_V2_METRIC("/expected-data-template/python/ec2/adot-genai-v2/genai-metric.mustache"),
 
   /** Python EC2 Dynamic Instrumentation Test Case Validations */
-  PYTHON_EC2_ADOT_DI_SNAPSHOT_LINE("/expected-data-template/python/ec2/adot-di/di-snapshot-line.mustache"),
-  PYTHON_EC2_ADOT_DI_SNAPSHOT_FUNCTION("/expected-data-template/python/ec2/adot-di/di-snapshot-function.mustache"),
-  PYTHON_EC2_ADOT_DI_SNAPSHOT_EXCEPTION_FUNCTION(
-      "/expected-data-template/python/ec2/adot-di/di-snapshot-exception-function.mustache"),
-  PYTHON_EC2_ADOT_DI_SNAPSHOT_BREAKPOINT_FUNCTION(
-      "/expected-data-template/python/ec2/adot-di/di-snapshot-breakpoint-function.mustache"),
-  PYTHON_EC2_ADOT_DI_SNAPSHOT_PROBE_LINE(
-      "/expected-data-template/python/ec2/adot-di/di-snapshot-probe-line.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-line-breakpoint.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-probe.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_BREAKPOINT(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-breakpoint.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE_EXCEPTION(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-probe-exception.mustache"),
 
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),

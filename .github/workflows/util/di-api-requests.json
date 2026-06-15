@@ -1,7 +1,8 @@
 {
-  "_comment": "Request bodies for the Application Signals Dynamic Instrumentation control plane, used by .github/workflows/test.yml. Placeholders: \"$VAR\" -> replaced with os.environ['VAR'] as a string; \"$INT:VAR\" -> replaced as an integer (used for ExpiresAt which must be epoch seconds). Substitution happens via the inline Python snippet in the workflow steps that source this file.",
+  "_comment": "Request bodies for the Application Signals Dynamic Instrumentation control plane, used by .github/workflows/test.yml. Naming convention: create<Level><Type>[Exception]. 4 cells, one per distinct SDK code path — the (level x type) matrix has only 3 independently-testable combos because the SDK forces line_number=0 for any PROBE config (see ADOT Python InstrumentationConfiguration.parse() and ADOT Java InstrumentationConfiguration.parse()); plus methodProbeException for throwable capture in the function wrapper. There is no lineBreakpointException because the line engine has no exception-capture machinery (line snapshots fire pre-execution and emit no throwable regardless of whether the line raises). Placeholders: \"$VAR\" -> os.environ['VAR'] as a string; \"$INT:VAR\" -> int(os.environ['VAR']).",
 
-  "createBreakpoint": {
+  "createLineBreakpoint": {
+    "_comment": "Cell 1: line-level BREAKPOINT on http_call:134 (logger.info inside the try block). Captures locals at the snapshot point.",
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -24,11 +25,12 @@
         "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
       }
     },
-    "Description": "DI E2E line-level breakpoint",
+    "Description": "DI E2E line BREAKPOINT",
     "ExpiresAt": "$INT:EXPIRES_AT"
   },
 
-  "createProbe": {
+  "createMethodProbe": {
+    "_comment": "Cell 2: method-level PROBE on aws_sdk_call. Captures entry args + return value via the function wrapper.",
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -50,11 +52,11 @@
         "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
       }
     },
-    "Description": "DI E2E function-level probe"
+    "Description": "DI E2E method PROBE"
   },
 
-  "createBreakpointFunction": {
-    "_comment": "Function-level BREAKPOINT on views.downstream_service. The InstrumentationType axis (BREAKPOINT vs PROBE) is orthogonal to the level axis (line vs function): BREAKPOINT sets a 24h-bounded lifetime, PROBE is permanent — neither implies a level. We need a method here that the existing /remote-service traffic exercises.",
+  "createMethodBreakpoint": {
+    "_comment": "Cell 3: method-level BREAKPOINT on downstream_service. Distinct SDK code path from method PROBE: BREAKPOINT has 24h TTL + max-hits semantics; PROBE is permanent. Validator pins instrumentation_type=BREAKPOINT.",
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -76,39 +78,12 @@
         "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
       }
     },
-    "Description": "DI E2E function BREAKPOINT",
+    "Description": "DI E2E method BREAKPOINT",
     "ExpiresAt": "$INT:EXPIRES_AT"
   },
 
-  "createProbeLine": {
-    "_comment": "Line-level PROBE on views.http_call line 132 (assignment of url). Must be a different line from createBreakpoint (134) — backend enforces uniqueness on (service,env,signalType,location) ACROSS the BREAKPOINT and PROBE tables. SDK behavior to note: line-level engines always stamp aws.di.instrumentation_type=BREAKPOINT on emitted snapshots regardless of the configured type, so the validation template asserts BREAKPOINT here, not PROBE.",
-    "InstrumentationType": "PROBE",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "Location": {
-      "CodeLocation": {
-        "Language": "Python",
-        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
-        "LineNumber": 132,
-        "CodeUnit": "frontend_service_app.views",
-        "MethodName": "http_call"
-      }
-    },
-    "CaptureConfiguration": {
-      "CodeCapture": {
-        "CaptureArguments": [],
-        "CaptureLocals": ["url"],
-        "CaptureReturn": false,
-        "CaptureStackTrace": true,
-        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
-      }
-    },
-    "Description": "DI E2E line-level PROBE"
-  },
-
-  "createExceptionProbe": {
-    "_comment": "Targets views.mysql, which raises KeyError uncaught when RDS_MYSQL_CLUSTER_PASSWORD is unset (the DI test env never sets it). Validates that PROBE snapshots fire on the exception-tail path: 3.10 SETUP_WITH/WITH_EXCEPT_START, 3.11 disjoint TryBegin/TryEnd, 3.12 sys.monitoring PY_RETURN with exception.",
+  "createMethodProbeException": {
+    "_comment": "Cell 4: method-level PROBE on views.mysql, which raises KeyError uncaught when RDS_MYSQL_CLUSTER_PASSWORD is unset (DI test env never sets it). Validates throwable capture in the function wrapper's try/except/finally — body.captures.return.throwable.{type,message,stacktrace}.",
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -130,10 +105,10 @@
         "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
       }
     },
-    "Description": "DI E2E exception-path PROBE on views.mysql"
+    "Description": "DI E2E method PROBE exception"
   },
 
-  "getBreakpoint": {
+  "getLineBreakpoint": {
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -141,7 +116,7 @@
     "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
   },
 
-  "getProbe": {
+  "getMethodProbe": {
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -149,15 +124,7 @@
     "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
   },
 
-  "getExceptionProbe": {
-    "InstrumentationType": "PROBE",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
-  },
-
-  "deleteBreakpoint": {
+  "getMethodBreakpoint": {
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -165,7 +132,7 @@
     "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
   },
 
-  "deleteProbe": {
+  "getMethodProbeException": {
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -173,15 +140,7 @@
     "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
   },
 
-  "deleteExceptionProbe": {
-    "InstrumentationType": "PROBE",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
-  },
-
-  "getBreakpointFunction": {
+  "deleteLineBreakpoint": {
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -189,15 +148,7 @@
     "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
   },
 
-  "deleteBreakpointFunction": {
-    "InstrumentationType": "BREAKPOINT",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
-  },
-
-  "getProbeLine": {
+  "deleteMethodProbe": {
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -205,7 +156,15 @@
     "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
   },
 
-  "deleteProbeLine": {
+  "deleteMethodBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteMethodProbeException": {
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",

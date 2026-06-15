@@ -1,7 +1,7 @@
 -
   validationType: "cw-log"
-  httpPath: "/aws-sdk-call"
+  httpPath: "/remote-service"
   httpMethod: "get"
   callingType: "http"
-  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_DI_SNAPSHOT_FUNCTION"
+  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_BREAKPOINT"
   cwLogFilterPattern: "{ ($.attributes.['event.name'] = \"aws.dynamic_instrumentation.snapshot\") && ($.attributes.['aws.di.location_hash'] = \"{{locationHash}}\") }"

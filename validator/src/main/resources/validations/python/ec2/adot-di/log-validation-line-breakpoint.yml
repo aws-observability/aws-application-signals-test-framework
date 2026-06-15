@@ -3,5 +3,5 @@
   httpPath: "/outgoing-http-call"
   httpMethod: "get"
   callingType: "http"
-  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_DI_SNAPSHOT_LINE"
+  expectedLogStructureTemplate: "PYTHON_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT"
   cwLogFilterPattern: "{ ($.attributes.['event.name'] = \"aws.dynamic_instrumentation.snapshot\") && ($.attributes.['aws.di.location_hash'] = \"{{locationHash}}\") }"
