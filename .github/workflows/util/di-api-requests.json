@@ -53,6 +53,60 @@
     "Description": "DI E2E function-level probe"
   },
 
+  "createBreakpointFunction": {
+    "_comment": "Function-level BREAKPOINT on views.downstream_service. The InstrumentationType axis (BREAKPOINT vs PROBE) is orthogonal to the level axis (line vs function): BREAKPOINT sets a 24h-bounded lifetime, PROBE is permanent — neither implies a level. We need a method here that the existing /remote-service traffic exercises.",
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "Location": {
+      "CodeLocation": {
+        "Language": "Python",
+        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
+        "CodeUnit": "frontend_service_app.views",
+        "MethodName": "downstream_service"
+      }
+    },
+    "CaptureConfiguration": {
+      "CodeCapture": {
+        "CaptureArguments": ["request"],
+        "CaptureLocals": [],
+        "CaptureReturn": true,
+        "CaptureStackTrace": true,
+        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
+      }
+    },
+    "Description": "DI E2E function BREAKPOINT",
+    "ExpiresAt": "$INT:EXPIRES_AT"
+  },
+
+  "createProbeLine": {
+    "_comment": "Line-level PROBE on views.http_call line 132 (assignment of url). Must be a different line from createBreakpoint (134) — backend enforces uniqueness on (service,env,signalType,location) ACROSS the BREAKPOINT and PROBE tables. SDK behavior to note: line-level engines always stamp aws.di.instrumentation_type=BREAKPOINT on emitted snapshots regardless of the configured type, so the validation template asserts BREAKPOINT here, not PROBE.",
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "Location": {
+      "CodeLocation": {
+        "Language": "Python",
+        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
+        "LineNumber": 132,
+        "CodeUnit": "frontend_service_app.views",
+        "MethodName": "http_call"
+      }
+    },
+    "CaptureConfiguration": {
+      "CodeCapture": {
+        "CaptureArguments": [],
+        "CaptureLocals": ["url"],
+        "CaptureReturn": false,
+        "CaptureStackTrace": true,
+        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
+      }
+    },
+    "Description": "DI E2E line-level PROBE"
+  },
+
   "createExceptionProbe": {
     "_comment": "Targets views.mysql, which raises KeyError uncaught when RDS_MYSQL_CLUSTER_PASSWORD is unset (the DI test env never sets it). Validates that PROBE snapshots fire on the exception-tail path: 3.10 SETUP_WITH/WITH_EXCEPT_START, 3.11 disjoint TryBegin/TryEnd, 3.12 sys.monitoring PY_RETURN with exception.",
     "InstrumentationType": "PROBE",
@@ -120,6 +174,38 @@
   },
 
   "deleteExceptionProbe": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "getBreakpointFunction": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteBreakpointFunction": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "getProbeLine": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteProbeLine": {
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",

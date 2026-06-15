@@ -203,7 +203,16 @@ jobs:
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
           echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
-      - name: Create line-level BREAKPOINT and function-level PROBEs
+      - name: Create instrumentation configs across the type x level matrix
+        # InstrumentationType (BREAKPOINT vs PROBE) and level (line vs function) are
+        # orthogonal axes per the Application Signals control-plane contract:
+        #   BREAKPOINT line     → views.http_call:134
+        #   PROBE function       → views.aws_sdk_call
+        #   BREAKPOINT function  → views.downstream_service
+        #   PROBE line           → views.http_call:132 (must differ from line 134 —
+        #                          backend enforces uniqueness on (service, env, signalType, location)
+        #                          across the BREAKPOINT and PROBE tables)
+        # Plus an exception-path PROBE on views.mysql to exercise throwable capture.
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
           export EXPIRES_AT=$(($(date +%s) + 1800))
@@ -225,9 +234,24 @@ jobs:
           if [ -z "$PROBE_LOCATION_HASH" ]; then echo "ERROR: PROBE Create did not return LocationHash"; exit 1; fi
           echo "PROBE_LOCATION_HASH=$PROBE_LOCATION_HASH" >> "$GITHUB_ENV"
 
+          BPF_RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+            -X POST -H "content-type: application/json" -d "$(python3 $P createBreakpointFunction)" \
+            ${{ env.DI_API_URL }}/create-instrumentation-configuration)
+          echo "BreakpointFunction response: $BPF_RESP"
+          BPF_LOCATION_HASH=$(echo "$BPF_RESP" | jq -r '.LocationHash // empty')
+          if [ -z "$BPF_LOCATION_HASH" ]; then echo "ERROR: BreakpointFunction Create did not return LocationHash"; exit 1; fi
+          echo "BPF_LOCATION_HASH=$BPF_LOCATION_HASH" >> "$GITHUB_ENV"
+
+          PRL_RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
+            -X POST -H "content-type: application/json" -d "$(python3 $P createProbeLine)" \
+            ${{ env.DI_API_URL }}/create-instrumentation-configuration)
+          echo "ProbeLine response: $PRL_RESP"
+          PRL_LOCATION_HASH=$(echo "$PRL_RESP" | jq -r '.LocationHash // empty')
+          if [ -z "$PRL_LOCATION_HASH" ]; then echo "ERROR: ProbeLine Create did not return LocationHash"; exit 1; fi
+          echo "PRL_LOCATION_HASH=$PRL_LOCATION_HASH" >> "$GITHUB_ENV"
+
           # Exception-path PROBE on views.mysql — exercises the engine's
-          # exception tail (3.10 WITH_EXCEPT_START, 3.11 disjoint-segment
-          # exception_table, 3.12 sys.monitoring exception event).
+          # throwable-capture path (function wrapper's try/except/finally).
           EXC_PROBE_RESP=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
             -X POST -H "content-type: application/json" -d "$(python3 $P createExceptionProbe)" \
             ${{ env.DI_API_URL }}/create-instrumentation-configuration)
@@ -241,7 +265,7 @@ jobs:
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
           P=.github/workflows/util/di-payload.py
 
-          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}" "ExceptionProbe:${EXC_PROBE_LOCATION_HASH}"; do
+          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}" "BreakpointFunction:${BPF_LOCATION_HASH}" "ProbeLine:${PRL_LOCATION_HASH}" "ExceptionProbe:${EXC_PROBE_LOCATION_HASH}"; do
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             export LOCATION_HASH="$HASH"
             BODY=$(awscurl --service application-signals --region ${{ env.E2E_TEST_AWS_REGION }} \
@@ -294,9 +318,38 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --location-hash ${{ env.PROBE_LOCATION_HASH }}'
 
+      - name: Validate function-level BREAKPOINT snapshot record in CW Logs
+        id: breakpoint-function-validation
+        if: (success() || steps.function-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ec2/adot-di/log-validation-breakpoint-function.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8000
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --location-hash ${{ env.BPF_LOCATION_HASH }}'
+
+      - name: Validate line-level PROBE snapshot record in CW Logs
+        id: probe-line-validation
+        if: (success() || steps.breakpoint-function-validation.outcome == 'failure') && !cancelled()
+        # Note: line-level engines hard-code aws.di.instrumentation_type=BREAKPOINT
+        # in emitted snapshots regardless of the configured type, so the template
+        # asserts BREAKPOINT here even though the control-plane config is PROBE.
+        run: ./gradlew validator:run --args='-c python/ec2/adot-di/log-validation-probe-line.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://localhost:8000
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --location-hash ${{ env.PRL_LOCATION_HASH }}'
+
       - name: Validate exception-path snapshot record in CW Logs
         id: exception-validation
-        if: (success() || steps.function-validation.outcome == 'failure') && !cancelled()
+        if: (success() || steps.probe-line-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c python/ec2/adot-di/log-validation-exception-function.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
@@ -309,13 +362,13 @@ jobs:
 
       - name: Delete BREAKPOINT and PROBE configurations
         id: delete-configs
-        if: always() && (env.BREAKPOINT_LOCATION_HASH != '' || env.PROBE_LOCATION_HASH != '' || env.EXC_PROBE_LOCATION_HASH != '')
+        if: always() && (env.BREAKPOINT_LOCATION_HASH != '' || env.PROBE_LOCATION_HASH != '' || env.BPF_LOCATION_HASH != '' || env.PRL_LOCATION_HASH != '' || env.EXC_PROBE_LOCATION_HASH != '')
         continue-on-error: true
         run: |
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
           P=.github/workflows/util/di-payload.py
 
-          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}" "ExceptionProbe:${EXC_PROBE_LOCATION_HASH}"; do
+          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}" "BreakpointFunction:${BPF_LOCATION_HASH}" "ProbeLine:${PRL_LOCATION_HASH}" "ExceptionProbe:${EXC_PROBE_LOCATION_HASH}"; do
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             if [ -z "$HASH" ]; then continue; fi
             export LOCATION_HASH="$HASH"
@@ -337,7 +390,7 @@ jobs:
           export SERVICE_NAME DI_ENVIRONMENT="${{ env.DI_ENVIRONMENT }}"
           P=.github/workflows/util/di-payload.py
 
-          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}" "ExceptionProbe:${EXC_PROBE_LOCATION_HASH}"; do
+          for pair in "Breakpoint:${BREAKPOINT_LOCATION_HASH}" "Probe:${PROBE_LOCATION_HASH}" "BreakpointFunction:${BPF_LOCATION_HASH}" "ProbeLine:${PRL_LOCATION_HASH}" "ExceptionProbe:${EXC_PROBE_LOCATION_HASH}"; do
             KIND="${pair%%:*}"; HASH="${pair##*:}"
             if [ -z "$HASH" ]; then continue; fi
             export LOCATION_HASH="$HASH"
