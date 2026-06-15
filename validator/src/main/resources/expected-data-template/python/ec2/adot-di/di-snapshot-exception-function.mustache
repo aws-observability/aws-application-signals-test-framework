@@ -27,6 +27,17 @@
             "type": "^.+$"
           }
         }
+      },
+      "return": {
+        "throwable": {
+          "type": "^KeyError$",
+          "message": "^.*RDS_MYSQL_CLUSTER_PASSWORD.*$",
+          "stacktrace": [
+            {
+              "function": "^mysql$"
+            }
+          ]
+        }
       }
     },
     "stack": [
