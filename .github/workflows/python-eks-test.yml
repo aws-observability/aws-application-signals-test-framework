@@ -18,7 +18,7 @@ on:
         required: true
         type: string
       python-version:
-        description: "Currently support version 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, 3.14"
+        description: "Currently support version 3.10, 3.11, 3.12, 3.13, 3.14"
         required: false
         type: string
         default: '3.10'
@@ -72,7 +72,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'rds-migration' || github.ref }}
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
         # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
