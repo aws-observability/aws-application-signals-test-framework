@@ -42,7 +42,7 @@ variable "canary_type" {
 }
 
 variable "language_version" {
-  default = "3.9"
+  default = "3.10"
 }
 
 variable "cpu_architecture" {

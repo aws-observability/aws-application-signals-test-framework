@@ -38,7 +38,7 @@ variable "get_adot_wheel_command" {
 }
 
 variable "language_version" {
-  default = "3.9"
+  default = "3.10"
 }
 
 variable "cpu_architecture" {
