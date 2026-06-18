@@ -1,0 +1,48 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+name: Test Dotnet Chiseled Base Image
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  dotnet-eks-us-east-1:
+    uses: ./.github/workflows/dotnet-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: us-east-1
+      test-cluster-name: e2e-playground
+
+  dotnet-eks-eu-central-2:
+    needs: dotnet-eks-us-east-1
+    uses: ./.github/workflows/dotnet-eks-test.yml
+    secrets: inherit
+    with:
+      aws-region: eu-central-2
+      test-cluster-name: e2e-playground
+
+  dotnet-k8s-us-east-1:
+    needs: dotnet-eks-eu-central-2
+    uses: ./.github/workflows/dotnet-k8s-test.yml
+    secrets: inherit
+    with:
+      aws-region: us-east-1
+      caller-workflow-name: 'main-build'
+
+  dotnet-ec2-default-us-east-1:
+    uses: ./.github/workflows/dotnet-ec2-default-test.yml
+    secrets: inherit
+    with:
+      aws-region: us-east-1
+      caller-workflow-name: 'main-build'
+
+  dotnet-ec2-asg-us-east-1:
+    uses: ./.github/workflows/dotnet-ec2-asg-test.yml
+    secrets: inherit
+    with:
+      aws-region: us-east-1
+      caller-workflow-name: 'main-build'
