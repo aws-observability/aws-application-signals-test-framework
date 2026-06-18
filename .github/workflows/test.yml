@@ -23,7 +23,6 @@ jobs:
 
 
   dotnet-k8s-us-east-1:
-    needs: dotnet-eks-eu-central-2
     uses: ./.github/workflows/dotnet-k8s-test.yml
     secrets: inherit
     with:
