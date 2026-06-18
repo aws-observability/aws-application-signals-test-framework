@@ -4,6 +4,9 @@
 name: Test Dotnet Chiseled Base Image
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - TEST_AVM_FIX
 
 permissions:
   id-token: write
