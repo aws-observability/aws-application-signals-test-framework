@@ -3,7 +3,7 @@ WORKDIR /app
 COPY . ./
 RUN dotnet publish asp_frontend_service/*.csproj -c Release -o out
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-noble-chiseled
 WORKDIR /app
 EXPOSE 8080
 COPY --from=build-env /app/out .
