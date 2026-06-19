@@ -11,8 +11,8 @@
     "name": "serviceevents"
   },
   "eventName": "^aws.service_events.incident_snapshot$",
-  "traceId": "^[a-f0-9]{32}$",
-  "spanId": "^[a-f0-9]{16}$",
+  "traceId": "^([a-f0-9]{32})?$",
+  "spanId": "^([a-f0-9]{16})?$",
   "attributes": {
     "event.name": "aws.service_events.incident_snapshot",
     "aws.service_events.trigger_type": "^exception$",
