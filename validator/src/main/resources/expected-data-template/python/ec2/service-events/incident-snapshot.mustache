@@ -1,0 +1,37 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "aws.service_events.deployment.id": "{{serviceName}}",
+      "deployment.environment.name": "^ec2:service-events$",
+      "cloud.platform": "^aws_ec2$"
+    }
+  },
+  "scope": {
+    "name": "serviceevents"
+  },
+  "eventName": "^aws.service_events.incident_snapshot$",
+  "traceId": "^[a-f0-9]{32}$",
+  "spanId": "^[a-f0-9]{16}$",
+  "attributes": {
+    "event.name": "aws.service_events.incident_snapshot",
+    "aws.service_events.trigger_type": "^exception$",
+    "aws.service_events.operation": "^GET mysql$",
+    "aws.service_events.request.type": "^http$",
+    "aws.service_events.snapshot_id": "^snap_.+$",
+    "aws.service_events.duration_ms": "^[0-9.]+$",
+    "aws.service_events.is_partial": "^(true|false)$",
+    "aws.service_events.deployment.id": "{{serviceName}}",
+    "vcs.ref.head.revision": "^[0-9a-f]{40}$",
+    "vcs.repository.url.full": "^https?://.+$",
+    "http.request.method": "^GET$",
+    "http.response.status_code": "^500$",
+    "url.route": "^mysql$"
+  },
+  "body": {
+    "request_context": {
+      "status_code": "^500$",
+      "type": "^http$"
+    }
+  }
+}]

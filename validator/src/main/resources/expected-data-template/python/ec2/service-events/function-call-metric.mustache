@@ -1,0 +1,23 @@
+[
+  {
+    "Telemetry.Source": "^ServiceEvents$",
+    "__name__": "^service.function.duration$",
+    "__type__": "^ExponentialHistogram$",
+    "__unit__": "^Microseconds$",
+    "function.name": "^frontend_service_app/views\\.mysql$",
+    "status": "^error$"
+  },
+  {
+    "Telemetry.Source": "^ServiceEvents$",
+    "__name__": "^service.function.duration$",
+    "function.name": "^frontend_service_app/views\\..+$",
+    "status": "^success$"
+  },
+  {
+    "Telemetry.Source": "^ServiceEvents$",
+    "__name__": "^service.function.duration$",
+    "function.name": "^frontend_service_app/views\\.runnable_task$",
+    "aws.service_events.caller": "^frontend_service_app/views\\.run_scheduler$",
+    "status": "^success$"
+  }
+]
