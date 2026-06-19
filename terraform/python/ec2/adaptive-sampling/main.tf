@@ -120,9 +120,30 @@ resource "null_resource" "main_service_setup" {
       sudo yum install wget -y
       sudo yum install unzip -y
 
-      # Install Python
-      sudo dnf install -y python${var.language_version}
-      sudo dnf install -y python${var.language_version}-pip
+      # Dnf does not have the module for python 3.10, 3.12, 3.13, therefore we need to manually install it by downloading the package from the python website.
+      # Building and installing the package takes longer then installing it through dnf, so a seperate installation process was made.
+      # The canary should run on a version without the manual installation process
+      if [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
+          # Install modules required to compile Python and also run the sample app
+          sudo dnf groupinstall "Development Tools" -y
+          sudo dnf install openssl-devel sqlite-devel libffi-devel -y
+
+          # Download the Python package
+          cd /usr/src
+          sudo wget https://www.python.org/ftp/python/${var.language_version}.0/Python-${var.language_version}.0.tgz
+          sudo tar xzf Python-${var.language_version}.0.tgz
+
+          # Compile and install Python using c++
+          cd Python-${var.language_version}.0
+          sudo ./configure
+          sudo make install
+
+          # Return back to ec2-user directory
+          cd ~
+      else
+        sudo dnf install -y python${var.language_version}
+        sudo dnf install -y python${var.language_version}-pip
+      fi
 
       # enable ec2 instance connect for debug
       sudo yum install ec2-instance-connect -y
@@ -233,9 +254,30 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install wget -y
       sudo yum install unzip -y
 
-      # Install Python
-      sudo dnf install -y python${var.language_version}
-      sudo dnf install -y python${var.language_version}-pip
+      # Dnf does not have the module for python 3.10, 3.12, 3.13, therefore we need to manually install it by downloading the package from the python website.
+      # Building and installing the package takes longer then installing it through dnf, so a seperate installation process was made.
+      # The canary should run on a version without the manual installation process
+      if [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
+          # Install modules required to compile Python and also run the sample app
+          sudo dnf groupinstall "Development Tools" -y
+          sudo dnf install openssl-devel sqlite-devel libffi-devel -y
+
+          # Download the Python package
+          cd /usr/src
+          sudo wget https://www.python.org/ftp/python/${var.language_version}.0/Python-${var.language_version}.0.tgz
+          sudo tar xzf Python-${var.language_version}.0.tgz
+
+          # Compile and install Python using c++
+          cd Python-${var.language_version}.0
+          sudo ./configure
+          sudo make install
+
+          # Return back to ec2-user directory
+          cd ~
+      else
+        sudo dnf install -y python${var.language_version}
+        sudo dnf install -y python${var.language_version}-pip
+      fi
 
       # enable ec2 instance connect for debug
       sudo yum install ec2-instance-connect -y
