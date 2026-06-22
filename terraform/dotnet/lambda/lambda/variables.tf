@@ -34,12 +34,6 @@ variable "region" {
   default     = "us-west-2"
 }
 
-variable "is_canary" {
-  type        = bool
-  default     = false
-  description = "Whether to create the resource or not"
-}
-
 variable "layer_artifacts_directory" {
   type        = string
   default     = "./layer_artifacts"
