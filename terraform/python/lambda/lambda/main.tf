@@ -2,7 +2,7 @@ locals {
   architecture = var.architecture == "x86_64" ? "amd64" : "arm64"
 }
 resource "aws_lambda_layer_version" "sdk_layer" {
-  count               = var.is_canary ? 0 : 1
+  count               = 1
   layer_name          = var.sdk_layer_name
   filename            = "${var.layer_artifacts_directory}/layer.zip"
   compatible_runtimes = ["python3.10", "python3.11", "python3.12", "python3.13"]
@@ -26,7 +26,7 @@ module "hello-lambda-function" {
   memory_size = 512
   timeout     = 30
 
-  layers = var.is_canary ? [local.sdk_layer_arns_amd64[var.region]] : [aws_lambda_layer_version.sdk_layer[0].arn]
+  layers = [aws_lambda_layer_version.sdk_layer[0].arn]
 
   environment_variables = {
     AWS_LAMBDA_EXEC_WRAPPER                          = "/opt/otel-instrument"

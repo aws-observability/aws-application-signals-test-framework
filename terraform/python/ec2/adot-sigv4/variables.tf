@@ -33,10 +33,6 @@ variable "get_adot_wheel_command" {
   default = "aws s3 cp s3://<bucket-name>/<whl> ./<whl> && pip install <whl>"
 }
 
-variable "canary_type" {
-  default = "python-ec2-default"
-}
-
 variable "language_version" {
   default = "3.10"
 }

@@ -28,12 +28,6 @@ variable "architecture" {
   default     = "x86_64"
 }
 
-variable "is_canary" {
-  type        = bool
-  default     = false
-  description = "Whether to create the resource or not"
-}
-
 variable "region" {
   type        = string
   description = "Lambda function running region, default value is us-west-2"

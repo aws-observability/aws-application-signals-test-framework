@@ -43,10 +43,6 @@ variable "get_adot_instrumentation_command" {
   default = "<get ADOT instrumentation command> && <install/prepare instrumentation command>"
 }
 
-variable "canary_type" {
-  default = "node-ec2-default"
-}
-
 variable "application_logs_log_group" {
   default = "otlp_logs"
 }
