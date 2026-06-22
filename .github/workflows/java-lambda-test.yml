@@ -34,7 +34,6 @@ env:
   SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/java-lambda-function.zip
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   STAGING_S3_BUCKET: ${{ secrets.STAGING_BUCKET_NAME }}
-  IS_CANARY: false
   REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
@@ -93,17 +92,11 @@ jobs:
         run: echo ARTIFACTS_DIR="${{ github.workspace }}/lambda_artifacts" >> "$GITHUB_ENV"
 
       - name: Download Lambda Layer artifact for E2E Test
-        if: ${{ env.CALLER_WORKFLOW_NAME != 'appsignals-java-e2e-lambda-canary-test' }}
         run: |
           aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/adot-java-lambda-layer-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/layer.zip
 
       - name: Download the lambda function artifact for E2E test
         run: aws s3 cp ${{ env.SAMPLE_APP_ZIP }} ${{ env.ARTIFACTS_DIR }}/java-function.zip
-
-      - name: Set Canary Environment Variable
-        if: ${{ env.CALLER_WORKFLOW_NAME == 'appsignals-java-e2e-lambda-canary-test' }}
-        run: |
-          echo IS_CANARY=true >> "$GITHUB_ENV"
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -134,8 +127,7 @@ jobs:
           -var="sdk_layer_name=AWSOpenTelemetryDistroJava-${{ github.run_id }}" 
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
-          -var="region=${{ env.E2E_TEST_AWS_REGION }}"
-          -var="is_canary=${{ env.IS_CANARY }}"'
+          -var="region=${{ env.E2E_TEST_AWS_REGION }}"'
           max_retry: 6
           sleep_time: 60
 
@@ -237,5 +229,4 @@ jobs:
           -var="sdk_layer_name=AWSOpenTelemetryDistroJava-${{ github.run_id }}" \
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" \
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}" \
-          -var="region=${{ env.E2E_TEST_AWS_REGION }}" \
-          -var="is_canary=${{ env.IS_CANARY }}"
+          -var="region=${{ env.E2E_TEST_AWS_REGION }}"
