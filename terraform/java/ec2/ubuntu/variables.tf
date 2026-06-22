@@ -40,7 +40,3 @@ variable "get_cw_agent_deb_command" {
 variable "get_adot_jar_command" {
   default = "<command> s3://<bucket-name>/<jar>"
 }
-
-variable "canary_type" {
-  default = "java-ec2-ubuntu"
-}

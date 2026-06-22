@@ -37,10 +37,6 @@ variable "get_cw_agent_rpm_command" {
   default = "<command> s3://<bucket-name>/<jar>"
 }
 
-variable "canary_type" {
-  default = "python-ec2-default"
-}
-
 variable "language_version" {
   default = "3.10"
 }

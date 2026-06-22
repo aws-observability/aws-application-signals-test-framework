@@ -32,7 +32,3 @@ variable "sample_app_zip" {
 variable "get_cw_agent_rpm_command" {
   default = "<command> s3://<bucket-name>/<jar>"
 }
-
-variable "canary_type" {
-  default = "dotnet-ec2-default"
-}
