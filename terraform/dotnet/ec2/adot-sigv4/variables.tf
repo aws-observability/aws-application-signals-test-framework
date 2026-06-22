@@ -33,10 +33,6 @@ variable "get_adot_distro_command" {
   default = "aws s3 cp s3://<bucket-name>/<distro> ./<distro> && unzip <distro>"
 }
 
-variable "canary_type" {
-  default = "dotnet-ec2-default"
-}
-
 variable "language_version" {
   default = "8.0"
 }
