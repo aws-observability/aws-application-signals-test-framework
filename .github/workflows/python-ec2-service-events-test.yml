@@ -142,15 +142,11 @@ jobs:
           elif [ "${{ env.OTEL_SOURCE }}" == "pypi" ]; then
             echo GET_ADOT_WHEEL_COMMAND="sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
           else
-            # Service Events is not in any tagged ADOT Python release yet (it landed on main in
-            # PR #763, after v0.17.1), so the standard releases/latest wheel has no serviceevents
-            # code and emits no signals — the CW log group is never created and every validator
-            # fails with ResourceNotFoundException. Install from git main until a release ships,
-            # mirroring the DI canary. TODO: revert to the releases/latest wheel below once Service
-            # Events is in a tagged release.
-            #   latest_release_version=$(curl -sL https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest | grep -oP '/releases/tag/v\K[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
-            #   GET_ADOT_WHEEL_COMMAND="wget -O ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-$latest_release_version-py3-none-any.whl && sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}"
-            echo GET_ADOT_WHEEL_COMMAND="sudo dnf install -y git && sudo python${{ env.PYTHON_VERSION }} -m pip install 'git+https://github.com/aws-observability/aws-otel-python-instrumentation.git@main#subdirectory=aws-opentelemetry-distro'" >> "$GITHUB_ENV"
+            # Service Events shipped in aws-opentelemetry-distro v0.18.0, so the released wheel now
+            # carries the serviceevents code and emits signals. Resolve whatever GitHub marks as the
+            # latest release and install that wheel (the standard ADOT canary pattern).
+            latest_release_version=$(curl -sL https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest | grep -oP '/releases/tag/v\K[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+            echo GET_ADOT_WHEEL_COMMAND="wget -O ${{ env.ADOT_WHEEL_NAME }} https://github.com/aws-observability/aws-otel-python-instrumentation/releases/latest/download/aws_opentelemetry_distro-$latest_release_version-py3-none-any.whl && sudo python${{ env.PYTHON_VERSION }} -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
           fi
 
       - name: Set Get CW Agent command environment variable
