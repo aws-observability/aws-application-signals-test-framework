@@ -1,8 +1,5 @@
 {
-  "_comment": "Request bodies for the Application Signals Dynamic Instrumentation control plane, used by .github/workflows/test.yml. Naming convention: create<Level><Type>[Exception]. 4 cells, one per distinct SDK code path — the (level x type) matrix has only 3 independently-testable combos because the SDK forces line_number=0 for any PROBE config (see ADOT Python InstrumentationConfiguration.parse() and ADOT Java InstrumentationConfiguration.parse()); plus methodProbeException for throwable capture in the function wrapper. There is no lineBreakpointException because the line engine has no exception-capture machinery (line snapshots fire pre-execution and emit no throwable regardless of whether the line raises). Placeholders: \"$VAR\" -> os.environ['VAR'] as a string; \"$INT:VAR\" -> int(os.environ['VAR']).",
-
   "createLineBreakpoint": {
-    "_comment": "Cell 1: line-level BREAKPOINT on http_call's logger.info line. LineNumber is relative to the DEPLOYED sample app (s3://aws-appsignals-sample-app-prod-<region>/python-sample-app.zip), which differs from this repo's copy of views.py. In the deployed file: 133=response=requests.get, 134=status_code=response.status_code, 135=logger.info. A line breakpoint captures locals BEFORE executing the target line, so we point at 135 (the logger.info) so url+response+status_code are all already bound. Targeting 134 would miss status_code. If the deployed zip changes, re-derive this against the zip, not the repo.",
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -30,7 +27,6 @@
   },
 
   "createMethodProbe": {
-    "_comment": "Cell 2: method-level PROBE on aws_sdk_call. Captures entry args + return value via the function wrapper.",
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -56,7 +52,6 @@
   },
 
   "createMethodBreakpoint": {
-    "_comment": "Cell 3: method-level BREAKPOINT on downstream_service. Distinct SDK code path from method PROBE: BREAKPOINT has 24h TTL + max-hits semantics; PROBE is permanent. Validator pins instrumentation_type=BREAKPOINT.",
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -83,7 +78,6 @@
   },
 
   "createMethodProbeException": {
-    "_comment": "Cell 4: method-level PROBE on views.mysql, which raises KeyError uncaught when RDS_MYSQL_CLUSTER_PASSWORD is unset (DI test env never sets it). Validates throwable capture in the function wrapper's try/except/finally — body.captures.return.throwable.{type,message,stacktrace}.",
     "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
