@@ -25,10 +25,16 @@
         "134": {
           "locals": {
             "url": {
-              "value": "^.+$"
+              "type": "^str$",
+              "value": "^https?://.+$"
             },
             "response": {
-              "type": "^.+$"
+              "type": "^requests\\.models\\.Response$",
+              "not_captured_reason": "^fieldCount$"
+            },
+            "status_code": {
+              "type": "^int$",
+              "value": "^\\d{3}$"
             }
           }
         }

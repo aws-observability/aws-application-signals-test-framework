@@ -24,14 +24,14 @@
       "entry": {
         "arguments": {
           "request": {
-            "type": "^.+$"
+            "type": "^django\\.core\\.handlers\\.wsgi\\.WSGIRequest$"
           }
         }
       },
       "return": {
         "throwable": {
           "type": "^KeyError$",
-          "message": "^.*RDS_MYSQL_CLUSTER_PASSWORD.*$",
+          "message": "^'RDS_MYSQL_CLUSTER_PASSWORD'$",
           "stacktrace": [
             {
               "function": "^mysql$"
