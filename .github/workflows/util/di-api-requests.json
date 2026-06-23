@@ -2,7 +2,7 @@
   "_comment": "Request bodies for the Application Signals Dynamic Instrumentation control plane, used by .github/workflows/test.yml. Naming convention: create<Level><Type>[Exception]. 4 cells, one per distinct SDK code path — the (level x type) matrix has only 3 independently-testable combos because the SDK forces line_number=0 for any PROBE config (see ADOT Python InstrumentationConfiguration.parse() and ADOT Java InstrumentationConfiguration.parse()); plus methodProbeException for throwable capture in the function wrapper. There is no lineBreakpointException because the line engine has no exception-capture machinery (line snapshots fire pre-execution and emit no throwable regardless of whether the line raises). Placeholders: \"$VAR\" -> os.environ['VAR'] as a string; \"$INT:VAR\" -> int(os.environ['VAR']).",
 
   "createLineBreakpoint": {
-    "_comment": "Cell 1: line-level BREAKPOINT on http_call:134 (logger.info inside the try block). Captures locals at the snapshot point.",
+    "_comment": "Cell 1: line-level BREAKPOINT on http_call's logger.info line. LineNumber is relative to the DEPLOYED sample app (s3://aws-appsignals-sample-app-prod-<region>/python-sample-app.zip), which differs from this repo's copy of views.py. In the deployed file: 133=response=requests.get, 134=status_code=response.status_code, 135=logger.info. A line breakpoint captures locals BEFORE executing the target line, so we point at 135 (the logger.info) so url+response+status_code are all already bound. Targeting 134 would miss status_code. If the deployed zip changes, re-derive this against the zip, not the repo.",
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
@@ -11,7 +11,7 @@
       "CodeLocation": {
         "Language": "Python",
         "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
-        "LineNumber": 134,
+        "LineNumber": 135,
         "CodeUnit": "frontend_service_app.views",
         "MethodName": "http_call"
       }
