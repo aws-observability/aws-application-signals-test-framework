@@ -6,8 +6,6 @@ import subprocess
 import sys
 import time
 
-CELLS = ["LineBreakpoint", "MethodProbe", "MethodBreakpoint", "MethodProbeException"]
-
 
 def create_di_request_body(key):
     def sub(v):
@@ -49,7 +47,7 @@ def hash_var(cell):
 
 
 def cells_with_hash():
-    for cell in CELLS:
+    for cell in ["LineBreakpoint", "MethodProbe", "MethodBreakpoint", "MethodProbeException"]:
         h = os.environ.get(hash_var(cell), "")
         if h:
             os.environ["LOCATION_HASH"] = h
@@ -58,7 +56,7 @@ def cells_with_hash():
 
 def cmd_create():
     os.environ["EXPIRES_AT"] = str(int(time.time()) + 1800)
-    for cell in CELLS:
+    for cell in ["LineBreakpoint", "MethodProbe", "MethodBreakpoint", "MethodProbeException"]:
         data, raw = call_di("create-instrumentation-configuration", f"create{cell}")
         print(f"{cell} Create response: {raw}")
         location_hash = (data or {}).get("LocationHash")
@@ -100,18 +98,17 @@ def cmd_verify_deleted():
         print(f"{cell} post-delete Get OK")
 
 
-VERBS = {
-    "create": cmd_create,
-    "verify-created": cmd_verify_created,
-    "delete": cmd_delete,
-    "verify-deleted": cmd_verify_deleted,
-}
-
 if __name__ == "__main__":
+    verbs = {
+        "create": cmd_create,
+        "verify-created": cmd_verify_created,
+        "delete": cmd_delete,
+        "verify-deleted": cmd_verify_deleted,
+    }
     arg = sys.argv[1] if len(sys.argv) > 1 else ""
     if arg == "render":
         print(json.dumps(create_di_request_body(sys.argv[2]), indent=2))
-    elif arg in VERBS:
-        VERBS[arg]()
+    elif arg in verbs:
+        verbs[arg]()
     else:
-        sys.exit(f"usage: di-control-plane.py {{{'|'.join(VERBS)}|render <key>}}")
+        sys.exit(f"usage: di-control-plane.py {{{'|'.join(verbs)}|render <key>}}")
