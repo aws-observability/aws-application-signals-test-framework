@@ -16,7 +16,7 @@
   "attributes": {
     "event.name": "aws.service_events.incident_snapshot",
     "aws.service_events.trigger_type": "^latency$",
-    "aws.service_events.operation": "^GET /slow$",
+    "aws.service_events.operation": "^GET /aws-sdk-call$",
     "aws.service_events.request.type": "^http$",
     "aws.service_events.snapshot_id": "^snap_.+$",
     "aws.service_events.duration_ms": "^[0-9.]+$",
@@ -26,7 +26,7 @@
     "vcs.repository.url.full": "^https://github\\.com/aws-observability/aws-otel-js-instrumentation$",
     "http.request.method": "^GET$",
     "http.response.status_code": "^200$",
-    "url.route": "^/slow$"
+    "url.route": "^/aws-sdk-call$"
   },
   "body": {
     "request_context": {

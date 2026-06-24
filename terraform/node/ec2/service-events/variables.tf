@@ -49,7 +49,7 @@ variable "cpu_architecture" {
 # Function-instrumentation allowlist for Service Events FunctionCall telemetry. The SDK
 # instruments nothing by default. PACKAGES_INCLUDE is matched (minimatch, matchBase) against the
 # FULL file path of every require()'d module, so this must be a path glob, not a bare module name.
-# Scope it to the sample app's helpers module so `service.function.duration` is emitted for the
+# Scope it to the frontend-service helpers module so `service.function.duration` is emitted for the
 # helpers.* functions (processData/validateInput/computeResult/...).
 variable "service_events_packages_include" {
   default = "**/helpers.js"
@@ -69,8 +69,9 @@ variable "service_events_git_repo_url" {
 
 # Per-endpoint latency thresholds for latency-triggered IncidentSnapshots.
 # Format: "METHOD route:threshold_ms" (Express routes keep the leading slash). The traffic
-# generator hits /slow (busy-waits ~6s, returns HTTP 200), so a 1000ms threshold deterministically
-# fires a trigger_type="latency" incident (no exception, 200).
+# generator hits /aws-sdk-call (a real S3 GetBucketLocation, returns HTTP 200), so a 1ms threshold
+# deterministically fires a trigger_type="latency" incident (no exception, 200) — the same latency
+# driver the Python and Java Service Events cells use.
 variable "service_events_latency_thresholds" {
-  default = "GET /slow:1000"
+  default = "GET /aws-sdk-call:1"
 }

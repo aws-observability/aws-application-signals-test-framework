@@ -192,12 +192,14 @@ resource "null_resource" "main_service_setup" {
 
 # Single-instance traffic generator. Unlike the default test there is no remote service:
 # Service Events emits autonomously from the instrumented frontend, so we only need to drive
-# the frontend's own endpoints. The /mysql route throws an unhandled RuntimeException when the
-# RDS_* env vars are unset (DriverManager.getConnection on a null URL -> SQLException ->
-# RuntimeException), so the springboot app returns HTTP 500 with a captured exception. That 5xx +
-# captured-exception is exactly the gate for the EndpointErrorMetric `count` data point and the
-# exception-triggered IncidentSnapshot. The healthy routes drive FunctionCall + the latency-
-# triggered IncidentSnapshot (/aws-sdk-call). DeploymentEvent is emitted on startup.
+# the frontend's own endpoints. The /mysql route throws an unhandled exception when the RDS_*
+# env vars are unset, so the springboot app returns HTTP 500 with a captured exception. The exact
+# exception class depends on the deployed jar: the current source rethrows a RuntimeException from
+# the caught SQLException, while older jars NullPointerException on the null connection. The
+# validator accepts either class. That 5xx + captured-exception is exactly the gate for the
+# EndpointErrorMetric `count` data point and the exception-triggered IncidentSnapshot. The healthy
+# routes drive FunctionCall + the latency-triggered IncidentSnapshot (/aws-sdk-call).
+# DeploymentEvent is emitted on startup.
 resource "null_resource" "traffic_generator_setup" {
   connection {
     type        = "ssh"

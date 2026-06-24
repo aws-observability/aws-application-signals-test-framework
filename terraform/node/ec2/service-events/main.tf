@@ -144,12 +144,13 @@ resource "null_resource" "main_service_setup" {
       sudo rpm -U ./cw-agent.rpm
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
-      # Get and unzip the sample application. node-sample-app.zip is the multi-app Node bundle
-      # (frontend-service/, remote-service/, serviceevents-express/); the Service Events test uses
-      # the serviceevents-express app (app.js + helpers.js + package.json).
+      # Get and unzip the sample application. node-sample-app.zip unzips to frontend-service/ +
+      # remote-service/; the Service Events test uses the standard frontend-service app (the same
+      # app the default/asg Node EC2 cells deploy), which carries a helpers.js module plus
+      # /success and /exception routes that drive the Service Events signals.
       aws s3 cp ${var.sample_app_zip} ./node-sample-app.zip
       unzip -o node-sample-app.zip
-      cd serviceevents-express
+      cd frontend-service
 
       # Install the sample application dependencies (express)
       npm install
@@ -162,8 +163,8 @@ resource "null_resource" "main_service_setup" {
       # is enabled the Service Events OTLP endpoints default to the bundled CW Agent receiver on
       # localhost:4316 (/v1/logs + /v1/metrics), so no Service-Events-specific endpoint env vars are
       # needed. PACKAGES_INCLUDE scopes function instrumentation to helpers.js so the FunctionCall
-      # metric (service.function.duration) is emitted. The latency threshold on /slow fires the
-      # latency-triggered IncidentSnapshot. Run under tmux so it survives the SSH connection close.
+      # metric (service.function.duration) is emitted. The latency threshold on /aws-sdk-call fires
+      # the latency-triggered IncidentSnapshot. Run under tmux so it survives the SSH connection close.
       tmux new-session -d -s frontend bash
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false' C-m
@@ -182,7 +183,7 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend "export OTEL_RESOURCE_ATTRIBUTES='service.name=node-sample-application-${var.test_id},deployment.environment.name=ec2:service-events'" C-m
       tmux send-keys -t frontend "export OTEL_SERVICE_NAME='node-sample-application-${var.test_id}'" C-m
       tmux send-keys -t frontend "export AWS_REGION='${var.aws_region}'" C-m
-      tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" app.js' C-m
+      tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js' C-m
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -190,7 +191,7 @@ resource "null_resource" "main_service_setup" {
       # Check if the application is up. If it is not up, then exit 1.
       attempt_counter=0
       max_attempts=30
-      until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "http://localhost:8080/health" | tr -d '"')); do
+      until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "http://localhost:8000/healthcheck" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint."
           exit 1
@@ -210,12 +211,13 @@ resource "null_resource" "main_service_setup" {
 }
 
 # Single-instance traffic generator. Unlike the default test there is no remote service:
-# Service Events emits autonomously from the instrumented Express app, so we only drive the
+# Service Events emits autonomously from the instrumented frontend-service, so we only drive the
 # app's own endpoints. /exception throws a ValueError from the instrumented helpers.validateInput
 # (HTTP 500 with a captured exception) — the gate for the EndpointErrorMetric `count` data point
 # and the exception-triggered IncidentSnapshot. /success exercises the instrumented helpers
-# (processData/computeResult) for the FunctionCall metric, and /slow busy-waits past the latency
-# threshold for the latency-triggered IncidentSnapshot. DeploymentEvent is emitted on startup.
+# (processData/validateInput/computeResult) for the FunctionCall metric, and /aws-sdk-call (a real
+# S3 call) trips the 1ms latency threshold for the latency-triggered IncidentSnapshot — the same
+# latency driver the Python and Java cells use. DeploymentEvent is emitted on startup.
 resource "null_resource" "traffic_generator_setup" {
   connection {
     type        = "ssh"
@@ -231,10 +233,9 @@ resource "null_resource" "traffic_generator_setup" {
 
         tmux new -s traffic-generator -d
         tmux send-keys -t traffic-generator "while true; do \
-          curl -s -o /dev/null http://localhost:8080/success ; \
-          curl -s -o /dev/null http://localhost:8080/slow ; \
-          curl -s -o /dev/null http://localhost:8080/fault ; \
-          curl -s -o /dev/null http://localhost:8080/exception ; \
+          curl -s -o /dev/null http://localhost:8000/success ; \
+          curl -s -o /dev/null http://localhost:8000/aws-sdk-call ; \
+          curl -s -o /dev/null http://localhost:8000/exception ; \
           sleep 5 ; \
         done" C-m
       EOF
