@@ -136,10 +136,10 @@ jobs:
             # Reusing the node staging bucket to store the tarball built from the PR under test.
             echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> "$GITHUB_ENV"
           else
-            # Service Events shipped in the published distro (the npm release carries the serviceevents
-            # code and emits signals), so install the released package directly — the standard ADOT
-            # Node canary pattern.
-            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> "$GITHUB_ENV"
+            # Service Events requires distro >=0.12.0 (where the SE module ships). The sample app's
+            # package.json pins ^0.8.0 which (semver major=0 caret) allows only <0.9.0. Force @latest
+            # to override the lock and ensure the SE code is present.
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}@latest" >> "$GITHUB_ENV"
           fi
 
       - name: Set Get CW Agent command environment variable
