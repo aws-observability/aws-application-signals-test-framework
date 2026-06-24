@@ -122,22 +122,23 @@ resource "null_resource" "main_service_setup" {
       aws s3 cp ${var.sample_app_jar} ./main-service.jar
 
       # Start the sample app under the ADOT Java agent with Dynamic Instrumentation enabled.
-      # DI polls the Application Signals control plane for breakpoint configs, applies them,
-      # and emits snapshots to /aws/service-events/<service>. Poll intervals are dropped to 15s
-      # (vs the 60s/600s defaults) so the test does not wait minutes for the agent to pick up configs.
+      # Env is kept aligned with the Python adot-di test: only the DI vars + service identity, NO
+      # OTEL_AWS_APPLICATION_SIGNALS_ENABLED / OTLP exporter endpoints. App Signals is intentionally
+      # left off because (a) DI emits snapshots through the local CloudWatch agent independently of
+      # the App Signals pipeline, matching Python, and (b) enabling it also turns on ServiceEvents,
+      # which emits unrelated logs into the same /aws/service-events/<service> log group.
+      # We also do NOT set OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL — the agent reaches the control
+      # plane via the local CW agent (its default), not the public endpoint directly. Poll intervals
+      # are dropped to 15s (vs the 60s/600s defaults) so the test doesn't wait minutes for configs.
       JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
       OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
-      OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
-      OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED=true \
-      OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL='${var.di_api_url}' \
       OTEL_AWS_DYNAMIC_INSTRUMENTATION_PROBE_POLL_INTERVAL=15 \
       OTEL_AWS_DYNAMIC_INSTRUMENTATION_BREAKPOINT_POLL_INTERVAL=15 \
-      OTEL_RESOURCE_ATTRIBUTES="service.name=${var.service_name_prefix}-${var.test_id},deployment.environment.name=${var.di_environment}" \
-      OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
+      OTEL_SERVICE_NAME=${var.service_name_prefix}-${var.test_id} \
+      OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=${var.di_environment}" \
+      AWS_REGION='${var.aws_region}' \
       nohup java -XX:+UseG1GC -jar main-service.jar &> /tmp/sdk.log &
 
       sleep 30
