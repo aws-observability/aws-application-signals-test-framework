@@ -13,10 +13,10 @@ jobs:
     uses: ./.github/workflows/java-ec2-service-events-test.yml
     secrets: inherit
     with:
-      caller-workflow-name: 'main-build'
+      caller-workflow-name: 'test'
 
   node-ec2-service-events:
     uses: ./.github/workflows/node-ec2-service-events-test.yml
     secrets: inherit
     with:
-      caller-workflow-name: 'main-build'
+      caller-workflow-name: 'test'
