@@ -1,0 +1,21 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "aws.service_events.deployment.id": "{{serviceName}}",
+      "deployment.environment.name": "^ec2:service-events$",
+      "cloud.platform": "^aws_ec2$"
+    }
+  },
+  "scope": {
+    "name": "serviceevents"
+  },
+  "eventName": "^aws.service_events.deployment_event$",
+  "attributes": {
+    "event.name": "aws.service_events.deployment_event",
+    "aws.service_events.deployment.trigger": "^(startup|periodic|shutdown)$",
+    "aws.service_events.deployment.id": "{{serviceName}}",
+    "vcs.ref.head.revision": "^[0-9a-f]{40}$",
+    "vcs.repository.url.full": "^https?://.+$"
+  }
+}]

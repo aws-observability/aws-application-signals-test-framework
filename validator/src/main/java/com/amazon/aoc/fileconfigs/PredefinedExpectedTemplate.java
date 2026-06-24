@@ -264,6 +264,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ADOT_GENAI_V2_LLO_SPAN_ATTRIBUTE_LOG("/expected-data-template/python/ec2/adot-genai-v2/genai-log-llo-span-attribute.mustache"),
   PYTHON_EC2_ADOT_GENAI_V2_METRIC("/expected-data-template/python/ec2/adot-genai-v2/genai-metric.mustache"),
 
+  /** Python EC2 Service Events Test Case Validations */
+  PYTHON_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/python/ec2/service-events/deployment-event.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/python/ec2/service-events/incident-snapshot.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/python/ec2/service-events/incident-snapshot-latency.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/python/ec2/service-events/endpoint-error-metric.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/python/ec2/service-events/function-call-metric.mustache"),
+
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
   PYTHON_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/k8s/outgoing-http-call-metric.mustache"),

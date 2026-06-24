@@ -38,6 +38,9 @@ public class ValidationConfig {
   String expectedLogStructureTemplate;
   String cwLogFilterPattern;
 
+  /** PromQL query template (mustache) for Service Events OTLP metric validation. */
+  String promQlQuery;
+
   /** alarm related. */
   Integer pullingDuration;
 
