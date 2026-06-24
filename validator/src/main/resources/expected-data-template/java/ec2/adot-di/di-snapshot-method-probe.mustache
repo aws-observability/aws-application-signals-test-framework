@@ -1,0 +1,37 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "telemetry.sdk.language": "java"
+    }
+  },
+  "scope": {
+    "name": "aws.dynamic_instrumentation"
+  },
+  "attributes": {
+    "event.name": "aws.dynamic_instrumentation.snapshot",
+    "aws.di.instrumentation_type": "PROBE",
+    "aws.di.instrumentation_level": "method",
+    "aws.di.location_hash": "{{locationHash}}",
+    "aws.di.code_unit": "com.amazon.sampleapp",
+    "aws.di.class_name": "com.amazon.sampleapp.FrontendServiceController",
+    "aws.di.method_name": "awssdkCall",
+    "aws.di.snapshot_id": "^.+$"
+  },
+  "traceId": "^.+$",
+  "spanId": "^.+$",
+  "body": {
+    "captures": {
+      "return": {
+        "return_value": {
+          "type": "^java\\.lang\\.String$"
+        }
+      }
+    },
+    "stack": [
+      {
+        "function": "awssdkCall"
+      }
+    ]
+  }
+}]
