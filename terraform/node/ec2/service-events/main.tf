@@ -162,9 +162,12 @@ resource "null_resource" "main_service_setup" {
       # with Application Signals: enabling App Signals turns it on (Lambda excluded). When App Signals
       # is enabled the Service Events OTLP endpoints default to the bundled CW Agent receiver on
       # localhost:4316 (/v1/logs + /v1/metrics), so no Service-Events-specific endpoint env vars are
-      # needed. PACKAGES_INCLUDE scopes function instrumentation to helpers.js so the FunctionCall
-      # metric (service.function.duration) is emitted. The latency threshold on /aws-sdk-call fires
-      # the latency-triggered IncidentSnapshot. Run under tmux so it survives the SSH connection close.
+      # needed. PACKAGES_INCLUDE scopes function instrumentation to helpers.js + index.js so the
+      # FunctionCall metric (service.function.duration) is emitted AND latency incidents get call_path.
+      # We launch via `-e "require('./index.js')"` instead of `node index.js` so that index.js is
+      # loaded through require() and gets AST-transformed (entry scripts bypass the require hook).
+      # The latency threshold on /aws-sdk-call fires the latency-triggered IncidentSnapshot.
+      # Run under tmux so it survives the SSH connection close.
       tmux new-session -d -s frontend bash
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false' C-m
@@ -183,7 +186,7 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend "export OTEL_RESOURCE_ATTRIBUTES='service.name=node-sample-application-${var.test_id},deployment.environment.name=ec2:service-events'" C-m
       tmux send-keys -t frontend "export OTEL_SERVICE_NAME='node-sample-application-${var.test_id}'" C-m
       tmux send-keys -t frontend "export AWS_REGION='${var.aws_region}'" C-m
-      tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js' C-m
+      tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" -e "require('"'"'./index.js'"'"')"' C-m
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30

@@ -52,7 +52,7 @@ variable "cpu_architecture" {
 # Scope it to the frontend-service helpers module so `service.function.duration` is emitted for the
 # helpers.* functions (processData/validateInput/computeResult/...).
 variable "service_events_packages_include" {
-  default = "**/helpers.js"
+  default = "**/helpers.js,**/index.js"
 }
 
 # VCS provenance for Service Events. When OTEL_AWS_SERVICE_EVENTS_GIT_COMMIT_SHA /
