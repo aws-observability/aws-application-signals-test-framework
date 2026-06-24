@@ -519,6 +519,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/python/lambda/aws-sdk-call-log.mustache"),
   PYTHON_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/python/lambda/aws-sdk-call-metric.mustache"),
 
+  /** Python Lambda Lite SDK (Fast Start) Test Case Validations */
+  PYTHON_LAMBDA_LITE_SDK_INVOKE_TRACE("/expected-data-template/python/lambda-lite-sdk/lambda-invoke-trace.mustache"),
+
   /** DotNet Lambda Test Case Validations */
   DOTNET_LAMBDA_INVOKE_LOG("/expected-data-template/dotnet/lambda/lambda-invoke-log.mustache"),
   DOTNET_LAMBDA_INVOKE_METRIC("/expected-data-template/dotnet/lambda/lambda-invoke-metric.mustache"),

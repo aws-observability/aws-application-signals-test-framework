@@ -1,0 +1,199 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# Reusable workflow for running the Python Lambda Lite SDK (Fast Start) E2E test.
+name: Python Lambda Lite SDK Test
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        required: true
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+      python-version:
+        description: "Currently support version 3.10, 3.11, 3.12, 3.13, 3.14"
+        required: false
+        type: string
+        default: '3.10'
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
+        required: false
+        type: string
+        default: "x86_64"
+      staging-wheel-name:
+        required: false
+        default: 'aws-opentelemetry-distro'
+        type: string
+      otel-source:
+        required: false
+        type: string
+        default: 'github'
+    outputs:
+      job-started:
+        value: ${{ jobs.python-lambda-lite-sdk.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.python-lambda-lite-sdk.outputs.validation-result }}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  PYTHON_VERSION: ${{ inputs.python-version }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  METRIC_NAMESPACE: ApplicationSignals
+  LOG_GROUP_NAME: /aws/application-signals/data
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  STAGING_S3_BUCKET: ${{ secrets.STAGING_BUCKET_NAME }}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  python-lambda-lite-sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
+    steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 # v2.0.10
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Configure AWS Credentials
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Set Lambda Layer artifact directory path
+        run: echo ARTIFACTS_DIR="${{ github.workspace }}/lambda_artifacts" >> "$GITHUB_ENV"
+
+      - name: Download Lambda Layer and Function artifacts for E2E Test
+        run: |
+          mkdir -p ${{ env.ARTIFACTS_DIR }}
+          aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/layer-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/layer.zip
+          aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/function-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/pyfunction.zip
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda-lite-sdk/lambda && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Get terraform Lambda function name
+        shell: bash
+        run: |
+          echo TERRAFORM_LAMBDA_FUNCTION_NAME="AdotLambdaPythonLiteSdk-${{ github.run_id }}" |
+          tee --append "$GITHUB_ENV"
+
+      - name: Apply terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda-lite-sdk/lambda && terraform apply -auto-approve
+          -var="sdk_layer_name=AWSOpenTelemetryDistroPythonLiteSdk-${{ github.run_id }}"
+          -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
+          -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
+          -var="region=${{ env.E2E_TEST_AWS_REGION }}"'
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Extract endpoint
+        id: extract-endpoint
+        shell: bash
+        run: cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda-lite-sdk/lambda && echo API_GATEWAY_URL="$(terraform output -raw api-gateway-url)" >> "$GITHUB_ENV"
+
+      - name: Send request to endpoint
+        shell: bash
+        run: sleep 30s; curl -sS ${{ env.API_GATEWAY_URL }}
+
+      - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew.outcome == 'failure'
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Validate generated traces
+        id: trace-validation
+        run: ./gradlew validator:run --args='-c python/lambda-lite-sdk/trace-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.API_GATEWAY_URL }}
+          --region ${{ inputs.aws-region }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
+          --rollup'
+
+      - name: Publish validation result
+        id: validation-result
+        if: always()
+        run: |
+          if [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Destroy terraform
+        if: always()
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda-lite-sdk/lambda && terraform destroy -auto-approve
+          -var="sdk_layer_name=AWSOpenTelemetryDistroPythonLiteSdk-${{ github.run_id }}"
+          -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
+          -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
+          -var="region=${{ env.E2E_TEST_AWS_REGION }}"'
+          max_retry: 3
+          sleep_time: 60

@@ -1,0 +1,135 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+name: Python Lambda Lite SDK Performance Test
+on:
+  workflow_dispatch:
+    inputs:
+      test_runs:
+        description: 'Number of test runs to perform'
+        required: true
+        default: 20
+        type: number
+
+      python_version:
+        description: 'The Python version to run the test'
+        required: true
+        default: '3.13'
+        type: string
+
+      ADOT-Python-Branch:
+        description: 'ADOT branch to use'
+        required: true
+        default: 'otel-lite-sdk'
+        type: string
+
+jobs:
+  python-lambda-lite-sdk-performance-test:
+    runs-on: ubuntu-latest
+    permissions:
+        id-token: write
+        contents: read
+
+    env:
+      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
+      PYTHON_VERSION: ${{ github.event.inputs.python_version }}
+      ADOT_PYTHON_BRANCH: ${{ github.event.inputs.ADOT-Python-Branch }}
+
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+        aws-region: us-east-1
+
+    - name: Checkout aws-otel-python-instrumentation
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        repository: aws-observability/aws-otel-python-instrumentation
+        ref: ${{ env.ADOT_PYTHON_BRANCH }}
+        path: aws-otel-python-instrumentation
+
+    - name: Log branch and commit info
+      run: |
+        cd aws-otel-python-instrumentation
+        echo "ADOT Python Branch: ${{ env.ADOT_PYTHON_BRANCH }}"
+        echo "ADOT Python Commit Hash: $(git rev-parse HEAD)"
+
+    - name: Setup Python
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #v3.1.2
+
+    - name: Build Lambda Layer
+      run: |
+        cd aws-otel-python-instrumentation/lambda-layer
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Checkout current repository
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        path: current-repo
+
+    # Run 1: Full SDK (layer with standard opentelemetry-instrument path)
+    - name: Run Cold Start Iterations - Full SDK (Layer)
+      run: |
+        cd current-repo
+        chmod +x lambda-layer-perf-test/lambda-layer-run.sh
+        ./lambda-layer-perf-test/lambda-layer-run.sh false aws-opentelemetry-distro-python
+
+    # Run 2: Lite SDK (layer with OTEL_AWS_LAMBDA_FAST_START=true)
+    - name: Run Cold Start Iterations - Lite SDK (Fast Start)
+      run: |
+        cd current-repo
+        chmod +x lambda-layer-perf-test/lambda-lite-sdk-run.sh
+        ./lambda-layer-perf-test/lambda-lite-sdk-run.sh aws-opentelemetry-distro-python
+
+    # Run 3: No layer (baseline)
+    - name: Remove Application Signals Lambda Layer
+      run: |
+          echo "Removing Lambda layer..."
+
+          OUTPUT=$(aws lambda update-function-configuration \
+              --function-name aws-opentelemetry-distro-python \
+              --layers [])
+
+          echo "Lambda configuration:"
+          echo "$OUTPUT"
+
+          LAYERS=$(echo "$OUTPUT" | jq -r '.Layers | length')
+
+          if [ "$LAYERS" -ne 0 ]; then
+              echo "::error::Found $LAYERS layer(s) still attached to the function"
+              echo "::error::Layer details:"
+              echo "$OUTPUT" | jq -r '.Layers'
+              exit 1
+          else
+              echo "✅ Layers successfully removed"
+          fi
+
+    - name: Run Cold Start Iterations - No Layer (Baseline)
+      run: |
+        cd current-repo
+        chmod +x lambda-layer-perf-test/lambda-layer-run.sh
+        ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-python
+
+    - name: Upload test results
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: python-lite-sdk-performance-test-results
+        path: |
+          no_layer_results.txt
+          layer_results.txt
+          lite_sdk_results.txt
+        retention-days: 90
+
+    - name: Cleanup Terraform Resources
+      if: success() || failure() || cancelled()
+      run: |
+        cd aws-otel-python-instrumentation/lambda-layer/terraform/lambda
+        echo "Starting Terraform cleanup..."
+        terraform init
+        terraform destroy -auto-approve
