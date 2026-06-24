@@ -20,6 +20,7 @@ import com.amazon.aoc.exception.ExceptionCode;
 import com.amazon.aoc.fileconfigs.FileConfig;
 import com.amazon.aoc.models.Context;
 import com.amazon.aoc.models.ValidationConfig;
+import com.amazon.aoc.services.PromQLService;
 import com.amazon.aoc.services.XRayService;
 
 public class ValidatorFactory {
@@ -52,6 +53,10 @@ public class ValidatorFactory {
       case "cw-log":
         validator = new CWLogValidator();
         expectedData = validationConfig.getExpectedLogStructureTemplate();
+        break;
+      case "promql":
+        validator = new PromQLValidator(new PromQLService(context.getRegion()));
+        expectedData = validationConfig.getExpectedMetricTemplate();
         break;
       default:
         throw new BaseException(ExceptionCode.VALIDATION_TYPE_NOT_EXISTED);

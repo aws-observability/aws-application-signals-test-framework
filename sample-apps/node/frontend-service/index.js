@@ -8,6 +8,10 @@ const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
 const opentelemetry = require('@opentelemetry/sdk-node');
 const { metrics } = require('@opentelemetry/api');
 const { randomInt } = require('crypto');
+// Named functions instrumented for the Service Events FunctionCall signal (see helpers.js). Kept
+// in a separate module because Service Events function instrumentation only transforms require()'d
+// modules, not this entry script.
+const { processData, validateInput } = require('./helpers');
 
 const PORT = parseInt(process.env.SAMPLE_APP_PORT || '8000', 10);
 
@@ -221,6 +225,37 @@ app.get('/mysql', (req, res) => {
       res.send(msg);
     });
   });
+});
+
+// --- Service Events: success-path FunctionCall driver ---
+// Exercises the instrumented helpers (processData -> validateInput/computeResult/formatResponse)
+// so the `service.function.duration` metric emits a status=success data point. Returns HTTP 200.
+app.get('/success', (req, res) => {
+  const result = processData('service-events');
+  logger.info('/success called successfully');
+  res.json({ status: 'ok', result });
+});
+
+// --- Service Events: exception-incident driver ---
+// Calls the instrumented helpers.validateInput(null), which throws ValueError. The error
+// propagates to the error-handling middleware below, returning HTTP 500 with a captured
+// exception. This is the gate for the EndpointErrorMetric `count` data point and the
+// exception-triggered IncidentSnapshot (mirrors Python /mysql and Java /mysql in those cells).
+app.get('/exception', (req, res, next) => {
+  try {
+    validateInput(null);
+    res.json({ status: 'ok' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Error-handling middleware: turns a thrown/forwarded error into an HTTP 500 so Service Events
+// captures it. Express identifies an error handler by its four-argument signature.
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  logger.error(`Unhandled error: ${err.message}`);
+  res.status(500).json({ error: err.message });
 });
 
 app.listen(PORT, () => {

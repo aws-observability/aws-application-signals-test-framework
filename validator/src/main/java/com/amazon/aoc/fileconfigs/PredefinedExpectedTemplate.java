@@ -273,6 +273,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
       "/expected-data-template/python/ec2/adot-di/di-snapshot-method-breakpoint.mustache"),
   PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE_EXCEPTION(
       "/expected-data-template/python/ec2/adot-di/di-snapshot-method-probe-exception.mustache"),
+  
+  /** Python EC2 Service Events Test Case Validations */
+  PYTHON_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/python/ec2/service-events/deployment-event.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/python/ec2/service-events/incident-snapshot.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/python/ec2/service-events/incident-snapshot-latency.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/python/ec2/service-events/endpoint-error-metric.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/python/ec2/service-events/function-call-metric.mustache"),
 
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
