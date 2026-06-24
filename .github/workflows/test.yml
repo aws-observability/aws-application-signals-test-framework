@@ -205,13 +205,11 @@ jobs:
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
           echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
-      # The 4 cells, cell list, awscurl invocation, and per-verb assertions all live in
-      # util/di-control-plane.py. Each control-plane step is one verb against that driver.
       - name: Create instrumentation configurations
-        run: python3 .github/workflows/util/di-control-plane.py create
+        run: python3 .github/workflows/util/di/di-control-plane.py create
 
       - name: Verify all Get calls return the created configurations
-        run: python3 .github/workflows/util/di-control-plane.py verify-created
+        run: python3 .github/workflows/util/di/di-control-plane.py verify-created
 
       - name: Wait for SDK to poll, apply, and emit snapshots
         run: sleep 90
@@ -281,11 +279,11 @@ jobs:
         id: delete-configs
         if: always() && (env.LINE_BREAKPOINT_LOCATION_HASH != '' || env.METHOD_PROBE_LOCATION_HASH != '' || env.METHOD_BREAKPOINT_LOCATION_HASH != '' || env.METHOD_PROBE_EXCEPTION_LOCATION_HASH != '')
         continue-on-error: true
-        run: python3 .github/workflows/util/di-control-plane.py delete
+        run: python3 .github/workflows/util/di/di-control-plane.py delete
 
       - name: Verify all Get calls return ResourceNotFound after delete
         if: always() && steps.delete-configs.outcome == 'success'
-        run: python3 .github/workflows/util/di-control-plane.py verify-deleted
+        run: python3 .github/workflows/util/di/di-control-plane.py verify-deleted
 
       - name: Terraform destroy
         if: always()
