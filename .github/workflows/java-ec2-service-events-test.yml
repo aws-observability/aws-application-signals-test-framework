@@ -185,6 +185,7 @@ jobs:
               -var="get_adot_jar_command=${{ env.GET_ADOT_JAR_COMMAND }}" \
               -var="language_version=${{ env.JAVA_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="service_events_git_commit_sha=${{ github.sha }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then

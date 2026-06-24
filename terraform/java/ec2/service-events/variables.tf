@@ -54,8 +54,8 @@ variable "service_events_packages_include" {
 
 # VCS provenance for Service Events. When OTEL_AWS_SERVICE_EVENTS_GIT_COMMIT_SHA /
 # OTEL_AWS_SERVICE_EVENTS_GIT_REPO_URL are set, the SDK stamps every emitted event with
-# vcs.ref.head.revision / vcs.repository.url.full. Defaulted to deterministic test values so
-# the validator can assert these provenance fields (format-matched, not pinned to a real SHA).
+# vcs.ref.head.revision / vcs.repository.url.full. The workflow passes the real github.sha;
+# the default is a fallback for local `terraform apply` runs.
 variable "service_events_git_commit_sha" {
   default = "0000000000000000000000000000000000000000"
 }

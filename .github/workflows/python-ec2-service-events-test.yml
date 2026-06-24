@@ -195,6 +195,7 @@ jobs:
               -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
               -var="language_version=${{ env.PYTHON_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="service_events_git_commit_sha=${{ github.sha }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then

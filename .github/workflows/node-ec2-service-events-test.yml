@@ -188,6 +188,7 @@ jobs:
               -var="get_adot_instrumentation_command=${{ env.GET_ADOT_INSTRUMENTATION_COMMAND }}" \
               -var="language_version=${{ env.NODE_VERSION }}" \
               -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="service_events_git_commit_sha=${{ github.sha }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then
