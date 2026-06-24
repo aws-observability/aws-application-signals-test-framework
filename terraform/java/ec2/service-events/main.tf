@@ -151,11 +151,12 @@ resource "null_resource" "main_service_setup" {
       OTEL_LOGS_EXPORT=none \
       OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true \
       OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces \
       OTEL_TRACES_SAMPLER=always_on \
       OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       OTEL_AWS_SERVICE_EVENTS_SAMPLING_MODE=always \
+      OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED=true \
       OTEL_AWS_SERVICE_EVENTS_PACKAGES_INCLUDE='${var.service_events_packages_include}' \
       OTEL_AWS_SERVICE_EVENTS_DEPLOYMENT_ID='java-sample-application-${var.test_id}' \
       OTEL_AWS_SERVICE_EVENTS_GIT_COMMIT_SHA='${var.service_events_git_commit_sha}' \

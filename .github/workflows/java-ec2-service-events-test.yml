@@ -39,10 +39,6 @@ on:
         required: false
         type: string
         default: "x86_64"
-      otel-source:
-        required: false
-        type: string
-        default: 'github'
     outputs:
       job-started:
         value: ${{ jobs.java-ec2-service-events.outputs.job-started }}
@@ -68,7 +64,6 @@ env:
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name || 'manual-dispatch' }}
   JAVA_VERSION: ${{ inputs.java-version || '17' }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
-  OTEL_SOURCE: ${{ inputs.otel-source || 'github' }}
   SAMPLE_APP_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region || 'us-east-1' }}/java-main-service-v${{ inputs.java-version || '17' }}.jar
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
@@ -139,8 +134,7 @@ jobs:
             # serviceevents code), so the releases/latest agent emits no Service Events signals — the
             # CW log group is never created and every validator fails with ResourceNotFoundException.
             # Pull the main-build staging jar (built from main, which has Service Events) until a
-            # release ships, mirroring the Python EC2 Service Events test. TODO: revert to the
-            # releases/latest agent below once Service Events is in a tagged release.
+            # tagged release ships. Revert to the releases/latest line below when that happens:
             #   GET_ADOT_JAR_COMMAND="wget -O adot.jar https://github.com/aws-observability/aws-otel-java-instrumentation/releases/latest/download/aws-opentelemetry-agent.jar"
             echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> "$GITHUB_ENV"
           fi
