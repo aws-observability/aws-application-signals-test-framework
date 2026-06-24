@@ -79,6 +79,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/default/client-call-metric.mustache"),
   JAVA_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/default/client-call-trace.mustache"),
 
+  /** Java EC2 Service Events Test Case Validations */
+  JAVA_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/java/ec2/service-events/deployment-event.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/java/ec2/service-events/incident-snapshot.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/java/ec2/service-events/incident-snapshot-latency.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/java/ec2/service-events/endpoint-error-metric.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/java/ec2/service-events/function-call-metric.mustache"),
+
   /** Java EC2 ASG Test Case Validations */
   JAVA_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/asg/outgoing-http-call-log.mustache"),
   JAVA_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/ec2/asg/outgoing-http-call-metric.mustache"),
@@ -435,6 +447,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_EKS_CLIENT_CALL_METRIC("/expected-data-template/node/eks/client-call-metric.mustache"),
   NODE_EKS_CLIENT_CALL_TRACE("/expected-data-template/node/eks/client-call-trace.mustache"),
   
+  /** Node EC2 Service Events Test Case Validations */
+  NODE_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/node/ec2/service-events/deployment-event.mustache"),
+  NODE_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/node/ec2/service-events/incident-snapshot.mustache"),
+  NODE_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/node/ec2/service-events/incident-snapshot-latency.mustache"),
+  NODE_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/node/ec2/service-events/endpoint-error-metric.mustache"),
+  NODE_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/node/ec2/service-events/function-call-metric.mustache"),
+
   /** Node EC2 Default Test Case Validations */
   NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/node/ec2/default/outgoing-http-call-log.mustache"),
   NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/node/ec2/default/outgoing-http-call-metric.mustache"),
