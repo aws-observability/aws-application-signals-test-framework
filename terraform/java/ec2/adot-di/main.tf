@@ -13,9 +13,8 @@ terraform {
 
 provider "aws" {}
 
-# Shared DI environment variables (enabled + poll intervals + service identity),
-# rendered as bash `export` lines and consumed in the EC2 user-data below. Lives in
-# one place so python/java/js adot-di modules stay in sync.
+# Shared DI environment variables, rendered as bash `export` lines and consumed in the
+# EC2 user-data below. Lives in one place so python/java/js adot-di modules stay in sync.
 module "di_env" {
   source       = "../../../common/di-env"
   service_name = "${var.service_name_prefix}-${var.test_id}"
@@ -133,12 +132,12 @@ resource "null_resource" "main_service_setup" {
       # Start the sample app under the ADOT Java agent with Dynamic Instrumentation enabled.
       # Env is kept aligned with the Python adot-di test: only the DI vars + service identity, NO
       # OTEL_AWS_APPLICATION_SIGNALS_ENABLED / OTLP exporter endpoints. App Signals is intentionally
-      # left off because (a) DI emits snapshots through the local CloudWatch agent independently of
-      # the App Signals pipeline, matching Python, and (b) enabling it also turns on ServiceEvents,
+      # left off because DI emits snapshots through the local CloudWatch agent independently of
+      # the App Signals pipeline, matching Python, and enabling it also turns on ServiceEvents,
       # which emits unrelated logs into the same /aws/service-events/<service> log group.
       # We also do NOT set OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL — the agent reaches the control
-      # plane via the local CW agent (its default), not the public endpoint directly.
-      # The shared DI env vars (enabled + poll intervals + service identity) come from the common
+      # plane via the local CW agent, not the public endpoint directly.
+      # The shared DI env vars come from the common
       # terraform/common/di-env module so they stay identical across python/java/js.
       ${module.di_env.export_lines}
       export AWS_REGION='${var.aws_region}'
@@ -192,8 +191,8 @@ resource "null_resource" "traffic_generator_setup" {
         tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8080\"" C-m
         # The traffic generator gates on REMOTE_ENDPOINT being set even though the DI test has no
         # remote service. Point it at localhost so the generator unblocks and hits the breakpoint
-        # targets (/outgoing-http-call, /aws-sdk-call, /remote-service, /mysql). The /remote-service
-        # call will fail with a connection error, which is fine — each URL is fired independently.
+        # targets. The /remote-service call will fail with a connection error, which is fine —
+        # each URL is fired independently.
         tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"localhost\"" C-m
         tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
         tmux send-keys -t traffic-generator "npm start" C-m

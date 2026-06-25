@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# This is a reusable workflow for running the Python EC2 Dynamic Instrumentation (DI) E2E canary
+# This is a reusable workflow for running the Python EC2 Dynamic Instrumentation DI E2E canary
 # for Application Signals. It is meant to be called from another workflow.
 name: Python EC2 Dynamic Instrumentation Use Case
 on:
@@ -62,8 +62,7 @@ env:
   SERVICE_NAME_PREFIX: python-sample-application
   DI_ENVIRONMENT: ec2:python-di-main-service-asg
   # IAM instance profile used by the EC2 sample-app instance. Uses the canonical
-  # APP_SIGNALS_EC2_TEST_ROLE that exists in the Application Signals E2E test account
-  # (same profile every other python-ec2 canary uses; has CW Agent + S3 read + DI perms).
+  # APP_SIGNALS_EC2_TEST_ROLE that exists in the Application Signals E2E test account.
   IAM_INSTANCE_PROFILE: APP_SIGNALS_EC2_TEST_ROLE
 
 jobs:

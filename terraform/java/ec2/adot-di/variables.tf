@@ -53,8 +53,7 @@ variable "di_api_url" {
 }
 
 # Service identity for OTEL service.name and the DI Environment field. Sourced from the
-# workflow so the same values are used for terraform (which sets the env vars in
-# user-data) and the awscurl payloads (which target the same identity).
+# workflow so the same values are used for terraform and the awscurl payloads.
 variable "service_name_prefix" {
   default = "java-sample-application"
 }
