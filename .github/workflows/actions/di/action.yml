@@ -33,6 +33,19 @@ runs:
       shell: bash
       run: sleep 90
 
+    - name: Dump on-instance DI agent log (node debug)
+      if: inputs.language == 'node'
+      continue-on-error: true
+      shell: bash
+      run: |
+        DI_DEBUG_LOG_GROUP="/aws/di-debug/${{ env.SERVICE_NAME }}"
+        echo "===== DI agent log from $DI_DEBUG_LOG_GROUP ====="
+        aws logs filter-log-events \
+          --region "${{ env.E2E_TEST_AWS_REGION }}" \
+          --log-group-name "$DI_DEBUG_LOG_GROUP" \
+          --query 'events[].message' --output text 2>&1 \
+          | grep -iE "DI:|breakpoint|snapshot|Fetched|config diff|resolve|Inspector" || echo "NO DI AGENT LOG FOUND"
+
     - name: Initiate Gradlew Daemon
       if: inputs.gradlew-init-outcome == 'failure'
       uses: ./.github/workflows/actions/execute_and_retry

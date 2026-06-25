@@ -125,7 +125,7 @@ resource "null_resource" "main_service_setup" {
 
       echo "Node version in use: $(node -v)"
 
-      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
+      agent_config='${replace(replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region), "$DI_DEBUG_LOG_GROUP", "/aws/di-debug/${var.service_name_prefix}-${var.test_id}")}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
       ${var.get_cw_agent_rpm_command}

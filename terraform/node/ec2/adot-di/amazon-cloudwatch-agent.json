@@ -10,7 +10,17 @@
   },
   "logs": {
     "logs_collected": {
-      "application_signals": {}
+      "application_signals": {},
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/tmp/sdk.log",
+            "log_group_name": "$DI_DEBUG_LOG_GROUP",
+            "log_stream_name": "sdk-log",
+            "retention_in_days": 1
+          }
+        ]
+      }
     }
   }
 }
