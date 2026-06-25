@@ -101,22 +101,26 @@ resource "null_resource" "main_service_setup" {
 
       sudo yum install wget -y
       sudo yum install unzip -y
-      sudo yum install git -y
 
-      # Python 3.12 is required for Dynamic Instrumentation (sys.monitoring).
-      # Dnf does not have the module for python 3.8, 3.10, 3.12, 3.13, therefore we need to manually install it.
-      if [ "${var.language_version}" == "3.8" ] || [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
+      # Dnf does not have the module for python 3.10, 3.12, 3.13, therefore we need to manually install it by downloading the package from the python website.
+      # Building and installing the package takes longer then installing it through dnf, so a seperate installation process was made.
+      # The canary should run on a version without the manual installation process
+      if [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
+          # Install modules required to compile Python and also run the sample app
           sudo dnf groupinstall "Development Tools" -y
           sudo dnf install openssl-devel sqlite-devel libffi-devel -y
 
+          # Download the Python package
           cd /usr/src
           sudo wget https://www.python.org/ftp/python/${var.language_version}.0/Python-${var.language_version}.0.tgz
           sudo tar xzf Python-${var.language_version}.0.tgz
 
+          # Compile and install Python using c++
           cd Python-${var.language_version}.0
           sudo ./configure
           sudo make install
 
+          # Return back to ec2-user directory
           cd ~
       else
         sudo dnf install -y python${var.language_version}
@@ -143,49 +147,17 @@ resource "null_resource" "main_service_setup" {
       cd ./django_frontend_service
       sudo python${var.language_version} -m pip install -r ec2-requirements.txt
 
-      # DI DEBUG: install a sitecustomize.py that forces the debugger module's
-      # logger to DEBUG and adds a stderr handler. Without this the DI module's
-      # logger.debug/.warning calls are silently dropped because the SDK only
-      # bumps log level on the aws_opentelemetry_distro module, not on
-      # amazon.opentelemetry.distro.debugger.* sublogger tree.
-      SITE_DIR=$(sudo python${var.language_version} -c "import site; print(site.getsitepackages()[0])")
-      sudo tee "$${SITE_DIR}/sitecustomize.py" > /dev/null <<'EOSITE'
-      import logging, sys
-      _h = logging.StreamHandler(sys.stderr)
-      _h.setFormatter(logging.Formatter("DI_DEBUG %(asctime)s %(levelname)s %(name)s: %(message)s"))
-      for n in ("amazon.opentelemetry.distro", "amazon.opentelemetry.distro.debugger"):
-          lg = logging.getLogger(n)
-          lg.setLevel(logging.DEBUG)
-          lg.addHandler(_h)
-          lg.propagate = False
-      EOSITE
-
       export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
       export OTEL_PYTHON_DISTRO=aws_distro
       export OTEL_PYTHON_CONFIGURATOR=aws_configurator
-      export OTEL_PYTHON_LOG_LEVEL=debug
       export OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED=true
       export OTEL_AWS_DYNAMIC_INSTRUMENTATION_BREAKPOINT_POLL_INTERVAL=15
       export OTEL_AWS_DYNAMIC_INSTRUMENTATION_PROBE_POLL_INTERVAL=15
       export OTEL_SERVICE_NAME=${var.service_name_prefix}-${var.test_id}
       export OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=${var.di_environment}"
       export AWS_REGION='${var.aws_region}'
-      # Locate opentelemetry-instrument via filesystem search — its install path varies
-      # by how Python was installed (from-source: /usr/local/bin, dnf: /usr/bin, venv:
-      # <venv>/bin), and the SSH provisioner's $PATH may not cover all of them.
-      OTEL_INSTRUMENT=$(sudo find /usr/local/bin /usr/bin /opt -name opentelemetry-instrument -type f 2>/dev/null | head -1)
-      if [ -z "$${OTEL_INSTRUMENT}" ]; then
-        echo "FATAL: opentelemetry-instrument not found"
-        sudo find / -name opentelemetry-instrument -type f 2>/dev/null | head -5
-        sudo python${var.language_version} -m pip show opentelemetry-distro || true
-        exit 1
-      fi
-      echo "Using opentelemetry-instrument at $${OTEL_INSTRUMENT}"
-      ls -la "$${OTEL_INSTRUMENT}"
       python${var.language_version} manage.py migrate
-      # Redirect SDK stdout+stderr to /tmp/sdk.log so we can read DI debug logs
-      # later (sitecustomize installed above sets the debugger module to DEBUG).
-      nohup "$${OTEL_INSTRUMENT}" python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload > /tmp/sdk.log 2>&1 &
+      nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
 
       sleep 30
 
