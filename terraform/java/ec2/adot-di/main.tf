@@ -13,6 +13,15 @@ terraform {
 
 provider "aws" {}
 
+# Shared DI environment variables (enabled + poll intervals + service identity),
+# rendered as bash `export` lines and consumed in the EC2 user-data below. Lives in
+# one place so python/java/js adot-di modules stay in sync.
+module "di_env" {
+  source       = "../../../common/di-env"
+  service_name = "${var.service_name_prefix}-${var.test_id}"
+  environment  = var.di_environment
+}
+
 resource "aws_default_vpc" "default" {}
 
 resource "tls_private_key" "ssh_key" {
@@ -128,17 +137,14 @@ resource "null_resource" "main_service_setup" {
       # the App Signals pipeline, matching Python, and (b) enabling it also turns on ServiceEvents,
       # which emits unrelated logs into the same /aws/service-events/<service> log group.
       # We also do NOT set OTEL_AWS_DYNAMIC_INSTRUMENTATION_API_URL — the agent reaches the control
-      # plane via the local CW agent (its default), not the public endpoint directly. Poll intervals
-      # are dropped to 15s (vs the 60s/600s defaults) so the test doesn't wait minutes for configs.
+      # plane via the local CW agent (its default), not the public endpoint directly.
+      # The shared DI env vars (enabled + poll intervals + service identity) come from the common
+      # terraform/common/di-env module so they stay identical across python/java/js.
+      ${module.di_env.export_lines}
+      export AWS_REGION='${var.aws_region}'
       JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar' \
       OTEL_METRICS_EXPORTER=none \
       OTEL_LOGS_EXPORT=none \
-      OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED=true \
-      OTEL_AWS_DYNAMIC_INSTRUMENTATION_PROBE_POLL_INTERVAL=15 \
-      OTEL_AWS_DYNAMIC_INSTRUMENTATION_BREAKPOINT_POLL_INTERVAL=15 \
-      OTEL_SERVICE_NAME=${var.service_name_prefix}-${var.test_id} \
-      OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=${var.di_environment}" \
-      AWS_REGION='${var.aws_region}' \
       nohup java -XX:+UseG1GC -jar main-service.jar &> /tmp/sdk.log &
 
       sleep 30
