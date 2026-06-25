@@ -14,7 +14,7 @@ on:
         required: true
         type: string
       java-version:
-        description: "Currently support version 11, 17, 21"
+        description: "Currently support version 11, 17, 21, 25"
         required: false
         type: string
         default: '11'
