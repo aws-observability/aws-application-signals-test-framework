@@ -1,0 +1,168 @@
+{
+  "createLineBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "Location": {
+      "CodeLocation": {
+        "Language": "Python",
+        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
+        "LineNumber": 135,
+        "CodeUnit": "frontend_service_app.views",
+        "MethodName": "http_call"
+      }
+    },
+    "CaptureConfiguration": {
+      "CodeCapture": {
+        "CaptureArguments": [],
+        "CaptureLocals": ["status_code", "response", "url"],
+        "CaptureReturn": false,
+        "CaptureStackTrace": true,
+        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
+      }
+    },
+    "Description": "DI E2E line BREAKPOINT",
+    "ExpiresAt": "$INT:EXPIRES_AT"
+  },
+
+  "createMethodProbe": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "Location": {
+      "CodeLocation": {
+        "Language": "Python",
+        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
+        "CodeUnit": "frontend_service_app.views",
+        "MethodName": "aws_sdk_call"
+      }
+    },
+    "CaptureConfiguration": {
+      "CodeCapture": {
+        "CaptureArguments": ["request"],
+        "CaptureLocals": [],
+        "CaptureReturn": true,
+        "CaptureStackTrace": true,
+        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
+      }
+    },
+    "Description": "DI E2E method PROBE"
+  },
+
+  "createMethodBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "Location": {
+      "CodeLocation": {
+        "Language": "Python",
+        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
+        "CodeUnit": "frontend_service_app.views",
+        "MethodName": "downstream_service"
+      }
+    },
+    "CaptureConfiguration": {
+      "CodeCapture": {
+        "CaptureArguments": ["request"],
+        "CaptureLocals": [],
+        "CaptureReturn": true,
+        "CaptureStackTrace": true,
+        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
+      }
+    },
+    "Description": "DI E2E method BREAKPOINT",
+    "ExpiresAt": "$INT:EXPIRES_AT"
+  },
+
+  "createMethodProbeException": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "Location": {
+      "CodeLocation": {
+        "Language": "Python",
+        "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
+        "CodeUnit": "frontend_service_app.views",
+        "MethodName": "mysql"
+      }
+    },
+    "CaptureConfiguration": {
+      "CodeCapture": {
+        "CaptureArguments": ["request"],
+        "CaptureLocals": [],
+        "CaptureReturn": false,
+        "CaptureStackTrace": true,
+        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
+      }
+    },
+    "Description": "DI E2E method PROBE exception"
+  },
+
+  "getLineBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "getMethodProbe": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "getMethodBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "getMethodProbeException": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteLineBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteMethodProbe": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteMethodBreakpoint": {
+    "InstrumentationType": "BREAKPOINT",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  },
+
+  "deleteMethodProbeException": {
+    "InstrumentationType": "PROBE",
+    "Service": "$SERVICE_NAME",
+    "Environment": "$DI_ENVIRONMENT",
+    "SignalType": "SNAPSHOT",
+    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
+  }
+}

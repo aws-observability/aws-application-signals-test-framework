@@ -276,6 +276,16 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ADOT_GENAI_V2_LLO_SPAN_ATTRIBUTE_LOG("/expected-data-template/python/ec2/adot-genai-v2/genai-log-llo-span-attribute.mustache"),
   PYTHON_EC2_ADOT_GENAI_V2_METRIC("/expected-data-template/python/ec2/adot-genai-v2/genai-metric.mustache"),
 
+  /** Python EC2 Dynamic Instrumentation Test Case Validations */
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-line-breakpoint.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-probe.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_BREAKPOINT(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-breakpoint.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE_EXCEPTION(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-probe-exception.mustache"),
+  
   /** Python EC2 Service Events Test Case Validations */
   PYTHON_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
       "/expected-data-template/python/ec2/service-events/deployment-event.mustache"),
