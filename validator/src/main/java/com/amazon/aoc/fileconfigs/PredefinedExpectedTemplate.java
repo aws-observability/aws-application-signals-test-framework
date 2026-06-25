@@ -60,6 +60,16 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EKS_OTLP_OCB_CLIENT_CALL_METRIC("/expected-data-template/java/eks-otlp-ocb/client-call-metric.mustache"),
   JAVA_EKS_OTLP_OCB_CLIENT_CALL_TRACE("/expected-data-template/java/eks-otlp-ocb/client-call-trace.mustache"),
 
+  /** Java EC2 Dynamic Instrumentation Test Case Validations */
+  JAVA_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT(
+      "/expected-data-template/java/ec2/adot-di/di-snapshot-line-breakpoint.mustache"),
+  JAVA_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE(
+      "/expected-data-template/java/ec2/adot-di/di-snapshot-method-probe.mustache"),
+  JAVA_EC2_ADOT_DI_SNAPSHOT_METHOD_BREAKPOINT(
+      "/expected-data-template/java/ec2/adot-di/di-snapshot-method-breakpoint.mustache"),
+  JAVA_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE_EXCEPTION(
+      "/expected-data-template/java/ec2/adot-di/di-snapshot-method-probe-exception.mustache"),
+
   /** Java EC2 Default Test Case Validations */
   JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/default/outgoing-http-call-log.mustache"),
   JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC(

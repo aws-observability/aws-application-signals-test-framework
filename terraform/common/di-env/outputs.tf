@@ -4,8 +4,8 @@
 # -------------------------------------------------------------------------
 
 # DI environment variables rendered as newline-joined `export K=V` lines, ready to
-# drop into a bash user-data heredoc. Both the Python and Java (and eventually JS)
-# adot-di EC2 modules consume this single output so the DI knobs live in one place.
+# drop into a bash user-data heredoc. The per-language adot-di EC2 modules consume
+# this single output so the DI knobs live in one place.
 output "export_lines" {
   description = "Shared DI environment variables as bash `export K=V` lines."
   value = join("\n", [

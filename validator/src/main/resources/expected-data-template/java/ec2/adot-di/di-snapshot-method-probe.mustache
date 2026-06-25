@@ -1,0 +1,43 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "telemetry.sdk.language": "java"
+    }
+  },
+  "scope": {
+    "name": "aws.dynamic_instrumentation"
+  },
+  "attributes": {
+    "event.name": "aws.dynamic_instrumentation.snapshot",
+    "aws.di.instrumentation_type": "PROBE",
+    "aws.di.instrumentation_level": "method",
+    "aws.di.location_hash": "{{locationHash}}",
+    "aws.di.code_unit": "com.amazon.sampleapp",
+    "aws.di.class_name": "FrontendServiceController",
+    "aws.di.method_name": "awssdkCall",
+    "aws.di.file_path": "FrontendServiceController.java",
+    "aws.di.snapshot_id": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+  },
+  "traceId": "^[0-9a-f]{32}$",
+  "spanId": "^[0-9a-f]{16}$",
+  "body": {
+    "captures": {
+      "entry": {
+        "arguments": {
+          "testingId": {
+            "type": "^java\\.lang\\.String$",
+            "value": "^{{testingId}}$"
+          }
+        }
+      },
+      "return": {
+        "return_value": {
+          "type": "^java\\.lang\\.String$",
+          "value": "^\\{\"traceId\": \"1-.+\"\\}$"
+        }
+      }
+    },
+    "stack": "\\{\"file_path\":\"FrontendServiceController\\.java\",\"line_number\":95,\"function\":\"awssdkCall\"\\}"
+  }
+}]
