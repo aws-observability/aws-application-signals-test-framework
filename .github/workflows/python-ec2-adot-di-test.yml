@@ -1,37 +1,13 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# Reusable workflow for the Python EC2 Dynamic Instrumentation (DI) E2E canary.
-# Closed loop: Create breakpoint via Application Signals control plane → SDK polls
-# and applies → traffic hits breakpoint → snapshot lands in /aws/service-events/<svc>
-# → assert snapshot fields → Delete config.
-name: Test
+# This is a reusable workflow for running the Python EC2 Dynamic Instrumentation (DI) E2E canary
+# for Application Signals. It is meant to be called from another workflow.
+# Closed loop: Create breakpoint via Application Signals control plane -> SDK polls and applies ->
+# traffic hits breakpoint -> snapshot lands in /aws/service-events/<service> -> assert -> Delete.
+# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
+name: Python EC2 Dynamic Instrumentation Use Case
 on:
-  workflow_dispatch:
-    inputs:
-      aws-region:
-        description: AWS region to deploy the test in
-        required: false
-        type: string
-        default: 'us-east-1'
-      caller-workflow-name:
-        description: Identifier propagated from the caller; use 'manual' for ad-hoc dispatch
-        required: false
-        type: string
-        default: 'manual'
-      cpu-architecture:
-        required: false
-        type: string
-        default: 'x86_64'
-      staging-wheel-name:
-        required: false
-        default: 'aws-opentelemetry-distro'
-        type: string
-      otel-source:
-        required: false
-        type: string
-        default: 'github'
-
   workflow_call:
     inputs:
       aws-region:
@@ -40,10 +16,16 @@ on:
       caller-workflow-name:
         required: true
         type: string
-      cpu-architecture:
+      python-version:
+        description: "Currently support version 3.10, 3.11, 3.12, 3.13, 3.14"
         required: false
         type: string
-        default: 'x86_64'
+        default: '3.10'
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
+        required: false
+        type: string
+        default: "x86_64"
       staging-wheel-name:
         required: false
         default: 'aws-opentelemetry-distro'
@@ -52,6 +34,11 @@ on:
         required: false
         type: string
         default: 'github'
+    outputs:
+      job-started:
+        value: ${{ jobs.python-ec2-adot-di.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.python-ec2-adot-di.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -60,6 +47,7 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  PYTHON_VERSION: ${{ inputs.python-version }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_WHEEL_NAME: ${{ inputs.staging-wheel-name }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
@@ -84,16 +72,14 @@ jobs:
   python-ec2-adot-di:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        # 3.10/3.11 use BytecodeInjectionEngine; 3.12+ uses SysMonitoringEngine.
-        # 3.10 exercises the SETUP_WITH-based pre-3.11 wrapping path; 3.11 the
-        # disjoint TryBegin/TryEnd path; 3.12 sys.monitoring.
-        python-version: ['3.10', '3.11', '3.12']
-    env:
-      PYTHON_VERSION: ${{ matrix.python-version }}
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
@@ -282,9 +268,21 @@ jobs:
         run: python3 .github/workflows/util/di/di-control-plane.py delete
 
       - name: Verify all Get calls return ResourceNotFound after delete
+        id: verify-deleted
         if: always() && steps.delete-configs.outcome == 'success'
         run: python3 .github/workflows/util/di/di-control-plane.py verify-deleted
 
+      - name: Save test results
+        if: always()
+        id: validation-result
+        run: |
+          if [ "${{ steps.line-breakpoint-validation.outcome }}" = "success" ] && [ "${{ steps.method-probe-validation.outcome }}" = "success" ] && [ "${{ steps.method-breakpoint-validation.outcome }}" = "success" ] && [ "${{ steps.method-probe-exception-validation.outcome }}" = "success" ]; then
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Clean up Procedures
       - name: Terraform destroy
         if: always()
         continue-on-error: true
