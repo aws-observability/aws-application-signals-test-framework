@@ -13,6 +13,15 @@ terraform {
 
 provider "aws" {}
 
+# Shared DI environment variables (enabled + poll intervals + service identity),
+# rendered as bash `export` lines and consumed in the EC2 user-data below. Lives in
+# one place so python/java/js adot-di modules stay in sync.
+module "di_env" {
+  source       = "../../../common/di-env"
+  service_name = "${var.service_name_prefix}-${var.test_id}"
+  environment  = var.di_environment
+}
+
 resource "aws_default_vpc" "default" {}
 
 resource "tls_private_key" "ssh_key" {
@@ -150,11 +159,9 @@ resource "null_resource" "main_service_setup" {
       export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
       export OTEL_PYTHON_DISTRO=aws_distro
       export OTEL_PYTHON_CONFIGURATOR=aws_configurator
-      export OTEL_AWS_DYNAMIC_INSTRUMENTATION_ENABLED=true
-      export OTEL_AWS_DYNAMIC_INSTRUMENTATION_BREAKPOINT_POLL_INTERVAL=15
-      export OTEL_AWS_DYNAMIC_INSTRUMENTATION_PROBE_POLL_INTERVAL=15
-      export OTEL_SERVICE_NAME=${var.service_name_prefix}-${var.test_id}
-      export OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=${var.di_environment}"
+      # Shared DI env vars (enabled + poll intervals + service identity) come from the
+      # common terraform/common/di-env module so they stay identical across python/java/js.
+      ${module.di_env.export_lines}
       export AWS_REGION='${var.aws_region}'
       python${var.language_version} manage.py migrate
       nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
