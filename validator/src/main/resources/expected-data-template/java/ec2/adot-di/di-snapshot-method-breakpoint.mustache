@@ -22,9 +22,17 @@
   "spanId": "^.+$",
   "body": {
     "captures": {
+      "entry": {
+        "arguments": {
+          "ip": {
+            "type": "^java\\.lang\\.String$"
+          }
+        }
+      },
       "return": {
         "return_value": {
-          "type": "^java\\.lang\\.String$"
+          "type": "^java\\.lang\\.String$",
+          "value": "traceId"
         }
       }
     }
