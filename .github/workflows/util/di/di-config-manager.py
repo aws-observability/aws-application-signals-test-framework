@@ -111,4 +111,4 @@ if __name__ == "__main__":
     elif arg in verbs:
         verbs[arg]()
     else:
-        sys.exit(f"usage: di-control-plane.py {{{'|'.join(verbs)}|render <key>}}")
+        sys.exit(f"usage: di-config-manager.py {{{'|'.join(verbs)}|render <key>}}")
