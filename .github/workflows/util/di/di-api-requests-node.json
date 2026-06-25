@@ -8,8 +8,7 @@
       "CodeLocation": {
         "Language": "Javascript",
         "FilePath": "frontend-service/index.js",
-        "LineNumber": 86,
-        "MethodName": "outgoingHttpCall"
+        "LineNumber": 86
       }
     },
     "CaptureConfiguration": {
