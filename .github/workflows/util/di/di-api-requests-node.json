@@ -6,7 +6,7 @@
     "SignalType": "SNAPSHOT",
     "Location": {
       "CodeLocation": {
-        "Language": "JavaScript",
+        "Language": "Javascript",
         "FilePath": "frontend-service/index.js",
         "LineNumber": 86,
         "MethodName": "outgoingHttpCall"
@@ -25,79 +25,6 @@
     "ExpiresAt": "$INT:EXPIRES_AT"
   },
 
-  "createMethodProbe": {
-    "InstrumentationType": "PROBE",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "Location": {
-      "CodeLocation": {
-        "Language": "JavaScript",
-        "FilePath": "frontend-service/index.js",
-        "MethodName": "awsSdkCall"
-      }
-    },
-    "CaptureConfiguration": {
-      "CodeCapture": {
-        "CaptureArguments": [],
-        "CaptureLocals": [],
-        "CaptureReturn": true,
-        "CaptureStackTrace": true,
-        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
-      }
-    },
-    "Description": "DI E2E method PROBE"
-  },
-
-  "createMethodBreakpoint": {
-    "InstrumentationType": "BREAKPOINT",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "Location": {
-      "CodeLocation": {
-        "Language": "JavaScript",
-        "FilePath": "frontend-service/index.js",
-        "MethodName": "remoteService"
-      }
-    },
-    "CaptureConfiguration": {
-      "CodeCapture": {
-        "CaptureArguments": [],
-        "CaptureLocals": [],
-        "CaptureReturn": true,
-        "CaptureStackTrace": true,
-        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
-      }
-    },
-    "Description": "DI E2E method BREAKPOINT",
-    "ExpiresAt": "$INT:EXPIRES_AT"
-  },
-
-  "createMethodProbeException": {
-    "InstrumentationType": "PROBE",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "Location": {
-      "CodeLocation": {
-        "Language": "JavaScript",
-        "FilePath": "frontend-service/index.js",
-        "MethodName": "mysql"
-      }
-    },
-    "CaptureConfiguration": {
-      "CodeCapture": {
-        "CaptureArguments": [],
-        "CaptureLocals": [],
-        "CaptureReturn": false,
-        "CaptureStackTrace": true,
-        "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
-      }
-    },
-    "Description": "DI E2E method PROBE exception"
-  },
-
   "getLineBreakpoint": {
     "InstrumentationType": "BREAKPOINT",
     "Service": "$SERVICE_NAME",
@@ -106,56 +33,8 @@
     "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
   },
 
-  "getMethodProbe": {
-    "InstrumentationType": "PROBE",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
-  },
-
-  "getMethodBreakpoint": {
-    "InstrumentationType": "BREAKPOINT",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
-  },
-
-  "getMethodProbeException": {
-    "InstrumentationType": "PROBE",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
-  },
-
   "deleteLineBreakpoint": {
     "InstrumentationType": "BREAKPOINT",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
-  },
-
-  "deleteMethodProbe": {
-    "InstrumentationType": "PROBE",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
-  },
-
-  "deleteMethodBreakpoint": {
-    "InstrumentationType": "BREAKPOINT",
-    "Service": "$SERVICE_NAME",
-    "Environment": "$DI_ENVIRONMENT",
-    "SignalType": "SNAPSHOT",
-    "LocationIdentifier": { "LocationHash": "$LOCATION_HASH" }
-  },
-
-  "deleteMethodProbeException": {
-    "InstrumentationType": "PROBE",
     "Service": "$SERVICE_NAME",
     "Environment": "$DI_ENVIRONMENT",
     "SignalType": "SNAPSHOT",

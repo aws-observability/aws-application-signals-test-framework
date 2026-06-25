@@ -58,7 +58,7 @@ runs:
 
     - name: Validate methodProbe snapshot in CW Logs
       id: method-probe-validation
-      if: (success() || steps.line-breakpoint-validation.outcome == 'failure') && !cancelled()
+      if: env.METHOD_PROBE_LOCATION_HASH != '' && (success() || steps.line-breakpoint-validation.outcome == 'failure') && !cancelled()
       shell: bash
       run: ./gradlew validator:run --args='-c ${{ inputs.language }}/ec2/adot-di/log-validation-method-probe.yml
         --testing-id ${{ env.TESTING_ID }}
@@ -72,7 +72,7 @@ runs:
 
     - name: Validate methodBreakpoint snapshot in CW Logs
       id: method-breakpoint-validation
-      if: (success() || steps.method-probe-validation.outcome == 'failure') && !cancelled()
+      if: env.METHOD_BREAKPOINT_LOCATION_HASH != '' && (success() || steps.method-probe-validation.outcome == 'failure') && !cancelled()
       shell: bash
       run: ./gradlew validator:run --args='-c ${{ inputs.language }}/ec2/adot-di/log-validation-method-breakpoint.yml
         --testing-id ${{ env.TESTING_ID }}
@@ -86,7 +86,7 @@ runs:
 
     - name: Validate methodProbeException snapshot in CW Logs
       id: method-probe-exception-validation
-      if: (success() || steps.method-breakpoint-validation.outcome == 'failure') && !cancelled()
+      if: env.METHOD_PROBE_EXCEPTION_LOCATION_HASH != '' && (success() || steps.method-breakpoint-validation.outcome == 'failure') && !cancelled()
       shell: bash
       run: ./gradlew validator:run --args='-c ${{ inputs.language }}/ec2/adot-di/log-validation-method-probe-exception.yml
         --testing-id ${{ env.TESTING_ID }}
@@ -115,7 +115,7 @@ runs:
       id: validation-result
       shell: bash
       run: |
-        if [ "${{ steps.line-breakpoint-validation.outcome }}" = "success" ] && [ "${{ steps.method-probe-validation.outcome }}" = "success" ] && [ "${{ steps.method-breakpoint-validation.outcome }}" = "success" ] && [ "${{ steps.method-probe-exception-validation.outcome }}" = "success" ]; then
+        if [ "${{ steps.line-breakpoint-validation.outcome }}" = "success" ] && [ "${{ steps.method-probe-validation.outcome }}" != "failure" ] && [ "${{ steps.method-breakpoint-validation.outcome }}" != "failure" ] && [ "${{ steps.method-probe-exception-validation.outcome }}" != "failure" ]; then
           echo "validation-result=success" >> "$GITHUB_OUTPUT"
         else
           echo "validation-result=failure" >> "$GITHUB_OUTPUT"

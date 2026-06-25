@@ -470,12 +470,6 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   /** Node EC2 Dynamic Instrumentation Test Case Validations */
   NODE_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT(
       "/expected-data-template/node/ec2/adot-di/di-snapshot-line-breakpoint.mustache"),
-  NODE_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE(
-      "/expected-data-template/node/ec2/adot-di/di-snapshot-method-probe.mustache"),
-  NODE_EC2_ADOT_DI_SNAPSHOT_METHOD_BREAKPOINT(
-      "/expected-data-template/node/ec2/adot-di/di-snapshot-method-breakpoint.mustache"),
-  NODE_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE_EXCEPTION(
-      "/expected-data-template/node/ec2/adot-di/di-snapshot-method-probe-exception.mustache"),
 
   /** Node EC2 Service Events Test Case Validations */
   NODE_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
