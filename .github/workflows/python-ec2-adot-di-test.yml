@@ -3,9 +3,6 @@
 
 # This is a reusable workflow for running the Python EC2 Dynamic Instrumentation (DI) E2E canary
 # for Application Signals. It is meant to be called from another workflow.
-# Closed loop: Create breakpoint via Application Signals control plane -> SDK polls and applies ->
-# traffic hits breakpoint -> snapshot lands in /aws/service-events/<service> -> assert -> Delete.
-# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 name: Python EC2 Dynamic Instrumentation Use Case
 on:
   workflow_call:
@@ -103,7 +100,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Set Get ADOT Wheel command environment variable
         run: |
@@ -121,10 +118,15 @@ jobs:
 
       - name: Set Get CW Agent command environment variable
         run: |
-          if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
-          elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
+            # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
+            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> "$GITHUB_ENV"
+          else
+            if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+            elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+            fi
           fi
 
       - name: Install awscurl for SigV4-signed control-plane calls
@@ -192,10 +194,10 @@ jobs:
           echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
       - name: Create instrumentation configurations
-        run: python3 .github/workflows/util/di/di-control-plane.py create
+        run: python3 .github/workflows/util/di/di-config-manager.py create
 
       - name: Verify all Get calls return the created configurations
-        run: python3 .github/workflows/util/di/di-control-plane.py verify-created
+        run: python3 .github/workflows/util/di/di-config-manager.py verify-created
 
       - name: Wait for SDK to poll, apply, and emit snapshots
         run: sleep 90
@@ -265,12 +267,12 @@ jobs:
         id: delete-configs
         if: always() && (env.LINE_BREAKPOINT_LOCATION_HASH != '' || env.METHOD_PROBE_LOCATION_HASH != '' || env.METHOD_BREAKPOINT_LOCATION_HASH != '' || env.METHOD_PROBE_EXCEPTION_LOCATION_HASH != '')
         continue-on-error: true
-        run: python3 .github/workflows/util/di/di-control-plane.py delete
+        run: python3 .github/workflows/util/di/di-config-manager.py delete
 
       - name: Verify all Get calls return ResourceNotFound after delete
         id: verify-deleted
         if: always() && steps.delete-configs.outcome == 'success'
-        run: python3 .github/workflows/util/di/di-control-plane.py verify-deleted
+        run: python3 .github/workflows/util/di/di-config-manager.py verify-deleted
 
       - name: Save test results
         if: always()
