@@ -69,8 +69,6 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   REPOSITORY_NAME: ${{ github.event.repository.name }}
   DI_API_URL: https://application-signals.us-east-1.api.aws
-  # Tells di-config-manager.py to read the Java request bodies (Java CodeLocation needs
-  # ClassName + CodeUnit + Language=Java, distinct from the Python file's CodeLocation).
   DI_REQUESTS_FILE: di-api-requests-java.json
   # Single source of truth for the service identity. Passed as terraform vars so the
   # user-data OTEL_RESOURCE_ATTRIBUTES and the awscurl payloads target the same identity.

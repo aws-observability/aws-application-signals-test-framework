@@ -22,7 +22,7 @@ def create_di_request_body(key):
                 return os.environ[m.group(1)]
         return v
 
-    requests_file = os.environ.get("DI_REQUESTS_FILE", "di-api-requests.json")
+    requests_file = os.environ.get("DI_REQUESTS_FILE", "di-api-requests-python.json")
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), requests_file)) as f:
         return sub(json.load(f)[key])
 

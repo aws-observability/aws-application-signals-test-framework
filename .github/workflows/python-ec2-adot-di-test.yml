@@ -55,6 +55,7 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   REPOSITORY_NAME: ${{ github.event.repository.name }}
   DI_API_URL: https://application-signals.us-east-1.api.aws
+  DI_REQUESTS_FILE: di-api-requests-python.json
   # Single source of truth for the service identity. Must match the values terraform
   # exports as OTEL_SERVICE_NAME / OTEL_RESOURCE_ATTRIBUTES inside the EC2 user-data;
   # we pass them as terraform vars below so the values stay in sync.
