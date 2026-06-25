@@ -10,12 +10,16 @@ permissions:
 
 jobs:
   java-ec2-adot-di:
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: ['11', '17', '21', '25']
     uses: ./.github/workflows/java-ec2-adot-di-test.yml
     secrets: inherit
     with:
       aws-region: 'us-east-1'
       caller-workflow-name: 'test'
-      java-version: '25'
+      java-version: ${{ matrix.java-version }}
 
   java-ec2-service-events:
     uses: ./.github/workflows/java-ec2-service-events-test.yml
