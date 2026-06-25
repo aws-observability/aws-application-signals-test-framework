@@ -1,0 +1,4 @@
+-
+  validationType: "cw-log"
+  expectedLogStructureTemplate: "NODE_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY"
+  cwLogFilterPattern: "{ ($.resource.attributes.['service.name'] = \"{{serviceName}}\") && ($.attributes.['event.name'] = \"aws.service_events.incident_snapshot\") && ($.attributes.['aws.service_events.trigger_type'] = \"latency\") && ($.attributes.['aws.service_events.operation'] = \"GET /aws-sdk-call\") && ($.attributes.['http.request.method'] = \"GET\") && ($.attributes.['http.response.status_code'] = 200) && ($.attributes.['url.route'] = \"/aws-sdk-call\") && ($.attributes.['aws.service_events.request.type'] = \"http\") && ($.body.request_context.status_code = 200) && ($.body.request_context.type = \"http\") }"

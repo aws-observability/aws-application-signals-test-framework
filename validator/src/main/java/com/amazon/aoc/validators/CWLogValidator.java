@@ -73,7 +73,9 @@ public class CWLogValidator implements IValidator {
             // Use custom filter pattern from validation config
             String customPattern = validationConfig.getCwLogFilterPattern()
                 .replace("{{serviceName}}", context.getServiceName())
-                .replace("{{traceId}}", context.getTraceId() != null ? context.getTraceId() : "");
+                .replace("{{traceId}}", context.getTraceId() != null ? context.getTraceId() : "")
+                .replace("{{locationHash}}",
+                    context.getLocationHash() != null ? context.getLocationHash() : "");
             actualLog = this.getActualAwsOtlpLog(Arrays.asList(customPattern));
           } else if (isAwsOtlpLog(expectedAttributes)) {
             String otlpLogFilterPattern = String.format(

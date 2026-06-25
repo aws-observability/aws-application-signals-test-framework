@@ -1,0 +1,38 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "aws.local.service": "{{serviceName}}",
+      "deployment.environment.name": "^ec2:service-events$",
+      "telemetry.sdk.language": "^nodejs$"
+    }
+  },
+  "scope": {
+    "name": "serviceevents"
+  },
+  "eventName": "^aws.service_events.incident_snapshot$",
+  "traceId": "^[a-f0-9]{32}$",
+  "spanId": "^[a-f0-9]{16}$",
+  "attributes": {
+    "event.name": "aws.service_events.incident_snapshot",
+    "aws.service_events.trigger_type": "^exception$",
+    "aws.service_events.operation": "^GET /exception$",
+    "aws.service_events.request.type": "^http$",
+    "aws.service_events.snapshot_id": "^snap_.+$",
+    "aws.service_events.duration_ms": "^[0-9.]+$",
+    "aws.service_events.is_partial": "^(true|false)$",
+    "aws.service_events.deployment.id": "{{serviceName}}",
+    "vcs.ref.head.revision": "^[a-f0-9]{40}$",
+    "vcs.repository.url.full": "^https://github\\.com/aws-observability/aws-otel-js-instrumentation$",
+    "http.request.method": "^GET$",
+    "http.response.status_code": "^500$",
+    "url.route": "^/exception$"
+  },
+  "body": {
+    "request_context": {
+      "status_code": "^500$",
+      "type": "^http$"
+    },
+    "exception_info": "\"exception_type\":\"ValueError\".*\"function_name\":\"helpers\\.validateInput\""
+  }
+}]

@@ -79,6 +79,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/default/client-call-metric.mustache"),
   JAVA_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/default/client-call-trace.mustache"),
 
+  /** Java EC2 Service Events Test Case Validations */
+  JAVA_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/java/ec2/service-events/deployment-event.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/java/ec2/service-events/incident-snapshot.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/java/ec2/service-events/incident-snapshot-latency.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/java/ec2/service-events/endpoint-error-metric.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/java/ec2/service-events/function-call-metric.mustache"),
+
   /** Java EC2 ASG Test Case Validations */
   JAVA_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/asg/outgoing-http-call-log.mustache"),
   JAVA_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/ec2/asg/outgoing-http-call-metric.mustache"),
@@ -264,6 +276,28 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ADOT_GENAI_V2_LLO_SPAN_ATTRIBUTE_LOG("/expected-data-template/python/ec2/adot-genai-v2/genai-log-llo-span-attribute.mustache"),
   PYTHON_EC2_ADOT_GENAI_V2_METRIC("/expected-data-template/python/ec2/adot-genai-v2/genai-metric.mustache"),
 
+  /** Python EC2 Dynamic Instrumentation Test Case Validations */
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-line-breakpoint.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-probe.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_BREAKPOINT(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-breakpoint.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE_EXCEPTION(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-probe-exception.mustache"),
+  
+  /** Python EC2 Service Events Test Case Validations */
+  PYTHON_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/python/ec2/service-events/deployment-event.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/python/ec2/service-events/incident-snapshot.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/python/ec2/service-events/incident-snapshot-latency.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/python/ec2/service-events/endpoint-error-metric.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/python/ec2/service-events/function-call-metric.mustache"),
+
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
   PYTHON_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/k8s/outgoing-http-call-metric.mustache"),
@@ -423,6 +457,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_EKS_CLIENT_CALL_METRIC("/expected-data-template/node/eks/client-call-metric.mustache"),
   NODE_EKS_CLIENT_CALL_TRACE("/expected-data-template/node/eks/client-call-trace.mustache"),
   
+  /** Node EC2 Service Events Test Case Validations */
+  NODE_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/node/ec2/service-events/deployment-event.mustache"),
+  NODE_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/node/ec2/service-events/incident-snapshot.mustache"),
+  NODE_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/node/ec2/service-events/incident-snapshot-latency.mustache"),
+  NODE_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/node/ec2/service-events/endpoint-error-metric.mustache"),
+  NODE_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/node/ec2/service-events/function-call-metric.mustache"),
+
   /** Node EC2 Default Test Case Validations */
   NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/node/ec2/default/outgoing-http-call-log.mustache"),
   NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/node/ec2/default/outgoing-http-call-metric.mustache"),

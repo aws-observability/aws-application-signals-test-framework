@@ -1,0 +1,43 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "telemetry.sdk.language": "python"
+    }
+  },
+  "scope": {
+    "name": "aws.dynamic_instrumentation"
+  },
+  "attributes": {
+    "event.name": "aws.dynamic_instrumentation.snapshot",
+    "aws.di.instrumentation_type": "PROBE",
+    "aws.di.instrumentation_level": "method",
+    "aws.di.location_hash": "{{locationHash}}",
+    "aws.di.code_unit": "frontend_service_app.views",
+    "aws.di.method_name": "aws_sdk_call",
+    "aws.di.snapshot_id": "^.+$"
+  },
+  "traceId": "^.+$",
+  "spanId": "^.+$",
+  "body": {
+    "captures": {
+      "entry": {
+        "arguments": {
+          "request": {
+            "type": "^django\\.core\\.handlers\\.wsgi\\.WSGIRequest$"
+          }
+        }
+      },
+      "return": {
+        "return_value": {
+          "type": "^django\\.http\\.response\\.JsonResponse$"
+        }
+      }
+    },
+    "stack": [
+      {
+        "function": "aws_sdk_call"
+      }
+    ]
+  }
+}]
