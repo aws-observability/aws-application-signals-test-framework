@@ -1,0 +1,56 @@
+name: Validate one DI snapshot in CW Logs
+description: Checkout + build the validator and assert a single DI snapshot cell. Used by the per-cell validation jobs of the adot-di canaries.
+
+inputs:
+  language:
+    description: "python or java — validation config path prefix (<language>/ec2/adot-di/...)"
+    required: true
+  cell:
+    description: "line-breakpoint | method-probe | method-breakpoint | method-probe-exception"
+    required: true
+  endpoint-port:
+    description: "Local sample-app port (python 8000, java 8080)"
+    required: true
+  caller-workflow-name:
+    required: true
+  region:
+    required: true
+  service-name:
+    required: true
+  testing-id:
+    required: true
+  instance-ami:
+    required: true
+  instance-id:
+    required: true
+  location-hash:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        repository: 'aws-observability/aws-application-signals-test-framework'
+        ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+        fetch-depth: 0
+
+    - name: Initiate Gradlew Daemon
+      uses: ./.github/workflows/actions/execute_and_retry
+      with:
+        command: "./gradlew :validator:build"
+        cleanup: "./gradlew clean"
+        max_retry: 3
+        sleep_time: 60
+
+    - name: Validate ${{ inputs.cell }} snapshot in CW Logs
+      shell: bash
+      run: ./gradlew validator:run --args='-c ${{ inputs.language }}/ec2/adot-di/log-validation-${{ inputs.cell }}.yml
+        --testing-id ${{ inputs.testing-id }}
+        --endpoint http://localhost:${{ inputs.endpoint-port }}
+        --region ${{ inputs.region }}
+        --log-group /aws/service-events/${{ inputs.service-name }}
+        --service-name ${{ inputs.service-name }}
+        --instance-ami ${{ inputs.instance-ami }}
+        --instance-id ${{ inputs.instance-id }}
+        --location-hash ${{ inputs.location-hash }}'
