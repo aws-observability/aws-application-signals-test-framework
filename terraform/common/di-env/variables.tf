@@ -3,11 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # -------------------------------------------------------------------------
 #
-# Shared, language-agnostic Dynamic Instrumentation (DI) environment variables.
-# Consumed by the per-language adot-di EC2 test modules (python, java, and
-# eventually js) so the DI knobs live in exactly one place. Each caller renders
-# the `env_map` output in its own shell style (python: `export K=V`, java: inline
-# `K=V \` before the agent command).
+# Shared, language-agnostic Dynamic Instrumentation environment variables.
+# Consumed by the per-language adot-di EC2 test modules so the DI knobs live in
+# exactly one place, exposed as bash `export` lines via the export_lines output.
 
 variable "service_name" {
   description = "Value for OTEL_SERVICE_NAME (typically <prefix>-<test_id>)."

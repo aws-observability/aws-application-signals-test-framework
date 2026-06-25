@@ -1,0 +1,122 @@
+name: DI E2E Control Plane and Validation
+description: Shared Dynamic Instrumentation steps for the per-language adot-di EC2 canaries. Relies on env set by the caller plus the inputs below.
+
+inputs:
+  language:
+    description: "python or java — selects the validation config path prefix <language>/ec2/adot-di/..."
+    required: true
+  endpoint-port:
+    description: "Local sample-app port; python 8000, java 8080"
+    required: true
+  gradlew-init-outcome:
+    description: "Outcome of the caller's initial Initiate Gradlew Daemon step, to decide whether to retry it"
+    required: false
+    default: success
+
+outputs:
+  validation-result:
+    description: "success if all four snapshot validations passed, else failure"
+    value: ${{ steps.validation-result.outputs.validation-result }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create instrumentation configurations
+      shell: bash
+      run: python3 .github/workflows/util/di/di-config-manager.py create
+
+    - name: Verify all Get calls return the created configurations
+      shell: bash
+      run: python3 .github/workflows/util/di/di-config-manager.py verify-created
+
+    - name: Wait for agent to poll, apply, and emit snapshots
+      shell: bash
+      run: sleep 90
+
+    - name: Initiate Gradlew Daemon
+      if: inputs.gradlew-init-outcome == 'failure'
+      uses: ./.github/workflows/actions/execute_and_retry
+      continue-on-error: true
+      with:
+        command: "./gradlew :validator:build"
+        cleanup: "./gradlew clean"
+        max_retry: 3
+        sleep_time: 60
+
+    - name: Validate lineBreakpoint snapshot in CW Logs
+      id: line-breakpoint-validation
+      shell: bash
+      run: ./gradlew validator:run --args='-c ${{ inputs.language }}/ec2/adot-di/log-validation-line-breakpoint.yml
+        --testing-id ${{ env.TESTING_ID }}
+        --endpoint http://localhost:${{ inputs.endpoint-port }}
+        --region ${{ env.E2E_TEST_AWS_REGION }}
+        --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+        --service-name ${{ env.SERVICE_NAME }}
+        --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+        --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+        --location-hash ${{ env.LINE_BREAKPOINT_LOCATION_HASH }}'
+
+    - name: Validate methodProbe snapshot in CW Logs
+      id: method-probe-validation
+      if: (success() || steps.line-breakpoint-validation.outcome == 'failure') && !cancelled()
+      shell: bash
+      run: ./gradlew validator:run --args='-c ${{ inputs.language }}/ec2/adot-di/log-validation-method-probe.yml
+        --testing-id ${{ env.TESTING_ID }}
+        --endpoint http://localhost:${{ inputs.endpoint-port }}
+        --region ${{ env.E2E_TEST_AWS_REGION }}
+        --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+        --service-name ${{ env.SERVICE_NAME }}
+        --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+        --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+        --location-hash ${{ env.METHOD_PROBE_LOCATION_HASH }}'
+
+    - name: Validate methodBreakpoint snapshot in CW Logs
+      id: method-breakpoint-validation
+      if: (success() || steps.method-probe-validation.outcome == 'failure') && !cancelled()
+      shell: bash
+      run: ./gradlew validator:run --args='-c ${{ inputs.language }}/ec2/adot-di/log-validation-method-breakpoint.yml
+        --testing-id ${{ env.TESTING_ID }}
+        --endpoint http://localhost:${{ inputs.endpoint-port }}
+        --region ${{ env.E2E_TEST_AWS_REGION }}
+        --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+        --service-name ${{ env.SERVICE_NAME }}
+        --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+        --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+        --location-hash ${{ env.METHOD_BREAKPOINT_LOCATION_HASH }}'
+
+    - name: Validate methodProbeException snapshot in CW Logs
+      id: method-probe-exception-validation
+      if: (success() || steps.method-breakpoint-validation.outcome == 'failure') && !cancelled()
+      shell: bash
+      run: ./gradlew validator:run --args='-c ${{ inputs.language }}/ec2/adot-di/log-validation-method-probe-exception.yml
+        --testing-id ${{ env.TESTING_ID }}
+        --endpoint http://localhost:${{ inputs.endpoint-port }}
+        --region ${{ env.E2E_TEST_AWS_REGION }}
+        --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+        --service-name ${{ env.SERVICE_NAME }}
+        --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+        --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+        --location-hash ${{ env.METHOD_PROBE_EXCEPTION_LOCATION_HASH }}'
+
+    - name: Delete instrumentation configurations
+      id: delete-configs
+      if: always() && (env.LINE_BREAKPOINT_LOCATION_HASH != '' || env.METHOD_PROBE_LOCATION_HASH != '' || env.METHOD_BREAKPOINT_LOCATION_HASH != '' || env.METHOD_PROBE_EXCEPTION_LOCATION_HASH != '')
+      continue-on-error: true
+      shell: bash
+      run: python3 .github/workflows/util/di/di-config-manager.py delete
+
+    - name: Verify all Get calls return ResourceNotFound after delete
+      if: always() && steps.delete-configs.outcome == 'success'
+      shell: bash
+      run: python3 .github/workflows/util/di/di-config-manager.py verify-deleted
+
+    - name: Save test results
+      if: always()
+      id: validation-result
+      shell: bash
+      run: |
+        if [ "${{ steps.line-breakpoint-validation.outcome }}" = "success" ] && [ "${{ steps.method-probe-validation.outcome }}" = "success" ] && [ "${{ steps.method-breakpoint-validation.outcome }}" = "success" ] && [ "${{ steps.method-probe-exception-validation.outcome }}" = "success" ]; then
+          echo "validation-result=success" >> "$GITHUB_OUTPUT"
+        else
+          echo "validation-result=failure" >> "$GITHUB_OUTPUT"
+        fi

@@ -1,0 +1,40 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "telemetry.sdk.language": "java"
+    }
+  },
+  "scope": {
+    "name": "aws.dynamic_instrumentation"
+  },
+  "attributes": {
+    "event.name": "aws.dynamic_instrumentation.snapshot",
+    "aws.di.instrumentation_type": "BREAKPOINT",
+    "aws.di.instrumentation_level": "line",
+    "aws.di.location_hash": "{{locationHash}}",
+    "aws.di.code_unit": "com.amazon.sampleapp",
+    "aws.di.class_name": "FrontendServiceController",
+    "aws.di.method_name": "httpCall",
+    "aws.di.line_number": "117",
+    "aws.di.file_path": "FrontendServiceController.java",
+    "aws.di.snapshot_id": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+  },
+  "traceId": "^[0-9a-f]{32}$",
+  "spanId": "^[0-9a-f]{16}$",
+  "body": {
+    "captures": {
+      "lines": {
+        "117": {
+          "locals": {
+            "statusCode": {
+              "type": "^java\\.lang\\.Integer$",
+              "value": "^\\d{3}$"
+            }
+          }
+        }
+      }
+    },
+    "stack": "\\{\"file_path\":\"FrontendServiceController\\.java\",\"line_number\":117,\"function\":\"httpCall\"\\}"
+  }
+}]
