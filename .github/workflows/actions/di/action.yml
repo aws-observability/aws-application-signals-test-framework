@@ -3,10 +3,10 @@ description: Shared Dynamic Instrumentation steps for the per-language adot-di E
 
 inputs:
   language:
-    description: "python or java — selects the validation config path prefix <language>/ec2/adot-di/..."
+    description: "python, java, or node — selects the validation config path prefix <language>/ec2/adot-di/..."
     required: true
   endpoint-port:
-    description: "Local sample-app port; python 8000, java 8080"
+    description: "Local sample-app port; python 8000, java 8080, node 8000"
     required: true
   gradlew-init-outcome:
     description: "Outcome of the caller's initial Initiate Gradlew Daemon step, to decide whether to retry it"

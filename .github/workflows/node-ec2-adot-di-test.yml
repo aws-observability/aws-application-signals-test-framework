@@ -1,0 +1,199 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# This is a reusable workflow for running the Node EC2 Dynamic Instrumentation DI E2E canary
+# for Application Signals. It is meant to be called from another workflow.
+name: Node EC2 Dynamic Instrumentation Use Case
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        required: true
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+      node-version:
+        description: "Currently support version 18, 20, 22, 24"
+        required: false
+        type: string
+        default: '20'
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
+        required: false
+        type: string
+        default: "x86_64"
+      staging-instrumentation-name:
+        required: false
+        default: '@aws/aws-distro-opentelemetry-node-autoinstrumentation'
+        type: string
+    outputs:
+      job-started:
+        value: ${{ jobs.node-ec2-adot-di.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.node-ec2-adot-di.outputs.validation-result }}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  NODE_VERSION: ${{ inputs.node-version }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
+  ADOT_INSTRUMENTATION_NAME: ${{ inputs.staging-instrumentation-name }}
+  SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/node-sample-app.zip
+  TRAFFIC_GENERATOR_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/traffic-generator.zip
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
+  DI_API_URL: https://application-signals.us-east-1.api.aws
+  DI_REQUESTS_FILE: di-api-requests-node.json
+  # Single source of truth for the service identity. Must match the values terraform
+  # exports as OTEL_SERVICE_NAME / OTEL_RESOURCE_ATTRIBUTES inside the EC2 user-data;
+  # we pass them as terraform vars below so the values stay in sync.
+  SERVICE_NAME_PREFIX: node-sample-application
+  DI_ENVIRONMENT: ec2:node-di-main-service-asg
+  # IAM instance profile used by the EC2 sample-app instance. Uses the canonical
+  # APP_SIGNALS_EC2_TEST_ROLE that exists in the Application Signals E2E test account.
+  IAM_INSTANCE_PROFILE: APP_SIGNALS_EC2_TEST_ROLE
+
+jobs:
+  node-ec2-adot-di:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
+    steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Set Get ADOT Instrumentation command environment variable
+        run: |
+          if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-js-instrumentation" ]; then
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="aws s3 cp s3://adot-autoinstrumentation-node-staging/${{ env.ADOT_INSTRUMENTATION_NAME }} ./${{ env.ADOT_INSTRUMENTATION_NAME }} && npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> "$GITHUB_ENV"
+          else
+            echo GET_ADOT_INSTRUMENTATION_COMMAND="npm install ${{ env.ADOT_INSTRUMENTATION_NAME }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Set Get CW Agent command environment variable
+        run: |
+          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
+            echo GET_CW_AGENT_RPM_COMMAND="aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> "$GITHUB_ENV"
+          else
+            if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+            elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+            fi
+          fi
+
+      - name: Install awscurl for SigV4-signed control-plane calls
+        run: pip install awscurl
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/node/ec2/adot-di && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Deploy sample app via terraform
+        working-directory: terraform/node/ec2/adot-di
+        run: |
+          retry_counter=0
+          max_retry=2
+          while [ $retry_counter -lt $max_retry ]; do
+            echo "Attempt $retry_counter"
+            deployment_failed=0
+            terraform apply -auto-approve \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
+              -var="get_cw_agent_rpm_command=${{ env.GET_CW_AGENT_RPM_COMMAND }}" \
+              -var="get_adot_instrumentation_command=${{ env.GET_ADOT_INSTRUMENTATION_COMMAND }}" \
+              -var="language_version=${{ env.NODE_VERSION }}" \
+              -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="di_api_url=${{ env.DI_API_URL }}" \
+              -var="service_name_prefix=${{ env.SERVICE_NAME_PREFIX }}" \
+              -var="di_environment=${{ env.DI_ENVIRONMENT }}" \
+              -var="iam_instance_profile=${{ env.IAM_INSTANCE_PROFILE }}" \
+              -var="traffic_generator_zip=${{ env.TRAFFIC_GENERATOR_ZIP }}" \
+            || deployment_failed=$?
+
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
+              terraform destroy -auto-approve \
+                -var="test_id=${{ env.TESTING_ID }}"
+              retry_counter=$(($retry_counter+1))
+            else
+              break
+            fi
+
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Max retry reached, failed to deploy terraform and connect to the endpoint."
+              exit 1
+            fi
+          done
+
+      - name: Capture deployment outputs
+        working-directory: terraform/node/ec2/adot-di
+        run: |
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
+          echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
+
+      - name: Run DI control-plane + snapshot validation
+        id: validation-result
+        uses: ./.github/workflows/actions/di
+        with:
+          language: node
+          endpoint-port: 8000
+          gradlew-init-outcome: ${{ steps.initiate-gradlew.outcome }}
+
+      # Clean up Procedures
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        working-directory: terraform/node/ec2/adot-di
+        run: |
+          terraform destroy -auto-approve \
+            -var="test_id=${{ env.TESTING_ID }}"

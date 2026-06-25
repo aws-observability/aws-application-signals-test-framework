@@ -1,0 +1,42 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}"
+    }
+  },
+  "scope": {
+    "name": "aws.dynamic_instrumentation"
+  },
+  "attributes": {
+    "event.name": "aws.dynamic_instrumentation.snapshot",
+    "aws.di.instrumentation_type": "PROBE",
+    "aws.di.instrumentation_level": "method",
+    "aws.di.location_hash": "{{locationHash}}",
+    "aws.di.method_name": "awsSdkCall",
+    "aws.di.file_path": "frontend-service/index.js",
+    "aws.di.snapshot_id": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+  },
+  "traceId": "^[0-9a-f]{32}$",
+  "spanId": "^[0-9a-f]{16}$",
+  "body": {
+    "captures": {
+      "entry": {
+        "arguments": {
+          "req": {
+            "type": "^IncomingMessage$"
+          }
+        }
+      },
+      "return": {
+        "return_value": {
+          "type": "^Promise$"
+        }
+      }
+    },
+    "stack": [
+      {
+        "file_path": "^.*index\\.js$"
+      }
+    ]
+  }
+}]
