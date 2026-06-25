@@ -63,11 +63,10 @@ def cmd_create():
         location_hash = (data or {}).get("LocationHash")
         if not location_hash:
             sys.exit(f"ERROR: {cell} Create did not return LocationHash")
-        for sink in ("GITHUB_ENV", "GITHUB_OUTPUT"):
-            path = os.environ.get(sink)
-            if path:
-                with open(path, "a") as f:
-                    f.write(f"{hash_var(cell)}={location_hash}\n")
+        github_env = os.environ.get("GITHUB_ENV")
+        if github_env:
+            with open(github_env, "a") as f:
+                f.write(f"{hash_var(cell)}={location_hash}\n")
         print(f"{cell} OK: {hash_var(cell)}={location_hash}")
 
 

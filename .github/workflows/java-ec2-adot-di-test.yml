@@ -3,10 +3,6 @@
 
 # This is a reusable workflow for running the Java EC2 Dynamic Instrumentation (DI) E2E canary
 # for Application Signals. It is meant to be called from another workflow.
-#
-# Job graph: setup (deploy + create breakpoints) -> 4 parallel validate-<cell> jobs ->
-# teardown (delete configs + terminate instance). The instance + breakpoints are created
-# once in setup and shared; each validation runs in its own job reading CloudWatch Logs.
 name: Java EC2 Dynamic Instrumentation Use Case
 on:
   workflow_call:
@@ -37,9 +33,9 @@ on:
         default: 'github'
     outputs:
       job-started:
-        value: ${{ jobs.setup.outputs.job-started }}
+        value: ${{ jobs.java-ec2-adot-di.outputs.job-started }}
       validation-result:
-        value: ${{ jobs.validation-result.outputs.validation-result }}
+        value: ${{ jobs.java-ec2-adot-di.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -60,24 +56,23 @@ env:
   REPOSITORY_NAME: ${{ github.event.repository.name }}
   DI_API_URL: https://application-signals.us-east-1.api.aws
   DI_REQUESTS_FILE: di-api-requests-java.json
+  # Single source of truth for the service identity. Must match the values terraform
+  # exports as OTEL_SERVICE_NAME / OTEL_RESOURCE_ATTRIBUTES inside the EC2 user-data;
+  # we pass them as terraform vars below so the values stay in sync.
   SERVICE_NAME_PREFIX: java-sample-application
   DI_ENVIRONMENT: ec2:java-di-main-service-asg
+  # IAM instance profile used by the EC2 sample-app instance. Uses the canonical
+  # APP_SIGNALS_EC2_TEST_ROLE that exists in the Application Signals E2E test account
+  # (same profile every other java-ec2 canary uses; has CW Agent + S3 read + DI perms).
   IAM_INSTANCE_PROFILE: APP_SIGNALS_EC2_TEST_ROLE
 
 jobs:
-  setup:
+  java-ec2-adot-di:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
-      testing-id: ${{ steps.outputs.outputs.testing-id }}
-      service-name: ${{ steps.outputs.outputs.service-name }}
-      instance-ami: ${{ steps.outputs.outputs.instance-ami }}
-      instance-id: ${{ steps.outputs.outputs.instance-id }}
-      line-breakpoint-hash: ${{ steps.create-configs.outputs.LINE_BREAKPOINT_LOCATION_HASH }}
-      method-probe-hash: ${{ steps.create-configs.outputs.METHOD_PROBE_LOCATION_HASH }}
-      method-breakpoint-hash: ${{ steps.create-configs.outputs.METHOD_BREAKPOINT_LOCATION_HASH }}
-      method-probe-exception-hash: ${{ steps.create-configs.outputs.METHOD_PROBE_EXCEPTION_LOCATION_HASH }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
       - name: Check if the job started
         id: job-started
@@ -88,6 +83,16 @@ jobs:
           repository: 'aws-observability/aws-application-signals-test-framework'
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
+
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
 
       - name: Generate testing id
         run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
@@ -109,6 +114,7 @@ jobs:
       - name: Set Get CW Agent command environment variable
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
+            # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
             echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> "$GITHUB_ENV"
           else
             if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
@@ -176,206 +182,25 @@ jobs:
           done
 
       - name: Capture deployment outputs
-        id: outputs
         working-directory: terraform/java/ec2/adot-di
         run: |
-          echo "instance-ami=$(terraform output ec2_instance_ami)" >> "$GITHUB_OUTPUT"
-          echo "instance-id=$(terraform output main_service_instance_id)" >> "$GITHUB_OUTPUT"
-          echo "testing-id=${{ env.TESTING_ID }}" >> "$GITHUB_OUTPUT"
-          echo "service-name=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_OUTPUT"
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
+          echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
-      - name: Create instrumentation configurations
-        id: create-configs
-        env:
-          SERVICE_NAME: ${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}
-        run: python3 .github/workflows/util/di/di-config-manager.py create
-
-      - name: Verify all Get calls return the created configurations
-        env:
-          SERVICE_NAME: ${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}
-          LINE_BREAKPOINT_LOCATION_HASH: ${{ steps.create-configs.outputs.LINE_BREAKPOINT_LOCATION_HASH }}
-          METHOD_PROBE_LOCATION_HASH: ${{ steps.create-configs.outputs.METHOD_PROBE_LOCATION_HASH }}
-          METHOD_BREAKPOINT_LOCATION_HASH: ${{ steps.create-configs.outputs.METHOD_BREAKPOINT_LOCATION_HASH }}
-          METHOD_PROBE_EXCEPTION_LOCATION_HASH: ${{ steps.create-configs.outputs.METHOD_PROBE_EXCEPTION_LOCATION_HASH }}
-        run: python3 .github/workflows/util/di/di-config-manager.py verify-created
-
-      - name: Wait for agent to poll, apply, and emit snapshots
-        run: sleep 90
-
-  validate-line-breakpoint:
-    needs: setup
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: us-east-1
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
-      - uses: ./.github/workflows/actions/di-validate-snapshot
+      - name: Run DI control-plane + snapshot validation
+        id: validation-result
+        uses: ./.github/workflows/actions/di
         with:
           language: java
-          cell: line-breakpoint
           endpoint-port: 8080
-          caller-workflow-name: ${{ inputs.caller-workflow-name }}
-          region: ${{ env.E2E_TEST_AWS_REGION }}
-          service-name: ${{ needs.setup.outputs.service-name }}
-          testing-id: ${{ needs.setup.outputs.testing-id }}
-          instance-ami: ${{ needs.setup.outputs.instance-ami }}
-          instance-id: ${{ needs.setup.outputs.instance-id }}
-          location-hash: ${{ needs.setup.outputs.line-breakpoint-hash }}
+          gradlew-init-outcome: ${{ steps.initiate-gradlew.outcome }}
 
-  validate-method-probe:
-    needs: setup
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: us-east-1
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
-      - uses: ./.github/workflows/actions/di-validate-snapshot
-        with:
-          language: java
-          cell: method-probe
-          endpoint-port: 8080
-          caller-workflow-name: ${{ inputs.caller-workflow-name }}
-          region: ${{ env.E2E_TEST_AWS_REGION }}
-          service-name: ${{ needs.setup.outputs.service-name }}
-          testing-id: ${{ needs.setup.outputs.testing-id }}
-          instance-ami: ${{ needs.setup.outputs.instance-ami }}
-          instance-id: ${{ needs.setup.outputs.instance-id }}
-          location-hash: ${{ needs.setup.outputs.method-probe-hash }}
-
-  validate-method-breakpoint:
-    needs: setup
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: us-east-1
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
-      - uses: ./.github/workflows/actions/di-validate-snapshot
-        with:
-          language: java
-          cell: method-breakpoint
-          endpoint-port: 8080
-          caller-workflow-name: ${{ inputs.caller-workflow-name }}
-          region: ${{ env.E2E_TEST_AWS_REGION }}
-          service-name: ${{ needs.setup.outputs.service-name }}
-          testing-id: ${{ needs.setup.outputs.testing-id }}
-          instance-ami: ${{ needs.setup.outputs.instance-ami }}
-          instance-id: ${{ needs.setup.outputs.instance-id }}
-          location-hash: ${{ needs.setup.outputs.method-breakpoint-hash }}
-
-  validate-method-probe-exception:
-    needs: setup
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: us-east-1
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
-      - uses: ./.github/workflows/actions/di-validate-snapshot
-        with:
-          language: java
-          cell: method-probe-exception
-          endpoint-port: 8080
-          caller-workflow-name: ${{ inputs.caller-workflow-name }}
-          region: ${{ env.E2E_TEST_AWS_REGION }}
-          service-name: ${{ needs.setup.outputs.service-name }}
-          testing-id: ${{ needs.setup.outputs.testing-id }}
-          instance-ami: ${{ needs.setup.outputs.instance-ami }}
-          instance-id: ${{ needs.setup.outputs.instance-id }}
-          location-hash: ${{ needs.setup.outputs.method-probe-exception-hash }}
-
-  # Aggregates the four validation job results into the workflow's validation-result output.
-  validation-result:
-    needs: [validate-line-breakpoint, validate-method-probe, validate-method-breakpoint, validate-method-probe-exception]
-    if: always()
-    runs-on: ubuntu-latest
-    outputs:
-      validation-result: ${{ steps.result.outputs.validation-result }}
-    steps:
-      - name: Aggregate validation results
-        id: result
-        run: |
-          if [ "${{ needs.validate-line-breakpoint.result }}" = "success" ] && [ "${{ needs.validate-method-probe.result }}" = "success" ] && [ "${{ needs.validate-method-breakpoint.result }}" = "success" ] && [ "${{ needs.validate-method-probe-exception.result }}" = "success" ]; then
-            echo "validation-result=success" >> "$GITHUB_OUTPUT"
-          else
-            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
-          fi
-
-  teardown:
-    needs: [setup, validate-line-breakpoint, validate-method-probe, validate-method-breakpoint, validate-method-probe-exception]
-    if: always() && needs.setup.result != 'skipped'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      SERVICE_NAME: ${{ needs.setup.outputs.service-name }}
-      LINE_BREAKPOINT_LOCATION_HASH: ${{ needs.setup.outputs.line-breakpoint-hash }}
-      METHOD_PROBE_LOCATION_HASH: ${{ needs.setup.outputs.method-probe-hash }}
-      METHOD_BREAKPOINT_LOCATION_HASH: ${{ needs.setup.outputs.method-breakpoint-hash }}
-      METHOD_PROBE_EXCEPTION_LOCATION_HASH: ${{ needs.setup.outputs.method-probe-exception-hash }}
-    steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: us-east-1
-
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
-
-      - name: Install awscurl for SigV4-signed control-plane calls
-        run: pip install awscurl
-
-      - name: Delete instrumentation configurations
-        id: delete-configs
-        if: env.LINE_BREAKPOINT_LOCATION_HASH != '' || env.METHOD_PROBE_LOCATION_HASH != '' || env.METHOD_BREAKPOINT_LOCATION_HASH != '' || env.METHOD_PROBE_EXCEPTION_LOCATION_HASH != ''
+      # Clean up Procedures
+      - name: Terraform destroy
+        if: always()
         continue-on-error: true
-        run: python3 .github/workflows/util/di/di-config-manager.py delete
-
-      - name: Verify all Get calls return ResourceNotFound after delete
-        if: steps.delete-configs.outcome == 'success'
-        run: python3 .github/workflows/util/di/di-config-manager.py verify-deleted
-
-      # Tear down the per-run AWS resources the setup job created (the instance and its key
-      # pair). terraform destroy is not usable here — the tfstate lives on the setup runner,
-      # which is gone — so clean up directly by id/name. The default VPC is shared and not touched.
-      - name: Terminate EC2 instance
-        if: needs.setup.outputs.instance-id != ''
-        continue-on-error: true
+        working-directory: terraform/java/ec2/adot-di
         run: |
-          aws ec2 terminate-instances --region ${{ env.E2E_TEST_AWS_REGION }} \
-            --instance-ids ${{ needs.setup.outputs.instance-id }}
-
-      - name: Delete EC2 key pair
-        if: needs.setup.outputs.testing-id != ''
-        continue-on-error: true
-        run: |
-          aws ec2 delete-key-pair --region ${{ env.E2E_TEST_AWS_REGION }} \
-            --key-name "instance_key-${{ needs.setup.outputs.testing-id }}"
+          terraform destroy -auto-approve \
+            -var="test_id=${{ env.TESTING_ID }}"
