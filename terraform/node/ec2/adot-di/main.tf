@@ -155,6 +155,7 @@ resource "null_resource" "main_service_setup" {
       # The shared DI env vars come from the common terraform/common/di-env module so they stay
       # identical across python/java/node.
       ${module.di_env.export_lines}
+      export OTEL_LOG_LEVEL=debug
       export AWS_REGION='${var.aws_region}'
       export TESTING_ID='${var.test_id}'
       nohup node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js &> /tmp/sdk.log &
@@ -166,6 +167,8 @@ resource "null_resource" "main_service_setup" {
       until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "http://localhost:8000/healthcheck" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint."
+          echo "===== DI DIAGNOSTICS (sdk.log) ====="
+          cat /tmp/sdk.log || true
           exit 1
         fi
         echo "Attempting to connect to the main endpoint. Tried $attempt_counter out of $max_attempts"
@@ -174,6 +177,13 @@ resource "null_resource" "main_service_setup" {
       done
 
       echo "Successfully connected to main endpoint"
+
+      echo "===== DI env (resolved on instance) ====="
+      env | grep -E 'OTEL_AWS_DYNAMIC_INSTRUMENTATION|OTEL_SERVICE_NAME|OTEL_RESOURCE_ATTRIBUTES|OTEL_LOG_LEVEL' || true
+      echo "===== DI DIAGNOSTICS (sdk.log, DI lines) ====="
+      grep -iE 'DI:|Dynamic Instrumentation|breakpoint|snapshot|inspector|poll' /tmp/sdk.log || echo "NO DI LINES IN sdk.log"
+      echo "===== DI DIAGNOSTICS (sdk.log, full tail) ====="
+      tail -n 80 /tmp/sdk.log || true
 
       EOF
     ]
