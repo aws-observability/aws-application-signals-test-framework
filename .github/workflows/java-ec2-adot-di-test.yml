@@ -1,37 +1,10 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# Reusable workflow for the Java EC2 Dynamic Instrumentation (DI) E2E canary.
-# Closed loop: Create breakpoint via Application Signals control plane → ADOT Java agent
-# polls and applies → traffic hits breakpoint → snapshot lands in /aws/service-events/<svc>
-# → assert snapshot fields → Delete config.
-name: Java EC2 Dynamic Instrumentation Test
+# This is a reusable workflow for running the Java EC2 Dynamic Instrumentation (DI) E2E canary
+# for Application Signals. It is meant to be called from another workflow.
+name: Java EC2 Dynamic Instrumentation Use Case
 on:
-  workflow_dispatch:
-    inputs:
-      aws-region:
-        description: AWS region to deploy the test in
-        required: false
-        type: string
-        default: 'us-east-1'
-      caller-workflow-name:
-        description: Identifier propagated from the caller; use 'manual' for ad-hoc dispatch
-        required: false
-        type: string
-        default: 'manual'
-      cpu-architecture:
-        required: false
-        type: string
-        default: 'x86_64'
-      staging-jar-name:
-        required: false
-        default: 'aws-opentelemetry-agent.jar'
-        type: string
-      otel-source:
-        required: false
-        type: string
-        default: 'github'
-
   workflow_call:
     inputs:
       aws-region:
@@ -40,10 +13,16 @@ on:
       caller-workflow-name:
         required: true
         type: string
-      cpu-architecture:
+      java-version:
+        description: "Currently support version 11, 17, 21"
         required: false
         type: string
-        default: 'x86_64'
+        default: '11'
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
+        required: false
+        type: string
+        default: "x86_64"
       staging-jar-name:
         required: false
         default: 'aws-opentelemetry-agent.jar'
@@ -52,6 +31,11 @@ on:
         required: false
         type: string
         default: 'github'
+    outputs:
+      job-started:
+        value: ${{ jobs.java-ec2-adot-di.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.java-ec2-adot-di.outputs.validation-result }}
 
 permissions:
   id-token: write
@@ -60,9 +44,11 @@ permissions:
 env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
+  JAVA_VERSION: ${{ inputs.java-version }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture }}
   ADOT_JAR_NAME: ${{ inputs.staging-jar-name }}
   OTEL_SOURCE: ${{ inputs.otel-source }}
+  SAMPLE_APP_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/java-main-service-v${{ inputs.java-version }}.jar
   TRAFFIC_GENERATOR_ZIP: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/traffic-generator.zip
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
@@ -70,11 +56,13 @@ env:
   REPOSITORY_NAME: ${{ github.event.repository.name }}
   DI_API_URL: https://application-signals.us-east-1.api.aws
   DI_REQUESTS_FILE: di-api-requests-java.json
-  # Single source of truth for the service identity. Passed as terraform vars so the
-  # user-data OTEL_RESOURCE_ATTRIBUTES and the awscurl payloads target the same identity.
+  # Single source of truth for the service identity. Must match the values terraform
+  # exports as OTEL_SERVICE_NAME / OTEL_RESOURCE_ATTRIBUTES inside the EC2 user-data;
+  # we pass them as terraform vars below so the values stay in sync.
   SERVICE_NAME_PREFIX: java-sample-application
   DI_ENVIRONMENT: ec2:java-di-main-service-asg
-  # Canonical IAM instance profile in the Application Signals E2E test account
+  # IAM instance profile used by the EC2 sample-app instance. Uses the canonical
+  # APP_SIGNALS_EC2_TEST_ROLE that exists in the Application Signals E2E test account
   # (same profile every other java-ec2 canary uses; has CW Agent + S3 read + DI perms).
   IAM_INSTANCE_PROFILE: APP_SIGNALS_EC2_TEST_ROLE
 
@@ -82,15 +70,14 @@ jobs:
   java-ec2-adot-di:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        # DI uses ByteBuddy advice + line transformer; exercise the supported LTS versions.
-        java-version: ['11', '17', '21']
-    env:
-      JAVA_VERSION: ${{ matrix.java-version }}
-      SAMPLE_APP_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/java-main-service-v${{ matrix.java-version }}.jar
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
     steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
@@ -114,7 +101,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
           role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Set Get ADOT JAR command environment variable
         run: |
@@ -126,10 +113,15 @@ jobs:
 
       - name: Set Get CW Agent command environment variable
         run: |
-          if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
-          elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
-            echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
+            # Reusing the adot-main-build-staging-jar bucket to store the python wheel file
+            echo GET_CW_AGENT_RPM_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/binary/${{ github.sha }}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm ./cw-agent.rpm" >> "$GITHUB_ENV"
+          else
+            if [ "${{ env.CPU_ARCHITECTURE }}" = "x86_64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+            elif [ "${{ env.CPU_ARCHITECTURE }}" = "arm64" ]; then
+              echo GET_CW_AGENT_RPM_COMMAND="wget -O cw-agent.rpm https://amazoncloudwatch-agent-${{ inputs.aws-region }}.s3.${{ inputs.aws-region }}.amazonaws.com/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" >> "$GITHUB_ENV"
+            fi
           fi
 
       - name: Install awscurl for SigV4-signed control-plane calls
@@ -197,12 +189,14 @@ jobs:
           echo "SERVICE_NAME=${{ env.SERVICE_NAME_PREFIX }}-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
       - name: Run DI control-plane + snapshot validation
+        id: validation-result
         uses: ./.github/workflows/actions/di
         with:
           language: java
           endpoint-port: 8080
           gradlew-init-outcome: ${{ steps.initiate-gradlew.outcome }}
 
+      # Clean up Procedures
       - name: Terraform destroy
         if: always()
         continue-on-error: true
