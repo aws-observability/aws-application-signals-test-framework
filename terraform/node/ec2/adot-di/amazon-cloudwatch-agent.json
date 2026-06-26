@@ -20,8 +20,8 @@
             "retention_in_days": 1
           }
         ]
-      },
-      "force_flush_interval": 1
-    }
+      }
+    },
+    "force_flush_interval": 1
   }
 }
