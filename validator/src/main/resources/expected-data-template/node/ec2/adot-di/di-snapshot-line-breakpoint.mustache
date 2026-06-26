@@ -25,14 +25,51 @@
           "locals": {
             "bucketName": {
               "type": "^string$",
-              "value": "^e2e-test-bucket-name-.*$"
+              "value": "^e2e-test-bucket-name-{{testingId}}$"
             },
             "warningMsg": {
               "type": "^string$",
               "value": "^This is a custom log for validation testing$"
             },
+            "req": {
+              "type": "^IncomingMessage$",
+              "fields": {
+                "httpVersion": {
+                  "type": "^string$",
+                  "value": "^1\\.1$"
+                },
+                "httpVersionMajor": {
+                  "type": "^number$",
+                  "value": "^1$"
+                }
+              }
+            },
+            "res": {
+              "type": "^ServerResponse$",
+              "fields": {
+                "outputSize": {
+                  "type": "^number$",
+                  "value": "^0$"
+                },
+                "_eventsCount": {
+                  "type": "^number$",
+                  "value": "^\\d+$"
+                }
+              }
+            },
             "s3Client": {
-              "type": "^S3Client$"
+              "type": "^S3Client$",
+              "fields": {
+                "config": {
+                  "type": "^Object$",
+                  "fields": {
+                    "apiVersion": {
+                      "type": "^string$",
+                      "value": "^2006-03-01$"
+                    }
+                  }
+                }
+              }
             }
           }
         }
