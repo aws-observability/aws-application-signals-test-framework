@@ -1,0 +1,298 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# Reusable workflow for running the Node EKS Service Events E2E test.
+# Validates the 5 Service Events signals on EKS with operator-injected ADOT Python.
+# Requires the CW Observability operator addon (amazon-cloudwatch-observability) to be
+# installed on the target cluster with an ADOT Python version that includes SE support.
+name: Node EKS Service Events Use Case
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        required: false
+        type: string
+        default: 'us-east-1'
+      test-cluster-name:
+        required: true
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+      node-version:
+        required: false
+        type: string
+        default: '3.10'
+    outputs:
+      job-started:
+        value: ${{ jobs.node-eks-service-events.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.node-eks-service-events.outputs.validation-result }}
+  workflow_dispatch:
+    inputs:
+      aws-region:
+        required: false
+        type: string
+        default: 'us-east-1'
+      test-cluster-name:
+        required: false
+        type: string
+        default: 'e2e-test-cluster'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region || 'us-east-1' }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name || 'manual-dispatch' }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  CLUSTER_NAME: ${{ inputs.test-cluster-name || 'e2e-test-cluster' }}
+  NODE_VERSION: ${{ inputs.node-version || '20' }}
+
+jobs:
+  node-eks-service-events:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
+    steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
+
+      - name: Set Service Name
+        run: echo SERVICE_NAME="node-sample-application-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
+
+      - name: Set Namespace
+        run: echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 # v2.0.10
+        with:
+          secret-ids: |
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+            NODE_MAIN_SAMPLE_APP_IMAGE, e2e-test/node-main-sample-app-image
+
+      - name: Configure AWS Credentials
+        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Set Sample App Image
+        run: echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.NODE_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.NODE_VERSION }}" >> "$GITHUB_ENV"
+
+      - name: Set up kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Create namespace
+        run: kubectl create namespace ${{ env.SAMPLE_APP_NAMESPACE }}
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/node/eks/service-events && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Deploy sample app via terraform
+        working-directory: terraform/node/eks/service-events
+        run: |
+          retry_counter=0
+          max_retry=2
+          while [ $retry_counter -lt $max_retry ]; do
+            echo "Attempt $retry_counter"
+            deployment_failed=0
+            terraform apply -auto-approve \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+              -var="eks_cluster_context_name=${{ env.CLUSTER_NAME }}" \
+              -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
+              -var="service_account_aws_access=default" \
+              -var="node_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+              -var="account_id=${{ env.ACCOUNT_ID }}" \
+              -var="kube_directory_path=/home/runner/.kube" \
+              -var="service_events_git_commit_sha=${{ github.sha }}" \
+            || deployment_failed=$?
+
+            if [ $deployment_failed -ne 0 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry."
+              terraform destroy -auto-approve \
+                -var="test_id=${{ env.TESTING_ID }}" \
+                -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+                -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}"
+              retry_counter=$(($retry_counter+1))
+            else
+              break
+            fi
+
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Max retry reached. Exiting."
+              exit 1
+            fi
+          done
+
+      - name: Wait for pods to be ready
+        run: |
+          kubectl wait --for=condition=ready pod -l app=node-app -n ${{ env.SAMPLE_APP_NAMESPACE }} --timeout=120s
+          kubectl wait --for=condition=ready pod -l app=traffic-generator -n ${{ env.SAMPLE_APP_NAMESPACE }} --timeout=120s
+
+      - name: Get app endpoint and configure traffic generator
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=node-app -o jsonpath='{.items[0].status.podIP}'):8000" >> "$GITHUB_ENV"
+          max_retry: 3
+          sleep_time: 10
+
+      - name: Set traffic generator endpoints
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }}
+          max_retry: 3
+          sleep_time: 10
+
+      - name: Wait for signals to propagate
+        run: sleep 60
+
+      - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew.outcome == 'failure'
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      # ---- Service Events log signals ----
+
+      - name: Validate DeploymentEvent log
+        id: deployment-event-validation
+        run: ./gradlew validator:run --args='-c node/eks/service-events/deployment-event-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.APP_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --rollup'
+
+      - name: Validate IncidentSnapshot log
+        id: incident-snapshot-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c node/eks/service-events/incident-snapshot-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.APP_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --rollup'
+
+      - name: Validate IncidentSnapshot log (latency trigger)
+        id: incident-snapshot-latency-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure' || steps.incident-snapshot-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c node/eks/service-events/incident-snapshot-latency-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.APP_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --rollup'
+
+      # ---- Service Events metric signals ----
+
+      - name: Validate EndpointErrorMetric (count) via PromQL
+        id: endpoint-error-metric-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure' || steps.incident-snapshot-validation.outcome == 'failure' || steps.incident-snapshot-latency-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c node/eks/service-events/endpoint-error-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.APP_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --rollup'
+
+      - name: Validate FunctionCall (service.function.duration) via PromQL
+        id: function-call-metric-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure' || steps.incident-snapshot-validation.outcome == 'failure' || steps.incident-snapshot-latency-validation.outcome == 'failure' || steps.endpoint-error-metric-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c node/eks/service-events/function-call-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.APP_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --rollup'
+
+      - name: Refresh AWS Credentials
+        if: always()
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Save test results
+        if: always()
+        id: validation-result
+        run: |
+          if [ "${{ steps.deployment-event-validation.outcome }}" = "success" ] && \
+             [ "${{ steps.incident-snapshot-validation.outcome }}" = "success" ] && \
+             [ "${{ steps.incident-snapshot-latency-validation.outcome }}" = "success" ] && \
+             [ "${{ steps.endpoint-error-metric-validation.outcome }}" = "success" ] && \
+             [ "${{ steps.function-call-metric-validation.outcome }}" = "success" ]; then
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Clean up
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        working-directory: terraform/node/eks/service-events
+        run: |
+          terraform destroy -auto-approve \
+            -var="test_id=${{ env.TESTING_ID }}" \
+            -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+            -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}"
+
+      - name: Delete namespace
+        if: always()
+        continue-on-error: true
+        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }} --wait=false
