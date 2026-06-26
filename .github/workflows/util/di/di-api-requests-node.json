@@ -14,7 +14,7 @@
     "CaptureConfiguration": {
       "CodeCapture": {
         "CaptureArguments": [],
-        "CaptureLocals": [],
+        "CaptureLocals": ["req", "res", "s3Client", "bucketName", "warningMsg"],
         "CaptureReturn": false,
         "CaptureStackTrace": true,
         "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
