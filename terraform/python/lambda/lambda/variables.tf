@@ -39,3 +39,9 @@ variable "layer_artifacts_directory" {
   default     = "./layer_artifacts"
   description = "Lambda layer and function artifacts directory"
 }
+
+variable "lite_sdk" {
+  type        = bool
+  default     = false
+  description = "When true, deploy the lite SDK (fast start) configuration instead of the full SDK configuration"
+}

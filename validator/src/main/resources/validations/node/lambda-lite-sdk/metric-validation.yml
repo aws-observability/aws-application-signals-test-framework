@@ -2,4 +2,4 @@
   validationType: "cw-metric"
   httpPath: "/lambda-invoke"
   callingType: "lambda-invoke"
-  expectedMetricTemplate: "NODE_LAMBDA_LITE_SDK_INVOKE_METRIC"
+  expectedMetricTemplate: "NODE_LAMBDA_INVOKE_METRIC"
