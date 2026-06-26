@@ -120,10 +120,10 @@ jobs:
       - name: Prepare and upload sample app deployment files
         working-directory: terraform/python/k8s/deploy/resources
         run: |
-          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' python-frontend-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.PYTHON_VERSION }}#' python-frontend-service-depl.yaml
-          sed -i 's#\${TESTING_ID}#${{ env.TESTING_ID }}#' python-remote-service-depl.yaml
-          sed -i 's#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.PYTHON_VERSION }}#' python-remote-service-depl.yaml
+          sed -i "s#\${TESTING_ID}#${{ env.TESTING_ID }}#" python-frontend-service-depl.yaml
+          sed -i "s#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.PYTHON_VERSION }}#" python-frontend-service-depl.yaml
+          sed -i "s#\${TESTING_ID}#${{ env.TESTING_ID }}#" python-remote-service-depl.yaml
+          sed -i "s#\${IMAGE}#${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.PYTHON_VERSION }}#" python-remote-service-depl.yaml
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key python-frontend-service-depl-${{ env.TESTING_ID }}.yaml --body python-frontend-service-depl.yaml
           aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ env.E2E_TEST_AWS_REGION }} --key python-remote-service-depl-${{ env.TESTING_ID }}.yaml --body python-remote-service-depl.yaml
 
