@@ -154,11 +154,13 @@ resource "null_resource" "main_service_setup" {
       # plane via the local CW agent proxy (default http://localhost:2000), not the public endpoint.
       # The shared DI env vars come from the common terraform/common/di-env module so they stay
       # identical across python/java/node.
-      ${module.di_env.export_lines}
-      export OTEL_LOG_LEVEL=debug
-      export AWS_REGION='${var.aws_region}'
-      export TESTING_ID='${var.test_id}'
-      nohup node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js &> /tmp/sdk.log &
+      tmux new-session -d -s frontend bash
+      ${join("\n      ", [for line in split("\n", module.di_env.export_lines) : "tmux send-keys -t frontend '${line}' C-m"])}
+      tmux send-keys -t frontend 'export OTEL_LOG_LEVEL=debug' C-m
+      tmux send-keys -t frontend "export AWS_REGION='${var.aws_region}'" C-m
+      tmux send-keys -t frontend "export TESTING_ID='${var.test_id}'" C-m
+      tmux send-keys -t frontend 'cd /home/ec2-user/frontend-service' C-m
+      tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js &> /tmp/sdk.log' C-m
 
       sleep 30
 
