@@ -176,11 +176,23 @@ jobs:
           --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
           --rollup'
 
+      - name: Validate generated metrics
+        id: metric-validation
+        run: ./gradlew validator:run --args='-c python/lambda-lite-sdk/metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.API_GATEWAY_URL }}
+          --region ${{ inputs.aws-region }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
+          --rollup'
+
       - name: Publish validation result
         id: validation-result
         if: always()
         run: |
-          if [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.trace-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"

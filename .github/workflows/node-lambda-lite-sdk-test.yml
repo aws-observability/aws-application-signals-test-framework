@@ -160,6 +160,18 @@ jobs:
           --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
           --rollup'
 
+      - name: Validate generated metrics
+        id: metric-validation
+        run: ./gradlew validator:run --args='-c node/lambda-lite-sdk/metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.API_GATEWAY_URL }}
+          --region ${{ inputs.aws-region }}
+          --account-id ${{ env.ACCOUNT_ID }}
+          --metric-namespace ${{ env.METRIC_NAMESPACE }}
+          --log-group ${{ env.LOG_GROUP_NAME }}
+          --service-name ${{ env.TERRAFORM_LAMBDA_FUNCTION_NAME }}
+          --rollup'
+
       - name: Refresh AWS Credentials
         if: ${{ always() && env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -171,7 +183,7 @@ jobs:
         if: always()
         id: validation-result
         run: |
-          if [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.trace-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"
