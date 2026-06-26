@@ -8,13 +8,13 @@
       "CodeLocation": {
         "Language": "Javascript",
         "FilePath": "frontend-service/index.js",
-        "LineNumber": 86
+        "LineNumber": 120
       }
     },
     "CaptureConfiguration": {
       "CodeCapture": {
         "CaptureArguments": [],
-        "CaptureLocals": ["options"],
+        "CaptureLocals": [],
         "CaptureReturn": false,
         "CaptureStackTrace": true,
         "CaptureLimits": { "MaxHits": 100, "MaxStringLength": 128, "MaxCollectionSize": 10, "MaxFieldsPerObject": 10 }
