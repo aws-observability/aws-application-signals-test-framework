@@ -125,7 +125,7 @@ resource "null_resource" "main_service_setup" {
 
       echo "Node version in use: $(node -v)"
 
-      agent_config='${replace(replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region), "$DI_DEBUG_LOG_GROUP", "/aws/di-debug/${var.service_name_prefix}-${var.test_id}")}'
+      agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
       echo $agent_config > amazon-cloudwatch-agent.json
 
       ${var.get_cw_agent_rpm_command}
@@ -156,11 +156,10 @@ resource "null_resource" "main_service_setup" {
       # identical across python/java/node.
       tmux new-session -d -s frontend bash
       ${join("\n      ", [for line in split("\n", module.di_env.export_lines) : "tmux send-keys -t frontend '${line}' C-m"])}
-      tmux send-keys -t frontend 'export OTEL_LOG_LEVEL=debug' C-m
       tmux send-keys -t frontend "export AWS_REGION='${var.aws_region}'" C-m
       tmux send-keys -t frontend "export TESTING_ID='${var.test_id}'" C-m
       tmux send-keys -t frontend 'cd /home/ec2-user/frontend-service' C-m
-      tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js &> /tmp/sdk.log' C-m
+      tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" index.js' C-m
 
       sleep 30
 
@@ -169,8 +168,6 @@ resource "null_resource" "main_service_setup" {
       until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "http://localhost:8000/healthcheck" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint."
-          echo "===== DI DIAGNOSTICS (sdk.log) ====="
-          cat /tmp/sdk.log || true
           exit 1
         fi
         echo "Attempting to connect to the main endpoint. Tried $attempt_counter out of $max_attempts"
@@ -179,13 +176,6 @@ resource "null_resource" "main_service_setup" {
       done
 
       echo "Successfully connected to main endpoint"
-
-      echo "===== DI env (resolved on instance) ====="
-      env | grep -E 'OTEL_AWS_DYNAMIC_INSTRUMENTATION|OTEL_SERVICE_NAME|OTEL_RESOURCE_ATTRIBUTES|OTEL_LOG_LEVEL' || true
-      echo "===== DI DIAGNOSTICS (sdk.log, DI lines) ====="
-      grep -iE 'DI:|Dynamic Instrumentation|breakpoint|snapshot|inspector|poll' /tmp/sdk.log || echo "NO DI LINES IN sdk.log"
-      echo "===== DI DIAGNOSTICS (sdk.log, full tail) ====="
-      tail -n 80 /tmp/sdk.log || true
 
       EOF
     ]
