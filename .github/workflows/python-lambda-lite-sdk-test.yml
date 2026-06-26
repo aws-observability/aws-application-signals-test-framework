@@ -123,7 +123,7 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda/lambda && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda-lite-sdk/lambda && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
@@ -137,8 +137,7 @@ jobs:
       - name: Apply terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda/lambda && terraform apply -auto-approve
-          -var="lite_sdk=true"
+          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda-lite-sdk/lambda && terraform apply -auto-approve
           -var="sdk_layer_name=AWSOpenTelemetryDistroPythonLiteSdk-${{ github.run_id }}"
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
@@ -149,7 +148,7 @@ jobs:
       - name: Extract endpoint
         id: extract-endpoint
         shell: bash
-        run: cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda/lambda && echo API_GATEWAY_URL="$(terraform output -raw api-gateway-url)" >> "$GITHUB_ENV"
+        run: cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda-lite-sdk/lambda && echo API_GATEWAY_URL="$(terraform output -raw api-gateway-url)" >> "$GITHUB_ENV"
 
       - name: Send request to endpoint
         shell: bash
@@ -203,8 +202,7 @@ jobs:
         if: always()
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda/lambda && terraform destroy -auto-approve
-          -var="lite_sdk=true"
+          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda-lite-sdk/lambda && terraform destroy -auto-approve
           -var="sdk_layer_name=AWSOpenTelemetryDistroPythonLiteSdk-${{ github.run_id }}"
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"

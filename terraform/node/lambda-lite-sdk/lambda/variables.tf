@@ -1,25 +1,13 @@
 variable "function_name" {
   type        = string
   description = "Name of sample app function / API gateway"
-  default     = "aws-opentelemetry-distro-python"
+  default     = "aws-opentelemetry-distro-nodejs-lite-sdk"
 }
 
 variable "sdk_layer_name" {
   type        = string
   description = "Name of published SDK layer"
-  default     = "AWSOpenTelemetryDistroPython"
-}
-
-variable "tracing_mode" {
-  type        = string
-  description = "Lambda function tracing mode"
-  default     = "Active"
-}
-
-variable "runtime" {
-  type        = string
-  description = "Python runtime version used for sample Lambda Function"
-  default     = "python3.13"
+  default     = "AWSOpenTelemetryDistroJsLiteSdk"
 }
 
 variable "architecture" {
@@ -28,9 +16,21 @@ variable "architecture" {
   default     = "x86_64"
 }
 
+variable "runtime" {
+  type        = string
+  description = "NodeJS runtime version used for sample Lambda Function"
+  default     = "nodejs20.x"
+}
+
+variable "tracing_mode" {
+  type        = string
+  description = "Lambda function tracing mode"
+  default     = "Active"
+}
+
 variable "region" {
   type        = string
-  description = "Lambda function running region, default value is us-west-2"
+  description = "Lambda function running region"
   default     = "us-west-2"
 }
 

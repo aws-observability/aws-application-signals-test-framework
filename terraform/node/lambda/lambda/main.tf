@@ -29,15 +29,7 @@ module "hello-lambda-function" {
 
   layers = [aws_lambda_layer_version.sdk_layer[0].arn]
 
-  # The lite SDK (fast start) test exercises a minimal env var set; the default
-  # test exercises the full Application Signals / OTLP log export configuration.
-  environment_variables = var.lite_sdk ? {
-    AWS_LAMBDA_EXEC_WRAPPER              = "/opt/otel-instrument"
-    OTEL_AWS_LAMBDA_FAST_START           = "true"
-    OTEL_METRICS_EXPORTER                = "none"
-    OTEL_LOGS_EXPORTER                   = "none"
-    OTEL_AWS_APPLICATION_SIGNALS_ENABLED = "true"
-    } : {
+  environment_variables = {
     AWS_LAMBDA_EXEC_WRAPPER                      = "/opt/otel-instrument"
     OTEL_AWS_APPLICATION_SIGNALS_ENABLED         = "true"
     OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED = "false"
@@ -75,9 +67,7 @@ module "api-gateway" {
   enable_xray_tracing = var.tracing_mode == "Active"
 }
 
-# Only the default test exports OTLP logs; the lite SDK test disables log export.
 resource "aws_cloudwatch_log_stream" "otlp_logs" {
-  count          = var.lite_sdk ? 0 : 1
   name           = "otlp-logs"
   log_group_name = "/aws/lambda/${var.function_name}"
   depends_on     = [module.hello-lambda-function]
