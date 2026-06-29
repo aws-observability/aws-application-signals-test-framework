@@ -86,9 +86,9 @@ jobs:
       run: |
         cd current-repo
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh false aws-opentelemetry-distro-nodejs
+        ./lambda-layer-perf-test/lambda-layer-run.sh full aws-opentelemetry-distro-nodejs
 
-    - name: Run Cold Start Iterations for Lite SDK (Fast Start)
+    - name: Run Cold Start Iterations for Base Lambda + Lambda Layer Lite (Fast Start)
       run: |
         cd current-repo
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
@@ -120,7 +120,7 @@ jobs:
       run: |
         cd current-repo
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh true aws-opentelemetry-distro-nodejs
+        ./lambda-layer-perf-test/lambda-layer-run.sh baseline aws-opentelemetry-distro-nodejs
 
     - name: Upload test results
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -129,7 +129,7 @@ jobs:
         path: |
             no_layer_results.txt
             layer_results.txt
-            lite_sdk_results.txt
+            lite_layer_results.txt
         retention-days: 90
 
     - name: Cleanup Terraform Resources
