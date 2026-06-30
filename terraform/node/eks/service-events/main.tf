@@ -191,6 +191,18 @@ resource "kubernetes_deployment_v1" "traffic_generator" {
           name              = "traffic-generator"
           image             = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
           image_pull_policy = "Always"
+          # The shared traffic-generator image drives Python/Java routes (incl. /mysql), but the
+          # Node Service Events sample app uses different routes. Override the command to hit the
+          # Node routes that drive the SE signals (matching the Node EC2 SE test): /exception raises
+          # a ValueError from helpers.validateInput (HTTP 500 — gates the EndpointErrorMetric `count`
+          # and the exception-triggered IncidentSnapshot), /success exercises the instrumented
+          # helpers for the FunctionCall metric, and /aws-sdk-call trips the latency threshold for
+          # the latency-triggered IncidentSnapshot. Reuses the image's bundled node + axios. Waits
+          # for MAIN_ENDPOINT (set post-deploy via `kubectl set env`, which rolls a fresh pod).
+          command = ["sh", "-c"]
+          args = [
+            "cd /usr/src/app && node -e \"const axios=require('axios');const sleep=ms=>new Promise(r=>setTimeout(r,ms));(async()=>{while(!process.env.MAIN_ENDPOINT){console.log('waiting for MAIN_ENDPOINT');await sleep(10000);}const ep=process.env.MAIN_ENDPOINT;const urls=['/success','/aws-sdk-call','/exception'].map(p=>'http://'+ep+p);const tick=()=>urls.forEach(u=>axios.get(u).then(()=>console.log('ok '+u)).catch(e=>console.log('err '+u+' '+(e.response?e.response.status:e.code))));tick();setInterval(tick,5000);})();\"",
+          ]
           env {
             name  = "ID"
             value = var.test_id
