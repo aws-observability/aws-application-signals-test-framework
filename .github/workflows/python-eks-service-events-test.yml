@@ -445,10 +445,12 @@ jobs:
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+            -var="eks_cluster_context_name=$(kubectl config current-context)" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
             -var="python_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
-            -var="account_id=${{ env.ACCOUNT_ID }}"
+            -var="account_id=${{ env.ACCOUNT_ID }}" \
+            -var="kube_directory_path=${{ github.workspace }}/.kube"
 
       - name: Delete namespace
         if: always()
