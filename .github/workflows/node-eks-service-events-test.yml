@@ -315,14 +315,15 @@ jobs:
           max_retry: 3
           sleep_time: 10
 
-      # The generic traffic-generator image blocks until MAIN_ENDPOINT, REMOTE_ENDPOINT, and ID
-      # are all set (sample-apps/traffic-generator/index.js). Service Events has no remote service,
-      # so point REMOTE_ENDPOINT at the app itself — the SE-driving routes don't depend on a real
-      # remote; this just unblocks the generator so it sends traffic.
+      # The Node traffic-generator command is overridden in terraform/node/eks/service-events/main.tf
+      # to drive the Node SE routes (/success, /aws-sdk-call, /exception) and waits only on
+      # MAIN_ENDPOINT — it does not use the generic generator's REMOTE_ENDPOINT/ID gating. So set
+      # only MAIN_ENDPOINT here. (The python/java workflows keep the generic generator and therefore
+      # also set REMOTE_ENDPOINT.)
       - name: Set traffic generator endpoints
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }} REMOTE_ENDPOINT=${{ env.APP_ENDPOINT }}
+          command: kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }}
           max_retry: 3
           sleep_time: 10
 
