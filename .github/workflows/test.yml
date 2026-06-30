@@ -3,6 +3,11 @@
 
 # Temporary dispatch caller for validating EKS Service Events workflows on this branch.
 # Remove after the EKS SE tests are confirmed passing and merged to main.
+#
+# Each language uses its own dedicated EKS cluster in us-east-1:
+#   python -> e2e-python-adot-test, java -> e2e-adot-test, node -> e2e-node-adot-test
+# Leave the per-language cluster inputs empty to use those defaults; override only to
+# point a language at a different cluster.
 name: EKS SE Test Dispatch
 on:
   workflow_dispatch:
@@ -11,10 +16,18 @@ on:
         required: false
         type: string
         default: 'us-east-1'
-      test-cluster-name:
+      python-cluster-name:
         required: false
         type: string
-        default: 'e2e-test-cluster'
+        default: 'e2e-python-adot-test'
+      java-cluster-name:
+        required: false
+        type: string
+        default: 'e2e-adot-test'
+      node-cluster-name:
+        required: false
+        type: string
+        default: 'e2e-node-adot-test'
       language:
         description: 'Which language to test (python, java, node, all)'
         required: false
@@ -32,7 +45,7 @@ jobs:
     secrets: inherit
     with:
       aws-region: ${{ inputs.aws-region }}
-      test-cluster-name: ${{ inputs.test-cluster-name }}
+      test-cluster-name: ${{ inputs.python-cluster-name }}
       caller-workflow-name: 'test-dispatch'
 
   java:
@@ -41,7 +54,7 @@ jobs:
     secrets: inherit
     with:
       aws-region: ${{ inputs.aws-region }}
-      test-cluster-name: ${{ inputs.test-cluster-name }}
+      test-cluster-name: ${{ inputs.java-cluster-name }}
       caller-workflow-name: 'test-dispatch'
 
   node:
@@ -50,5 +63,5 @@ jobs:
     secrets: inherit
     with:
       aws-region: ${{ inputs.aws-region }}
-      test-cluster-name: ${{ inputs.test-cluster-name }}
+      test-cluster-name: ${{ inputs.node-cluster-name }}
       caller-workflow-name: 'test-dispatch'
