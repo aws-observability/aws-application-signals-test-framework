@@ -1,0 +1,5 @@
+-
+  validationType: "cw-metric"
+  httpPath: "/lambda-invoke"
+  callingType: "lambda-invoke"
+  expectedMetricTemplate: "NODE_LAMBDA_INVOKE_METRIC"
