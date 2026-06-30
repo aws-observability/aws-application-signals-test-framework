@@ -491,6 +491,10 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_EKS_CLIENT_CALL_METRIC("/expected-data-template/node/eks/client-call-metric.mustache"),
   NODE_EKS_CLIENT_CALL_TRACE("/expected-data-template/node/eks/client-call-trace.mustache"),
   
+  /** Node EC2 Dynamic Instrumentation Test Case Validations */
+  NODE_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT(
+      "/expected-data-template/node/ec2/adot-di/di-snapshot-line-breakpoint.mustache"),
+
   /** Node EC2 Service Events Test Case Validations */
   NODE_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
       "/expected-data-template/node/ec2/service-events/deployment-event.mustache"),

@@ -47,8 +47,14 @@ def hash_var(cell):
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", cell).upper() + "_LOCATION_HASH"
 
 
+def cells():
+    requests_file = os.environ.get("DI_REQUESTS_FILE", "di-api-requests-python.json")
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), requests_file)) as f:
+        return [k[len("create"):] for k in json.load(f) if k.startswith("create")]
+
+
 def cells_with_hash():
-    for cell in ["LineBreakpoint", "MethodProbe", "MethodBreakpoint", "MethodProbeException"]:
+    for cell in cells():
         h = os.environ.get(hash_var(cell), "")
         if h:
             os.environ["LOCATION_HASH"] = h
@@ -57,7 +63,7 @@ def cells_with_hash():
 
 def cmd_create():
     os.environ["EXPIRES_AT"] = str(int(time.time()) + 1800)
-    for cell in ["LineBreakpoint", "MethodProbe", "MethodBreakpoint", "MethodProbeException"]:
+    for cell in cells():
         data, raw = call_di("create-instrumentation-configuration", f"create{cell}")
         print(f"{cell} Create response: {raw}")
         location_hash = (data or {}).get("LocationHash")

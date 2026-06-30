@@ -3,12 +3,24 @@
 
 #!/bin/bash
 
-IS_BASE_RUN=${1:-false}
+# Scenario mode (arg 1):
+#   full (default) - Full SDK: layer attached, standard otel-instrument wrapper
+#   baseline       - Baseline: no instrumentation env vars
+#   lite           - Lite SDK: layer attached, OTEL_AWS_LAMBDA_FAST_START=true
+RUN_MODE=${1:-full}
+
+case "$RUN_MODE" in
+  full|baseline|lite) ;;
+  *)
+    echo "::error::Unknown run mode '$RUN_MODE' (expected: full, baseline, or lite)"
+    exit 1
+    ;;
+esac
 FUNCTION_NAME=${2:-none}
 SLEEP_TIME_SECONDS=300
 TEST_RUNS=${NUM_TEST_RUNS:-20}
 
-echo "Running $TEST_RUNS cold start test iterations"
+echo "Running $TEST_RUNS cold start test iterations (mode: $RUN_MODE)"
 
 CW_LOGS_QUERY_START_TIME=$(date +%s)
 
@@ -19,8 +31,10 @@ ACTUAL_START_TIME=$(date +%s)
 echo "Start time for test run: $ACTUAL_START_TIME"
 
 for i in $(seq 1 "$TEST_RUNS"); do
-  if $IS_BASE_RUN; then
+  if [ "$RUN_MODE" = "baseline" ]; then
       ENV_JSON="{\"Variables\":{\"FOO\":\"BAR_$i\"}}"
+  elif [ "$RUN_MODE" = "lite" ]; then
+      ENV_JSON="{\"Variables\":{\"AWS_LAMBDA_EXEC_WRAPPER\":\"/opt/otel-instrument\",\"OTEL_AWS_LAMBDA_FAST_START\":\"true\",\"OTEL_METRICS_EXPORTER\":\"none\",\"OTEL_LOGS_EXPORTER\":\"none\",\"FOO\":\"BAR_$i\"}}"
   else
       ENV_JSON="{\"Variables\":{\"AWS_LAMBDA_EXEC_WRAPPER\":\"/opt/otel-instrument\",\"FOO\":\"BAR_$i\"}}"
   fi
@@ -101,9 +115,12 @@ FLATTENED=$(echo "$RESULT" | jq -r '
     join(",\n")
 ')
 
-if $IS_BASE_RUN; then
+if [ "$RUN_MODE" = "baseline" ]; then
     echo "$FLATTENED" > ../no_layer_results.txt
     echo "Results saved to no_layer_results.txt"
+elif [ "$RUN_MODE" = "lite" ]; then
+    echo "$FLATTENED" > ../lite_layer_results.txt
+    echo "Results saved to lite_layer_results.txt"
 else
     echo "$FLATTENED" > ../layer_results.txt
     echo "Results saved to layer_results.txt"
