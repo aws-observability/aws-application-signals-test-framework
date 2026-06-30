@@ -119,6 +119,21 @@ resource "kubernetes_deployment_v1" "node_app_deployment" {
             name  = "OTEL_AWS_SERVICE_EVENTS_PACKAGES_INCLUDE"
             value = var.service_events_packages_include
           }
+          # The Node SDK only AST-transforms the PACKAGES_INCLUDE'd modules when function
+          # instrumentation is explicitly enabled. Without this, helpers.* (e.g. validateInput)
+          # is never wrapped, so the service.function.duration metric and the /exception
+          # exception-triggered IncidentSnapshot (exception_type=ValueError,
+          # function_name=helpers.validateInput) are never emitted. Matches the Node EC2 SE test.
+          env {
+            name  = "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED"
+            value = "true"
+          }
+          # Emit a Service Events sample for every request rather than head-sampling, so the
+          # error/exception signals reliably appear within the validator's retry window.
+          env {
+            name  = "OTEL_AWS_SERVICE_EVENTS_SAMPLING_MODE"
+            value = "always"
+          }
           env {
             name  = "OTEL_AWS_SERVICE_EVENTS_DEPLOYMENT_ID"
             value = local.service_name
