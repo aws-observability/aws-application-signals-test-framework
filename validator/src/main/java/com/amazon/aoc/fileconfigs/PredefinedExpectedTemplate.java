@@ -101,6 +101,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
       "/expected-data-template/java/ec2/service-events/function-call-metric.mustache"),
 
+  /** Java EKS Service Events Test Case Validations */
+  JAVA_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/java/eks/service-events/deployment-event.mustache"),
+  JAVA_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/java/eks/service-events/incident-snapshot.mustache"),
+  JAVA_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/java/eks/service-events/incident-snapshot-latency.mustache"),
+  JAVA_EKS_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/java/eks/service-events/endpoint-error-metric.mustache"),
+  JAVA_EKS_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/java/eks/service-events/function-call-metric.mustache"),
+
   /** Java EC2 ASG Test Case Validations */
   JAVA_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/asg/outgoing-http-call-log.mustache"),
   JAVA_EC2_ASG_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/java/ec2/asg/outgoing-http-call-metric.mustache"),
@@ -308,6 +320,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
       "/expected-data-template/python/ec2/service-events/function-call-metric.mustache"),
 
+  /** Python EKS Service Events Test Case Validations */
+  PYTHON_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/python/eks/service-events/deployment-event.mustache"),
+  PYTHON_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/python/eks/service-events/incident-snapshot.mustache"),
+  PYTHON_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/python/eks/service-events/incident-snapshot-latency.mustache"),
+  PYTHON_EKS_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/python/eks/service-events/endpoint-error-metric.mustache"),
+  PYTHON_EKS_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/python/eks/service-events/function-call-metric.mustache"),
+
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
   PYTHON_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/python/k8s/outgoing-http-call-metric.mustache"),
@@ -482,6 +506,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
       "/expected-data-template/node/ec2/service-events/endpoint-error-metric.mustache"),
   NODE_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
       "/expected-data-template/node/ec2/service-events/function-call-metric.mustache"),
+
+  /** Node EKS Service Events Test Case Validations */
+  NODE_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/node/eks/service-events/deployment-event.mustache"),
+  NODE_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/node/eks/service-events/incident-snapshot.mustache"),
+  NODE_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/node/eks/service-events/incident-snapshot-latency.mustache"),
+  NODE_EKS_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/node/eks/service-events/endpoint-error-metric.mustache"),
+  NODE_EKS_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/node/eks/service-events/function-call-metric.mustache"),
 
   /** Node EC2 Default Test Case Validations */
   NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/node/ec2/default/outgoing-http-call-log.mustache"),
