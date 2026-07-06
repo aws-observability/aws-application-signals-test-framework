@@ -6,7 +6,7 @@ resource "aws_lambda_layer_version" "sdk_layer" {
   count               = 1
   layer_name          = var.sdk_layer_name
   filename            = "${var.layer_artifacts_directory}/layer.zip"
-  compatible_runtimes = ["dotnet6", "dotnet8"]
+  compatible_runtimes = ["dotnet8", "dotnet10"]
   license_info        = "Apache-2.0"
   source_code_hash    = filebase64sha256("${var.layer_artifacts_directory}/layer.zip")
   #   filename = "${var.kube_directory_path}/config"

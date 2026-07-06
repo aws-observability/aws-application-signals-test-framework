@@ -18,7 +18,7 @@ on:
         description: "Currently support version 3.10, 3.11, 3.12, 3.13, 3.14"
         required: false
         type: string
-        default: '3.10'
+        default: '3.13'
       cpu-architecture:
         description: "Permitted values: x86_64 or arm64"
         required: false
@@ -140,10 +140,11 @@ jobs:
       - name: Apply terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda/lambda && terraform apply -auto-approve 
-          -var="sdk_layer_name=AWSOpenTelemetryDistroPython-${{ github.run_id }}" 
+          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/python/lambda/lambda && terraform apply -auto-approve
+          -var="sdk_layer_name=AWSOpenTelemetryDistroPython-${{ github.run_id }}"
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
+          -var="runtime=python${{ inputs.python-version }}"
           -var="region=${{ env.E2E_TEST_AWS_REGION }}"'
           max_retry: 6
           sleep_time: 60
@@ -245,4 +246,5 @@ jobs:
           -var="sdk_layer_name=AWSOpenTelemetryDistroPython-${{ github.run_id }}" \
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" \
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}" \
+          -var="runtime=python${{ inputs.python-version }}" \
           -var="region=${{ env.E2E_TEST_AWS_REGION }}"

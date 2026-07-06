@@ -14,6 +14,11 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      runtime:
+        description: "Java Lambda runtime, e.g. java11, java17, java21, java25"
+        required: false
+        type: string
+        default: 'java17'
     outputs:
       job-started:
         value: ${{ jobs.java-lambda-default.outputs.job-started }}
@@ -123,10 +128,11 @@ jobs:
       - name: Apply terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/lambda/lambda && terraform apply -auto-approve 
-          -var="sdk_layer_name=AWSOpenTelemetryDistroJava-${{ github.run_id }}" 
+          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/lambda/lambda && terraform apply -auto-approve
+          -var="sdk_layer_name=AWSOpenTelemetryDistroJava-${{ github.run_id }}"
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
+          -var="runtime=${{ inputs.runtime }}"
           -var="region=${{ env.E2E_TEST_AWS_REGION }}"'
           max_retry: 6
           sleep_time: 60
@@ -229,4 +235,5 @@ jobs:
           -var="sdk_layer_name=AWSOpenTelemetryDistroJava-${{ github.run_id }}" \
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" \
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}" \
+          -var="runtime=${{ inputs.runtime }}" \
           -var="region=${{ env.E2E_TEST_AWS_REGION }}"
