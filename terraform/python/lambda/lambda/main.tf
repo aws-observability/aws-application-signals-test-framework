@@ -5,7 +5,7 @@ resource "aws_lambda_layer_version" "sdk_layer" {
   count               = 1
   layer_name          = var.sdk_layer_name
   filename            = "${var.layer_artifacts_directory}/layer.zip"
-  compatible_runtimes = ["python3.10", "python3.11", "python3.12", "python3.13"]
+  compatible_runtimes = ["python3.10", "python3.11", "python3.12", "python3.13", "python3.14"]
   license_info        = "Apache-2.0"
   source_code_hash    = filebase64sha256("${var.layer_artifacts_directory}/layer.zip")
   #   filename = "${var.kube_directory_path}/config"

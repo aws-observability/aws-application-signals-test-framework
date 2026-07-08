@@ -14,6 +14,11 @@ on:
       caller-workflow-name:
         required: true
         type: string
+      runtime:
+        description: "DotNet Lambda runtime, e.g. dotnet6, dotnet8"
+        required: false
+        type: string
+        default: 'dotnet8'
     outputs:
       job-started:
         value: ${{ jobs.dotnet-lambda-default.outputs.job-started }}
@@ -93,8 +98,13 @@ jobs:
 
       - name: Download Lambda Layer and Function artifacts for E2E Test
         run: |
-          aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip ${{ env.ARTIFACTS_DIR }}/layer.zip |
-          aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/function-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/dotnet-function.zip
+          aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip ${{ env.ARTIFACTS_DIR }}/layer.zip
+          # Prefer a runtime-specific function artifact (function-<run_id>-<runtime>.zip); fall back to the legacy single artifact.
+          if aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/function-${{ github.run_id }}-${{ inputs.runtime }}.zip ${{ env.ARTIFACTS_DIR }}/dotnet-function.zip; then
+            echo "Using runtime-specific function artifact for ${{ inputs.runtime }}"
+          else
+            aws s3 cp s3://${{ env.STAGING_S3_BUCKET }}/function-${{ github.run_id }}.zip ${{ env.ARTIFACTS_DIR }}/dotnet-function.zip
+          fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -120,10 +130,11 @@ jobs:
       - name: Apply terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && terraform apply -auto-approve 
-          -var="sdk_layer_name=AWSOpenTelemetryDistroDotNet-${{ github.run_id }}" 
-          -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" 
+          command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && terraform apply -auto-approve
+          -var="sdk_layer_name=AWSOpenTelemetryDistroDotNet-${{ github.run_id }}"
+          -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
+          -var="runtime=${{ inputs.runtime }}"
           -var="region=${{ env.E2E_TEST_AWS_REGION }}"'
           max_retry: 6
           sleep_time: 60
@@ -215,4 +226,5 @@ jobs:
           -var="sdk_layer_name=AWSOpenTelemetryDistroDotNet-${{ github.run_id }}" \
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" \
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}" \
+          -var="runtime=${{ inputs.runtime }}" \
           -var="region=${{ env.E2E_TEST_AWS_REGION }}"

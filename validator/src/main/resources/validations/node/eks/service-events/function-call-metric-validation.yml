@@ -1,0 +1,4 @@
+-
+  validationType: "promql"
+  expectedMetricTemplate: "NODE_EKS_SERVICE_EVENTS_FUNCTION_CALL_METRIC"
+  promQlQuery: "{\"service.function.duration\", \"@resource.service.name\"=\"{{serviceName}}\"}"
