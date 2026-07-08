@@ -29,7 +29,13 @@ module "hello-lambda-function" {
 
   layers = [aws_lambda_layer_version.sdk_layer[0].arn]
 
-  environment_variables = {
+  environment_variables = var.lite_sdk ? {
+    AWS_LAMBDA_EXEC_WRAPPER              = "/opt/otel-instrument"
+    OTEL_AWS_LAMBDA_FAST_START           = "true"
+    OTEL_METRICS_EXPORTER                = "none"
+    OTEL_LOGS_EXPORTER                   = "none"
+    OTEL_AWS_APPLICATION_SIGNALS_ENABLED = "true"
+    } : {
     AWS_LAMBDA_EXEC_WRAPPER                      = "/opt/otel-instrument"
     OTEL_AWS_APPLICATION_SIGNALS_ENABLED         = "true"
     OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED = "false"
@@ -68,6 +74,7 @@ module "api-gateway" {
 }
 
 resource "aws_cloudwatch_log_stream" "otlp_logs" {
+  count          = var.lite_sdk ? 0 : 1
   name           = "otlp-logs"
   log_group_name = "/aws/lambda/${var.function_name}"
   depends_on     = [module.hello-lambda-function]
