@@ -124,14 +124,20 @@ jobs:
 
       - name: Get terraform Lambda function name
         shell: bash
+        # Suffix resource names with the matrix runtime so parallel runtime jobs sharing a run_id
+        # don't collide on the same IAM role / log group / layer. Strip dots since Lambda function,
+        # IAM role, and layer names disallow them.
         run: |
-          echo TERRAFORM_LAMBDA_FUNCTION_NAME="AdotLambdaDotNetSampleApp-${{ github.run_id }}"|
+          RUNTIME_TAG=$(echo "${{ inputs.runtime }}" | tr -cd '[:alnum:]')
+          echo TERRAFORM_LAMBDA_FUNCTION_NAME="AdotLambdaDotNetSampleApp-${{ github.run_id }}-${RUNTIME_TAG}" |
+          tee --append "$GITHUB_ENV"
+          echo TERRAFORM_LAMBDA_LAYER_NAME="AWSOpenTelemetryDistroDotNet-${{ github.run_id }}-${RUNTIME_TAG}" |
           tee --append "$GITHUB_ENV"
       - name: Apply terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: 'cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && terraform apply -auto-approve
-          -var="sdk_layer_name=AWSOpenTelemetryDistroDotNet-${{ github.run_id }}"
+          -var="sdk_layer_name=${{ env.TERRAFORM_LAMBDA_LAYER_NAME }}"
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}"
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}"
           -var="runtime=${{ inputs.runtime }}"
@@ -223,7 +229,7 @@ jobs:
         continue-on-error: true
         run: |
           cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/lambda/lambda && terraform destroy -auto-approve \
-          -var="sdk_layer_name=AWSOpenTelemetryDistroDotNet-${{ github.run_id }}" \
+          -var="sdk_layer_name=${{ env.TERRAFORM_LAMBDA_LAYER_NAME }}" \
           -var="function_name=${{env.TERRAFORM_LAMBDA_FUNCTION_NAME}}" \
           -var="layer_artifacts_directory=${{ env.ARTIFACTS_DIR }}" \
           -var="runtime=${{ inputs.runtime }}" \
