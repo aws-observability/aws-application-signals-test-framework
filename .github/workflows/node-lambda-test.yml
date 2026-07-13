@@ -123,9 +123,6 @@ jobs:
 
       - name: Get terraform Lambda function name
         shell: bash
-        # Suffix resource names with the matrix runtime so parallel runtime jobs sharing a run_id
-        # don't collide on the same IAM role / log group / layer. Strip dots ('nodejs22.x' ->
-        # 'nodejs22x') since Lambda function, IAM role, and layer names disallow them.
         run: |
           RUNTIME_TAG=$(echo "${{ inputs.runtime }}" | tr -cd '[:alnum:]')
           echo TERRAFORM_LAMBDA_FUNCTION_NAME="AdotLambdaNodeJsSampleApp-${{ github.run_id }}-${RUNTIME_TAG}" |

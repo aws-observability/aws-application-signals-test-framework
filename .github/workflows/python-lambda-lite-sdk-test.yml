@@ -130,9 +130,6 @@ jobs:
 
       - name: Get terraform Lambda function name
         shell: bash
-        # Suffix resource names with the matrix runtime so parallel python-version jobs sharing a
-        # run_id don't collide on the same IAM role / log group / layer. Strip dots ('3.12' -> '312')
-        # since Lambda function, IAM role, and layer names disallow them.
         run: |
           RUNTIME_TAG=$(echo "${{ inputs.python-version }}" | tr -cd '[:alnum:]')
           echo TERRAFORM_LAMBDA_FUNCTION_NAME="AdotLambdaPythonLiteSdk-${{ github.run_id }}-py${RUNTIME_TAG}" |
