@@ -16,29 +16,25 @@ on:
         required: true
         default: 'main'
         type: string
-
+    
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  java-lambda-layer-performance-test:
+    runs-on: ubuntu-latest 
     permissions:
-      id-token: write
-      contents: read
-
-    outputs:
-      layer_version_arn: ${{ steps.publish-layer.outputs.layer_version_arn }}
-      iam_role_arn: ${{ steps.create-iam.outputs.iam_role_arn }}
-      iam_policy_arn: ${{ steps.create-iam.outputs.iam_policy_arn }}
+        id-token: write
+        contents: read
 
     env:
+      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
       ADOT_JAVA_BRANCH: ${{ github.event.inputs.ADOT-Java-Branch }}
-
+  
     steps:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
       with:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1
-
+ 
     - name: Checkout aws-otel-java-instrumentation
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
@@ -58,168 +54,98 @@ jobs:
         echo "ADOT Java Branch: ${{ env.ADOT_JAVA_BRANCH }}"
         echo "ADOT Java Commit Hash: $(git rev-parse HEAD)"
 
-    - name: Build Lambda Layer
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #v3.1.2
+    
+    - name: Build and Deploy Lambda Layer
       run: |
         cd aws-otel-java-instrumentation/lambda-layer
         chmod +x build-layer.sh
         ./build-layer.sh
-
-    - name: Publish Lambda Layer
-      id: publish-layer
-      run: |
+                
         LAYER_VERSION_ARN=$(aws lambda publish-layer-version \
           --layer-name AWSOpenTelemetryDistroJava \
-          --zip-file fileb://aws-otel-java-instrumentation/lambda-layer/build/distributions/aws-opentelemetry-java-layer.zip \
+          --zip-file fileb://build/distributions/aws-opentelemetry-java-layer.zip \
           --compatible-runtimes "java11" "java17" "java21" \
           --compatible-architectures "x86_64" "arm64" \
           --query 'LayerVersionArn' \
           --output text)
+        
+        echo "LAYER_VERSION_ARN=$LAYER_VERSION_ARN" >> "$GITHUB_ENV"
+        echo "Published layer ARN $LAYER_VERSION_ARN"
 
-        echo "layer_version_arn=$LAYER_VERSION_ARN" >> "$GITHUB_OUTPUT"
-        echo "Published layer ARN: $LAYER_VERSION_ARN"
-
-    - name: Create shared IAM resources
-      id: create-iam
-      run: |
-        # Create IAM role (or get existing)
-        ROLE_ARN=$(aws iam create-role \
-          --role-name lambda_execution_role \
-          --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"}}]}' \
-          --query 'Role.Arn' --output text 2>/dev/null) || \
-        ROLE_ARN=$(aws iam get-role --role-name lambda_execution_role --query 'Role.Arn' --output text)
-
-        # Create IAM policy (or get existing)
-        POLICY_ARN=$(aws iam create-policy \
-          --policy-name S3ListBucketsPolicy \
-          --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:ListAllMyBuckets"],"Resource":"*"}]}' \
-          --query 'Policy.Arn' --output text 2>/dev/null) || \
-        POLICY_ARN=$(aws iam list-policies --query "Policies[?PolicyName=='S3ListBucketsPolicy'].Arn | [0]" --output text)
-
-        # Attach policies to role
-        aws iam attach-role-policy --role-name lambda_execution_role \
-          --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole 2>/dev/null || true
-        aws iam attach-role-policy --role-name lambda_execution_role \
-          --policy-arn "$POLICY_ARN" 2>/dev/null || true
-        aws iam attach-role-policy --role-name lambda_execution_role \
-          --policy-arn arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess 2>/dev/null || true
-
-        echo "iam_role_arn=$ROLE_ARN" >> "$GITHUB_OUTPUT"
-        echo "iam_policy_arn=$POLICY_ARN" >> "$GITHUB_OUTPUT"
-        echo "IAM Role ARN: $ROLE_ARN"
-        echo "IAM Policy ARN: $POLICY_ARN"
-
-    - name: Build Sample Application
+    - name: Build and Deploy Sample Application with Lambda Layer
       run: |
         cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda
         gradle clean build
         gradle createLambdaZip
+        
+        cd terraform
+        terraform init
+        terraform apply -auto-approve -var "adot_layer_arn=${{ env.LAYER_VERSION_ARN }}"
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        name: java-lambda-build-artifacts
-        path: |
-          aws-otel-java-instrumentation/sample-apps/apigateway-lambda/build/distributions/lambda-function.zip
-          aws-otel-java-instrumentation/sample-apps/apigateway-lambda/terraform/
-        retention-days: 1
-
-  test:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: [full, baseline]
-        include:
-          - mode: full
-            result_file: layer_results.txt
-          - mode: baseline
-            result_file: no_layer_results.txt
-
-    env:
-      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
-      FUNCTION_NAME: aws-opentelemetry-distro-java-${{ matrix.mode }}
-      LAYER_VERSION_ARN: ${{ needs.build.outputs.layer_version_arn }}
-      IAM_ROLE_ARN: ${{ needs.build.outputs.iam_role_arn }}
-      IAM_POLICY_ARN: ${{ needs.build.outputs.iam_policy_arn }}
-
-    steps:
-    - name: Configure AWS Credentials
+    # Re-authenticate to refresh credentials (important!)
+    - name: Refresh AWS Credentials
       uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
       with:
         role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
         aws-region: us-east-1
 
-    - name: Download build artifacts
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      with:
-        name: java-lambda-build-artifacts
-        path: aws-otel-java-instrumentation/sample-apps/apigateway-lambda
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #v3.1.2
-
-    - name: Deploy Lambda Function
-      run: |
-        cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda/terraform
-        terraform init
-
-        # Import shared IAM resources so Terraform adopts them instead of recreating
-        terraform import aws_iam_role.lambda_role lambda_execution_role
-        terraform import aws_iam_policy.s3_access ${{ env.IAM_POLICY_ARN }}
-        terraform import aws_iam_role_policy_attachment.attach_execution_role_policy lambda_execution_role/arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        terraform import aws_iam_role_policy_attachment.attach_s3_policy lambda_execution_role/${{ env.IAM_POLICY_ARN }}
-        terraform import aws_iam_role_policy_attachment.attach_xray_policy lambda_execution_role/arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
-
-        terraform apply -auto-approve \
-          -var="function_name=${{ env.FUNCTION_NAME }}" \
-          -var="api_gateway_name=${{ env.FUNCTION_NAME }}" \
-          -var="adot_layer_arn=${{ env.LAYER_VERSION_ARN }}"
-
-    - name: Remove Application Signals Lambda Layer
-      if: matrix.mode == 'baseline'
-      run: |
-        echo "Removing Lambda layer..."
-
-        OUTPUT=$(aws lambda update-function-configuration \
-            --function-name ${{ env.FUNCTION_NAME }} \
-            --layers [])
-
-        echo "Lambda configuration:"
-        echo "$OUTPUT"
-
-        LAYERS=$(echo "$OUTPUT" | jq -r '.Layers | length')
-
-        if [ "$LAYERS" -ne 0 ]; then
-            echo "::error::Found $LAYERS layer(s) still attached to the function"
-            echo "::error::Layer details:"
-            echo "$OUTPUT" | jq -r '.Layers'
-            exit 1
-        else
-            echo "Layers successfully removed"
-        fi
-
     - name: Checkout current repository
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       with:
         path: current-repo
-
-    - name: Run Cold Start Iterations (${{ matrix.mode }})
+    
+    - name: Run Cold Start Iterations for Base Lambda + Lambda Layer
       run: |
         cd current-repo
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh ${{ matrix.mode }} ${{ env.FUNCTION_NAME }}
+        ./lambda-layer-perf-test/lambda-layer-run.sh full aws-opentelemetry-distro-java
+
+    - name: Remove Application Signals Lambda Layer
+      run: |
+          echo "Removing Lambda layer..."
+          
+          OUTPUT=$(aws lambda update-function-configuration \
+              --function-name aws-opentelemetry-distro-java \
+              --layers [])
+  
+          echo "Lambda configuration:"
+          echo "$OUTPUT"
+  
+          LAYERS=$(echo "$OUTPUT" | jq -r '.Layers | length')
+  
+          if [ "$LAYERS" -ne 0 ]; then
+              echo "::error::Found $LAYERS layer(s) still attached to the function"
+              echo "::error::Layer details:"
+              echo "$OUTPUT" | jq -r '.Layers'
+              exit 1
+          else
+              echo "✅ Layers successfully removed"
+          fi
+ 
+    - name: Run Cold Start Iterations for Base Lambda
+      run: |
+        cd current-repo
+        chmod +x lambda-layer-perf-test/lambda-layer-run.sh
+        ./lambda-layer-perf-test/lambda-layer-run.sh baseline aws-opentelemetry-distro-java
 
     - name: Upload test results
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
-        name: java-${{ matrix.mode }}-results
-        path: ${{ matrix.result_file }}
+        name: java-performance-test-results
+        path: |
+            no_layer_results.txt
+            layer_results.txt
         retention-days: 90
+
+    # Always re-authenticate to refresh credentials before cleanup
+    - name: Refresh AWS Credentials before cleanup
+      if: success() || failure() || cancelled()
+      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+        aws-region: us-east-1
 
     - name: Cleanup Terraform Resources
       if: success() || failure() || cancelled()
@@ -227,71 +153,4 @@ jobs:
         cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda/terraform
         echo "Starting Terraform cleanup..."
         terraform init
-
-        # Remove shared IAM resources from state so they aren't destroyed per-job
-        terraform state rm aws_iam_role.lambda_role || true
-        terraform state rm aws_iam_policy.s3_access || true
-        terraform state rm aws_iam_role_policy_attachment.attach_execution_role_policy || true
-        terraform state rm aws_iam_role_policy_attachment.attach_s3_policy || true
-        terraform state rm aws_iam_role_policy_attachment.attach_xray_policy || true
-
-        terraform destroy -auto-approve \
-          -var="function_name=${{ env.FUNCTION_NAME }}" \
-          -var="api_gateway_name=${{ env.FUNCTION_NAME }}" \
-          -var="adot_layer_arn=${{ env.LAYER_VERSION_ARN }}"
-
-  cleanup-shared-resources:
-    needs: [build, test]
-    if: always()
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    env:
-      IAM_POLICY_ARN: ${{ needs.build.outputs.iam_policy_arn }}
-
-    steps:
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-      with:
-        role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-        aws-region: us-east-1
-
-    - name: Delete shared IAM resources
-      run: |
-        echo "Cleaning up shared IAM resources..."
-
-        # Detach policies
-        aws iam detach-role-policy --role-name lambda_execution_role \
-          --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole 2>/dev/null || true
-        aws iam detach-role-policy --role-name lambda_execution_role \
-          --policy-arn "${{ env.IAM_POLICY_ARN }}" 2>/dev/null || true
-        aws iam detach-role-policy --role-name lambda_execution_role \
-          --policy-arn arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess 2>/dev/null || true
-
-        # Delete role and policy
-        aws iam delete-role --role-name lambda_execution_role 2>/dev/null || true
-        aws iam delete-policy --policy-arn "${{ env.IAM_POLICY_ARN }}" 2>/dev/null || true
-
-        echo "Shared IAM resources cleaned up"
-
-  collect-results:
-    needs: [test]
-    if: always()
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Download all test results
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      with:
-        pattern: java-*-results
-        merge-multiple: true
-        path: results
-
-    - name: Upload combined results
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        name: java-performance-test-results
-        path: results/
-        retention-days: 90
+        terraform destroy -auto-approve
