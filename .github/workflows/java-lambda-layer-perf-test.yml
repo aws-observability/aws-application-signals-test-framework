@@ -135,6 +135,7 @@ jobs:
         terraform init
         terraform apply -auto-approve \
           -var="function_name=${{ env.FUNCTION_NAME }}" \
+          -var="api_gateway_name=${{ env.FUNCTION_NAME }}" \
           -var="adot_layer_arn=${{ env.LAYER_VERSION_ARN }}"
 
     - name: Remove Application Signals Lambda Layer
@@ -186,6 +187,7 @@ jobs:
         terraform init
         terraform destroy -auto-approve \
           -var="function_name=${{ env.FUNCTION_NAME }}" \
+          -var="api_gateway_name=${{ env.FUNCTION_NAME }}" \
           -var="adot_layer_arn=${{ env.LAYER_VERSION_ARN }}"
 
   collect-results:
