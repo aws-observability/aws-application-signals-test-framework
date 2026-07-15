@@ -287,3 +287,23 @@ jobs:
         terraform destroy -auto-approve \
           -var="function_name=aws-opentelemetry-distro-python-baseline" \
           -var="sdk_layer_name=AWSOpenTelemetryDistroPython-baseline"
+
+  collect-results:
+    needs: [test-full-sdk, test-lite-sdk, test-baseline]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download all test results
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      with:
+        pattern: python-*-results
+        merge-multiple: true
+        path: results
+
+    - name: Upload combined results
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: python-performance-test-results
+        path: results/
+        retention-days: 90
