@@ -101,8 +101,8 @@ jobs:
 
     env:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
-      FUNCTION_NAME: aws-opentelemetry-distro-python-${{ matrix.mode }}-${{ github.run_id }}
-      LAYER_NAME: AWSOpenTelemetryDistroPython-${{ matrix.mode }}-${{ github.run_id }}
+      FUNCTION_NAME: aws-opentelemetry-distro-python-${{ matrix.mode }}
+      LAYER_NAME: AWSOpenTelemetryDistroPython-${{ matrix.mode }}
 
     steps:
     - name: Configure AWS Credentials
