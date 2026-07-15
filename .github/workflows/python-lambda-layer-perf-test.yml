@@ -80,15 +80,29 @@ jobs:
           aws-otel-python-instrumentation/lambda-layer/terraform/
         retention-days: 1
 
-  test-full-sdk:
+  test:
     needs: build
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
 
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [full, lite, baseline]
+        include:
+          - mode: full
+            result_file: layer_results.txt
+          - mode: lite
+            result_file: lite_layer_results.txt
+          - mode: baseline
+            result_file: no_layer_results.txt
+
     env:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
+      FUNCTION_NAME: aws-opentelemetry-distro-python-${{ matrix.mode }}
+      LAYER_NAME: AWSOpenTelemetryDistroPython-${{ matrix.mode }}
 
     steps:
     - name: Configure AWS Credentials
@@ -111,139 +125,16 @@ jobs:
         cd aws-otel-python-instrumentation/lambda-layer/terraform/lambda
         terraform init
         terraform apply -auto-approve \
-          -var="function_name=aws-opentelemetry-distro-python-full" \
-          -var="sdk_layer_name=AWSOpenTelemetryDistroPython-full"
-
-    - name: Checkout current repository
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      with:
-        path: current-repo
-
-    - name: Run Cold Start Iterations (Full SDK)
-      run: |
-        cd current-repo
-        chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh full aws-opentelemetry-distro-python-full
-
-    - name: Upload test results
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        name: python-full-sdk-results
-        path: layer_results.txt
-        retention-days: 90
-
-    - name: Cleanup Terraform Resources
-      if: success() || failure() || cancelled()
-      run: |
-        cd aws-otel-python-instrumentation/lambda-layer/terraform/lambda
-        echo "Starting Terraform cleanup..."
-        terraform init
-        terraform destroy -auto-approve \
-          -var="function_name=aws-opentelemetry-distro-python-full" \
-          -var="sdk_layer_name=AWSOpenTelemetryDistroPython-full"
-
-  test-lite-sdk:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    env:
-      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
-
-    steps:
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-      with:
-        role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-        aws-region: us-east-1
-
-    - name: Download build artifacts
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      with:
-        name: python-lambda-build-artifacts
-        path: aws-otel-python-instrumentation/lambda-layer
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #v3.1.2
-
-    - name: Deploy Lambda Function
-      run: |
-        cd aws-otel-python-instrumentation/lambda-layer/terraform/lambda
-        terraform init
-        terraform apply -auto-approve \
-          -var="function_name=aws-opentelemetry-distro-python-lite" \
-          -var="sdk_layer_name=AWSOpenTelemetryDistroPython-lite"
-
-    - name: Checkout current repository
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      with:
-        path: current-repo
-
-    - name: Run Cold Start Iterations (Lite SDK)
-      run: |
-        cd current-repo
-        chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh lite aws-opentelemetry-distro-python-lite
-
-    - name: Upload test results
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-      with:
-        name: python-lite-sdk-results
-        path: lite_layer_results.txt
-        retention-days: 90
-
-    - name: Cleanup Terraform Resources
-      if: success() || failure() || cancelled()
-      run: |
-        cd aws-otel-python-instrumentation/lambda-layer/terraform/lambda
-        echo "Starting Terraform cleanup..."
-        terraform init
-        terraform destroy -auto-approve \
-          -var="function_name=aws-opentelemetry-distro-python-lite" \
-          -var="sdk_layer_name=AWSOpenTelemetryDistroPython-lite"
-
-  test-baseline:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-
-    env:
-      NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
-
-    steps:
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-      with:
-        role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-        aws-region: us-east-1
-
-    - name: Download build artifacts
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      with:
-        name: python-lambda-build-artifacts
-        path: aws-otel-python-instrumentation/lambda-layer
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd #v3.1.2
-
-    - name: Deploy Lambda Function
-      run: |
-        cd aws-otel-python-instrumentation/lambda-layer/terraform/lambda
-        terraform init
-        terraform apply -auto-approve \
-          -var="function_name=aws-opentelemetry-distro-python-baseline" \
-          -var="sdk_layer_name=AWSOpenTelemetryDistroPython-baseline"
+          -var="function_name=${{ env.FUNCTION_NAME }}" \
+          -var="sdk_layer_name=${{ env.LAYER_NAME }}"
 
     - name: Remove Application Signals Lambda Layer
+      if: matrix.mode == 'baseline'
       run: |
         echo "Removing Lambda layer..."
 
         OUTPUT=$(aws lambda update-function-configuration \
-            --function-name aws-opentelemetry-distro-python-baseline \
+            --function-name ${{ env.FUNCTION_NAME }} \
             --layers [])
 
         echo "Lambda configuration:"
@@ -257,7 +148,7 @@ jobs:
             echo "$OUTPUT" | jq -r '.Layers'
             exit 1
         else
-            echo "✅ Layers successfully removed"
+            echo "Layers successfully removed"
         fi
 
     - name: Checkout current repository
@@ -265,17 +156,17 @@ jobs:
       with:
         path: current-repo
 
-    - name: Run Cold Start Iterations (Baseline)
+    - name: Run Cold Start Iterations (${{ matrix.mode }})
       run: |
         cd current-repo
         chmod +x lambda-layer-perf-test/lambda-layer-run.sh
-        ./lambda-layer-perf-test/lambda-layer-run.sh baseline aws-opentelemetry-distro-python-baseline
+        ./lambda-layer-perf-test/lambda-layer-run.sh ${{ matrix.mode }} ${{ env.FUNCTION_NAME }}
 
     - name: Upload test results
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
-        name: python-baseline-results
-        path: no_layer_results.txt
+        name: python-${{ matrix.mode }}-results
+        path: ${{ matrix.result_file }}
         retention-days: 90
 
     - name: Cleanup Terraform Resources
@@ -285,11 +176,11 @@ jobs:
         echo "Starting Terraform cleanup..."
         terraform init
         terraform destroy -auto-approve \
-          -var="function_name=aws-opentelemetry-distro-python-baseline" \
-          -var="sdk_layer_name=AWSOpenTelemetryDistroPython-baseline"
+          -var="function_name=${{ env.FUNCTION_NAME }}" \
+          -var="sdk_layer_name=${{ env.LAYER_NAME }}"
 
   collect-results:
-    needs: [test-full-sdk, test-lite-sdk, test-baseline]
+    needs: [test]
     if: always()
     runs-on: ubuntu-latest
 
