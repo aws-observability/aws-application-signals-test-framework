@@ -26,6 +26,8 @@ jobs:
 
     outputs:
       layer_version_arn: ${{ steps.publish-layer.outputs.layer_version_arn }}
+      iam_role_arn: ${{ steps.create-iam.outputs.iam_role_arn }}
+      iam_policy_arn: ${{ steps.create-iam.outputs.iam_policy_arn }}
 
     env:
       ADOT_JAVA_BRANCH: ${{ github.event.inputs.ADOT-Java-Branch }}
@@ -76,6 +78,36 @@ jobs:
         echo "layer_version_arn=$LAYER_VERSION_ARN" >> "$GITHUB_OUTPUT"
         echo "Published layer ARN: $LAYER_VERSION_ARN"
 
+    - name: Create shared IAM resources
+      id: create-iam
+      run: |
+        # Create IAM role (or get existing)
+        ROLE_ARN=$(aws iam create-role \
+          --role-name lambda_execution_role \
+          --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"}}]}' \
+          --query 'Role.Arn' --output text 2>/dev/null) || \
+        ROLE_ARN=$(aws iam get-role --role-name lambda_execution_role --query 'Role.Arn' --output text)
+
+        # Create IAM policy (or get existing)
+        POLICY_ARN=$(aws iam create-policy \
+          --policy-name S3ListBucketsPolicy \
+          --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:ListAllMyBuckets"],"Resource":"*"}]}' \
+          --query 'Policy.Arn' --output text 2>/dev/null) || \
+        POLICY_ARN=$(aws iam list-policies --query "Policies[?PolicyName=='S3ListBucketsPolicy'].Arn | [0]" --output text)
+
+        # Attach policies to role
+        aws iam attach-role-policy --role-name lambda_execution_role \
+          --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole 2>/dev/null || true
+        aws iam attach-role-policy --role-name lambda_execution_role \
+          --policy-arn "$POLICY_ARN" 2>/dev/null || true
+        aws iam attach-role-policy --role-name lambda_execution_role \
+          --policy-arn arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess 2>/dev/null || true
+
+        echo "iam_role_arn=$ROLE_ARN" >> "$GITHUB_OUTPUT"
+        echo "iam_policy_arn=$POLICY_ARN" >> "$GITHUB_OUTPUT"
+        echo "IAM Role ARN: $ROLE_ARN"
+        echo "IAM Policy ARN: $POLICY_ARN"
+
     - name: Build Sample Application
       run: |
         cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda
@@ -112,6 +144,8 @@ jobs:
       NUM_TEST_RUNS: ${{ github.event.inputs.test_runs }}
       FUNCTION_NAME: aws-opentelemetry-distro-java-${{ matrix.mode }}
       LAYER_VERSION_ARN: ${{ needs.build.outputs.layer_version_arn }}
+      IAM_ROLE_ARN: ${{ needs.build.outputs.iam_role_arn }}
+      IAM_POLICY_ARN: ${{ needs.build.outputs.iam_policy_arn }}
 
     steps:
     - name: Configure AWS Credentials
@@ -133,6 +167,14 @@ jobs:
       run: |
         cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda/terraform
         terraform init
+
+        # Import shared IAM resources so Terraform adopts them instead of recreating
+        terraform import aws_iam_role.lambda_role lambda_execution_role
+        terraform import aws_iam_policy.s3_access ${{ env.IAM_POLICY_ARN }}
+        terraform import aws_iam_role_policy_attachment.attach_execution_role_policy lambda_execution_role/arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        terraform import aws_iam_role_policy_attachment.attach_s3_policy lambda_execution_role/${{ env.IAM_POLICY_ARN }}
+        terraform import aws_iam_role_policy_attachment.attach_xray_policy lambda_execution_role/arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+
         terraform apply -auto-approve \
           -var="function_name=${{ env.FUNCTION_NAME }}" \
           -var="api_gateway_name=${{ env.FUNCTION_NAME }}" \
@@ -185,10 +227,54 @@ jobs:
         cd aws-otel-java-instrumentation/sample-apps/apigateway-lambda/terraform
         echo "Starting Terraform cleanup..."
         terraform init
+
+        # Remove shared IAM resources from state so they aren't destroyed per-job
+        terraform state rm aws_iam_role.lambda_role || true
+        terraform state rm aws_iam_policy.s3_access || true
+        terraform state rm aws_iam_role_policy_attachment.attach_execution_role_policy || true
+        terraform state rm aws_iam_role_policy_attachment.attach_s3_policy || true
+        terraform state rm aws_iam_role_policy_attachment.attach_xray_policy || true
+
         terraform destroy -auto-approve \
           -var="function_name=${{ env.FUNCTION_NAME }}" \
           -var="api_gateway_name=${{ env.FUNCTION_NAME }}" \
           -var="adot_layer_arn=${{ env.LAYER_VERSION_ARN }}"
+
+  cleanup-shared-resources:
+    needs: [build, test]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      IAM_POLICY_ARN: ${{ needs.build.outputs.iam_policy_arn }}
+
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}:role/${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+        aws-region: us-east-1
+
+    - name: Delete shared IAM resources
+      run: |
+        echo "Cleaning up shared IAM resources..."
+
+        # Detach policies
+        aws iam detach-role-policy --role-name lambda_execution_role \
+          --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole 2>/dev/null || true
+        aws iam detach-role-policy --role-name lambda_execution_role \
+          --policy-arn "${{ env.IAM_POLICY_ARN }}" 2>/dev/null || true
+        aws iam detach-role-policy --role-name lambda_execution_role \
+          --policy-arn arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess 2>/dev/null || true
+
+        # Delete role and policy
+        aws iam delete-role --role-name lambda_execution_role 2>/dev/null || true
+        aws iam delete-policy --policy-arn "${{ env.IAM_POLICY_ARN }}" 2>/dev/null || true
+
+        echo "Shared IAM resources cleaned up"
 
   collect-results:
     needs: [test]
