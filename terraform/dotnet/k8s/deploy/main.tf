@@ -93,9 +93,8 @@ resource "null_resource" "deploy" {
       elif [ "${var.repository}" = "aws-otel-dotnet-instrumentation" ]; then
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
         -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/5", "value": "--auto-instrumentation-dotnet-image=${var.patch_image_arn}"}]'
-        kubectl delete pods --all -n amazon-cloudwatch
-        sleep 10
-        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+        # Patching the deployment triggers a rollout; wait for it to converge before proceeding.
+        kubectl rollout status deployment/amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch --timeout=120s
       fi
 
       # Create sample app namespace
