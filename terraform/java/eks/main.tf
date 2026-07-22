@@ -59,6 +59,20 @@ provider "kubectl" {
   load_config_file       = false
 }
 
+# Compute unique NodePorts per Java version so EKS test jobs can run in parallel
+# on the same cluster without "port is already allocated" collisions.
+locals {
+  version_offset = {
+    "8"  = 0
+    "11" = 1
+    "17" = 2
+    "21" = 3
+    "25" = 4
+  }
+  main_node_port   = 30100 + lookup(local.version_offset, var.java_version, 0) * 2
+  remote_node_port = 30101 + lookup(local.version_offset, var.java_version, 0) * 2
+}
+
 data "template_file" "kubeconfig_file" {
   template = file("./kubeconfig.tpl")
   vars = {
@@ -152,7 +166,7 @@ resource "kubernetes_service" "sample_app_service" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8080
-      node_port   = 30100
+      node_port   = local.main_node_port
     }
   }
 }
@@ -224,7 +238,7 @@ resource "kubernetes_service" "sample_remote_app_deployment" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8080
-      node_port   = 30101
+      node_port   = local.remote_node_port
     }
   }
 }

@@ -217,6 +217,7 @@ jobs:
               -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
               -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
               -var='account_id=${{ env.ACCOUNT_ID }}' \
+              -var="java_version=${{ env.JAVA_VERSION }}" \
             || deployment_failed=$?          
 
             if [ $deployment_failed -ne 0 ]; then
@@ -266,8 +267,9 @@ jobs:
                 -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
                 -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
                 -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
-                -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
-          
+                -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
+                -var="java_version=${{ env.JAVA_VERSION }}"
+
               retry_counter=$(($retry_counter+1))
             else
               # If deployment succeeded, then exit the loop
@@ -450,7 +452,8 @@ jobs:
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
             -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
-            -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
+            -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
+            -var="java_version=${{ env.JAVA_VERSION }}"
 
       - name: Remove aws access service account
         if: always()
