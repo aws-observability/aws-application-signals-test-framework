@@ -183,7 +183,8 @@ jobs:
     needs: [test]
     if: always()
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      actions: write
 
     steps:
     - name: Download all test results
@@ -199,3 +200,15 @@ jobs:
         name: python-performance-test-results
         path: results/
         retention-days: 90
+
+    - name: Delete intermediate artifacts
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        artifacts=$(gh api --paginate \
+          "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+          --jq '.artifacts[] | select(.name | test("^python-(full|lite|baseline)-results$")) | .id')
+        for id in $artifacts; do
+          echo "Deleting artifact $id"
+          gh api --method DELETE "/repos/${{ github.repository }}/actions/artifacts/$id"
+        done
