@@ -207,7 +207,7 @@ jobs:
       run: |
         artifacts=$(gh api --paginate \
           "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
-          --jq '.artifacts[] | select(.name | test("^python-(full|lite|baseline)-results$")) | .id')
+          --jq '.artifacts[] | select(.name | test("^python-(full|lite|baseline)-results$|^python-lambda-build-artifacts$")) | .id')
         for id in $artifacts; do
           echo "Deleting artifact $id"
           gh api --method DELETE "/repos/${{ github.repository }}/actions/artifacts/$id"
