@@ -51,19 +51,15 @@ jobs:
         run: |
           docker compose build
 
-      # Push the default (8.0) canary image both untagged (for backwards compatibility) and
-      # tagged :v8.0 so the version-parametrized EKS test can resolve it by version tag.
+      # Push the default (8.0) canary image tagged :v8.0 to all regions so the version-parametrized
+      # EKS and k8s tests can resolve it by version tag, matching the Java/Python pattern.
       - name: Upload Main Service Image
         run: |
-          docker tag dotnetsampleapp/frontend-service ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}
-          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}
           docker tag dotnetsampleapp/frontend-service ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}:v8.0
           docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}:v8.0
 
       - name: Upload Remote Service Image
         run: |
-          docker tag dotnetsampleapp/remote-service ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}
-          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}
           docker tag dotnetsampleapp/remote-service ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}:v8.0
           docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ matrix.aws-region }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}:v8.0
 

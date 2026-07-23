@@ -435,8 +435,8 @@ jobs:
             -var="eks_cluster_name=${{ inputs.test-cluster-name }}" \
             -var="test_namespace=${{ env.DOTNET_SAMPLE_APP_NAMESPACE }}" \
             -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
-            -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}" \
-            -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}"
+            -var="dotnet_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_FE_SA_IMG }}:v${{ env.DOTNET_VERSION }}" \
+            -var="dotnet_remote_app_image=${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ secrets.APP_SIGNALS_DOTNET_E2E_RE_SA_IMG }}:v${{ env.DOTNET_VERSION }}"
 
       - name: Remove aws access service account
         if: always()
