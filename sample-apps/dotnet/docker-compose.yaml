@@ -7,6 +7,8 @@ services:
     build:
       context: .
       dockerfile: asp_frontend_service/Dockerfile
+      args:
+        DOTNET_VERSION: ${DOTNET_VERSION:-8.0}
     container_name: asp_frontend_service
     restart: always
     ports:
@@ -17,6 +19,8 @@ services:
     build:
       context: .
       dockerfile: asp_remote_service/Dockerfile
+      args:
+        DOTNET_VERSION: ${DOTNET_VERSION:-8.0}
     container_name: asp_remote_service
     restart: always
     ports:
