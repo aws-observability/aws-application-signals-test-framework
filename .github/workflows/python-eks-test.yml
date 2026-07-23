@@ -208,6 +208,7 @@ jobs:
             echo "Attempt $retry_counter"
             deployment_failed=0
             terraform apply -auto-approve \
+              -var='python_version=${{ env.PYTHON_VERSION }}'\
               -var='test_id=${{ env.TESTING_ID }}' \
               -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
               -var='kube_directory_path=${{ github.workspace }}/.kube' \
@@ -261,6 +262,7 @@ jobs:
 
               echo "Destroying terraform"
               terraform destroy -auto-approve \
+                -var='python_version=${{ env.PYTHON_VERSION }}'\
                 -var='test_id=${{ env.TESTING_ID }}' \
                 -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
                 -var='kube_directory_path=${{ github.workspace }}/.kube' \
@@ -444,6 +446,7 @@ jobs:
         working-directory: terraform/python/eks
         run: |
           terraform destroy -auto-approve \
+            -var='python_version=${{ env.PYTHON_VERSION }}'\
             -var='test_id=${{ env.TESTING_ID }}' \
             -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
             -var='kube_directory_path=${{ github.workspace }}/.kube' \

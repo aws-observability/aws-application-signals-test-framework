@@ -49,6 +49,10 @@ variable "python_remote_app_image" {
   default = "<ECR_IMAGE_LINK>:<TAG>"
 }
 
+variable "python_version" {
+  default = "3.10"
+}
+
 variable "account_id" {
   default = "<AWS_ACCOUNT_ID>"
 }
