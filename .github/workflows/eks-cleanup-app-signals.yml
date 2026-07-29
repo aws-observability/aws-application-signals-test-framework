@@ -68,14 +68,6 @@ jobs:
           rm -f eksctl_Linux_amd64.tar.gz
           eksctl version
 
-      # Do not delete the shared App Signals log group (it holds data from other sources). Strip that
-      # line from the script; only the addon + agent IRSA are torn down.
-      - name: Remove log group deletion command
-        working-directory: enablement-script
-        run: |
-          delete_log_group="aws logs delete-log-group --log-group-name '/aws/application-signals/data' --region \$REGION"
-          sed -i "s#$delete_log_group##g" clean-app-signals.sh
-
       # Safety guard: if any sample-app test namespaces are still present, another run may be using the
       # cluster — refuse to tear down the shared addon (the hazard this design avoids).
       - name: Refuse to clean up while tests are running
