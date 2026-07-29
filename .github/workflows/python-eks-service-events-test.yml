@@ -89,9 +89,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          # TESTING: pin to the fix branch so the addon-safe teardown changes are present.
-          # REVERT to `... && 'main' || github.ref` before merge.
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'fix-python-se-addon-irsa' || github.ref }}
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon
@@ -244,11 +242,6 @@ jobs:
             if [ $deployment_failed -eq 0 ]; then
               echo "Installing Application Signals to the sample app"
               . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
-              # Install the cluster-wide Application Signals addon (idempotent). Do NOT pass a
-              # clean-up command that deletes the addon: it is shared across parallel jobs, and
-              # deleting/reinstalling it drops the CloudWatch agent's IRSA role binding (agent falls
-              # back to the node role -> logs:PutLogEvents / xray:PutTraceSegments AccessDenied ->
-              # all App Signals telemetry dropped cluster-wide).
               execute_and_retry 3 \
               "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
               ${{ env.CLUSTER_NAME }} \
@@ -265,9 +258,6 @@ jobs:
             fi
 
             if [ $deployment_failed -ne 0 ]; then
-              # Do NOT run clean-app-signals.sh here: the addon is cluster-wide and shared. Deleting
-              # it would break other jobs and drop the CloudWatch agent's IRSA role. Only tear down
-              # this run's own terraform resources before retrying.
               echo "Deployment failed. Destroying terraform, then retrying."
               terraform destroy -auto-approve \
                 -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
@@ -480,13 +470,6 @@ jobs:
           else
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
-
-      # ---- Clean up (each step scoped to this run's namespace / resources only) ----
-      # NOTE: the cluster-wide Application Signals addon is intentionally NOT removed here. It is
-      # shared and persists on the long-lived test cluster; deleting it (clean-app-signals.sh runs
-      # aws eks delete-addon) drops the CloudWatch agent's IRSA role binding on reinstall, causing
-      # logs:PutLogEvents / xray:PutTraceSegments AccessDenied and dropping telemetry cluster-wide.
-      # Only this run's own namespace and terraform resources are torn down.
 
       - name: Terraform destroy
         if: always()
