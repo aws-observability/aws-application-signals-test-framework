@@ -89,7 +89,9 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          # TESTING: pin to the fix branch so the addon-safe teardown changes are present.
+          # REVERT to `... && 'main' || github.ref` before merge.
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'fix-python-se-addon-irsa' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon
