@@ -59,6 +59,15 @@ jobs:
       - name: Set up kubeconfig
         run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
 
+      # clean-app-signals.sh calls `eksctl delete iamserviceaccount` to remove the cloudwatch-agent
+      # IRSA service account, so eksctl must be on PATH.
+      - name: Install eksctl
+        run: |
+          curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
+          tar -xzf eksctl_Linux_amd64.tar.gz -C /usr/local/bin
+          rm -f eksctl_Linux_amd64.tar.gz
+          eksctl version
+
       # Do not delete the shared App Signals log group (it holds data from other sources). Strip that
       # line from the script; only the addon + agent IRSA are torn down.
       - name: Remove log group deletion command
