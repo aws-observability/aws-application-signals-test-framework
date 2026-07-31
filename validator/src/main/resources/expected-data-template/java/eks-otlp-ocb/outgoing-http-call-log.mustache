@@ -2,7 +2,7 @@
   "EC2.AutoScalingGroup": "^eks-.+",
   "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
   "Environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$",
-  "PlatformType": "^(Generic|AWS::EKS)$",
+  "PlatformType": "^AWS::EKS$",
   "Service": "^{{serviceName}}$",
   "Operation": "GET /outgoing-http-call",
   "Host": "^ip(-[0-9]{1,3}){4}.*$"
@@ -11,7 +11,7 @@
   "EC2.AutoScalingGroup": "^eks-.+",
   "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
   "Environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$",
-  "PlatformType": "^(Generic|AWS::EKS)$",
+  "PlatformType": "^AWS::EKS$",
   "Service": "^{{serviceName}}$",
   "Operation": "GET /outgoing-http-call",
   "RemoteService": "www.amazon.com",
