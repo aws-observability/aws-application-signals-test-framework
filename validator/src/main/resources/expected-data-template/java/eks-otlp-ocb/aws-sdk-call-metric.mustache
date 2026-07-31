@@ -10,7 +10,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
 
 -
   metricName: Latency
@@ -24,49 +24,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
-    -
-      name: RemoteOperation
-      value: GetBucketLocation
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ANY_VALUE
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ANY_VALUE
-    -
-      name: RemoteService
-      value: AWS::S3
-
--
-  metricName: Latency
-  namespace: {{metricNamespace}}
-  dimensions:
-    -
-      name: Service
-      value: {{serviceName}}
-    -
-      name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -83,7 +41,49 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:default
+    -
+      name: RemoteService
+      value: AWS::S3
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:default
+    -
+      name: RemoteOperation
+      value: GetBucketLocation
+    -
+      name: RemoteService
+      value: AWS::S3
+
+-
+  metricName: Latency
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: Service
+      value: {{serviceName}}
+    -
+      name: Environment
+      value: eks:default
     -
       name: RemoteService
       value: AWS::S3
@@ -106,7 +106,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -129,7 +129,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -155,7 +155,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
 
 -
   metricName: Error
@@ -169,7 +169,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -186,7 +186,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
 
 -
   metricName: Error
@@ -197,7 +197,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteService
       value: AWS::S3
@@ -211,7 +211,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -228,7 +228,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteService
       value: AWS::S3
@@ -251,7 +251,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -274,7 +274,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -300,7 +300,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
 
 -
   metricName: Fault
@@ -314,7 +314,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -331,7 +331,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
 
 -
   metricName: Fault
@@ -342,7 +342,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteService
       value: AWS::S3
@@ -356,7 +356,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -373,7 +373,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteService
       value: AWS::S3
@@ -396,7 +396,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
@@ -419,7 +419,7 @@
       value: {{serviceName}}
     -
       name: Environment
-      value: ANY_VALUE
+      value: eks:default
     -
       name: RemoteOperation
       value: GetBucketLocation
