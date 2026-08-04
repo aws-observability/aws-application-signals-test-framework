@@ -247,7 +247,11 @@ jobs:
               ${{ env.CLUSTER_NAME }} \
               ${{ env.E2E_TEST_AWS_REGION }} \
               ${{ env.SAMPLE_APP_NAMESPACE }}" \
-              "" \
+              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
+              ${{ env.CLUSTER_NAME }} \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }} && \
+              aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
               60
 
               aws eks update-kubeconfig --region ${{ env.E2E_TEST_AWS_REGION }} --name ${{ env.CLUSTER_NAME }}
@@ -258,7 +262,12 @@ jobs:
             fi
 
             if [ $deployment_failed -ne 0 ]; then
-              echo "Deployment failed. Destroying terraform, then retrying."
+              echo "Deployment failed. Cleaning up Application Signals and terraform, then retrying."
+              ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
+              ${{ env.CLUSTER_NAME }} \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }} || true
+              aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
               terraform destroy -auto-approve \
                 -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
                 -var="test_id=${{ env.TESTING_ID }}" \
@@ -470,6 +479,25 @@ jobs:
           else
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
+
+      # ---- Clean up (each step scoped to this run's namespace / resources only) ----
+
+      - name: Clean Up Application Signals
+        if: always()
+        continue-on-error: true
+        working-directory: enablement-script
+        run: |
+          ./clean-app-signals.sh \
+          ${{ env.CLUSTER_NAME }} \
+          ${{ env.E2E_TEST_AWS_REGION }} \
+          ${{ env.SAMPLE_APP_NAMESPACE }}
+
+      # clean-app-signals.sh removes the current cluster from kubeconfig; re-add it for the
+      # subsequent destroy/delete steps.
+      - name: Restore kubeconfig
+        if: always()
+        continue-on-error: true
+        run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Terraform destroy
         if: always()
