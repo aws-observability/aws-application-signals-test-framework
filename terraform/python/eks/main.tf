@@ -59,20 +59,6 @@ provider "kubectl" {
   load_config_file       = false
 }
 
-# Compute unique NodePorts per Python version so EKS test jobs can run in parallel
-# on the same cluster without "port is already allocated" collisions.
-locals {
-  version_offset = {
-    "3.10" = 0
-    "3.11" = 1
-    "3.12" = 2
-    "3.13" = 3
-    "3.14" = 4
-  }
-  main_node_port   = 30100 + lookup(local.version_offset, var.python_version, 1) * 2
-  remote_node_port = 30101 + lookup(local.version_offset, var.python_version, 1) * 2
-}
-
 data "template_file" "kubeconfig_file" {
   template = file("./kubeconfig.tpl")
   vars = {
@@ -174,7 +160,7 @@ resource "kubernetes_service" "python_app_service" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8000
-      node_port   = local.main_node_port
+      node_port   = 30100
     }
   }
 }
@@ -232,9 +218,7 @@ resource "kubernetes_service" "python_r_app_service" {
   depends_on = [kubernetes_deployment_v1.python_r_app_deployment]
 
   metadata {
-    # Name the remote Service after the remote DEPLOYMENT (python-remote-${test_id}) instead of a
-    # shared constant ("python-r-app-service").
-    name      = "python-remote-${var.test_id}"
+    name      = "python-r-app-service"
     namespace = var.test_namespace
   }
   spec {
@@ -246,7 +230,7 @@ resource "kubernetes_service" "python_r_app_service" {
       protocol    = "TCP"
       port        = 8001
       target_port = 8001
-      node_port   = local.remote_node_port
+      node_port   = 30101
     }
   }
 }

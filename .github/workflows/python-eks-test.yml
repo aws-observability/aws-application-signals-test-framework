@@ -66,13 +66,8 @@ jobs:
 
       - name: Generate testing id and python sample app namespace
         run: |
-          # Sanitize the python version for a DNS-1123 namespace label (no dots).
-          PY_VERSION_SLUG="py$(echo '${{ env.PYTHON_VERSION }}' | tr -d '.')"
-          echo TESTING_ID="${{ github.job }}-${PY_VERSION_SLUG}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
-          # Namespace is unique per parallel version job. The reusable workflow's github.job is
-          # identical ("python-eks") across all version callers, so the version slug disambiguates
-          # concurrent runs sharing the cluster.
-          echo SAMPLE_APP_NAMESPACE="ns-${PY_VERSION_SLUG}-${{ github.run_id }}-${{ github.run_number }}" >> "$GITHUB_ENV"
+          echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+          echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> "$GITHUB_ENV"
           
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -153,11 +148,11 @@ jobs:
         run: |
           echo "${{ github.workspace }}/eksctl" >> "$GITHUB_PATH"
 
-      # Delete only THIS version's namespace from a prior run. Do NOT bulk-delete all ns-* namespaces
-      - name: Delete this version's sample app namespace if it lingers
+      # This step deletes lingering resources from previous test runs
+      - name: Delete all sample app namespaces
         continue-on-error: true
         timeout-minutes: 5
-        run: kubectl delete namespace "${{ env.SAMPLE_APP_NAMESPACE }}" --ignore-not-found
+        run: kubectl get namespace | awk '/^ns-[0-9]+-[0-9]+/{print $1}' | xargs kubectl delete namespace
 
       - name: Create role for AWS access from the sample app
         id: create_service_account
@@ -199,18 +194,6 @@ jobs:
             echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.PYTHON_VERSION }}" >> "$GITHUB_ENV"
             echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.PYTHON_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.PYTHON_VERSION }}" >> "$GITHUB_ENV"
 
-      # The ADOT image this test injects. Set BEFORE deploy so the Instrumentation CR created in the
-      # deploy step can reference it. For the python repo this is the staging image under test.
-      - name: Determine ADOT image to inject
-        run: |
-          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
-            echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> "$GITHUB_ENV"
-          elif [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent-operator" ]; then
-            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> "$GITHUB_ENV"
-          elif [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-python-instrumentation" ]; then
-            echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> "$GITHUB_ENV"
-          fi
-
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-python-app
         working-directory: terraform/python/eks
@@ -225,7 +208,6 @@ jobs:
             echo "Attempt $retry_counter"
             deployment_failed=0
             terraform apply -auto-approve \
-              -var='python_version=${{ env.PYTHON_VERSION }}'\
               -var='test_id=${{ env.TESTING_ID }}' \
               -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
               -var='kube_directory_path=${{ github.workspace }}/.kube' \
@@ -244,109 +226,41 @@ jobs:
 
             # If the deployment_failed is still 0, then the terraform deployment succeeded and now try to connect to the endpoint 
             # after installing Application Signals. Attempts to connect will be made for up to 10 minutes
-            if [ $deployment_failed -eq 0 ]; then
-              echo "Ensuring Application Signals is enabled on the cluster"
+            if [ $deployment_failed -eq 0 ]; then          
+              echo "Installing application signals to the sample app"
               . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
-              # Install the cluster-wide Application Signals addon. This is idempotent: the first
-              # parallel version job installs it, the rest see it already present. We intentionally do
-              # NOT pass a per-job clean-up command here — deleting the shared addon would break other
-              # parallel jobs. The addon persists on the (long-lived) test cluster.
               execute_and_retry 3 \
               "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
               ${{ inputs.test-cluster-name }} \
               ${{ env.E2E_TEST_AWS_REGION }} \
               ${{ env.SAMPLE_APP_NAMESPACE }}" \
-              "" \
+              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
+              ${{ inputs.test-cluster-name }} \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }} && \
+              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
               60
-
+          
               aws eks update-kubeconfig --region ${{ env.E2E_TEST_AWS_REGION }} --name ${{ env.CLUSTER_NAME }}
-
-              # enable-app-signals.sh returns as soon as the addon is requested, while the addon is still
-              # being created. The operator is not serving until the addon becomes active, so we need to 
-              #wait for the addon to become ACTIVE.
-              execute_and_retry 30 \
-                "[ \"\$(aws eks describe-addon --cluster-name ${{ env.CLUSTER_NAME }} --addon-name amazon-cloudwatch-observability --region ${{ env.E2E_TEST_AWS_REGION }} --query 'addon.status' --output text)\" = ACTIVE ]" \
-                "" 20
-
-              # Inject THIS test's ADOT image the same way the sequential (main) flow does: patch the
-              # operator's cluster-wide --auto-instrumentation-python-image arg. 
-              #
-              # Every python version job injects the SAME adot-image-name (the single staging image 
-              # under test; the version differences live in the sample-app image, not the instrumentation image).
-              # So the shared operator arg is a value all jobs agree on. We only patch + roll out if the arg is not
-              # already the target value, so the first job patches and the rest no-op. We restart ONLY
-              # the operator deployment — never the shared cloudwatch-agent, whose restart would drop
-              # other parallel jobs' in-flight telemetry.
-              #
-              # Concurrency: multiple version jobs may reach this at once. A `get | jq | apply` pipeline
-              # carries the read resourceVersion and loses to a sibling job's concurrent write with
-              # "Operation cannot be fulfilled ... the object has been modified". Since every job writes
-              # the SAME target image, we retry: re-read each attempt, treat "already target" as done,
-              # and only patch when it differs. 
-              patched=0
-              for patch_attempt in 1 2 3 4 5 6; do
-                CURRENT_PY_IMAGE=$(kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager \
-                  -o jsonpath='{range .spec.template.spec.containers[0].args[*]}{.}{"\n"}{end}' \
-                  | sed -n 's/^--auto-instrumentation-python-image=//p')
-                if [ "$CURRENT_PY_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
-                  echo "Operator python image is set to target (${{ env.PATCH_IMAGE_ARN }})."
-                  patched=1
-                  break
-                fi
-                echo "Attempt $patch_attempt: patching operator python image '$CURRENT_PY_IMAGE' -> '${{ env.PATCH_IMAGE_ARN }}'"
-                if kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager -o json \
-                    | jq '.spec.template.spec.containers[0].args |= map(if test("^--auto-instrumentation-python-image=") then "--auto-instrumentation-python-image=${{ env.PATCH_IMAGE_ARN }}" else . end)' \
-                    | kubectl apply -f - ; then
-                  echo "Patch applied on attempt $patch_attempt."
-                  patched=1
-                  break
-                fi
-                echo "Patch attempt $patch_attempt lost a concurrent write; re-reading and retrying..."
-                sleep 10
-              done
-              if [ "$patched" -ne 1 ]; then
-                echo "Failed to set operator python image after retries."
-                exit 1
-              fi
-
-              # Wait for the operator to be rolled out and serving before restarting pods. Otherwise
-              # pods can come up Ready but WITHOUT instrumentation injected (uninstrumented app -> zero
-              # telemetry -> empty validator results). The injection-verification loop below is the
-              # authoritative gate if the rollout status is slow.
-              kubectl -n amazon-cloudwatch rollout status \
-                deployment/amazon-cloudwatch-observability-controller-manager --timeout=180s \
-                || echo "Operator rollout wait timed out; continuing (injection is verified below)."
-
-              # Restart this namespace's pods so the operator injects instrumentation, then VERIFY
-              # injection took effect with the CORRECT (patched) image. If the auto-
-              # instrumentation init container is missing, or still carries a non-target image, we
-              # restart again until it appears with the patched image.
-              inject_verified=0
-              for inject_attempt in 1 2 3 4 5; do
-                execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-                execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
-                INJECTED_IMAGE=$(kubectl get pod -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=python-app \
-                  -o jsonpath='{.items[0].spec.initContainers[?(@.name=="opentelemetry-auto-instrumentation-python")].image}' 2>/dev/null || true)
-                if [ "$INJECTED_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
-                  echo "Instrumentation injected with target image on attempt $inject_attempt: $INJECTED_IMAGE"
-                  inject_verified=1
-                  break
-                fi
-                echo "Instrumentation not yet injected with target image on attempt $inject_attempt (got: '${INJECTED_IMAGE:-none}', want: '${{ env.PATCH_IMAGE_ARN }}'); retrying restart..."
-                sleep 20
-              done
-              if [ "$inject_verified" -ne 1 ]; then
-                echo "Instrumentation was never injected with the target image after retries; failing so this is not a silent empty-telemetry pass."
-                exit 1
-              fi
+                  
+              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
+              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
             fi
           
             # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
             # resources created from terraform and try again.
             if [ $deployment_failed -eq 1 ]; then
+              echo "Cleaning up Application Signal"
+              ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
+              ${{ env.CLUSTER_NAME }} \
+              ${{ env.E2E_TEST_AWS_REGION }} \
+              ${{ env.SAMPLE_APP_NAMESPACE }}
+
+              # Running clean-app-signal.sh removes the current cluster from the config. Update the cluster again for subsequent runs.
+              aws eks update-kubeconfig --name ${{ inputs.test-cluster-name }} --region ${{ env.E2E_TEST_AWS_REGION }}
+
               echo "Destroying terraform"
               terraform destroy -auto-approve \
-                -var='python_version=${{ env.PYTHON_VERSION }}'\
                 -var='test_id=${{ env.TESTING_ID }}' \
                 -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
                 -var='kube_directory_path=${{ github.workspace }}/.kube' \
@@ -369,6 +283,30 @@ jobs:
             fi
           done
 
+      - name: Get ECR to Patch
+        run: |
+          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
+            echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> "$GITHUB_ENV"
+          elif [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent-operator" ]; then
+            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> "$GITHUB_ENV"
+          elif [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-python-instrumentation" ]; then
+            echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Patch Image and Check Diff
+        id: patch-image
+        uses: ./.github/workflows/actions/patch_image_and_check_diff
+        with:
+          repository: ${{ env.REPOSITORY_NAME }}
+          patch-image-arn: ${{ env.PATCH_IMAGE_ARN }}
+          sample-app-namespace: ${{ env.SAMPLE_APP_NAMESPACE }}
+
+      - name: Log Artifact Versions
+        run: |
+          echo "ADOT Image: Previous Version is: ${{ steps.patch-image.outputs.default-adot-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-adot-image }}";
+          echo "CW Agent Image: Previous Version is: ${{ steps.patch-image.outputs.default-cw-agent-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-cw-agent-image }}";
+          echo "CW Agent Operator Image: Previous Version is: ${{ steps.patch-image.outputs.default-cw-agent-operator-image }}, Updated Version is: ${{ steps.patch-image.outputs.latest-cw-agent-operator-image }}";
+          echo "Fluent Bit Image: Version is: ${{ steps.patch-image.outputs.fluent-bit-image }}";
 
       - name: Get Remote Service Deployment Name
         uses: ./.github/workflows/actions/execute_and_retry
@@ -482,14 +420,22 @@ jobs:
           fi
 
       # Clean up Procedures
-      # NOTE: the cluster-wide Application Signals addon is intentionally NOT removed here — it is
-      # shared by the other parallel version jobs and persists on the long-lived test cluster.
-      # This job cleans up only its own namespace (which also deletes its Instrumentation CR).
 
-      - name: Delete this version's sample app namespace
+      - name: Clean Up Application Signals
         if: always()
         continue-on-error: true
-        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }} --ignore-not-found
+        working-directory: enablement-script
+        run: |
+          ./clean-app-signals.sh \
+          ${{ inputs.test-cluster-name }} \
+          ${{ env.E2E_TEST_AWS_REGION }} \
+          ${{ env.SAMPLE_APP_NAMESPACE }}
+
+      # This step also deletes lingering resources from previous test runs
+      - name: Delete all sample app resources
+        if: always()
+        continue-on-error: true
+        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }}
 
       - name: Terraform destroy
         if: always()
@@ -498,7 +444,6 @@ jobs:
         working-directory: terraform/python/eks
         run: |
           terraform destroy -auto-approve \
-            -var='python_version=${{ env.PYTHON_VERSION }}'\
             -var='test_id=${{ env.TESTING_ID }}' \
             -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
             -var='kube_directory_path=${{ github.workspace }}/.kube' \

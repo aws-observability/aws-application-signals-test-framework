@@ -299,73 +299,9 @@ jobs:
             echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> "$GITHUB_ENV"
           fi
 
-      # Patch the operator's ADOT python image only if it differs, then restart this namespace's pods.
-      - name: Patch operator python image (idempotent) and restart sample app
-        id: patch-image
-        if: ${{ env.ADOT_IMAGE_NAME != '' && env.REPOSITORY_NAME == 'aws-otel-python-instrumentation' }}
-        run: |
-          . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
-
-           # --- Patch the shared operator's python image (retry: siblings may write it concurrently) ---
-          patched=0
-          for patch_attempt in 1 2 3 4 5 6; do
-            # Read the operator's currently-configured python image from its container args
-
-            CURRENT_PY_IMAGE=$(kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager \
-              -o jsonpath='{range .spec.template.spec.containers[0].args[*]}{.}{"\n"}{end}' \
-              | sed -n 's/^--auto-instrumentation-python-image=//p')
-
-            # Already the target image (e.g. an eks-py* job set it) -> nothing to do
-
-            if [ "$CURRENT_PY_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
-              echo "Operator python image already at target (${{ env.PATCH_IMAGE_ARN }})."
-              patched=1
-              break
-            fi
-            
-            # Rewrite just the --auto-instrumentation-python-image arg and apply
-
-            echo "Attempt $patch_attempt: patching '$CURRENT_PY_IMAGE' -> '${{ env.PATCH_IMAGE_ARN }}'"
-            if kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager -o json \
-                | jq '.spec.template.spec.containers[0].args |= map(if test("^--auto-instrumentation-python-image=") then "--auto-instrumentation-python-image=${{ env.PATCH_IMAGE_ARN }}" else . end)' \
-                | kubectl apply -f - ; then
-              echo "Patch applied on attempt $patch_attempt."
-              patched=1
-              break
-            fi
-            echo "Patch attempt $patch_attempt lost a concurrent write; retrying..."
-            sleep 10
-          done
-          if [ "$patched" -ne 1 ]; then echo "Failed to set operator python image."; exit 1; fi
-          
-          # Wait for the operator to roll out with the new arg before restarting app pods
-          kubectl -n amazon-cloudwatch rollout status \
-            deployment/amazon-cloudwatch-observability-controller-manager --timeout=180s \
-            || echo "Operator rollout wait timed out; continuing (injection is verified below)."
-          
-          # --- Restart this namespace's pods and confirm the target image was actually injected ---
-          # A pod can come up Ready but uninjected if the webhook wasn't serving yet, so verify + retry.
-          
-          inject_verified=0
-          for inject_attempt in 1 2 3 4 5; do
-            execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-            execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
-            INJECTED_IMAGE=$(kubectl get pod -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=python-app \
-              -o jsonpath='{.items[0].spec.initContainers[?(@.name=="opentelemetry-auto-instrumentation-python")].image}' 2>/dev/null || true)
-            if [ "$INJECTED_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
-              echo "Instrumentation injected with target image on attempt $inject_attempt: $INJECTED_IMAGE"
-              inject_verified=1
-              break
-            fi
-            echo "Not injected with target image yet on attempt $inject_attempt (got: '${INJECTED_IMAGE:-none}'); retrying..."
-            sleep 20
-          done
-          if [ "$inject_verified" -ne 1 ]; then echo "Instrumentation never injected with target image."; exit 1; fi
-
-      # Other repos (e.g. amazon-cloudwatch-agent-operator) keep the shared patch+diff action.
       - name: Patch Image and Check Diff
-        id: patch-image-operator
-        if: ${{ env.CW_AGENT_OPERATOR_TAG != '' && env.REPOSITORY_NAME != 'aws-otel-python-instrumentation' }}
+        id: patch-image
+        if: ${{ env.ADOT_IMAGE_NAME != '' || env.CW_AGENT_OPERATOR_TAG != '' }}
         uses: ./.github/workflows/actions/patch_image_and_check_diff
         with:
           repository: ${{ env.REPOSITORY_NAME }}
