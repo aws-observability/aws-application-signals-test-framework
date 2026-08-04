@@ -273,7 +273,7 @@ jobs:
               #
               # Every python version job injects the SAME adot-image-name (the single staging image 
               # under test; the version differences live in the sample-app image, not the instrumentation image).
-              # So the shared operator arg is a value all jobs agree on. We only patch + roll out if the arg is not
+               So the shared operator arg is a value all jobs agree on. We only patch + roll out if the arg is not
               # already the target value, so the first job patches and the rest no-op. We restart ONLY
               # the operator deployment — never the shared cloudwatch-agent, whose restart would drop
               # other parallel jobs' in-flight telemetry.
