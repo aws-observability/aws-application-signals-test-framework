@@ -122,7 +122,9 @@ public class CWLogValidator implements IValidator {
             }
           }
           String actualLogStr = actualLog != null ? actualLog.toString() : "null";
-          log.info("Value of an actual log: {}", actualLogStr.length() > 2000 ? actualLogStr.substring(0, 2000) + "...(truncated)" : actualLogStr);
+          // DEBUG(di-body-stack): raised from 2000 -> 20000. body.stack sits past the 2000-char
+          // cutoff, so the value under test was never visible in CI logs.
+          log.info("Value of an actual log: {}", actualLogStr.length() > 20000 ? actualLogStr.substring(0, 20000) + "...(truncated)" : actualLogStr);
           log.debug("Value of an actual log: {}", actualLogStr);
 
           if (actualLog == null) throw new BaseException(ExceptionCode.EXPECTED_LOG_NOT_FOUND);
@@ -146,7 +148,8 @@ public class CWLogValidator implements IValidator {
       }
 
       Pattern pattern = Pattern.compile(expectedValue.toString());
-      Matcher matcher = pattern.matcher(actualLog.get(expectedKey).toString());
+      String actualValueStr = actualLog.get(expectedKey).toString();
+      Matcher matcher = pattern.matcher(actualValueStr);
 
       if (!matcher.find()) {
         log.error(
@@ -154,9 +157,39 @@ public class CWLogValidator implements IValidator {
           expectedKey,
           expectedValue,
           actualLog.get(expectedKey));
+        // DEBUG(di-body-stack): the failure line above has repeatedly shown an expected regex that
+        // *does* match the actual value printed beside it, which should be impossible since both
+        // come from the same object. Dump the exact strings being compared, with lengths and a
+        // char-code view, to expose invisible differences (unicode escapes, NBSP, zero-width chars,
+        // CR, smart quotes) and to confirm which value the matcher actually ran against.
+        log.error("DEBUG_CMP key={}", expectedKey);
+        log.error("DEBUG_CMP regex.len={} regex.raw=[{}]", expectedValue.toString().length(), expectedValue);
+        log.error("DEBUG_CMP actual.len={} actual.raw=[{}]", actualValueStr.length(), actualValueStr);
+        log.error("DEBUG_CMP actual.class={}", actualLog.get(expectedKey).getClass().getName());
+        log.error("DEBUG_CMP rematch.find={}", Pattern.compile(expectedValue.toString()).matcher(actualValueStr).find());
+        log.error("DEBUG_CMP regex.codes={}", describeChars(expectedValue.toString()));
+        log.error("DEBUG_CMP actual.codes={}", describeChars(actualValueStr));
         throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
       }
     }
+  }
+
+  /**
+   * DEBUG(di-body-stack): render any non-ASCII / non-printable character as \\uXXXX so that
+   * invisible mismatches between the expected regex and the actual value are visible in CI logs.
+   * ASCII printables are emitted as-is to keep the output readable.
+   */
+  private static String describeChars(String s) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
+      if (c >= 0x20 && c < 0x7F) {
+        sb.append(c);
+      } else {
+        sb.append(String.format("\\u%04X", (int) c));
+      }
+    }
+    return sb.toString();
   }
 
   private JsonifyArrayList<Map<String, Object>> getExpectedAttributes() throws Exception {
@@ -288,6 +321,28 @@ public class CWLogValidator implements IValidator {
     if (retrievedLogs == null || retrievedLogs.isEmpty()) {
       throw new BaseException(ExceptionCode.EMPTY_LIST);
     }
+
+    // DEBUG(di-body-stack): filterLogs() fetches up to 10 events but we only ever validate
+    // get(0). If several snapshots match the filter, we may be validating a different event
+    // than the one whose values get reported. Log how many came back, and the identity +
+    // body.stack of each, so "wrong event selected" can be distinguished from "body differs".
+    log.error("DEBUG_SEL retrievedLogs.size={}", retrievedLogs.size());
+    for (int i = 0; i < retrievedLogs.size(); i++) {
+      String msg = retrievedLogs.get(i).getMessage();
+      Map<String, Object> f =
+          new JsonFlattener(msg).withFlattenMode(FlattenMode.KEEP_ARRAYS).flattenAsMap();
+      Object stack = f.get("body.stack");
+      log.error(
+          "DEBUG_SEL[{}] ts={} snapshot_id={} location_hash={} method={} stack.class={} body.stack={}",
+          i,
+          retrievedLogs.get(i).getTimestamp(),
+          f.get("attributes[\\\"aws.di.snapshot_id\\\"]"),
+          f.get("attributes[\\\"aws.di.location_hash\\\"]"),
+          f.get("attributes[\\\"aws.di.method_name\\\"]"),
+          stack == null ? "null" : stack.getClass().getName(),
+          stack);
+    }
+    log.error("DEBUG_SEL selecting index 0");
 
     return new JsonFlattener(retrievedLogs.get(0).getMessage())
              .withFlattenMode(FlattenMode.KEEP_ARRAYS)
