@@ -24,7 +24,7 @@ module "hello-lambda-function" {
   local_existing_package = "${var.layer_artifacts_directory}/java-function.zip"
 
   memory_size = 512
-  timeout     = 30
+  timeout     = 60
 
   layers = [aws_lambda_layer_version.sdk_layer[0].arn]
 
