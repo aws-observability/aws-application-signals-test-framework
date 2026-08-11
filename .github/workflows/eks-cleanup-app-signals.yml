@@ -36,6 +36,8 @@ env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region || 'us-east-1' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  # Shared, long-lived log group that clean-app-signals.sh must NOT delete (see the strip step below).
+  LOG_GROUP_NAME: /aws/application-signals/data
 
 jobs:
   eks-cleanup-app-signals:
@@ -87,6 +89,17 @@ jobs:
           mkdir -p enablement-script && cd enablement-script
           wget -q https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/clean-app-signals.sh
           chmod +x clean-app-signals.sh
+
+      # clean-app-signals.sh ends with `aws logs delete-log-group --log-group-name
+      # '/aws/application-signals/data'`. That log group is SHARED and long-lived — it holds telemetry
+      # from every source (EC2/ECS/Lambda/all languages) and is what the validators query. Deleting it
+      # breaks the current run (validators hit ResourceNotFoundException) and wipes other teams' data.
+      # Strip that one line before running the script; the sequential python-eks-test.yml does the same.
+      - name: Remove log group deletion command
+        working-directory: enablement-script
+        run: |
+          delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP_NAME }}' --region \$REGION"
+          sed -i "s#$delete_log_group##g" clean-app-signals.sh
 
       - name: Set up kubeconfig
         run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
