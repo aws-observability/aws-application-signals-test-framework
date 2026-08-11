@@ -52,3 +52,9 @@ variable "python_remote_app_image" {
 variable "account_id" {
   default = "<AWS_ACCOUNT_ID>"
 }
+
+# Selects the NodePort offset in main.tf's version_offset map. The parallel workflow passes this
+# per-job; the sequential workflow omits it and gets the default (offset 0 -> ports 30100/30101).
+variable "python_version" {
+  default = "3.10"
+}

@@ -59,6 +59,22 @@ provider "kubectl" {
   load_config_file       = false
 }
 
+# Per-version NodePort assignment so multiple Python version jobs can run in PARALLEL on one shared
+# cluster without "port is already allocated" collisions (NodePort is cluster-wide, not namespaced).
+# Backward-compatible with the sequential test: it passes no python_version, so the default "3.10"
+# yields offset 0 -> 30100 / 30101, identical to the previously hardcoded values.
+locals {
+  version_offset = {
+    "3.10" = 0
+    "3.11" = 1
+    "3.12" = 2
+    "3.13" = 3
+    "3.14" = 4
+  }
+  main_node_port   = 30100 + lookup(local.version_offset, var.python_version, 1) * 2
+  remote_node_port = 30101 + lookup(local.version_offset, var.python_version, 1) * 2
+}
+
 data "template_file" "kubeconfig_file" {
   template = file("./kubeconfig.tpl")
   vars = {
@@ -160,7 +176,7 @@ resource "kubernetes_service" "python_app_service" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8000
-      node_port   = 30100
+      node_port   = local.main_node_port # per-version port; avoids cross-job NodePort collision
     }
   }
 }
@@ -230,7 +246,7 @@ resource "kubernetes_service" "python_r_app_service" {
       protocol    = "TCP"
       port        = 8001
       target_port = 8001
-      node_port   = 30101
+      node_port   = local.remote_node_port # per-version port; avoids cross-job NodePort collision
     }
   }
 }

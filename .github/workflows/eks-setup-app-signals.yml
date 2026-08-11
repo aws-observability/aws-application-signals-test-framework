@@ -37,11 +37,6 @@ jobs:
           ref: 'python-eks-parallel-pipeline'
           fetch-depth: 0
 
-      # Operate on the cluster as E2E_TEST_ACCOUNT_ID, matching python-eks-parallel-test.yml and
-      # eks-cleanup-app-signals.yml. The sequential python-eks-test.yml only hops to the per-region
-      # ACCOUNT_ID role in the canary (framework-repo) case; for our caller it stays on this role, so
-      # setup must too — otherwise setup installs shared state as a different principal than the test
-      # jobs use it, which can mismatch the cluster's access entries.
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
