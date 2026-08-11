@@ -234,7 +234,7 @@ resource "kubernetes_service" "python_r_app_service" {
   depends_on = [kubernetes_deployment_v1.python_r_app_deployment]
 
   metadata {
-    name      = "python-r-app-service"
+    name      = "python-remote-${var.test_id}"
     namespace = var.test_namespace
   }
   spec {
