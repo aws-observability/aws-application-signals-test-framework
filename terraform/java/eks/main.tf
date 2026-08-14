@@ -59,6 +59,22 @@ provider "kubectl" {
   load_config_file       = false
 }
 
+# Compute unique NodePorts per Java version so EKS test jobs can run in parallel
+# on the same cluster without "port is already allocated" collisions.
+# Backward-compatible with the sequential test: it passes no java_version, so the default "8"
+# yields offset 0 -> 30100 / 30101, identical to the previously hardcoded values.
+locals {
+  version_offset = {
+    "8"  = 0
+    "11" = 1
+    "17" = 2
+    "21" = 3
+    "25" = 4
+  }
+  main_node_port   = 30100 + lookup(local.version_offset, var.java_version, 0) * 2
+  remote_node_port = 30101 + lookup(local.version_offset, var.java_version, 0) * 2
+}
+
 data "template_file" "kubeconfig_file" {
   template = file("./kubeconfig.tpl")
   vars = {
@@ -152,7 +168,7 @@ resource "kubernetes_service" "sample_app_service" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8080
-      node_port   = 30100
+      node_port   = local.main_node_port # per-version port; avoids cross-job NodePort collision
     }
   }
 }
@@ -162,7 +178,13 @@ resource "kubernetes_service" "sample_app_service" {
 resource "kubernetes_deployment" "sample_remote_app_deployment" {
 
   metadata {
-    name      = "sample-r-app-deployment-${var.test_id}"
+    # Keep this prefix short: the CloudWatch agent derives RemoteService from the pod name by
+    # stripping the "-<replicaset-hash>-<pod-hash>" suffixes, and k8s truncates pod names to 63
+    # chars. The longer "sample-r-app-deployment-" prefix pushed the name past that limit for the
+    # parallel per-version test_id, so the derived name no longer matched the trace template and
+    # validation failed for every version but the first. "java-remote-" mirrors Python's working
+    # "python-remote-" prefix and stays under the 47-char edge-case threshold (see PR #1553 below).
+    name      = "java-remote-${var.test_id}"
     namespace = var.test_namespace
     labels = {
       app = "remote-app"
@@ -212,7 +234,7 @@ resource "kubernetes_service" "sample_remote_app_deployment" {
     # use the same name as the deployment to handle the edge case when the deployment name is longer than 47 characters
     # in this edge case, we just use the service name (rather than deployment name) as RemoteService
     # see https://github.com/aws/amazon-cloudwatch-agent/pull/1553
-    name      = "sample-r-app-deployment-${var.test_id}"
+    name      = "java-remote-${var.test_id}"
     namespace = var.test_namespace
   }
   spec {
@@ -224,7 +246,7 @@ resource "kubernetes_service" "sample_remote_app_deployment" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8080
-      node_port   = 30101
+      node_port   = local.remote_node_port # per-version port; avoids cross-job NodePort collision
     }
   }
 }

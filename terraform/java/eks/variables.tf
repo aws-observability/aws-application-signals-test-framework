@@ -49,6 +49,12 @@ variable "sample_remote_app_image" {
   default = "<ECR_IMAGE_LINK>:<TAG>"
 }
 
+# Selects the NodePort offset in main.tf's version_offset map. The parallel workflow passes this
+# per-job; the sequential workflow omits it and gets the default (offset 0 -> ports 30100/30101).
+variable "java_version" {
+  default = "8"
+}
+
 variable "account_id" {
   default = "<AWS_ACCOUNT_ID>"
 }
