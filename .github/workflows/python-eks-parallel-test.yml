@@ -19,6 +19,11 @@ on:
         required: false
         type: string
         default: '3.10'
+      python-versions:
+        description: "JSON array of all supported Python versions, ordered. This job's NodePort offset is python-version's index in this list. Managed here as the single source of truth."
+        required: false
+        type: string
+        default: '["3.10","3.11","3.12","3.13","3.14"]'
       adot-image-name:
         required: false
         type: string
@@ -37,6 +42,7 @@ env:
   CLUSTER_NAME: ${{ inputs.test-cluster-name }}
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
   PYTHON_VERSION: ${{ inputs.python-version }}
+  PYTHON_VERSIONS: ${{ inputs.python-versions }}
   ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
@@ -70,7 +76,8 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          # TESTING PIN — revert 'python-eks-parallel-pipeline' back to 'main' before merge.
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'python-eks-parallel-pipeline' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon
@@ -191,7 +198,8 @@ jobs:
             echo "Attempt $retry_counter"
             deployment_failed=0
             terraform apply -auto-approve \
-              -var='python_version=${{ env.PYTHON_VERSION }}'\
+              -var='python_version=${{ env.PYTHON_VERSION }}' \
+              -var='python_versions=${{ env.PYTHON_VERSIONS }}' \
               -var='test_id=${{ env.TESTING_ID }}' \
               -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
               -var='kube_directory_path=${{ github.workspace }}/.kube' \
@@ -298,7 +306,8 @@ jobs:
             if [ $deployment_failed -eq 1 ]; then
               echo "Destroying terraform"
               terraform destroy -auto-approve \
-                -var='python_version=${{ env.PYTHON_VERSION }}'\
+                -var='python_version=${{ env.PYTHON_VERSION }}' \
+                -var='python_versions=${{ env.PYTHON_VERSIONS }}' \
                 -var='test_id=${{ env.TESTING_ID }}' \
                 -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
                 -var='kube_directory_path=${{ github.workspace }}/.kube' \
@@ -439,7 +448,8 @@ jobs:
         working-directory: terraform/python/eks
         run: |
           terraform destroy -auto-approve \
-            -var='python_version=${{ env.PYTHON_VERSION }}'\
+            -var='python_version=${{ env.PYTHON_VERSION }}' \
+            -var='python_versions=${{ env.PYTHON_VERSIONS }}' \
             -var='test_id=${{ env.TESTING_ID }}' \
             -var='aws_region=${{ env.E2E_TEST_AWS_REGION }}' \
             -var='kube_directory_path=${{ github.workspace }}/.kube' \

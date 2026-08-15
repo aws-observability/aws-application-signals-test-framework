@@ -53,8 +53,17 @@ variable "account_id" {
   default = "<AWS_ACCOUNT_ID>"
 }
 
-# Selects the NodePort offset in main.tf's version_offset map. The parallel workflow passes this
-# per-job; the sequential workflow omits it and gets the default (offset 0 -> ports 30100/30101).
+# The Python version this job is testing. The parallel workflow passes it per-job; the sequential
+# workflow omits it and gets the default.
 variable "python_version" {
   default = "3.10"
+}
+
+# The ordered set of Python versions the calling workflow supports. main.tf derives this job's
+# NodePort offset from python_version's index in this list, so supported versions are managed only
+# in the calling workflow -- never hardcoded here. Defaults to just the sequential default so a lone
+# job (no list passed) still resolves to index 0 -> ports 30100/30101.
+variable "python_versions" {
+  type    = list(string)
+  default = ["3.10"]
 }
