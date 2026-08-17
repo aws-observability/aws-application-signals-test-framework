@@ -468,3 +468,27 @@ jobs:
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}
+
+      # This job does NOT own the shared cluster's App Signals state: the amazon-cloudwatch-observability
+      # addon and the cloudwatch-agent IRSA service account are installed once by the `eks-setup` job and
+      # torn down by the `eks-cleanup` job. Re-running THIS job in isolation will fail the same way (it
+      # asserts that shared state exists), and it also skips `eks-cleanup`, leaving the cluster dirty for
+      # the next run. So on failure, tell the operator to re-run the whole pipeline starting from setup.
+      - name: How to re-run this test
+        if: failure()
+        run: |
+          echo "::error title=Re-run from eks-setup, not this job alone::This EKS test depends on shared cluster state provisioned by the eks-setup job and cleaned up by the eks-cleanup job. Re-running only this job will fail and leave the cluster dirty. Re-run the entire application-signals-e2e-test pipeline (which runs eks-setup -> eks-py* -> eks-cleanup) instead."
+          echo "=================================================================="
+          echo "  This test job cannot be re-run on its own."
+          echo ""
+          echo "  It requires shared Application Signals state on the cluster that"
+          echo "  is set up by the 'eks-setup' job and removed by 'eks-cleanup':"
+          echo "    - the amazon-cloudwatch-observability addon (must be ACTIVE)"
+          echo "    - the cloudwatch-agent IRSA service account"
+          echo ""
+          echo "  Re-running ONLY this job will fail on those assertions and will"
+          echo "  also skip 'eks-cleanup', leaving the shared cluster dirty."
+          echo ""
+          echo "  => Re-run the ENTIRE pipeline so it flows:"
+          echo "       eks-setup -> eks-py3xx (this test) -> eks-cleanup"
+          echo "=================================================================="
