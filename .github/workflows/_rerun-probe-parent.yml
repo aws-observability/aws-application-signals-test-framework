@@ -1,0 +1,32 @@
+## THROWAWAY PROBE — delete before merge.
+## Parent that calls the probe child as ONE job (like application-signals-e2e-test.yml calls
+## python-eks-e2e.yml), plus an unrelated sibling that always passes (like the ec2/lambda jobs).
+##
+## HOW TO USE:
+##   1. Commit both _rerun-probe-*.yml files onto a scratch branch named `rerun-probe` and push it:
+##        git checkout -b rerun-probe
+##        git add .github/workflows/_rerun-probe-*.yml && git commit -m "probe: nested rerun test"
+##        git push origin rerun-probe
+##   2. The push triggers this workflow; it FAILS (test-fail exits 1 on attempt 1).
+##   3. Open the failed run -> "Re-run jobs" -> "Re-run failed jobs".
+##   4. Read the logs:
+##        - If SETUP and TEST-PASS log run_attempt=2  -> whole called workflow re-ran. Refactor VALID:
+##          "Re-run failed jobs" brings eks-setup back.
+##        - If only TEST-FAIL and CLEANUP log run_attempt=2, and UNRELATED-PASSING did NOT re-run,
+##          -> re-run is granular; eks-setup would NOT re-run. Refactor does NOT achieve the goal via
+##          "Re-run failed jobs" (try "Re-run this job" on probe-e2e instead, and re-read attempts).
+##   5. Delete the branch + both files when done:  git push origin --delete rerun-probe
+name: _rerun-probe parent
+on:
+  push:
+    branches: [ rerun-probe ]
+  workflow_dispatch: {}
+
+jobs:
+  unrelated-passing:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "UNRELATED (parent sibling) ran — run_attempt=${{ github.run_attempt }}"
+
+  probe-e2e:
+    uses: ./.github/workflows/_rerun-probe-child.yml

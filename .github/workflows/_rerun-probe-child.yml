@@ -1,0 +1,41 @@
+## THROWAWAY PROBE — delete before merge.
+## Mirrors the real eks-e2e structure (setup -> tests -> cleanup) with pure echo jobs to answer:
+## when the parent's "Re-run failed jobs" runs, does the SUCCESSFUL `setup` job re-run too?
+## Each job prints github.run_attempt: 1 on the first run, 2 on a re-run. If `setup` logs
+## attempt=2 after "Re-run failed jobs", the whole called workflow re-ran (refactor is valid).
+## If `setup` stays at attempt=1 while only `test-fail`/`cleanup` show attempt=2, it does NOT.
+name: _rerun-probe child (setup -> tests -> cleanup)
+on:
+  workflow_call: {}
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "SETUP ran — run_attempt=${{ github.run_attempt }}"
+
+  test-pass:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "TEST-PASS ran — run_attempt=${{ github.run_attempt }}"
+
+  test-fail:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "TEST-FAIL ran — run_attempt=${{ github.run_attempt }}"
+          # Fail only on the first attempt so a re-run can go green and you can watch the full flow.
+          if [ "${{ github.run_attempt }}" = "1" ]; then
+            echo "Deliberately failing on attempt 1."
+            exit 1
+          fi
+          echo "Passing on re-run (attempt >= 2)."
+
+  cleanup:
+    needs: [ setup, test-pass, test-fail ]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CLEANUP ran — run_attempt=${{ github.run_attempt }}"
