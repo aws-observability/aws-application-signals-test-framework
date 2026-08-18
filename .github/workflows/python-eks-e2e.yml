@@ -65,7 +65,6 @@ jobs:
 
   eks-py310-amd64:
     needs: eks-setup
-    if: ${{ always() && needs.eks-setup.result == 'success' }}
     # TESTING PIN — revert '@python-eks-parallel-pipeline' back to '@main' before merge.
     uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-eks-parallel-test.yml@python-eks-parallel-pipeline
     secrets: inherit
@@ -78,7 +77,6 @@ jobs:
 
   eks-py311-amd64:
     needs: eks-setup
-    if: ${{ always() && needs.eks-setup.result == 'success' }}
     # TESTING PIN — revert '@python-eks-parallel-pipeline' back to '@main' before merge.
     uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-eks-parallel-test.yml@python-eks-parallel-pipeline
     secrets: inherit
@@ -91,7 +89,6 @@ jobs:
 
   eks-py312-amd64:
     needs: eks-setup
-    if: ${{ always() && needs.eks-setup.result == 'success' }}
     # TESTING PIN — revert '@python-eks-parallel-pipeline' back to '@main' before merge.
     uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-eks-parallel-test.yml@python-eks-parallel-pipeline
     secrets: inherit
@@ -104,7 +101,6 @@ jobs:
 
   eks-py313-amd64:
     needs: eks-setup
-    if: ${{ always() && needs.eks-setup.result == 'success' }}
     # TESTING PIN — revert '@python-eks-parallel-pipeline' back to '@main' before merge.
     uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-eks-parallel-test.yml@python-eks-parallel-pipeline
     secrets: inherit
@@ -117,7 +113,6 @@ jobs:
 
   eks-py314-amd64:
     needs: eks-setup
-    if: ${{ always() && needs.eks-setup.result == 'success' }}
     # TESTING PIN — revert '@python-eks-parallel-pipeline' back to '@main' before merge.
     uses: aws-observability/aws-application-signals-test-framework/.github/workflows/python-eks-parallel-test.yml@python-eks-parallel-pipeline
     secrets: inherit
