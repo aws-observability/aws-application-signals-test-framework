@@ -122,6 +122,15 @@ jobs:
       adot-image-name: ${{ inputs.adot-image-name }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       python-version: '3.14'
+  
+   # TEMP — deliberate failure to exercise re-run behavior. DELETE before merge.
+  eks-fail-test:
+    needs: eks-setup
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Forcing failure to test re-run / setup-dependency behavior."
+          exit 1
 
   # Tear down cluster-wide App Signals state once, after ALL parallel eks-py* jobs finish.
   # if: always() so a failed version job still triggers teardown; gated on every eks-py* so it never
