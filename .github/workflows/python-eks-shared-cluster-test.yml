@@ -76,8 +76,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          # TESTING PIN — revert 'python-eks-parallel-pipeline' back to 'main' before merge.
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'python-eks-parallel-pipeline' || github.ref }}
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon

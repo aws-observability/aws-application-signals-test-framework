@@ -61,8 +61,7 @@ variable "python_version" {
 
 # The ordered set of Python versions the calling workflow supports. main.tf derives this job's
 # NodePort offset from python_version's index in this list, so supported versions are managed only
-# in the calling workflow -- never hardcoded here. Defaults to just the sequential default so a lone
-# job (no list passed) still resolves to index 0 -> ports 30100/30101.
+# in the calling workflow, never hardcoded here.
 variable "python_versions" {
   type    = list(string)
   default = ["3.10"]
