@@ -1,13 +1,21 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-name: Java EKS Use Case (Parallel)
+# Parallel variant of the Java EKS Service Events E2E test.
+# Unlike java-eks-service-events-test.yml (which self-installs App Signals per run), this assumes
+# Application Signals is already installed cluster-wide by eks-setup-app-signals.yml, so it can run
+# concurrently with the eks-v* version jobs on the shared cluster. It patches the shared operator's
+# --auto-instrumentation-java-image to the ADOT image under test (idempotent), restarts its own
+# sample app, verifies injection, then runs the Service Events validations. Teardown of App Signals
+# itself is handled once by eks-cleanup-app-signals.yml after all parallel jobs finish.
+name: Java EKS Service Events Use Case (Parallel)
 on:
   workflow_call:
     inputs:
       aws-region:
-        required: true
+        required: false
         type: string
+        default: 'us-east-1'
       test-cluster-name:
         required: true
         type: string
@@ -15,44 +23,36 @@ on:
         required: true
         type: string
       java-version:
-        description: "Currently support version 8, 11, 17, 21, 25"
         required: false
         type: string
         default: '11'
-      java-versions:
-        description: "JSON array of all supported Java versions, ordered. This job's NodePort offset is java-version's index in this list. This default is the single source of truth for the supported set; callers may override."
-        required: false
-        type: string
-        default: '["8","11","17","21","25"]'
       adot-image-name:
         required: false
         type: string
     outputs:
       job-started:
-        value: ${{ jobs.java-eks.outputs.job-started }}
+        value: ${{ jobs.java-eks-service-events.outputs.job-started }}
       validation-result:
-        value: ${{ jobs.java-eks.outputs.validation-result }}
+        value: ${{ jobs.java-eks-service-events.outputs.validation-result }}
 
 permissions:
   id-token: write
   contents: read
 
 env:
-  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
-  CLUSTER_NAME: ${{ inputs.test-cluster-name }}
-  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name }}
-  JAVA_VERSION: ${{ inputs.java-version }}
-  JAVA_VERSIONS: ${{ inputs.java-versions }}
-  ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region || 'us-east-1' }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name || 'manual-dispatch' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  METRIC_NAMESPACE: ApplicationSignals
-  LOG_GROUP_NAME: /aws/application-signals/data
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  CLUSTER_NAME: ${{ inputs.test-cluster-name || 'e2e-adot-test' }}
+  JAVA_VERSION: ${{ inputs.java-version || '11' }}
+  ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
   REPOSITORY_NAME: ${{ github.event.repository.name }}
+  LOG_GROUP_NAME: /aws/application-signals/data
 
 jobs:
-  java-eks:
+  java-eks-service-events:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -63,20 +63,11 @@ jobs:
         id: job-started
         run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
-      - name: Generate testing id and sample app namespace
-        run: |
-          # Make every cluster-scoped resource this job creates unique per Java version so parallel
-          # eks-v* jobs sharing one cluster never collide on a namespace, service account, or role.
-          JV_SLUG="jv${{ env.JAVA_VERSION }}"
-          echo TESTING_ID="${{ github.job }}-${JV_SLUG}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
-          echo SAMPLE_APP_NAMESPACE="ns-${JV_SLUG}-${{ github.run_id }}-${{ github.run_number }}" >> "$GITHUB_ENV"
-          echo APP_SA_NAME="sa-${JV_SLUG}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
-
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          # TESTING PIN: pull terraform/java/eks (java_version + version_offset NodePort fix) from the
-          # feature branch, since those changes are not yet on main. REVERT to 'main' before merging.
+          # TESTING PIN: pull terraform/java/eks/service-events (distinct NodePort) + this workflow
+          # from the feature branch, since they are not yet on main. REVERT to 'main' before merging.
           ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'java-eks-test-fix' || github.ref }}
           fetch-depth: 0
 
@@ -90,6 +81,17 @@ jobs:
           max_retry: 3
           sleep_time: 60
 
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
+
+      - name: Set Service Name
+        run: echo SERVICE_NAME="java-sample-application-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
+
+      # Distinct 'se' prefix so this namespace never collides with the version jobs' ns-jv* namespaces
+      # while they run concurrently on the shared cluster.
+      - name: Set Namespace
+        run: echo SAMPLE_APP_NAMESPACE="ns-se-${{ github.run_id }}-${{ github.run_number }}" >> "$GITHUB_ENV"
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
@@ -102,7 +104,9 @@ jobs:
           secret-ids: |
             ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
-            JAVA_REMOTE_SAMPLE_APP_IMAGE, e2e-test/java-remote-sample-app-image
+
+      - name: Set Sample App Image
+        run: echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
 
       # local directory to store the kubernetes config
       - name: Create kubeconfig directory
@@ -123,13 +127,11 @@ jobs:
           cleanup: 'rm -f eksctl_Linux_amd64.tar.gz'
 
       - name: Add eksctl to Github Path
-        run: |
-          echo "${{ github.workspace }}/eksctl" >> "$GITHUB_PATH"
+        run: echo "${{ github.workspace }}/eksctl" >> "$GITHUB_PATH"
 
-      # Delete only THIS version's namespace from a prior run. Do NOT bulk-delete all ns-* namespaces
-      # (the monolithic sequential workflow did that) because parallel eks-v* jobs each own their own
-      # namespace and a bulk delete would tear down a sibling job's live test.
-      - name: Delete this version's sample app namespace if it lingers
+      # Delete only THIS run's namespace if it lingers. Do NOT bulk-delete all ns-* namespaces:
+      # the concurrent eks-v* jobs own their own namespaces and a bulk delete would tear down a live test.
+      - name: Delete this run's sample app namespace if it lingers
         continue-on-error: true
         timeout-minutes: 5
         run: kubectl delete namespace "${{ env.SAMPLE_APP_NAMESPACE }}" --ignore-not-found
@@ -139,15 +141,15 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "eksctl create iamserviceaccount \
-          --name ${{ env.APP_SA_NAME }} \
+          --name service-account-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
-          --role-name eks-s3-${{ env.APP_SA_NAME }} \
+          --role-name eks-s3-access-${{ env.TESTING_ID }} \
           --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
           --region ${{ env.E2E_TEST_AWS_REGION }} \
           --approve"
           cleanup: "eksctl delete iamserviceaccount \
-          --name ${{ env.APP_SA_NAME }} \
+          --name service-account-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}"
@@ -164,20 +166,13 @@ jobs:
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks && terraform init && terraform validate"
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/eks/service-events && terraform init && terraform validate"
           cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
           max_retry: 6
           sleep_time: 60
 
-      - name: Set Sample App Image
-        run: |
-          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
-          echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
-
       # The ADOT image this test injects. Set BEFORE deploy so the operator patch below can reference
-      # it. This is the staging image under test, passed in by the caller (aws-otel-java-instrumentation)
-      # via the adot-image-name input. All parallel eks-v* jobs pass the SAME image, so every job
-      # patches the shared operator to the same value and the patches are idempotent.
+      # it. All parallel jobs pass the SAME image, so patching the shared operator is idempotent.
       - name: Determine ADOT image to inject
         run: |
           if [ -z "${{ env.ADOT_IMAGE_NAME }}" ]; then
@@ -186,42 +181,36 @@ jobs:
           fi
           echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> "$GITHUB_ENV"
 
-      - name: Deploy sample app via terraform and wait for the endpoint to come online
-        id: deploy-sample-app
-        working-directory: terraform/java/eks
+      - name: Deploy sample app via terraform and wait for injection
+        id: deploy-java-app
+        working-directory: terraform/java/eks/service-events
         run: |
-          # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online.
-          # There may be occasional failures due to transitivity issues, so try up to 2 times.
-          # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
-          # that it failed at some point
+          # Deploy the sample app, then (App Signals already installed cluster-wide by
+          # eks-setup-app-signals.yml) verify the shared install is healthy, point the shared operator
+          # at the ADOT image under test, and restart the sample app so it is injected. Retry up to 2x.
           retry_counter=0
           max_retry=2
           while [ $retry_counter -lt $max_retry ]; do
             echo "Attempt $retry_counter"
             deployment_failed=0
             terraform apply -auto-approve \
-              -var="java_version=${{ env.JAVA_VERSION }}" \
-              -var="java_versions=${{ env.JAVA_VERSIONS }}" \
-              -var="test_id=${{ env.TESTING_ID }}" \
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
-              -var="kube_directory_path=${{ github.workspace }}/.kube" \
+              -var="main_node_port=30110" \
+              -var="test_id=${{ env.TESTING_ID }}" \
               -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
               -var="eks_cluster_context_name=$(kubectl config current-context)" \
               -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-              -var="service_account_aws_access=${{ env.APP_SA_NAME }}" \
-              -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
-              -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
-              -var='account_id=${{ env.ACCOUNT_ID }}' \
+              -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+              -var="java_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+              -var="account_id=${{ env.ACCOUNT_ID }}" \
+              -var="kube_directory_path=${{ github.workspace }}/.kube" \
+              -var="service_events_git_commit_sha=${{ github.sha }}" \
             || deployment_failed=$?
 
             if [ $deployment_failed -eq 1 ]; then
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
             fi
 
-            # If the deployment_failed is still 0, then the terraform deployment succeeded. Application
-            # Signals is already installed cluster-wide by eks-setup-app-signals.yml, so instead of
-            # running enable-app-signals.sh here we verify the shared install is healthy, point the
-            # shared operator at the ADOT image under test, and restart the sample app so it is injected.
             if [ $deployment_failed -eq 0 ]; then
               echo "Verifying Application Signals is enabled on the cluster"
               . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
@@ -240,16 +229,13 @@ jobs:
               agent_pods=$(printf '%s\n' "$agent_pods" | grep -v '^[[:space:]]*$' || true)
               agent_total=$(printf '%s\n' "$agent_pods" | grep -c . || true)
               if [ "${agent_total:-0}" -eq 0 ]; then
-                echo "::error::No cloudwatch-agent pods found. The CloudWatch agent is not running, so no"
-                echo "telemetry can reach CloudWatch. Shared setup (eks-setup-app-signals.yml) should have"
-                echo "installed the amazon-cloudwatch-observability addon before this job ran."
+                echo "::error::No cloudwatch-agent pods found. Shared setup (eks-setup-app-signals.yml)"
+                echo "should have installed the amazon-cloudwatch-observability addon before this job ran."
                 exit 1
               fi
               agent_missing_irsa=$(printf '%s\n' "$agent_pods" | awk -F'|' '$2==""{print $1}')
               if [ -n "$agent_missing_irsa" ]; then
                 echo "::error::cloudwatch-agent pods lack projected IRSA credentials: $agent_missing_irsa"
-                echo "The agent will authenticate as the EC2 node role and get AccessDeniedException on"
-                echo "logs:PutLogEvents, so no telemetry will reach CloudWatch and validation will fail."
                 echo "Shared setup (eks-setup-app-signals.yml) should have established this."
                 exit 1
               fi
@@ -289,7 +275,7 @@ jobs:
               for inject_attempt in 1 2 3 4 5; do
                 execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
                 execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
-                INJECTED_IMAGE=$(kubectl get pod -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app \
+                INJECTED_IMAGE=$(kubectl get pod -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=java-app \
                   -o jsonpath='{.items[0].spec.initContainers[?(@.name=="opentelemetry-auto-instrumentation-java")].image}' 2>/dev/null || true)
                 if [ "$INJECTED_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
                   echo "Instrumentation injected with target image on attempt $inject_attempt: $INJECTED_IMAGE"
@@ -305,61 +291,48 @@ jobs:
               fi
             fi
 
-            # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
-            # resources created from terraform and try again.
             if [ $deployment_failed -eq 1 ]; then
               echo "Destroying terraform"
               terraform destroy -auto-approve \
-                -var="java_version=${{ env.JAVA_VERSION }}" \
-                -var="java_versions=${{ env.JAVA_VERSIONS }}" \
-                -var="test_id=${{ env.TESTING_ID }}" \
                 -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
-                -var="kube_directory_path=${{ github.workspace }}/.kube" \
+                -var="main_node_port=30110" \
+                -var="test_id=${{ env.TESTING_ID }}" \
                 -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+                -var="eks_cluster_context_name=$(kubectl config current-context)" \
                 -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-                -var="service_account_aws_access=${{ env.APP_SA_NAME }}" \
-                -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
-                -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
-
+                -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+                -var="java_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+                -var="account_id=${{ env.ACCOUNT_ID }}" \
+                -var="kube_directory_path=${{ github.workspace }}/.kube"
               retry_counter=$(($retry_counter+1))
             else
-              # If deployment succeeded, then exit the loop
               break
             fi
 
             if [ $retry_counter -ge $max_retry ]; then
-              echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
+              echo "Max retry reached. Exiting."
               exit 1
             fi
           done
 
-      - name: Get Remote Service Deployment Name
+      - name: Get app endpoint and configure traffic generator
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> "$GITHUB_ENV"
+          command: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=java-app -o jsonpath='{.items[0].status.podIP}'):8080" >> "$GITHUB_ENV"
           max_retry: 3
-          sleep_time: 30
+          sleep_time: 10
 
-      - name: Get Remote Service IP
+      # The generic traffic-generator image blocks until MAIN_ENDPOINT, REMOTE_ENDPOINT, and ID
+      # are all set. Service Events has no remote service, so point REMOTE_ENDPOINT at the app itself.
+      - name: Set traffic generator endpoints
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> "$GITHUB_ENV"
+          command: kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }} REMOTE_ENDPOINT=${{ env.APP_ENDPOINT }}
           max_retry: 3
-          sleep_time: 30
+          sleep_time: 10
 
-      - name: Get the sample app endpoint
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8080" >> "$GITHUB_ENV"
-          max_retry: 3
-          sleep_time: 30
-
-      - name: Set endpoints for the traffic generator
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          command: kubectl set env -n ${{ env.SAMPLE_APP_NAMESPACE }} deployment/traffic-generator MAIN_ENDPOINT=${{ env.APP_ENDPOINT }} REMOTE_ENDPOINT=${{ env.REMOTE_SERVICE_POD_IP }}
-          max_retry: 3
-          sleep_time: 30
+      - name: Wait for signals to propagate
+        run: sleep 60
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew.outcome == 'failure'
@@ -371,105 +344,107 @@ jobs:
           max_retry: 3
           sleep_time: 60
 
-      # Validation for app signals telemetry data
-      - name: Call endpoint and validate generated EMF logs
-        id: log-validation
-        if: steps.deploy-sample-app.outcome == 'success' && !cancelled()
-        run: ./gradlew validator:run --args='-c java/eks/log-validation.yml
+      # ---- Service Events log signals ----
+
+      - name: Validate DeploymentEvent log
+        id: deployment-event-validation
+        run: ./gradlew validator:run --args='-c java/eks/service-events/deployment-event-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
-          --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
-          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ env.CLUSTER_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --remote-resource-identifier "information_schema|mysql-service.${{ env.SAMPLE_APP_NAMESPACE }}.svc.cluster.local|3306"
-          --remote-db-user root
-          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
           --rollup'
 
-      - name: Call endpoints and validate generated metrics
-        id: metric-validation
-        if: (steps.deploy-sample-app.outcome == 'success' || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c java/eks/metric-validation.yml
+      - name: Validate IncidentSnapshot log
+        id: incident-snapshot-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c java/eks/service-events/incident-snapshot-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
-          --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
-          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ env.CLUSTER_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --remote-resource-identifier "information_schema|mysql-service.${{ env.SAMPLE_APP_NAMESPACE }}.svc.cluster.local|3306"
-          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
           --rollup'
 
-      - name: Call endpoints and validate generated traces
-        id: trace-validation
-        if: (steps.deploy-sample-app.outcome == 'success' || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c java/eks/trace-validation.yml
+      - name: Validate IncidentSnapshot log (latency trigger)
+        id: incident-snapshot-latency-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure' || steps.incident-snapshot-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c java/eks/service-events/incident-snapshot-latency-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.APP_ENDPOINT }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
-          --account-id ${{ env.ACCOUNT_ID }}
-          --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
-          --app-namespace ${{ env.SAMPLE_APP_NAMESPACE }}
-          --platform-info ${{ env.CLUSTER_NAME }}
-          --service-name sample-application-${{ env.TESTING_ID }}
-          --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --remote-resource-identifier "information_schema|mysql-service.${{ env.SAMPLE_APP_NAMESPACE }}.svc.cluster.local|3306"
-          --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
+          --log-group /aws/service-events/${{ env.SERVICE_NAME }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --rollup'
+
+      # ---- Service Events metric signals ----
+
+      - name: Validate EndpointErrorMetric (count) via PromQL
+        id: endpoint-error-metric-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure' || steps.incident-snapshot-validation.outcome == 'failure' || steps.incident-snapshot-latency-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c java/eks/service-events/endpoint-error-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.APP_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --rollup'
+
+      - name: Validate FunctionCall (service.function.duration) via PromQL
+        id: function-call-metric-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure' || steps.incident-snapshot-validation.outcome == 'failure' || steps.incident-snapshot-latency-validation.outcome == 'failure' || steps.endpoint-error-metric-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c java/eks/service-events/function-call-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.APP_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
           --rollup'
 
       - name: Save test results
         if: always()
         id: validation-result
         run: |
-          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.deployment-event-validation.outcome }}" = "success" ] && \
+             [ "${{ steps.incident-snapshot-validation.outcome }}" = "success" ] && \
+             [ "${{ steps.incident-snapshot-latency-validation.outcome }}" = "success" ] && \
+             [ "${{ steps.endpoint-error-metric-validation.outcome }}" = "success" ] && \
+             [ "${{ steps.function-call-metric-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
 
-      # Clean up Procedures. Application Signals itself is torn down once, cluster-wide, by
-      # eks-cleanup-app-signals.yml after every parallel eks-v* job finishes, so this job only removes
-      # the per-version resources it created (its namespace, terraform stack, and service account).
-      - name: Delete this version's sample app namespace
+      # ---- Clean up (only this run's namespace / resources; App Signals torn down by eks-cleanup) ----
+
+      - name: Delete namespace
         if: always()
         continue-on-error: true
-        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }} --ignore-not-found
+        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }} --ignore-not-found --wait=false
 
       - name: Terraform destroy
         if: always()
         continue-on-error: true
         timeout-minutes: 5
-        working-directory: terraform/java/eks
+        working-directory: terraform/java/eks/service-events
         run: |
           terraform destroy -auto-approve \
-            -var="java_version=${{ env.JAVA_VERSION }}" \
-            -var="java_versions=${{ env.JAVA_VERSIONS }}" \
-            -var="test_id=${{ env.TESTING_ID }}" \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
-            -var="kube_directory_path=${{ github.workspace }}/.kube" \
+            -var="main_node_port=30110" \
+            -var="test_id=${{ env.TESTING_ID }}" \
             -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
+            -var="eks_cluster_context_name=$(kubectl config current-context)" \
             -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
-            -var="service_account_aws_access=${{ env.APP_SA_NAME }}" \
-            -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
-            -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}"
+            -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
+            -var="java_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
+            -var="account_id=${{ env.ACCOUNT_ID }}" \
+            -var="kube_directory_path=${{ github.workspace }}/.kube"
 
       - name: Remove aws access service account
         if: always()
         continue-on-error: true
         run: |
           eksctl delete iamserviceaccount \
-          --name ${{ env.APP_SA_NAME }} \
+          --name service-account-${{ env.TESTING_ID }} \
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}

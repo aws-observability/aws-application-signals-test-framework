@@ -59,20 +59,14 @@ provider "kubectl" {
   load_config_file       = false
 }
 
-# Compute unique NodePorts per Java version so EKS test jobs can run in parallel
-# on the same cluster without "port is already allocated" collisions.
-# Backward-compatible with the sequential test: it passes no java_version, so the default "8"
-# yields offset 0 -> 30100 / 30101, identical to the previously hardcoded values.
+# Per-version NodePort assignment so multiple Java version jobs can run in PARALLEL on one shared
+# cluster without "port is already allocated" collisions (NodePort is cluster-wide, not namespaced).
+# The offset is derived from java_version's index in java_versions, so the supported version set is
+# managed only in the calling workflow, never hardcoded here. Backward-compatible with the sequential
+# test: it passes neither var, so the defaults ("8" in ["8"]) yield offset 0 -> 30100 / 30101.
 locals {
-  version_offset = {
-    "8"  = 0
-    "11" = 1
-    "17" = 2
-    "21" = 3
-    "25" = 4
-  }
-  main_node_port   = 30100 + lookup(local.version_offset, var.java_version, 0) * 2
-  remote_node_port = 30101 + lookup(local.version_offset, var.java_version, 0) * 2
+  main_node_port   = 30100 + index(var.java_versions, var.java_version) * 2
+  remote_node_port = 30101 + index(var.java_versions, var.java_version) * 2
 }
 
 data "template_file" "kubeconfig_file" {

@@ -180,7 +180,7 @@ resource "kubernetes_service" "java_app_service" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8080
-      node_port   = 30100
+      node_port   = var.main_node_port
     }
   }
 }
