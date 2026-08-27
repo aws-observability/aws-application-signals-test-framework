@@ -201,7 +201,7 @@ jobs:
             deployment_failed=0
             terraform apply -auto-approve \
               -var="java_version=${{ env.JAVA_VERSION }}" \
-              -var="java_versions=${{ env.JAVA_VERSIONS }}" \
+              -var='java_versions=${{ env.JAVA_VERSIONS }}' \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="kube_directory_path=${{ github.workspace }}/.kube" \
@@ -288,7 +288,7 @@ jobs:
               inject_verified=0
               for inject_attempt in 1 2 3 4 5; do
                 execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-                execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
+                execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod -l app=sample-app -n ${{ env.SAMPLE_APP_NAMESPACE }} && kubectl wait --for=condition=Ready --request-timeout '5m' pod -l app=remote-app -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
                 INJECTED_IMAGE=$(kubectl get pod -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app \
                   -o jsonpath='{.items[0].spec.initContainers[?(@.name=="opentelemetry-auto-instrumentation-java")].image}' 2>/dev/null || true)
                 if [ "$INJECTED_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
@@ -311,7 +311,7 @@ jobs:
               echo "Destroying terraform"
               terraform destroy -auto-approve \
                 -var="java_version=${{ env.JAVA_VERSION }}" \
-                -var="java_versions=${{ env.JAVA_VERSIONS }}" \
+                -var='java_versions=${{ env.JAVA_VERSIONS }}' \
                 -var="test_id=${{ env.TESTING_ID }}" \
                 -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
                 -var="kube_directory_path=${{ github.workspace }}/.kube" \
@@ -454,7 +454,7 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="java_version=${{ env.JAVA_VERSION }}" \
-            -var="java_versions=${{ env.JAVA_VERSIONS }}" \
+            -var='java_versions=${{ env.JAVA_VERSIONS }}' \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube" \

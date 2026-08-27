@@ -274,7 +274,7 @@ jobs:
               inject_verified=0
               for inject_attempt in 1 2 3 4 5; do
                 execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-                execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
+                execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod -l app=java-app -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
                 INJECTED_IMAGE=$(kubectl get pod -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=java-app \
                   -o jsonpath='{.items[0].spec.initContainers[?(@.name=="opentelemetry-auto-instrumentation-java")].image}' 2>/dev/null || true)
                 if [ "$INJECTED_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
