@@ -451,6 +451,18 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
       "/expected-data-template/dotnet/ec2/service-events/function-call-metric.mustache"),
 
+  /** DotNet EKS Service Events Test Case Validations */
+  DOTNET_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/dotnet/eks/service-events/deployment-event.mustache"),
+  DOTNET_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/dotnet/eks/service-events/incident-snapshot.mustache"),
+  DOTNET_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/dotnet/eks/service-events/incident-snapshot-latency.mustache"),
+  DOTNET_EKS_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/dotnet/eks/service-events/endpoint-error-metric.mustache"),
+  DOTNET_EKS_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/dotnet/eks/service-events/function-call-metric.mustache"),
+
   /** DotNet K8s Test Case Validations */
   DOTNET_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/dotnet/k8s/outgoing-http-call-log.mustache"),
   DOTNET_K8S_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/dotnet/k8s/outgoing-http-call-metric.mustache"),
