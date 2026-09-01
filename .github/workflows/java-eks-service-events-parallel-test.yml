@@ -3,11 +3,12 @@
 
 # Parallel variant of the Java EKS Service Events E2E test.
 # Unlike java-eks-service-events-test.yml (which self-installs App Signals per run), this assumes
-# Application Signals is already installed cluster-wide by eks-setup-app-signals.yml, so it can run
-# concurrently with the eks-v* version jobs on the shared cluster. It patches the shared operator's
-# --auto-instrumentation-java-image to the ADOT image under test (idempotent), restarts its own
-# sample app, verifies injection, then runs the Service Events validations. Teardown of App Signals
-# itself is handled once by eks-cleanup-app-signals.yml after all parallel jobs finish.
+# Application Signals is already installed cluster-wide by eks-setup-app-signals.yml, and the shared
+# operator's --auto-instrumentation-java-image is set once by the eks-patch-java-operator gate job, so
+# this job can run concurrently with the eks-v* version jobs on the shared cluster without touching the
+# operator. It deploys its own sample app, restarts it, verifies injection, then runs the Service Events
+# validations. Teardown of App Signals itself is handled once by eks-cleanup-app-signals.yml after all
+# parallel jobs finish.
 name: Java EKS Service Events Use Case (Parallel)
 on:
   workflow_call:
@@ -54,7 +55,7 @@ env:
 jobs:
   java-eks-service-events:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
@@ -241,35 +242,11 @@ jobs:
               fi
               echo "cloudwatch-agent has IRSA credentials projected ($agent_total pod(s))."
 
-              patched=0
-              for patch_attempt in 1 2 3 4 5 6; do
-                CURRENT_JAVA_IMAGE=$(kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager \
-                  -o jsonpath='{range .spec.template.spec.containers[0].args[*]}{.}{"\n"}{end}' \
-                  | sed -n 's/^--auto-instrumentation-java-image=//p')
-                if [ "$CURRENT_JAVA_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
-                  echo "Operator java image is set to target (${{ env.PATCH_IMAGE_ARN }})."
-                  patched=1
-                  break
-                fi
-                echo "Attempt $patch_attempt: patching operator java image '$CURRENT_JAVA_IMAGE' -> '${{ env.PATCH_IMAGE_ARN }}'"
-                if kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager -o json \
-                    | jq '.spec.template.spec.containers[0].args |= map(if test("^--auto-instrumentation-java-image=") then "--auto-instrumentation-java-image=${{ env.PATCH_IMAGE_ARN }}" else . end)' \
-                    | kubectl apply -f - ; then
-                  echo "Patch applied on attempt $patch_attempt."
-                  patched=1
-                  break
-                fi
-                echo "Patch attempt $patch_attempt lost a concurrent write; re-reading and retrying..."
-                sleep 10
-              done
-              if [ "$patched" -ne 1 ]; then
-                echo "Failed to set operator java image after retries."
-                exit 1
-              fi
-
-              kubectl -n amazon-cloudwatch rollout status \
-                deployment/amazon-cloudwatch-observability-controller-manager --timeout=180s \
-                || echo "Operator rollout wait timed out; continuing (injection is verified below)."
+              # The shared cluster-wide operator's --auto-instrumentation-java-image is set ONCE by the
+              # eks-patch-java-operator gate job (needs: eks-setup) before any EKS test job runs, so this
+              # job does NOT patch the operator. Patching + rolling out the singleton operator from every
+              # parallel job serialized them on one Deployment (rollout races, webhook churn, repeated
+              # pod restarts). We only verify below that our restarted pods came up injected.
 
               inject_verified=0
               for inject_attempt in 1 2 3 4 5; do

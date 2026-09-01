@@ -174,10 +174,10 @@ jobs:
           echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
           echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
 
-      # The ADOT image this test injects. Set BEFORE deploy so the operator patch below can reference
-      # it. This is the staging image under test, passed in by the caller (aws-otel-java-instrumentation)
-      # via the adot-image-name input. All parallel eks-v* jobs pass the SAME image, so every job
-      # patches the shared operator to the same value and the patches are idempotent.
+      # The ADOT image this test expects injected. This is the staging image under test, passed in by
+      # the caller (aws-otel-java-instrumentation) via the adot-image-name input. The eks-patch-java-operator
+      # gate job has already set the shared operator to this image; here we only record it so the
+      # injection-verify step below can confirm our restarted pods came up with it.
       - name: Determine ADOT image to inject
         run: |
           if [ -z "${{ env.ADOT_IMAGE_NAME }}" ]; then
@@ -255,35 +255,12 @@ jobs:
               fi
               echo "cloudwatch-agent has IRSA credentials projected ($agent_total pod(s))."
 
-              patched=0
-              for patch_attempt in 1 2 3 4 5 6; do
-                CURRENT_JAVA_IMAGE=$(kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager \
-                  -o jsonpath='{range .spec.template.spec.containers[0].args[*]}{.}{"\n"}{end}' \
-                  | sed -n 's/^--auto-instrumentation-java-image=//p')
-                if [ "$CURRENT_JAVA_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
-                  echo "Operator java image is set to target (${{ env.PATCH_IMAGE_ARN }})."
-                  patched=1
-                  break
-                fi
-                echo "Attempt $patch_attempt: patching operator java image '$CURRENT_JAVA_IMAGE' -> '${{ env.PATCH_IMAGE_ARN }}'"
-                if kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager -o json \
-                    | jq '.spec.template.spec.containers[0].args |= map(if test("^--auto-instrumentation-java-image=") then "--auto-instrumentation-java-image=${{ env.PATCH_IMAGE_ARN }}" else . end)' \
-                    | kubectl apply -f - ; then
-                  echo "Patch applied on attempt $patch_attempt."
-                  patched=1
-                  break
-                fi
-                echo "Patch attempt $patch_attempt lost a concurrent write; re-reading and retrying..."
-                sleep 10
-              done
-              if [ "$patched" -ne 1 ]; then
-                echo "Failed to set operator java image after retries."
-                exit 1
-              fi
-
-              kubectl -n amazon-cloudwatch rollout status \
-                deployment/amazon-cloudwatch-observability-controller-manager --timeout=180s \
-                || echo "Operator rollout wait timed out; continuing (injection is verified below)."
+              # The shared cluster-wide operator's --auto-instrumentation-java-image is set ONCE by the
+              # eks-patch-java-operator gate job (needs: eks-setup) before any eks-v* job runs, so this
+              # job does NOT patch the operator. Patching + rolling out the singleton operator from every
+              # parallel version job serialized the "parallel" jobs on one Deployment (rollout races,
+              # webhook churn, repeated pod restarts) and blew wall-time past the run cap. We only verify
+              # below that our restarted pods came up injected with the expected image.
 
               inject_verified=0
               for inject_attempt in 1 2 3 4 5; do
