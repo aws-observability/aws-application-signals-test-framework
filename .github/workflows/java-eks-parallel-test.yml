@@ -75,9 +75,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          # TESTING PIN: pull terraform/java/eks (java_version + version_offset NodePort fix) from the
-          # feature branch, since those changes are not yet on main. REVERT to 'main' before merging.
-          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'java-eks-test-fix' || github.ref }}
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon
@@ -127,8 +125,6 @@ jobs:
           echo "${{ github.workspace }}/eksctl" >> "$GITHUB_PATH"
 
       # Delete only THIS version's namespace from a prior run. Do NOT bulk-delete all ns-* namespaces
-      # (the monolithic sequential workflow did that) because parallel eks-v* jobs each own their own
-      # namespace and a bulk delete would tear down a sibling job's live test.
       - name: Delete this version's sample app namespace if it lingers
         continue-on-error: true
         timeout-minutes: 5
@@ -174,10 +170,6 @@ jobs:
           echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
           echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_REMOTE_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
 
-      # The ADOT image this test expects injected. This is the staging image under test, passed in by
-      # the caller (aws-otel-java-instrumentation) via the adot-image-name input. The eks-patch-java-operator
-      # gate job has already set the shared operator to this image; here we only record it so the
-      # injection-verify step below can confirm our restarted pods came up with it.
       - name: Determine ADOT image to inject
         run: |
           if [ -z "${{ env.ADOT_IMAGE_NAME }}" ]; then
@@ -190,10 +182,6 @@ jobs:
         id: deploy-sample-app
         working-directory: terraform/java/eks
         run: |
-          # Attempt to deploy the sample app on an EKS instance and wait for its endpoint to come online.
-          # There may be occasional failures due to transitivity issues, so try up to 2 times.
-          # deployment_failed of 0 indicates that both the terraform deployment and the endpoint are running, while 1 indicates
-          # that it failed at some point
           retry_counter=0
           max_retry=2
           while [ $retry_counter -lt $max_retry ]; do
@@ -218,10 +206,6 @@ jobs:
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
             fi
 
-            # If the deployment_failed is still 0, then the terraform deployment succeeded. Application
-            # Signals is already installed cluster-wide by eks-setup-app-signals.yml, so instead of
-            # running enable-app-signals.sh here we verify the shared install is healthy, point the
-            # shared operator at the ADOT image under test, and restart the sample app so it is injected.
             if [ $deployment_failed -eq 0 ]; then
               echo "Verifying Application Signals is enabled on the cluster"
               . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
@@ -255,12 +239,6 @@ jobs:
               fi
               echo "cloudwatch-agent has IRSA credentials projected ($agent_total pod(s))."
 
-              # The shared cluster-wide operator's --auto-instrumentation-java-image is set ONCE by the
-              # eks-patch-java-operator gate job (needs: eks-setup) before any eks-v* job runs, so this
-              # job does NOT patch the operator. Patching + rolling out the singleton operator from every
-              # parallel version job serialized the "parallel" jobs on one Deployment (rollout races,
-              # webhook churn, repeated pod restarts) and blew wall-time past the run cap. We only verify
-              # below that our restarted pods came up injected with the expected image.
 
               inject_verified=0
               for inject_attempt in 1 2 3 4 5; do
@@ -282,8 +260,6 @@ jobs:
               fi
             fi
 
-            # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
-            # resources created from terraform and try again.
             if [ $deployment_failed -eq 1 ]; then
               echo "Destroying terraform"
               terraform destroy -auto-approve \

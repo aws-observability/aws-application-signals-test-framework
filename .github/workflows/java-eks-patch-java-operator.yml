@@ -6,10 +6,6 @@
 # before the parallel eks-v* / service-events-eks jobs, so those jobs never patch or roll out the
 # singleton operator themselves. This removes the operator-Deployment contention (rollout races,
 # webhook churn) that serialized the "parallel" Java EKS jobs and pushed them past the run time cap.
-#
-# Java-scoped by design: it only touches --auto-instrumentation-java-image. Other languages patch
-# their own --auto-instrumentation-<lang>-image arg independently, so this does not affect them, and
-# it does NOT modify the shared eks-setup-app-signals.yml.
 name: Java EKS Patch Operator Image
 
 on:
@@ -61,8 +57,6 @@ jobs:
 
       - name: Patch operator java image and wait for rollout
         run: |
-          # Idempotent: skip the write (and rollout) if the operator already targets our image, so a
-          # re-run does not restart the operator needlessly.
           patched=0
           for patch_attempt in 1 2 3 4 5 6; do
             CURRENT_JAVA_IMAGE=$(kubectl get deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager \

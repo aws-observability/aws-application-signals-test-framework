@@ -67,9 +67,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          # TESTING PIN: pull terraform/java/eks/service-events (distinct NodePort) + this workflow
-          # from the feature branch, since they are not yet on main. REVERT to 'main' before merging.
-          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'java-eks-test-fix' || github.ref }}
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon
@@ -88,8 +86,6 @@ jobs:
       - name: Set Service Name
         run: echo SERVICE_NAME="java-sample-application-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
-      # Distinct 'se' prefix so this namespace never collides with the version jobs' ns-jv* namespaces
-      # while they run concurrently on the shared cluster.
       - name: Set Namespace
         run: echo SAMPLE_APP_NAMESPACE="ns-se-${{ github.run_id }}-${{ github.run_number }}" >> "$GITHUB_ENV"
 
@@ -172,8 +168,6 @@ jobs:
           max_retry: 6
           sleep_time: 60
 
-      # The ADOT image this test injects. Set BEFORE deploy so the operator patch below can reference
-      # it. All parallel jobs pass the SAME image, so patching the shared operator is idempotent.
       - name: Determine ADOT image to inject
         run: |
           if [ -z "${{ env.ADOT_IMAGE_NAME }}" ]; then
@@ -186,9 +180,6 @@ jobs:
         id: deploy-java-app
         working-directory: terraform/java/eks/service-events
         run: |
-          # Deploy the sample app, then (App Signals already installed cluster-wide by
-          # eks-setup-app-signals.yml) verify the shared install is healthy, point the shared operator
-          # at the ADOT image under test, and restart the sample app so it is injected. Retry up to 2x.
           retry_counter=0
           max_retry=2
           while [ $retry_counter -lt $max_retry ]; do
@@ -241,12 +232,6 @@ jobs:
                 exit 1
               fi
               echo "cloudwatch-agent has IRSA credentials projected ($agent_total pod(s))."
-
-              # The shared cluster-wide operator's --auto-instrumentation-java-image is set ONCE by the
-              # eks-patch-java-operator gate job (needs: eks-setup) before any EKS test job runs, so this
-              # job does NOT patch the operator. Patching + rolling out the singleton operator from every
-              # parallel job serialized them on one Deployment (rollout races, webhook churn, repeated
-              # pod restarts). We only verify below that our restarted pods came up injected.
 
               inject_verified=0
               for inject_attempt in 1 2 3 4 5; do
