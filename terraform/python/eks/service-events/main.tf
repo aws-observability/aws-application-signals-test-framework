@@ -83,13 +83,13 @@ locals {
 # The CW agent is a cluster-wide daemonset installed by enable-app-signals.sh and outlives this
 # module, so a late flush after the pod is gone can recreate the group. The one-day retention is
 # what actually bounds the leak in that case.
+# NOTE: no `tags` block. Terraform's aws provider now tags log groups on-create (tags passed inline
+# to CreateLogGroup), which requires logs:TagResource on the caller. The E2E test role lacks that, so
+# a tagged create fails with AccessDeniedException. The Name tag was cosmetic and unreferenced, so we
+# drop it; creating without tags needs only logs:CreateLogGroup, which the role has.
 resource "aws_cloudwatch_log_group" "service_events" {
   name              = local.log_group_name
   retention_in_days = 1
-
-  tags = {
-    Name = "service-events-${var.test_id}"
-  }
 }
 
 resource "kubernetes_deployment_v1" "python_app_deployment" {
