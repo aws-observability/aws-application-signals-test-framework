@@ -39,6 +39,12 @@ resource "aws_key_pair" "aws_ssh_key" {
 locals {
   ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
   private_key_content = tls_private_key.ssh_key.private_key_pem
+
+  # Single source of truth for the service name. The Service Events log group name is derived from
+  # service.name by the CW agent, so the log group resource and the exported service name must not
+  # drift apart.
+  service_name   = "node-sample-application-${var.test_id}"
+  log_group_name = "/aws/service-events/${local.service_name}"
 }
 
 data "aws_ami" "ami" {
@@ -74,6 +80,19 @@ data "aws_ami" "ami" {
   }
 }
 
+# Each run emits into a run-unique Service Events log group. Left to the CW agent these groups are
+# created with never-expire retention and outlive the test, accumulating one orphaned group per run.
+# Managing the group here gives it a one-day retention and makes `terraform destroy` remove it, so
+# even a failed destroy caps storage at a day.
+resource "aws_cloudwatch_log_group" "service_events" {
+  name              = local.log_group_name
+  retention_in_days = 1
+
+  tags = {
+    Name = "service-events-${var.test_id}"
+  }
+}
+
 resource "aws_instance" "main_service_instance" {
   ami                                  = data.aws_ami.ami.id # Amazon Linux 2023 (free tier)
   instance_type                        = var.cpu_architecture == "x86_64" ? "t3.small" : "t4g.small"
@@ -95,6 +114,11 @@ resource "aws_instance" "main_service_instance" {
   tags = {
     Name = "main-service-${var.test_id}"
   }
+
+  # The instance emits into the managed log group. Making that relationship explicit reverses the
+  # order on destroy: Terraform waits for the instance (and its CW Agent) to terminate before it
+  # deletes the log group, so the agent cannot recreate the group after cleanup.
+  depends_on = [aws_cloudwatch_log_group.service_events]
 }
 
 resource "null_resource" "main_service_setup" {
@@ -178,13 +202,13 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend 'export OTEL_TRACES_SAMPLER=always_on' C-m
       tmux send-keys -t frontend 'export OTEL_AWS_SERVICE_EVENTS_SAMPLING_MODE=always' C-m
       tmux send-keys -t frontend "export OTEL_AWS_SERVICE_EVENTS_PACKAGES_INCLUDE='${var.service_events_packages_include}'" C-m
-      tmux send-keys -t frontend "export OTEL_AWS_SERVICE_EVENTS_DEPLOYMENT_ID='node-sample-application-${var.test_id}'" C-m
+      tmux send-keys -t frontend "export OTEL_AWS_SERVICE_EVENTS_DEPLOYMENT_ID='${local.service_name}'" C-m
       tmux send-keys -t frontend 'export OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED=true' C-m
       tmux send-keys -t frontend "export OTEL_AWS_SERVICE_EVENTS_GIT_COMMIT_SHA='${var.service_events_git_commit_sha}'" C-m
       tmux send-keys -t frontend "export OTEL_AWS_SERVICE_EVENTS_GIT_REPO_URL='${var.service_events_git_repo_url}'" C-m
       tmux send-keys -t frontend "export OTEL_AWS_SERVICE_EVENTS_LATENCY_THRESHOLDS='${var.service_events_latency_thresholds}'" C-m
-      tmux send-keys -t frontend "export OTEL_RESOURCE_ATTRIBUTES='service.name=node-sample-application-${var.test_id},deployment.environment.name=ec2:service-events'" C-m
-      tmux send-keys -t frontend "export OTEL_SERVICE_NAME='node-sample-application-${var.test_id}'" C-m
+      tmux send-keys -t frontend "export OTEL_RESOURCE_ATTRIBUTES='service.name=${local.service_name},deployment.environment.name=ec2:service-events'" C-m
+      tmux send-keys -t frontend "export OTEL_SERVICE_NAME='${local.service_name}'" C-m
       tmux send-keys -t frontend "export AWS_REGION='${var.aws_region}'" C-m
       tmux send-keys -t frontend 'node --require "@aws/aws-distro-opentelemetry-node-autoinstrumentation/register" -e "require('"'"'./index.js'"'"')"' C-m
 

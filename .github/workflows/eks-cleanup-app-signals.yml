@@ -1,0 +1,189 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# End-of-pipeline teardown of Application Signals from a shared EKS test cluster.
+name: EKS Cleanup Application Signals
+
+on:
+  workflow_call:
+    inputs:
+      test-cluster-name:
+        required: true
+        type: string
+      aws-region:
+        required: false
+        type: string
+        default: 'us-east-1'
+  workflow_dispatch:
+    inputs:
+      test-cluster-name:
+        description: 'EKS cluster to tear down App Signals from'
+        required: false
+        type: string
+        default: 'e2e-python-adot-test'
+      aws-region:
+        required: false
+        type: string
+        default: 'us-east-1'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  # Fallbacks so a manual workflow_dispatch run works even with inputs left blank.
+  CLUSTER_NAME: ${{ inputs.test-cluster-name || 'e2e-python-adot-test' }}
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region || 'us-east-1' }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  # Shared, long-lived log group that clean-app-signals.sh must NOT delete (see the strip step below).
+  LOG_GROUP_NAME: /aws/application-signals/data
+
+jobs:
+  eks-cleanup-app-signals:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Configure AWS Credentials
+        id: creds
+        continue-on-error: true
+        timeout-minutes: 4
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Retry AWS Credentials (attempt 2)
+        id: creds2
+        if: steps.creds.outcome == 'failure'
+        continue-on-error: true
+        timeout-minutes: 4
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Retry AWS Credentials (attempt 3)
+        if: steps.creds.outcome == 'failure' && steps.creds2.outcome == 'failure'
+        timeout-minutes: 4
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      # Fail loudly if the cluster could not be cleaned. A silent green here is how state leaks.
+      - name: Assert credentials are usable
+        run: |
+          if ! aws sts get-caller-identity >/dev/null 2>&1; then
+            echo "::error::Could not assume the E2E test role after 3 attempts, so the shared cluster"
+            echo "was NOT cleaned up. It will stay warm and the next pipeline will not cold-start."
+            echo "Re-run this job, or tear down manually with clean-app-signals.sh."
+            exit 1
+          fi
+          aws sts get-caller-identity --query 'Arn' --output text
+
+      - name: Download cleanup script
+        run: |
+          mkdir -p enablement-script && cd enablement-script
+          wget -q https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/clean-app-signals.sh
+          chmod +x clean-app-signals.sh
+
+      # clean-app-signals.sh ends with `aws logs delete-log-group --log-group-name
+      # '/aws/application-signals/data'`. That log group is SHARED and long-lived — it holds telemetry
+      # from every source (EC2/ECS/Lambda/all languages) and is what the validators query. Deleting it
+      # breaks the current run (validators hit ResourceNotFoundException) and wipes other teams' data.
+      # Strip that one line before running the script; the sequential python-eks-test.yml does the same.
+      - name: Remove log group deletion command
+        working-directory: enablement-script
+        run: |
+          delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP_NAME }}' --region \$REGION"
+          sed -i "s#$delete_log_group##g" clean-app-signals.sh
+
+      - name: Set up kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Install eksctl
+        run: |
+          curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
+          tar -xzf eksctl_Linux_amd64.tar.gz -C /usr/local/bin
+          rm -f eksctl_Linux_amd64.tar.gz
+          eksctl version
+
+      # Reap every leftover sample-app namespace, then tear down shared state unconditionally.
+      - name: Reap leftover test namespaces
+        timeout-minutes: 15
+        run: |
+          stale=$(kubectl get namespace -o name 2>/dev/null | grep -E 'namespace/ns-' | sed 's#namespace/##' || true)
+          if [ -z "$stale" ]; then
+            echo "No leftover test namespaces."
+            exit 0
+          fi
+          echo "Reaping leftover test namespaces from this pipeline:"
+          echo "$stale"
+          # Best-effort: a namespace wedged in Terminating must not block shared teardown below.
+          for ns in $stale; do
+            kubectl delete namespace "$ns" --ignore-not-found --timeout=180s || \
+              echo "::warning::Namespace $ns did not delete cleanly; continuing."
+          done
+          echo "Remaining namespaces (if any):"
+          kubectl get namespace -o name 2>/dev/null | grep -E 'namespace/ns-' || echo "  none"
+
+      - name: Clean up Application Signals
+        working-directory: enablement-script
+        run: |
+          # `yes |` answers any interactive prompt in the script non-interactively.
+          yes | ./clean-app-signals.sh \
+            ${{ env.CLUSTER_NAME }} \
+            ${{ env.E2E_TEST_AWS_REGION }} \
+            default || echo "::warning::clean-app-signals.sh exited non-zero; verifying actual state below."
+
+      - name: Verify cluster is cold and sweep remnants
+        timeout-minutes: 15
+        run: |
+          if aws eks describe-addon --cluster-name "${{ env.CLUSTER_NAME }}" \
+               --addon-name amazon-cloudwatch-observability \
+               --region "${{ env.E2E_TEST_AWS_REGION }}" >/dev/null 2>&1; then
+            echo "Addon still present; deleting explicitly."
+            aws eks delete-addon --cluster-name "${{ env.CLUSTER_NAME }}" \
+              --addon-name amazon-cloudwatch-observability \
+              --region "${{ env.E2E_TEST_AWS_REGION }}" >/dev/null 2>&1 || true
+            for i in $(seq 1 30); do
+              aws eks describe-addon --cluster-name "${{ env.CLUSTER_NAME }}" \
+                --addon-name amazon-cloudwatch-observability \
+                --region "${{ env.E2E_TEST_AWS_REGION }}" >/dev/null 2>&1 || break
+              echo "  waiting for addon deletion ($i)"; sleep 10
+            done
+          fi
+
+          if kubectl get sa cloudwatch-agent -n amazon-cloudwatch >/dev/null 2>&1; then
+            echo "cloudwatch-agent SA still present; deleting via eksctl."
+            eksctl delete iamserviceaccount --name cloudwatch-agent --namespace amazon-cloudwatch \
+              --cluster "${{ env.CLUSTER_NAME }}" --region "${{ env.E2E_TEST_AWS_REGION }}" || \
+              kubectl delete sa cloudwatch-agent -n amazon-cloudwatch --ignore-not-found || true
+          fi
+
+          orphans=$(aws cloudformation describe-stacks --region "${{ env.E2E_TEST_AWS_REGION }}" \
+            --query "Stacks[?contains(StackName, 'eksctl-${{ env.CLUSTER_NAME }}-addon-iamserviceaccount-amazon-cloudwatch')].StackName" \
+            --output text 2>/dev/null || true)
+          if [ -n "$orphans" ] && [ "$orphans" != "None" ]; then
+            for st in $orphans; do
+              echo "Deleting orphaned IRSA stack: $st"
+              aws cloudformation delete-stack --region "${{ env.E2E_TEST_AWS_REGION }}" --stack-name "$st" || \
+                echo "::warning::Could not delete stack $st"
+            done
+          else
+            echo "No orphaned cloudwatch-agent IRSA stacks."
+          fi
+
+          echo "=== Final cluster state ==="
+          echo "addons:     $(aws eks list-addons --cluster-name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }} --query 'addons' --output text 2>/dev/null || echo '<none>')"
+          echo "cw SAs:     $(kubectl get sa -n amazon-cloudwatch --no-headers 2>/dev/null | awk '{print $1}' | tr '\n' ' ' || echo '<none>')"
+          leftover=$(kubectl get namespace -o name 2>/dev/null | grep -E 'namespace/ns-' || true)
+          if [ -n "$leftover" ]; then
+            echo "::warning::Test namespaces still present after cleanup (likely stuck Terminating):"
+            echo "$leftover"
+          else
+            echo "test ns:    <none> — cluster is cold"
+          fi

@@ -38,6 +38,14 @@ public class ValidationConfig {
   String expectedLogStructureTemplate;
   String cwLogFilterPattern;
 
+  /**
+   * How far back a cw-log validation searches CloudWatch Logs, in minutes. Defaults to 5 when unset,
+   * which suits signals the application re-emits continuously. Widen it for a one-shot signal, whose
+   * single record would otherwise fall outside the window while the validator was still starting up
+   * — no amount of retrying recovers it, because the window slides forward with the clock.
+   */
+  Integer cwLogLookbackMinutes;
+
   /** PromQL query template (mustache) for Service Events OTLP metric validation. */
   String promQlQuery;
 

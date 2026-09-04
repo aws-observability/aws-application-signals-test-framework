@@ -1,0 +1,170 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# Start-of-pipeline setup of Application Signals on a shared EKS test cluster.
+name: EKS Setup Application Signals
+
+on:
+  workflow_call:
+    inputs:
+      test-cluster-name:
+        required: true
+        type: string
+      aws-region:
+        required: false
+        type: string
+        default: 'us-east-1'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
+  CLUSTER_NAME: ${{ inputs.test-cluster-name }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+
+jobs:
+  eks-setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: 'main'
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Download enablement script
+        run: |
+          mkdir -p enablement-script && cd enablement-script
+          wget -q https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/enable-app-signals.sh
+          chmod +x enable-app-signals.sh
+
+
+      - name: Set up kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Install eksctl
+        run: |
+          curl -sLO "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_Linux_amd64.tar.gz"
+          tar -xzf eksctl_Linux_amd64.tar.gz -C /usr/local/bin
+          rm -f eksctl_Linux_amd64.tar.gz
+          eksctl version
+
+      - name: Reap leftovers from previous runs
+        timeout-minutes: 10
+        run: |
+          stale=$(kubectl get namespace -o name 2>/dev/null | grep -E 'namespace/ns-' | sed 's#namespace/##' || true)
+          if [ -z "$stale" ]; then
+            echo "No leftover test namespaces."
+          else
+            echo "::warning::Leftover namespaces from a previous run (cleanup did not complete):"
+            echo "$stale"
+            for ns in $stale; do
+              kubectl delete namespace "$ns" --ignore-not-found --timeout=180s || \
+                echo "::warning::Namespace $ns did not delete cleanly; continuing."
+            done
+          fi
+
+          # Sweep orphaned eksctl IRSA CFN stacks so the create below starts from a known state.
+          orphans=$(aws cloudformation describe-stacks --region "${{ env.E2E_TEST_AWS_REGION }}" \
+            --query "Stacks[?contains(StackName, 'eksctl-${{ env.CLUSTER_NAME }}-addon-iamserviceaccount-amazon-cloudwatch')].StackName" \
+            --output text 2>/dev/null || true)
+          if [ -n "$orphans" ] && [ "$orphans" != "None" ]; then
+            for st in $orphans; do
+              # Only sweep stacks whose SA is already gone; a live SA means the stack is legitimately in use.
+              if ! kubectl get sa cloudwatch-agent -n amazon-cloudwatch >/dev/null 2>&1; then
+                echo "Deleting orphaned IRSA stack (no matching service account): $st"
+                aws cloudformation delete-stack --region "${{ env.E2E_TEST_AWS_REGION }}" --stack-name "$st" || \
+                  echo "::warning::Could not delete stack $st"
+                aws cloudformation wait stack-delete-complete --region "${{ env.E2E_TEST_AWS_REGION }}" \
+                  --stack-name "$st" 2>/dev/null || true
+              else
+                echo "Stack $st has a live cloudwatch-agent SA; leaving it alone."
+              fi
+            done
+          fi
+
+      - name: Install Application Signals (addon + cloudwatch-agent IRSA)
+        working-directory: enablement-script
+        run: |
+          # `default` namespace: this job only establishes cluster-wide state. Per-test namespace
+          # annotation is not needed here -- App Signals mode comes from the operator's cluster-wide
+          # --auto-instrumentation-python-image arg, which the per-version test jobs patch.
+          for attempt in 1 2 3; do
+            echo "enable-app-signals.sh attempt $attempt"
+            # `yes |` answers the script's interactive addon-upgrade prompt non-interactively.
+            if yes | ./enable-app-signals.sh "${{ env.CLUSTER_NAME }}" "${{ env.E2E_TEST_AWS_REGION }}" default; then
+              echo "App Signals enablement succeeded."
+              exit 0
+            fi
+            echo "Attempt $attempt failed."
+            [ "$attempt" -lt 3 ] && sleep 60
+          done
+          echo "::error::enable-app-signals.sh failed after 3 attempts."
+          exit 1
+
+      - name: Wait for addon to become ACTIVE
+        run: |
+          for attempt in $(seq 1 30); do
+            status=$(aws eks describe-addon \
+              --cluster-name "${{ env.CLUSTER_NAME }}" \
+              --addon-name amazon-cloudwatch-observability \
+              --region "${{ env.E2E_TEST_AWS_REGION }}" \
+              --query 'addon.status' --output text 2>/dev/null || echo "UNKNOWN")
+            echo "Attempt $attempt: addon status = $status"
+            if [ "$status" = "ACTIVE" ]; then
+              echo "Addon is ACTIVE."
+              exit 0
+            fi
+            if [ "$status" = "CREATE_FAILED" ] || [ "$status" = "DEGRADED" ]; then
+              echo "::error::Addon entered terminal state $status"
+              exit 1
+            fi
+            sleep 20
+          done
+          echo "::error::Addon did not become ACTIVE within ~10 minutes."
+          exit 1
+
+      - name: Verify cloudwatch-agent has IRSA credentials projected
+        run: |
+          kubectl rollout status daemonset/cloudwatch-agent -n amazon-cloudwatch --timeout=300s || true
+
+          for attempt in 1 2 3 4 5 6; do
+            pods=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=cloudwatch-agent \
+              -o jsonpath='{range .items[*]}{.metadata.name}{"|"}{.spec.containers[0].env[?(@.name=="AWS_ROLE_ARN")].value}{"\n"}{end}' 2>/dev/null) || pods=""
+            pods=$(printf '%s\n' "$pods" | grep -v '^[[:space:]]*$' || true)
+            total=$(printf '%s\n' "$pods" | grep -c . || true)
+            missing=$(printf '%s\n' "$pods" | awk -F'|' '$2==""{print $1}')
+
+            if [ "${total:-0}" -gt 0 ] && [ -z "$missing" ]; then
+              echo "All $total cloudwatch-agent pod(s) have AWS_ROLE_ARN projected."
+              kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=cloudwatch-agent \
+                -o jsonpath='{range .items[*]}{.metadata.name}{" -> "}{.spec.containers[0].env[?(@.name=="AWS_ROLE_ARN")].value}{"\n"}{end}'
+              exit 0
+            fi
+
+            if [ "${total:-0}" -eq 0 ]; then
+              echo "Attempt $attempt: no cloudwatch-agent pods found yet (DaemonSet may still be rolling out)."
+            else
+              echo "Attempt $attempt: $total pod(s) present, missing IRSA credentials: $missing"
+            fi
+            echo "Restarting DaemonSet so the IRSA webhook re-injects credentials at admission."
+            kubectl rollout restart daemonset/cloudwatch-agent -n amazon-cloudwatch
+            kubectl rollout status daemonset/cloudwatch-agent -n amazon-cloudwatch --timeout=300s
+          done
+
+          echo "::error::cloudwatch-agent pods still lack IRSA credentials after 6 restart attempts."
+          echo "Agent would authenticate as the EC2 node role and get AccessDeniedException on"
+          echo "logs:PutLogEvents, causing every downstream EKS validator to fail on missing telemetry."
+          kubectl get sa cloudwatch-agent -n amazon-cloudwatch -o yaml || true
+          kubectl describe daemonset cloudwatch-agent -n amazon-cloudwatch || true
+          exit 1

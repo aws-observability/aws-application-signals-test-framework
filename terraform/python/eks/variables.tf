@@ -52,3 +52,17 @@ variable "python_remote_app_image" {
 variable "account_id" {
   default = "<AWS_ACCOUNT_ID>"
 }
+
+# The Python version this job is testing. The parallel workflow passes it per-job; the sequential
+# workflow omits it and gets the default.
+variable "python_version" {
+  default = "3.10"
+}
+
+# The ordered set of Python versions the calling workflow supports. main.tf derives this job's
+# NodePort offset from python_version's index in this list, so supported versions are managed only
+# in the calling workflow, never hardcoded here.
+variable "python_versions" {
+  type    = list(string)
+  default = ["3.10"]
+}

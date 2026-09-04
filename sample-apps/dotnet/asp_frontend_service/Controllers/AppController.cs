@@ -103,6 +103,63 @@ public class AppController : ControllerBase
         return "Application started!";
     }
 
+    // Trivial in-process readiness route. Serves as both the provisioning readiness probe and the
+    // downstream target for /success, so neither depends on anything outside this process.
+    [HttpGet]
+    [Route("/health")]
+    public string Health()
+    {
+        return "healthy";
+    }
+
+    // Makes a real HttpClient call to this application's own /health route. This produces the
+    // Service Events FunctionCall (`service.function.duration`) data point with status=success and,
+    // via the per-endpoint latency threshold, the latency-triggered IncidentSnapshot at HTTP 200.
+    // Unlike /outgoing-http-call (which reaches a public site) the downstream hop stays on loopback,
+    // so neither signal depends on DNS, TLS or egress from the test VPC.
+    [HttpGet]
+    [Route("/success")]
+    public string Success()
+    {
+        var endpoint = $"{this.Request.Scheme}://{this.Request.Host}/health";
+        _ = this.httpClient.GetAsync(endpoint).Result;
+
+        return this.GetTraceId();
+    }
+
+    // Makes an HttpClient call that fails, producing the Service Events FunctionCall data point
+    // with status=error. /exception cannot cover this: it throws inside the controller without
+    // making an outbound call, so no HttpClient activity exists for FunctionCall to record. The
+    // target is a closed loopback port, so the connection is refused immediately and deterministically
+    // without DNS, TLS or egress. The exception is swallowed because the failed downstream call is
+    // the signal under test; the request itself returning 200 keeps it distinct from /exception.
+    [HttpGet]
+    [Route("/failed-call")]
+    public string FailedCall()
+    {
+        try
+        {
+            _ = this.httpClient.GetAsync("http://127.0.0.1:1/").Result;
+        }
+        catch (Exception)
+        {
+            // Expected: the point is the failed HttpClient activity, not the response.
+        }
+
+        return this.GetTraceId();
+    }
+
+    // Throws so the request completes with HTTP 500 and a captured exception. This is the
+    // trigger for the Service Events exception-type IncidentSnapshot and the EndpointErrorMetric
+    // `count` data point. The thrown type surfaces on the snapshot as the fully-qualified .NET
+    // type name (System.InvalidOperationException).
+    [HttpGet]
+    [Route("/exception")]
+    public string Exception()
+    {
+        throw new InvalidOperationException("intentional exception for service events e2e test");
+    }
+
     private string GetTraceId()
     {
         var traceId = Activity.Current.TraceId.ToHexString();

@@ -41,6 +41,7 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class CWLogValidator implements IValidator {
   private static int DEFAULT_MAX_RETRY_COUNT = 40;
+  private static final int DEFAULT_LOOKBACK_MINUTES = 5;
 
   private MustacheHelper mustacheHelper = new MustacheHelper();
   private Context context;
@@ -221,7 +222,7 @@ public class CWLogValidator implements IValidator {
       this.cloudWatchService.filterLogs(
         context.getLogGroup(),
         filterPattern,
-        System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
+        this.searchStartTime(),
         10);
 
     if (retrievedLogs == null || retrievedLogs.isEmpty()) {
@@ -255,7 +256,7 @@ public class CWLogValidator implements IValidator {
       this.cloudWatchService.filterLogs(
         context.getLogGroup(),
         filterPattern,
-        System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
+        this.searchStartTime(),
         10);
 
     if (retrievedLogs == null || retrievedLogs.isEmpty()) {
@@ -276,7 +277,7 @@ public class CWLogValidator implements IValidator {
       retrievedLogs = this.cloudWatchService.filterLogs(
           context.getLogGroup(),
           pattern,
-          System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(5),
+          this.searchStartTime(),
           10);
           
       if (retrievedLogs != null && !retrievedLogs.isEmpty()) {
@@ -292,6 +293,26 @@ public class CWLogValidator implements IValidator {
     return new JsonFlattener(retrievedLogs.get(0).getMessage())
              .withFlattenMode(FlattenMode.KEEP_ARRAYS)
              .flattenAsMap();
+  }
+
+  /**
+   * Start of the CloudWatch Logs search window.
+   *
+   * <p>Recomputed per call, so on every retry the window slides forward with the clock. That is
+   * correct for a signal the application re-emits continuously, but it walks away from a signal
+   * emitted only once: past the window, no number of retries can find it again. A validation whose
+   * signal is one-shot — the .NET Service Events DeploymentEvent fires at startup and is never
+   * repeated — should widen this via {@code cwLogLookbackMinutes} so it is not racing the clock
+   * between provisioning and validation.
+   *
+   * @return epoch millis to search from
+   */
+  private long searchStartTime() {
+    int lookbackMinutes =
+        this.validationConfig != null && this.validationConfig.getCwLogLookbackMinutes() != null
+            ? this.validationConfig.getCwLogLookbackMinutes()
+            : DEFAULT_LOOKBACK_MINUTES;
+    return System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(lookbackMinutes);
   }
 
   @Override

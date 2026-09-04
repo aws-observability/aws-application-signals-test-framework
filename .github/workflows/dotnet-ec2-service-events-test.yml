@@ -1,0 +1,517 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# Reusable workflow for the .NET EC2 Service Events E2E test. The test provisions one EC2
+# instance, installs a Service Events-capable ADOT .NET distro and the CloudWatch Agent, drives
+# deterministic local traffic, then validates the emitted logs and metrics in CloudWatch.
+name: DotNet EC2 Service Events Use Case
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        required: true
+        type: string
+      caller-workflow-name:
+        required: true
+        type: string
+      dotnet-version:
+        description: "Supported versions: 8.0, 9.0, 10.0"
+        required: false
+        type: string
+        default: '8.0'
+      distro-source:
+        description: "ADOT .NET distro source: release or staging"
+        required: false
+        type: string
+        default: 'release'
+      staging-distro-name:
+        description: "Staging bucket object name, used when distro-source is staging and adot-distro-uri is empty"
+        required: false
+        type: string
+        default: 'aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip'
+      adot-distro-uri:
+        description: "Optional immutable s3:// or https:// distro URI; overrides the source default"
+        required: false
+        type: string
+        default: ''
+      sample-app-zip:
+        description: "Optional immutable s3:// or https:// sample-app ZIP URI"
+        required: false
+        type: string
+        default: ''
+      sample-app-git-commit-sha:
+        description: "Source commit SHA that produced the sample-app ZIP; defaults to the caller's SHA"
+        required: false
+        type: string
+        default: ''
+      cw-agent-rpm-uri:
+        description: "Optional immutable s3:// or https:// CloudWatch Agent RPM URI"
+        required: false
+        type: string
+        default: ''
+      framework-ref:
+        description: "Framework branch, tag, or SHA to check out; external callers default to main"
+        required: false
+        type: string
+        default: ''
+    outputs:
+      job-started:
+        value: ${{ jobs.dotnet-ec2-service-events.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.dotnet-ec2-service-events.outputs.validation-result }}
+  workflow_dispatch:
+    inputs:
+      aws-region:
+        required: false
+        type: string
+        default: 'us-east-1'
+      dotnet-version:
+        description: "Supported versions: 8.0, 9.0, 10.0"
+        required: false
+        type: choice
+        options:
+          - '8.0'
+          - '9.0'
+          - '10.0'
+        default: '8.0'
+      distro-source:
+        description: "ADOT .NET distro source"
+        required: false
+        type: choice
+        options:
+          - release
+          - staging
+        default: release
+      staging-distro-name:
+        required: false
+        type: string
+        default: 'aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip'
+      adot-distro-uri:
+        description: "Optional immutable s3:// or https:// distro URI"
+        required: false
+        type: string
+        default: ''
+      sample-app-zip:
+        description: "Optional immutable s3:// or https:// sample-app ZIP URI"
+        required: false
+        type: string
+        default: ''
+      sample-app-git-commit-sha:
+        description: "Source commit SHA that produced the sample-app ZIP; defaults to this dispatch's SHA"
+        required: false
+        type: string
+        default: ''
+      cw-agent-rpm-uri:
+        description: "Optional immutable s3:// or https:// CloudWatch Agent RPM URI"
+        required: false
+        type: string
+        default: ''
+      framework-ref:
+        description: "Framework branch, tag, or SHA; defaults to this dispatch's SHA"
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region || 'us-east-1' }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name || 'manual-dispatch' }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  DOTNET_VERSION: ${{ inputs.dotnet-version || '8.0' }}
+  DISTRO_SOURCE: ${{ inputs.distro-source || 'release' }}
+  STAGING_DISTRO_NAME: ${{ inputs.staging-distro-name || 'aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip' }}
+  ADOT_DISTRO_URI_INPUT: ${{ inputs.adot-distro-uri || '' }}
+  SAMPLE_APP_ZIP_INPUT: ${{ inputs.sample-app-zip || '' }}
+  SAMPLE_APP_GIT_COMMIT_SHA: ${{ inputs.sample-app-git-commit-sha || '' }}
+  CW_AGENT_RPM_URI_INPUT: ${{ inputs.cw-agent-rpm-uri || '' }}
+  FRAMEWORK_REF_INPUT: ${{ inputs.framework-ref || '' }}
+  CALLER_REPOSITORY: ${{ github.repository }}
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+
+jobs:
+  dotnet-ec2-service-events:
+    runs-on: ubuntu-latest
+    # Five validators can each retry for about 6.5 minutes. Leave headroom for provisioning,
+    # credential refresh, and a retried destroy rather than terminating before cleanup.
+    timeout-minutes: 90
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
+    steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
+
+      # Validate every caller-controlled value before requesting AWS credentials. Artifact values
+      # are URIs, never executable command strings; fixed download logic lives in Terraform.
+      - name: Validate inputs and resolve artifact URIs
+        env:
+          S3_INTEGRATION_BUCKET: ${{ secrets.S3_INTEGRATION_BUCKET }}
+          CALLER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$E2E_TEST_AWS_REGION" =~ ^[a-z]{2}(-[a-z]+)+-[0-9]$ ]]; then
+            echo "Invalid aws-region: $E2E_TEST_AWS_REGION"
+            exit 1
+          fi
+          if [[ ! "$DOTNET_VERSION" =~ ^(8\.0|9\.0|10\.0)$ ]]; then
+            echo "Unsupported dotnet-version: $DOTNET_VERSION (expected 8.0, 9.0, or 10.0)"
+            exit 1
+          fi
+          # Provenance for the sample-app artifact. When the caller supplies the SHA that actually
+          # produced the ZIP, it is stamped on every event and the templates pin it exactly. With no
+          # value there is nothing to look up — the published ZIP records no source revision — so
+          # fall back to the caller's own SHA and say so, matching how the sibling service-events
+          # workflows source this value.
+          if [[ -n "$SAMPLE_APP_GIT_COMMIT_SHA" ]]; then
+            RESOLVED_SAMPLE_APP_SHA="$SAMPLE_APP_GIT_COMMIT_SHA"
+          else
+            RESOLVED_SAMPLE_APP_SHA="$CALLER_SHA"
+            echo "No sample-app-git-commit-sha supplied; falling back to the caller SHA $CALLER_SHA."
+            echo "Provenance on this run is nominal rather than artifact-derived."
+          fi
+          if [[ ! "$RESOLVED_SAMPLE_APP_SHA" =~ ^[a-f0-9]{40}$ \
+            || "$RESOLVED_SAMPLE_APP_SHA" == "0000000000000000000000000000000000000000" ]]; then
+            echo "sample-app-git-commit-sha must be a non-zero 40-character lowercase hex SHA"
+            exit 1
+          fi
+          if [[ ! "$DISTRO_SOURCE" =~ ^(release|staging)$ ]]; then
+            echo "Invalid distro-source: $DISTRO_SOURCE (expected release or staging)"
+            exit 1
+          fi
+          if [[ ! "$STAGING_DISTRO_NAME" =~ ^[A-Za-z0-9._-]+\.zip$ ]]; then
+            echo "Invalid staging-distro-name: $STAGING_DISTRO_NAME"
+            exit 1
+          fi
+
+          validate_uri() {
+            local name="$1"
+            local uri="$2"
+            case "$uri" in
+              s3://*|https://*) ;;
+              *)
+                echo "$name must use s3:// or https://: $uri"
+                exit 1
+                ;;
+            esac
+            if [[ "$uri" == *"'"* || "$uri" == *\"* || "$uri" =~ [[:space:]] ]]; then
+              echo "$name cannot contain quotes or whitespace"
+              exit 1
+            fi
+          }
+
+          if [[ -n "$ADOT_DISTRO_URI_INPUT" ]]; then
+            ADOT_DISTRO_URI="$ADOT_DISTRO_URI_INPUT"
+          elif [[ "$DISTRO_SOURCE" == "staging" ]]; then
+            ADOT_DISTRO_URI="s3://adot-autoinstrumentation-dotnet-staging/$STAGING_DISTRO_NAME"
+          else
+            ADOT_DISTRO_URI="https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip"
+          fi
+          validate_uri "adot-distro-uri" "$ADOT_DISTRO_URI"
+
+          if [[ -n "$SAMPLE_APP_ZIP_INPUT" ]]; then
+            SAMPLE_APP_ZIP="$SAMPLE_APP_ZIP_INPUT"
+          else
+            SAMPLE_APP_ZIP="s3://aws-appsignals-sample-app-prod-$E2E_TEST_AWS_REGION/dotnet-sample-app-$DOTNET_VERSION.zip"
+            echo "No sample-app-zip supplied; using the mutable regional canary artifact: $SAMPLE_APP_ZIP"
+          fi
+          validate_uri "sample-app-zip" "$SAMPLE_APP_ZIP"
+
+          if [[ -n "$CW_AGENT_RPM_URI_INPUT" ]]; then
+            CW_AGENT_RPM_URI="$CW_AGENT_RPM_URI_INPUT"
+          elif [[ "$CALLER_REPOSITORY" == "aws-observability/amazon-cloudwatch-agent" ]]; then
+            if [[ -z "$S3_INTEGRATION_BUCKET" ]]; then
+              echo "S3_INTEGRATION_BUCKET is required for a CloudWatch Agent staging caller"
+              exit 1
+            fi
+            CW_AGENT_RPM_URI="s3://$S3_INTEGRATION_BUCKET/integration-test/binary/$CALLER_SHA/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
+          else
+            CW_AGENT_RPM_URI="https://amazoncloudwatch-agent-$E2E_TEST_AWS_REGION.s3.$E2E_TEST_AWS_REGION.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"
+          fi
+          validate_uri "cw-agent-rpm-uri" "$CW_AGENT_RPM_URI"
+
+          if [[ -n "$FRAMEWORK_REF_INPUT" ]]; then
+            FRAMEWORK_REF="$FRAMEWORK_REF_INPUT"
+          elif [[ "$CALLER_REPOSITORY" == "aws-observability/aws-application-signals-test-framework" ]]; then
+            # Manual dispatch and same-repository callers test the exact revision that invoked us.
+            FRAMEWORK_REF="$CALLER_SHA"
+          else
+            # A caller branch/PR ref generally does not exist in the framework repository.
+            FRAMEWORK_REF="main"
+          fi
+          if [[ ! "$FRAMEWORK_REF" =~ ^[A-Za-z0-9._/-]+$ ]] || [[ "$FRAMEWORK_REF" == *".."* ]]; then
+            echo "Invalid framework-ref: $FRAMEWORK_REF"
+            exit 1
+          fi
+
+          {
+            echo "ADOT_DISTRO_URI=$ADOT_DISTRO_URI"
+            echo "SAMPLE_APP_ZIP=$SAMPLE_APP_ZIP"
+            echo "CW_AGENT_RPM_URI=$CW_AGENT_RPM_URI"
+            echo "FRAMEWORK_REF=$FRAMEWORK_REF"
+            echo "RESOLVED_SAMPLE_APP_SHA=$RESOLVED_SAMPLE_APP_SHA"
+          } >> "$GITHUB_ENV"
+
+      - name: Check out test framework
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ env.FRAMEWORK_REF }}
+          fetch-depth: 0
+
+      - name: Record checked-out framework revision
+        run: |
+          set -euo pipefail
+          framework_sha=$(git rev-parse HEAD)
+          if [[ ! "$framework_sha" =~ ^[a-f0-9]{40}$ ]]; then
+            echo "Unable to resolve a full framework commit SHA: $framework_sha"
+            exit 1
+          fi
+          echo "FRAMEWORK_SHA=$framework_sha" >> "$GITHUB_ENV"
+          echo "Framework provenance: https://github.com/aws-observability/aws-application-signals-test-framework@$framework_sha"
+
+      # Initialize the Gradle daemon early because it can fail transiently. A later step retries if
+      # this warm-up fails.
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Generate testing id
+        run: echo "TESTING_ID=${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
+
+      # Bootstrap in the central account only long enough to retrieve the regional target account.
+      - name: Configure bootstrap AWS credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve regional account
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 # v2.0.10
+        with:
+          secret-ids: |
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+
+      # Always assume the regional target role, so an external caller cannot end up provisioning
+      # with bootstrap credentials into whichever region happens to be ambient.
+      - name: Configure regional target AWS credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Verify AWS identity and region
+        run: |
+          set -euo pipefail
+          actual_account=$(aws sts get-caller-identity --query Account --output text)
+          if [[ "$actual_account" != "$ACCOUNT_ID" ]]; then
+            echo "Expected target account $ACCOUNT_ID, but credentials are for $actual_account"
+            exit 1
+          fi
+          if [[ "${AWS_REGION:-}" != "$E2E_TEST_AWS_REGION" ]]; then
+            echo "Expected AWS_REGION=$E2E_TEST_AWS_REGION, got ${AWS_REGION:-<unset>}"
+            exit 1
+          fi
+          aws sts get-caller-identity
+
+      - name: Set up Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor --yes -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install -y terraform'
+          sleep_time: 60
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/dotnet/ec2/service-events && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -f .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Deploy sample app and verify it is ready
+        working-directory: terraform/dotnet/ec2/service-events
+        run: |
+          set -euo pipefail
+          terraform_vars=(
+            -var="aws_region=$E2E_TEST_AWS_REGION"
+            -var="test_id=$TESTING_ID"
+            -var="sample_app_zip=$SAMPLE_APP_ZIP"
+            -var="cw_agent_rpm_uri=$CW_AGENT_RPM_URI"
+            -var="adot_distro_uri=$ADOT_DISTRO_URI"
+            -var="language_version=$DOTNET_VERSION"
+            -var="service_events_git_commit_sha=$RESOLVED_SAMPLE_APP_SHA"
+          )
+
+          max_retry=2
+          for ((retry_counter=0; retry_counter<max_retry; retry_counter++)); do
+            echo "Terraform apply attempt $((retry_counter + 1)) of $max_retry"
+            if terraform apply -auto-approve "${terraform_vars[@]}"; then
+              exit 0
+            fi
+
+            echo "Terraform deployment failed; destroying partial resources before retry."
+            terraform destroy -auto-approve "${terraform_vars[@]}" || true
+          done
+
+          echo "Terraform deployment failed after $max_retry attempts."
+          exit 1
+
+      - name: Read Terraform outputs
+        working-directory: terraform/dotnet/ec2/service-events
+        run: |
+          set -euo pipefail
+          {
+            echo "EC2_INSTANCE_AMI=$(terraform output -raw ec2_instance_ami)"
+            echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output -raw main_service_instance_id)"
+            echo "SERVICE_NAME=$(terraform output -raw service_name)"
+            echo "SERVICE_EVENTS_LOG_GROUP=$(terraform output -raw service_events_log_group)"
+            echo "MAIN_SERVICE_ENDPOINT=127.0.0.1:8080"
+          } >> "$GITHUB_ENV"
+
+      - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew.outcome == 'failure'
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      # Service Events log signals: /aws/service-events/<service.name>
+      - name: Validate DeploymentEvent log
+        id: deployment-event-validation
+        run: ./gradlew validator:run --args='-c dotnet/ec2/service-events/deployment-event-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group ${{ env.SERVICE_EVENTS_LOG_GROUP }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --service-events-git-commit-sha ${{ env.RESOLVED_SAMPLE_APP_SHA }}
+          --rollup'
+
+      - name: Validate IncidentSnapshot log
+        id: incident-snapshot-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/service-events/incident-snapshot-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group ${{ env.SERVICE_EVENTS_LOG_GROUP }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --service-events-git-commit-sha ${{ env.RESOLVED_SAMPLE_APP_SHA }}
+          --rollup'
+
+      - name: Validate IncidentSnapshot log (latency trigger)
+        id: incident-snapshot-latency-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure' || steps.incident-snapshot-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/service-events/incident-snapshot-latency-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --log-group ${{ env.SERVICE_EVENTS_LOG_GROUP }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --service-events-git-commit-sha ${{ env.RESOLVED_SAMPLE_APP_SHA }}
+          --rollup'
+
+      # Service Events native OTLP metrics, queried through the Prometheus-compatible API.
+      - name: Validate EndpointErrorMetric via PromQL
+        id: endpoint-error-metric-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure' || steps.incident-snapshot-validation.outcome == 'failure' || steps.incident-snapshot-latency-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/service-events/endpoint-error-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --service-events-git-commit-sha ${{ env.RESOLVED_SAMPLE_APP_SHA }}
+          --rollup'
+
+      - name: Validate FunctionCall via PromQL
+        id: function-call-metric-validation
+        if: (success() || steps.deployment-event-validation.outcome == 'failure' || steps.incident-snapshot-validation.outcome == 'failure' || steps.incident-snapshot-latency-validation.outcome == 'failure' || steps.endpoint-error-metric-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/service-events/function-call-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --service-events-git-commit-sha ${{ env.RESOLVED_SAMPLE_APP_SHA }}
+          --rollup'
+
+      - name: Save test results
+        if: always()
+        id: validation-result
+        run: |
+          if [[ "${{ steps.deployment-event-validation.outcome }}" == "success" \
+            && "${{ steps.incident-snapshot-validation.outcome }}" == "success" \
+            && "${{ steps.incident-snapshot-latency-validation.outcome }}" == "success" \
+            && "${{ steps.endpoint-error-metric-validation.outcome }}" == "success" \
+            && "${{ steps.function-call-metric-validation.outcome }}" == "success" ]]; then
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Refresh the regional role because provisioning plus five serial validators can outlive the
+      # original session. This is unconditional for the same reason as the initial regional assume.
+      - name: Refresh regional target AWS credentials for cleanup
+        if: always() && env.ACCOUNT_ID != ''
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Terraform destroy
+        if: always()
+        working-directory: terraform/dotnet/ec2/service-events
+        run: |
+          set -euo pipefail
+          if [[ ! -d .terraform || ! -f terraform.tfstate ]]; then
+            echo "Terraform was not initialized or created no state; nothing to destroy."
+            exit 0
+          fi
+
+          terraform_vars=(
+            -var="aws_region=$E2E_TEST_AWS_REGION"
+            -var="test_id=$TESTING_ID"
+            -var="sample_app_zip=$SAMPLE_APP_ZIP"
+            -var="cw_agent_rpm_uri=$CW_AGENT_RPM_URI"
+            -var="adot_distro_uri=$ADOT_DISTRO_URI"
+            -var="language_version=$DOTNET_VERSION"
+            -var="service_events_git_commit_sha=$RESOLVED_SAMPLE_APP_SHA"
+          )
+
+          max_attempts=3
+          for ((attempt=1; attempt<=max_attempts; attempt++)); do
+            echo "Terraform destroy attempt $attempt of $max_attempts"
+            if terraform destroy -auto-approve "${terraform_vars[@]}"; then
+              echo "Terraform destroy completed successfully."
+              exit 0
+            fi
+            sleep $((attempt * 15))
+          done
+
+          echo "Terraform destroy failed after $max_attempts attempts; resources may require manual cleanup."
+          exit 1

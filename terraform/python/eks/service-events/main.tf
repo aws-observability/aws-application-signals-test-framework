@@ -71,7 +71,25 @@ resource "local_file" "kubeconfig" {
 }
 
 locals {
-  service_name = "python-sample-application-${var.test_id}"
+  service_name   = "python-sample-application-${var.test_id}"
+  log_group_name = "/aws/service-events/${local.service_name}"
+}
+
+# Each run emits into a run-unique Service Events log group. Left to the CW agent these groups are
+# created with never-expire retention and outlive the test, accumulating one orphaned group per run.
+# Managing the group here gives it a one-day retention and makes `terraform destroy` remove it, so
+# even a failed destroy caps storage at a day.
+#
+# The CW agent is a cluster-wide daemonset installed by enable-app-signals.sh and outlives this
+# module, so a late flush after the pod is gone can recreate the group. The one-day retention is
+# what actually bounds the leak in that case.
+resource "aws_cloudwatch_log_group" "service_events" {
+  name              = local.log_group_name
+  retention_in_days = 1
+
+  tags = {
+    Name = "service-events-${var.test_id}"
+  }
 }
 
 resource "kubernetes_deployment_v1" "python_app_deployment" {
@@ -145,6 +163,10 @@ resource "kubernetes_deployment_v1" "python_app_deployment" {
       }
     }
   }
+
+  # The app emits into the managed log group. Making the relationship explicit reverses the order on
+  # destroy: Terraform removes the pod before deleting the group.
+  depends_on = [aws_cloudwatch_log_group.service_events]
 }
 
 resource "kubernetes_service" "python_app_service" {
