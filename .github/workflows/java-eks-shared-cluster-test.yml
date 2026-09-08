@@ -426,3 +426,19 @@ jobs:
           --namespace ${{ env.SAMPLE_APP_NAMESPACE }} \
           --cluster ${{ env.CLUSTER_NAME }} \
           --region ${{ env.E2E_TEST_AWS_REGION }}
+
+
+      - name: How to re-run this test
+        if: failure()
+        run: |
+          echo "=================================================================="
+          echo "  This test job cannot be re-run on its own."
+          echo ""
+          echo "  => Re-run the pipeline starting from eks-setup so it flows:"
+          echo "       eks-setup -> eks-vxx (this test) -> eks-cleanup"
+          echo ""
+          echo "  It needs shared cluster state (App Signals addon + agent IRSA)"
+          echo "  that eks-setup installs and eks-cleanup tears down. Re-running"
+          echo "  ONLY this job skips setup, so it runs against a torn-down"
+          echo "  cluster and fails again."
+          echo "=================================================================="
