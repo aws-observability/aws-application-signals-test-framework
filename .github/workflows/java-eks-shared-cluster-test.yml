@@ -1,7 +1,7 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-name: Java EKS Use Case (Parallel)
+name: Java EKS Use Case (Parallel/Shared cluster)
 on:
   workflow_call:
     inputs:

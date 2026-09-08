@@ -27,6 +27,11 @@ on:
         required: false
         type: string
         default: '11'
+      java-versions:
+        description: "JSON array of all supported Java versions, ordered. Used to derive this test's NodePort (one slot above the version block). Caller is the source of truth."
+        required: false
+        type: string
+        default: '["8","11","17","21","25"]'
       adot-image-name:
         required: false
         type: string
@@ -48,6 +53,7 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   CLUSTER_NAME: ${{ inputs.test-cluster-name || 'e2e-adot-test' }}
   JAVA_VERSION: ${{ inputs.java-version || '11' }}
+  JAVA_VERSIONS: ${{ inputs.java-versions }}
   ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
   REPOSITORY_NAME: ${{ github.event.repository.name }}
   LOG_GROUP_NAME: /aws/application-signals/data
@@ -187,7 +193,7 @@ jobs:
             deployment_failed=0
             terraform apply -auto-approve \
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
-              -var="main_node_port=30110" \
+              -var='java_versions=${{ env.JAVA_VERSIONS }}' \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
               -var="eks_cluster_context_name=$(kubectl config current-context)" \
@@ -257,7 +263,7 @@ jobs:
               echo "Destroying terraform"
               terraform destroy -auto-approve \
                 -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
-                -var="main_node_port=30110" \
+                -var='java_versions=${{ env.JAVA_VERSIONS }}' \
                 -var="test_id=${{ env.TESTING_ID }}" \
                 -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
                 -var="eks_cluster_context_name=$(kubectl config current-context)" \
@@ -391,7 +397,7 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
-            -var="main_node_port=30110" \
+            -var='java_versions=${{ env.JAVA_VERSIONS }}' \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
             -var="eks_cluster_context_name=$(kubectl config current-context)" \
