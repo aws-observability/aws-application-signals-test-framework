@@ -73,6 +73,9 @@ resource "local_file" "kubeconfig" {
 locals {
   service_name   = "java-sample-application-${var.test_id}"
   log_group_name = "/aws/service-events/${local.service_name}"
+  # One slot above the version jobs' NodePort block (they use 30100 + index*2 for indexes
+  # 0..length-1), so this never collides even when a Java version is added.
+  main_node_port = 30100 + length(var.java_versions) * 2
 }
 
 # Each run emits into a run-unique Service Events log group. Left to the CW agent these groups are
@@ -180,7 +183,7 @@ resource "kubernetes_service" "java_app_service" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8080
-      node_port   = 30100
+      node_port   = local.main_node_port
     }
   }
 }

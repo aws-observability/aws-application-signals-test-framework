@@ -1,11 +1,15 @@
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: Apache-2.0
 
-# Reusable workflow for running the Java EKS Service Events E2E test.
-# Validates the 5 Service Events signals on EKS with operator-injected ADOT Java.
-# Installs Application Signals (the amazon-cloudwatch-observability operator) per-run via
-# enable-app-signals.sh, optionally patches in the ADOT image under test, then cleans up.
-name: Java EKS Service Events Use Case
+# Parallel variant of the Java EKS Service Events E2E test.
+# Unlike java-eks-service-events-test.yml (which self-installs App Signals per run), this assumes
+# Application Signals is already installed cluster-wide by eks-setup-app-signals.yml, and the shared
+# operator's --auto-instrumentation-java-image is set once by the eks-patch-java-operator gate job, so
+# this job can run concurrently with the eks-v* version jobs on the shared cluster without touching the
+# operator. It deploys its own sample app, restarts it, verifies injection, then runs the Service Events
+# validations. Teardown of App Signals itself is handled once by eks-cleanup-app-signals.yml after all
+# parallel jobs finish.
+name: Java EKS Service Events Use Case (Parallel/Shared cluster)
 on:
   workflow_call:
     inputs:
@@ -23,12 +27,12 @@ on:
         required: false
         type: string
         default: '11'
-      adot-image-name:
-        description: "Optional ADOT Java instrumentation image to patch into the operator. When empty, the cluster operator's default (SE-capable) ADOT image is validated."
+      java-versions:
+        description: "JSON array of all supported Java versions, ordered. Used to derive this test's NodePort (one slot above the version block). Caller is the source of truth."
         required: false
         type: string
-      cw-agent-operator-tag:
-        description: "Optional CloudWatch Agent Operator image tag to patch in. When empty, the default operator image is used."
+        default: '["8","11","17","21","25"]'
+      adot-image-name:
         required: false
         type: string
     outputs:
@@ -36,24 +40,6 @@ on:
         value: ${{ jobs.java-eks-service-events.outputs.job-started }}
       validation-result:
         value: ${{ jobs.java-eks-service-events.outputs.validation-result }}
-  workflow_dispatch:
-    inputs:
-      aws-region:
-        required: false
-        type: string
-        default: 'us-east-1'
-      test-cluster-name:
-        required: false
-        type: string
-        default: 'e2e-adot-test'
-      adot-image-name:
-        description: "Optional ADOT Java instrumentation image to patch into the operator. When empty, the cluster operator's default (SE-capable) ADOT image is validated."
-        required: false
-        type: string
-      cw-agent-operator-tag:
-        description: "Optional CloudWatch Agent Operator image tag to patch in. When empty, the default operator image is used."
-        required: false
-        type: string
 
 permissions:
   id-token: write
@@ -67,17 +53,15 @@ env:
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   CLUSTER_NAME: ${{ inputs.test-cluster-name || 'e2e-adot-test' }}
   JAVA_VERSION: ${{ inputs.java-version || '11' }}
+  JAVA_VERSIONS: ${{ inputs.java-versions }}
   ADOT_IMAGE_NAME: ${{ inputs.adot-image-name }}
-  CW_AGENT_OPERATOR_TAG: ${{ inputs.cw-agent-operator-tag }}
   REPOSITORY_NAME: ${{ github.event.repository.name }}
-  # App Signals data log group — the SE log group (/aws/service-events/<svc>) is separate
-  # and validated below; both are preserved during cleanup (delete line stripped).
   LOG_GROUP_NAME: /aws/application-signals/data
 
 jobs:
   java-eks-service-events:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
@@ -89,7 +73,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
-          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
 
       - name: Initiate Gradlew Daemon
@@ -109,25 +93,7 @@ jobs:
         run: echo SERVICE_NAME="java-sample-application-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
 
       - name: Set Namespace
-        run: echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> "$GITHUB_ENV"
-
-      - name: Download enablement script
-        uses: ./.github/workflows/actions/execute_and_retry
-        with:
-          pre-command: "mkdir enablement-script && cd enablement-script"
-          command: "wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/enable-app-signals.sh
-          && wget https://raw.githubusercontent.com/aws-observability/application-signals-demo/main/scripts/eks/appsignals/clean-app-signals.sh"
-          cleanup: "rm -f enable-app-signals.sh && rm -f clean-app-signals.sh"
-          post-command: "chmod +x enable-app-signals.sh && chmod +x clean-app-signals.sh"
-
-      # Do not delete the App Signals data log group (shared across sources). The SE log group
-      # (/aws/service-events/<svc>) is also preserved — clean-app-signals.sh does not target it.
-      - name: Remove log group deletion command
-        if: always()
-        working-directory: enablement-script
-        run: |
-          delete_log_group="aws logs delete-log-group --log-group-name '${{ env.LOG_GROUP_NAME }}' --region \$REGION"
-          sed -i "s#$delete_log_group##g" clean-app-signals.sh
+        run: echo SAMPLE_APP_NAMESPACE="ns-se-${{ github.run_id }}-${{ github.run_number }}" >> "$GITHUB_ENV"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -141,13 +107,6 @@ jobs:
           secret-ids: |
             ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
             JAVA_MAIN_SAMPLE_APP_IMAGE, e2e-test/java-main-sample-app-image
-
-      - name: Configure AWS Credentials
-        if: ${{ github.event.repository.name == 'aws-application-signals-test-framework' }}
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
 
       - name: Set Sample App Image
         run: echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.JAVA_MAIN_SAMPLE_APP_IMAGE }}:v${{ env.JAVA_VERSION }}" >> "$GITHUB_ENV"
@@ -173,11 +132,12 @@ jobs:
       - name: Add eksctl to Github Path
         run: echo "${{ github.workspace }}/eksctl" >> "$GITHUB_PATH"
 
-      # Delete lingering sample app namespaces from previous test runs
-      - name: Delete all sample app namespaces
+      # Delete only THIS run's namespace if it lingers. Do NOT bulk-delete all ns-* namespaces:
+      # the concurrent eks-v* jobs own their own namespaces and a bulk delete would tear down a live test.
+      - name: Delete this run's sample app namespace if it lingers
         continue-on-error: true
         timeout-minutes: 5
-        run: kubectl get namespace | awk '/^ns-[0-9]+-[0-9]+/{print $1}' | xargs --no-run-if-empty kubectl delete namespace
+        run: kubectl delete namespace "${{ env.SAMPLE_APP_NAMESPACE }}" --ignore-not-found
 
       - name: Create role for AWS access from the sample app
         id: create_service_account
@@ -214,13 +174,18 @@ jobs:
           max_retry: 6
           sleep_time: 60
 
-      - name: Deploy sample app via terraform and install Application Signals
+      - name: Determine ADOT image to inject
+        run: |
+          if [ -z "${{ env.ADOT_IMAGE_NAME }}" ]; then
+            echo "::error::adot-image-name input is empty; nothing to inject."
+            exit 1
+          fi
+          echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> "$GITHUB_ENV"
+
+      - name: Deploy sample app via terraform and wait for injection
         id: deploy-java-app
         working-directory: terraform/java/eks/service-events
         run: |
-          # Deploy the sample app, then install Application Signals (which installs the
-          # amazon-cloudwatch-observability operator that injects ADOT into the SE-annotated
-          # pods). Retry up to 2 times on transient failures.
           retry_counter=0
           max_retry=2
           while [ $retry_counter -lt $max_retry ]; do
@@ -228,6 +193,7 @@ jobs:
             deployment_failed=0
             terraform apply -auto-approve \
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var='java_versions=${{ env.JAVA_VERSIONS }}' \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
               -var="eks_cluster_context_name=$(kubectl config current-context)" \
@@ -239,44 +205,73 @@ jobs:
               -var="service_events_git_commit_sha=${{ github.sha }}" \
             || deployment_failed=$?
 
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
+            fi
+
             if [ $deployment_failed -eq 0 ]; then
-              echo "Installing Application Signals to the sample app"
+              echo "Verifying Application Signals is enabled on the cluster"
               . ${{ env.TEST_RESOURCES_FOLDER }}/.github/workflows/util/execute_and_retry.sh
-              execute_and_retry 3 \
-              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/enable-app-signals.sh \
-              ${{ env.CLUSTER_NAME }} \
-              ${{ env.E2E_TEST_AWS_REGION }} \
-              ${{ env.SAMPLE_APP_NAMESPACE }}" \
-              "${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
-              ${{ env.CLUSTER_NAME }} \
-              ${{ env.E2E_TEST_AWS_REGION }} \
-              ${{ env.SAMPLE_APP_NAMESPACE }} && \
-              aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}" \
-              60
 
               aws eks update-kubeconfig --region ${{ env.E2E_TEST_AWS_REGION }} --name ${{ env.CLUSTER_NAME }}
 
-              # Restart pods so the now-installed operator injects ADOT instrumentation, then wait.
-              execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
+              execute_and_retry 30 \
+                "[ \"\$(aws eks describe-addon --cluster-name ${{ env.CLUSTER_NAME }} --addon-name amazon-cloudwatch-observability --region ${{ env.E2E_TEST_AWS_REGION }} --query 'addon.status' --output text)\" = ACTIVE ]" \
+                "" 20
+
+              agent_pods=$(kubectl get pods -n amazon-cloudwatch -l app.kubernetes.io/name=cloudwatch-agent \
+                -o jsonpath='{range .items[*]}{.metadata.name}{"|"}{.spec.containers[0].env[?(@.name=="AWS_ROLE_ARN")].value}{"\n"}{end}' 2>/dev/null) || {
+                  echo "::error::Could not query cloudwatch-agent pods in amazon-cloudwatch namespace."
+                  exit 1
+                }
+              agent_pods=$(printf '%s\n' "$agent_pods" | grep -v '^[[:space:]]*$' || true)
+              agent_total=$(printf '%s\n' "$agent_pods" | grep -c . || true)
+              if [ "${agent_total:-0}" -eq 0 ]; then
+                echo "::error::No cloudwatch-agent pods found. Shared setup (eks-setup-app-signals.yml)"
+                echo "should have installed the amazon-cloudwatch-observability addon before this job ran."
+                exit 1
+              fi
+              agent_missing_irsa=$(printf '%s\n' "$agent_pods" | awk -F'|' '$2==""{print $1}')
+              if [ -n "$agent_missing_irsa" ]; then
+                echo "::error::cloudwatch-agent pods lack projected IRSA credentials: $agent_missing_irsa"
+                echo "Shared setup (eks-setup-app-signals.yml) should have established this."
+                exit 1
+              fi
+              echo "cloudwatch-agent has IRSA credentials projected ($agent_total pod(s))."
+
+              inject_verified=0
+              for inject_attempt in 1 2 3 4 5; do
+                execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
+                execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod -l app=java-app -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
+                INJECTED_IMAGE=$(kubectl get pod -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=java-app \
+                  -o jsonpath='{.items[0].spec.initContainers[?(@.name=="opentelemetry-auto-instrumentation-java")].image}' 2>/dev/null || true)
+                if [ "$INJECTED_IMAGE" = "${{ env.PATCH_IMAGE_ARN }}" ]; then
+                  echo "Instrumentation injected with target image on attempt $inject_attempt: $INJECTED_IMAGE"
+                  inject_verified=1
+                  break
+                fi
+                echo "Instrumentation not yet injected with target image on attempt $inject_attempt (got: '${INJECTED_IMAGE:-none}', want: '${{ env.PATCH_IMAGE_ARN }}'); retrying restart..."
+                sleep 20
+              done
+              if [ "$inject_verified" -ne 1 ]; then
+                echo "Instrumentation was never injected with the target image after retries; failing so this is not a silent empty-telemetry pass."
+                exit 1
+              fi
             fi
 
-            if [ $deployment_failed -ne 0 ]; then
-              echo "Deployment failed. Cleaning up Application Signals and terraform, then retrying."
-              ${{ env.TEST_RESOURCES_FOLDER }}/enablement-script/clean-app-signals.sh \
-              ${{ env.CLUSTER_NAME }} \
-              ${{ env.E2E_TEST_AWS_REGION }} \
-              ${{ env.SAMPLE_APP_NAMESPACE }} || true
-              aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Destroying terraform"
               terraform destroy -auto-approve \
                 -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+                -var='java_versions=${{ env.JAVA_VERSIONS }}' \
                 -var="test_id=${{ env.TESTING_ID }}" \
                 -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
                 -var="eks_cluster_context_name=$(kubectl config current-context)" \
                 -var="test_namespace=${{ env.SAMPLE_APP_NAMESPACE }}" \
                 -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
                 -var="java_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
-                -var="account_id=${{ env.ACCOUNT_ID }}"
+                -var="account_id=${{ env.ACCOUNT_ID }}" \
+                -var="kube_directory_path=${{ github.workspace }}/.kube"
               retry_counter=$(($retry_counter+1))
             else
               break
@@ -288,26 +283,6 @@ jobs:
             fi
           done
 
-      # Optionally patch in the ADOT image / operator tag under test. Skipped on manual
-      # dispatch with no image, in which case the operator's default (SE-capable) ADOT is used.
-      - name: Get ECR to Patch
-        if: ${{ env.ADOT_IMAGE_NAME != '' || env.CW_AGENT_OPERATOR_TAG != '' }}
-        run: |
-          if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent-operator" ]; then
-            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> "$GITHUB_ENV"
-          elif [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-java-instrumentation" ]; then
-            echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> "$GITHUB_ENV"
-          fi
-
-      - name: Patch Image and Check Diff
-        id: patch-image
-        if: ${{ env.ADOT_IMAGE_NAME != '' || env.CW_AGENT_OPERATOR_TAG != '' }}
-        uses: ./.github/workflows/actions/patch_image_and_check_diff
-        with:
-          repository: ${{ env.REPOSITORY_NAME }}
-          patch-image-arn: ${{ env.PATCH_IMAGE_ARN }}
-          sample-app-namespace: ${{ env.SAMPLE_APP_NAMESPACE }}
-
       - name: Get app endpoint and configure traffic generator
         uses: ./.github/workflows/actions/execute_and_retry
         with:
@@ -316,9 +291,7 @@ jobs:
           sleep_time: 10
 
       # The generic traffic-generator image blocks until MAIN_ENDPOINT, REMOTE_ENDPOINT, and ID
-      # are all set (sample-apps/traffic-generator/index.js). Service Events has no remote service,
-      # so point REMOTE_ENDPOINT at the app itself — the SE-driving routes don't depend on a real
-      # remote; this just unblocks the generator so it sends traffic.
+      # are all set. Service Events has no remote service, so point REMOTE_ENDPOINT at the app itself.
       - name: Set traffic generator endpoints
         uses: ./.github/workflows/actions/execute_and_retry
         with:
@@ -395,13 +368,6 @@ jobs:
           --service-name ${{ env.SERVICE_NAME }}
           --rollup'
 
-      - name: Refresh AWS Credentials
-        if: always()
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
-          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
-
       - name: Save test results
         if: always()
         id: validation-result
@@ -416,24 +382,12 @@ jobs:
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
 
-      # ---- Clean up (each step scoped to this run's namespace / resources only) ----
+      # ---- Clean up (only this run's namespace / resources; App Signals torn down by eks-cleanup) ----
 
-      - name: Clean Up Application Signals
+      - name: Delete namespace
         if: always()
         continue-on-error: true
-        working-directory: enablement-script
-        run: |
-          ./clean-app-signals.sh \
-          ${{ env.CLUSTER_NAME }} \
-          ${{ env.E2E_TEST_AWS_REGION }} \
-          ${{ env.SAMPLE_APP_NAMESPACE }}
-
-      # clean-app-signals.sh removes the current cluster from kubeconfig; re-add it for the
-      # subsequent destroy/delete steps.
-      - name: Restore kubeconfig
-        if: always()
-        continue-on-error: true
-        run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
+        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }} --ignore-not-found --wait=false
 
       - name: Terraform destroy
         if: always()
@@ -443,6 +397,7 @@ jobs:
         run: |
           terraform destroy -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+            -var='java_versions=${{ env.JAVA_VERSIONS }}' \
             -var="test_id=${{ env.TESTING_ID }}" \
             -var="eks_cluster_name=${{ env.CLUSTER_NAME }}" \
             -var="eks_cluster_context_name=$(kubectl config current-context)" \
@@ -451,11 +406,6 @@ jobs:
             -var="java_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
             -var="account_id=${{ env.ACCOUNT_ID }}" \
             -var="kube_directory_path=${{ github.workspace }}/.kube"
-
-      - name: Delete namespace
-        if: always()
-        continue-on-error: true
-        run: kubectl delete namespace ${{ env.SAMPLE_APP_NAMESPACE }} --wait=false
 
       - name: Remove aws access service account
         if: always()

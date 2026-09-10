@@ -26,6 +26,15 @@ variable "service_account_aws_access" {
   default = ""
 }
 
+# The ordered set of Java versions the parallel version jobs cover. main.tf derives this test's
+# NodePort from it (30100 + length*2), landing one slot above the version block (which uses
+# 30100..30100+(len-1)*2) so a cluster-wide "port already allocated" collision is impossible even
+# when a version is added. Same list the eks-v* jobs pass; caller is the source of truth.
+variable "java_versions" {
+  type    = list(string)
+  default = ["8", "11", "17", "21", "25"]
+}
+
 variable "java_app_image" {
   default = "<ECR_IMAGE_LINK>:<TAG>"
 }

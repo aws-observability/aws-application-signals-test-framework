@@ -59,6 +59,16 @@ provider "kubectl" {
   load_config_file       = false
 }
 
+# Per-version NodePort assignment so multiple Java version jobs can run in PARALLEL on one shared
+# cluster without "port is already allocated" collisions (NodePort is cluster-wide, not namespaced).
+# The offset is derived from java_version's index in java_versions, so the supported version set is
+# managed only in the calling workflow, never hardcoded here. Backward-compatible with the sequential
+# test: it passes neither var, so the defaults ("8" in ["8"]) yield offset 0 -> 30100 / 30101.
+locals {
+  main_node_port   = 30100 + index(var.java_versions, var.java_version) * 2
+  remote_node_port = 30101 + index(var.java_versions, var.java_version) * 2
+}
+
 data "template_file" "kubeconfig_file" {
   template = file("./kubeconfig.tpl")
   vars = {
@@ -152,7 +162,7 @@ resource "kubernetes_service" "sample_app_service" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8080
-      node_port   = 30100
+      node_port   = local.main_node_port # per-version port; avoids cross-job NodePort collision
     }
   }
 }
@@ -162,7 +172,7 @@ resource "kubernetes_service" "sample_app_service" {
 resource "kubernetes_deployment" "sample_remote_app_deployment" {
 
   metadata {
-    name      = "sample-r-app-deployment-${var.test_id}"
+    name      = "java-remote-${var.test_id}"
     namespace = var.test_namespace
     labels = {
       app = "remote-app"
@@ -212,7 +222,7 @@ resource "kubernetes_service" "sample_remote_app_deployment" {
     # use the same name as the deployment to handle the edge case when the deployment name is longer than 47 characters
     # in this edge case, we just use the service name (rather than deployment name) as RemoteService
     # see https://github.com/aws/amazon-cloudwatch-agent/pull/1553
-    name      = "sample-r-app-deployment-${var.test_id}"
+    name      = "java-remote-${var.test_id}"
     namespace = var.test_namespace
   }
   spec {
@@ -224,7 +234,7 @@ resource "kubernetes_service" "sample_remote_app_deployment" {
       protocol    = "TCP"
       port        = 8080
       target_port = 8080
-      node_port   = 30101
+      node_port   = local.remote_node_port # per-version port; avoids cross-job NodePort collision
     }
   }
 }
