@@ -1,4 +1,6 @@
 -
   validationType: "promql"
   expectedMetricTemplate: "PYTHON_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC"
-  promQlQuery: "{\"service.function.duration\", \"@resource.service.name\"=\"{{serviceName}}\"}"
+  # Regex dots are written \\\\. here: YAML collapses that to \\. on the wire, which the PromQL
+  # string literal unescapes to \. (a single \. is rejected as "unknown escape sequence").
+  promQlQuery: "{\"service.function.duration\", \"@resource.service.name\"=\"{{serviceName}}\", \"function.name\"=~\"frontend_service_app/views\\\\..+\"}"
