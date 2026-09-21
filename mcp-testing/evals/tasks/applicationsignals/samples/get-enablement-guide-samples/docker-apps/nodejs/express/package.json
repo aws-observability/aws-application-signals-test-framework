@@ -2,7 +2,7 @@
   "author": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.922.0",
-    "express": "^5.1.0",
+    "express": "^5.2.0",
     "pino": "^10.1.0"
   },
   "description": "nodejs-express-app",
