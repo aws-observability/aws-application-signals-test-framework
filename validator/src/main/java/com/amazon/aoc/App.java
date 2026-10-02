@@ -87,6 +87,10 @@ public class App implements Callable<Integer> {
   @CommandLine.Option(names = {"--endpoint"})
   private String endpoint;
 
+  /** Optional role to assume for CloudWatch Profiles queries ("profile" validations). */
+  @CommandLine.Option(names = {"--profiles-role-arn"})
+  private String profilesRoleArn;
+
   @CommandLine.Option(names = {"--query-string"})
   private String queryString;
 
@@ -192,6 +196,7 @@ public class App implements Callable<Integer> {
     context.setRemoteResourceIdentifier(this.remoteResourceIdentifier);
     context.setRemoteDbUser(this.remoteDbUser);
     context.setEndpoint(this.endpoint);
+    context.setProfilesRoleArn(this.profilesRoleArn);
     context.setQueryString(this.queryString);
     context.setLogGroup(this.logGroup);
     context.setEcsContext(buildJsonContext(ecsContext, ECSContext.class));

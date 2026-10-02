@@ -73,6 +73,12 @@ public class Context {
 
   private String serviceEventsGitCommitSha;
 
+  /**
+   * Optional role to assume for CloudWatch Profiles queries, e.g. a role in an account that is
+   * enabled for CloudWatch Profiles when the test account is not.
+   */
+  private String profilesRoleArn;
+
   private ECSContext ecsContext;
 
   private CloudWatchContext cloudWatchContext;
