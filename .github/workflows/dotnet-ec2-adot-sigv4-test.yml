@@ -44,7 +44,14 @@ env:
 
 jobs:
   dotnet-ec2-adot-sigv4:
+    name: DotNet ${{ inputs.dotnet-version }} SigV4 (traces-use-legacy-path=${{ matrix.traces-use-legacy-path }})
     runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        traces-use-legacy-path: [true, false]
+    env:
+      TF_VAR_traces_use_legacy_path: ${{ matrix.traces-use-legacy-path }}
     steps:
       - name: Check if the job started
         id: job-started
@@ -75,7 +82,7 @@ jobs:
           sleep_time: 60
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${{ matrix.traces-use-legacy-path }}-${RANDOM}" >> "$GITHUB_ENV"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0

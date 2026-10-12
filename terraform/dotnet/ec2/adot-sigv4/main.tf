@@ -39,6 +39,20 @@ resource "aws_key_pair" "aws_ssh_key" {
 locals {
   ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
   private_key_content = tls_private_key.ssh_key.private_key_pem
+  legacy_traces_environment = {
+    OTEL_EXPORTER_OTLP_PROTOCOL        = "http/protobuf"
+    OTEL_TRACES_EXPORTER               = "none"
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = "https://xray.${var.aws_region}.amazonaws.com/v1/traces"
+    OTEL_AWS_SIG_V4_ENABLED            = "true"
+  }
+  non_legacy_traces_environment = {
+    OTEL_EXPORTER_OTLP_PROTOCOL        = "http/protobuf"
+    OTEL_TRACES_EXPORTER               = "otlp"
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = "https://xray.${var.aws_region}.amazonaws.com/v1/traces"
+  }
+  traces_environment = join(" ", [
+    for name, value in(var.traces_use_legacy_path ? local.legacy_traces_environment : local.non_legacy_traces_environment) : "${name}=${value}"
+  ])
 }
 
 data "aws_ami" "ami" {
@@ -145,12 +159,9 @@ resource "null_resource" "main_service_setup" {
       DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll \
       OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro \
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_LOGS_EXPORTER=none \
       OTEL_METRICS_EXPORTER=none \
-      OTEL_TRACES_EXPORTER=none \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
-      OTEL_AWS_SIG_V4_ENABLED=true \
+      ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8080 \
@@ -248,12 +259,9 @@ resource "null_resource" "remote_service_setup" {
       DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll \
       OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro \
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       OTEL_LOGS_EXPORTER=none \
       OTEL_METRICS_EXPORTER=none \
-      OTEL_TRACES_EXPORTER=none \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
-      OTEL_AWS_SIG_V4_ENABLED=true \
+      ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8081 \
