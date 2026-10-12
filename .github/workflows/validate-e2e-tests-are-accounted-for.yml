@@ -2,6 +2,11 @@ name: Validate E2E Tests Are Accounted For
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       exclusions:
         description: 'Comma-separated list of test files to exclude from validation'
         type: string
@@ -14,7 +19,7 @@ env:
 
 jobs:
   validate-e2e-tests-are-accounted-for:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     steps:
       - name: Install Ruby
         uses: ruby/setup-ruby@32110d4e311bd8996b2a82bf2a43b714ccc91777 #v1.221.0
