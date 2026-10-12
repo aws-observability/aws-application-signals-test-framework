@@ -280,6 +280,14 @@ jobs:
           echo "FRAMEWORK_SHA=$framework_sha" >> "$GITHUB_ENV"
           echo "Framework provenance: https://github.com/aws-observability/aws-application-signals-test-framework@$framework_sha"
 
+      # Pin the JDK used to build the validator. Without it Gradle uses the machine's default JDK, which is
+      # Java 17 on GitHub-hosted runners but Java 25 on CodeBuild's image, which Gradle 8.10 cannot run on.
+      - name: Set up Java for the validator
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
       # Initialize the Gradle daemon early because it can fail transiently. A later step retries if
       # this warm-up fails.
       - name: Initiate Gradlew Daemon

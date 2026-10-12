@@ -60,6 +60,14 @@ jobs:
             && python3.12 -m pip install ${{ env.ADOT_WHEEL_NAME }}" >> "$GITHUB_ENV"
           fi
 
+      # Pin the JDK used to build the validator. Without it Gradle uses the machine's default JDK, which is
+      # Java 17 on GitHub-hosted runners but Java 25 on CodeBuild's image, which Gradle 8.10 cannot run on.
+      - name: Set up Java for the validator
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Initiate Gradlew Daemon
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
