@@ -163,7 +163,10 @@ resource "null_resource" "main_service_setup" {
       OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
       OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
-      OTEL_METRICS_EXPORTER=none \
+      OTEL_METRICS_EXPORTER=otlp \
+      OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics \
+      OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=SigV4.SampleApp \
       ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
@@ -266,7 +269,10 @@ resource "null_resource" "remote_service_setup" {
       OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
       OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
-      OTEL_METRICS_EXPORTER=none \
+      OTEL_METRICS_EXPORTER=otlp \
+      OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics \
+      OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=SigV4.SampleApp \
       ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
