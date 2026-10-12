@@ -1,0 +1,3 @@
+-
+  validationType: "cw-log"
+  expectedLogStructureTemplate: "DOTNET_EC2_ADOT_SIGV4_APPLICATION_LOG"

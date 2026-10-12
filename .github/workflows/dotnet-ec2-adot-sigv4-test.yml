@@ -32,7 +32,8 @@ env:
   DOTNET_VERSION: ${{ inputs.dotnet-version }}
   SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-us-east-1/dotnet-sample-app-${{ inputs.dotnet-version }}.zip
   METRIC_NAMESPACE: ApplicationSignals
-  LOG_GROUP_NAME: aws/spans
+  SPANS_LOG_GROUP_NAME: aws/spans
+  APPLICATION_LOGS_LOG_GROUP_NAME: otlp_logs
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   REPOSITORY_NAME: ${{ github.event.repository.name }}
@@ -119,6 +120,7 @@ jobs:
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
+              -var="application_logs_log_group=${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}" \
               -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
               -var="language_version=${{ env.DOTNET_VERSION }}" \
             || deployment_failed=$?
@@ -172,7 +174,7 @@ jobs:
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name dotnet-sample-application-${{ env.TESTING_ID }}
           --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
@@ -189,7 +191,7 @@ jobs:
           --remote-service-deployment-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name dotnet-sample-application-${{ env.TESTING_ID }}
           --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}
@@ -207,12 +209,23 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name dotnet-sample-application-${{ env.TESTING_ID }}
           --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+
+      - name: Validate generated OTLP application logs
+        id: application-log-validation
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.trace-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/application-log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
+          --log-group ${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
           --rollup'
 
       - name: Refresh AWS Credentials

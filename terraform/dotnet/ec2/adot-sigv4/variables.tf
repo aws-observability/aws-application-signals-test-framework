@@ -37,6 +37,10 @@ variable "language_version" {
   default = "8.0"
 }
 
+variable "application_logs_log_group" {
+  default = "otlp_logs"
+}
+
 variable "traces_use_legacy_path" {
   description = "Use the legacy SigV4 trace configuration instead of the upstream OTLP trace exporter."
   type        = bool

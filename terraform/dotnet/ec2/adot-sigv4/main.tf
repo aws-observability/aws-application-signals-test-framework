@@ -159,7 +159,10 @@ resource "null_resource" "main_service_setup" {
       DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll \
       OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro \
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
-      OTEL_LOGS_EXPORTER=none \
+      OTEL_LOGS_EXPORTER=otlp \
+      OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
+      OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
       OTEL_METRICS_EXPORTER=none \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
@@ -259,7 +262,10 @@ resource "null_resource" "remote_service_setup" {
       DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll \
       OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro \
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
-      OTEL_LOGS_EXPORTER=none \
+      OTEL_LOGS_EXPORTER=otlp \
+      OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
+      OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
       OTEL_METRICS_EXPORTER=none \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
