@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,12 @@ namespace asp_frontend_service.Controllers;
 [Route("[controller]")]
 public class AppController : ControllerBase
 {
+    private static readonly Meter CustomMeter = new Meter("SigV4.SampleApp");
+    private static readonly Counter<long> CustomRequestCounter = CustomMeter.CreateCounter<long>(
+        "sigv4.custom.requests",
+        unit: "{request}",
+        description: "Requests handled by the SigV4 validation sample.");
+
     // reads and writes to bool are atomic according to spec:
     // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/variables#96-atomicity-of-variable-references
     private static bool shouldSendLocalRootClientCall = false;
@@ -165,6 +172,7 @@ public class AppController : ControllerBase
 
     private string GetTraceId()
     {
+        CustomRequestCounter.Add(1);
         this.logger.LogWarning("This is a custom log for validation testing");
         var traceId = Activity.Current.TraceId.ToHexString();
         var version = "1";
