@@ -255,7 +255,7 @@ jobs:
 
             if [ -n "$found" ]; then
               echo "Found candidate OTLP metrics:"
-              echo "$found" | sed 's/^/    /'
+              echo "$found" | awk '{print "    " $0}'
               break
             fi
 
@@ -281,7 +281,7 @@ jobs:
             --recently-active PT3H \
             --max-items 5000 \
             --output json 2>/dev/null \
-            | jq -r '[.Metrics[]?.Namespace] | unique | .[]' | sed 's/^/    /' || true
+            | jq -r '[.Metrics[]?.Namespace] | unique | .[]' | awk '{print "    " $0}' || true
           exit 1
 
       - name: Validate generated traces
