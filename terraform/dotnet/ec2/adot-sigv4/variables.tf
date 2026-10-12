@@ -36,3 +36,9 @@ variable "get_adot_distro_command" {
 variable "language_version" {
   default = "8.0"
 }
+
+variable "traces_use_legacy_path" {
+  description = "Use the legacy SigV4 trace configuration instead of the upstream OTLP trace exporter."
+  type        = bool
+  default     = true
+}
