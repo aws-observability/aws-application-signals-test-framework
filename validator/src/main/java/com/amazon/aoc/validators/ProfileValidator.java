@@ -23,6 +23,7 @@ import com.amazon.aoc.helpers.RetryHelper;
 import com.amazon.aoc.models.Context;
 import com.amazon.aoc.models.ValidationConfig;
 import com.amazon.aoc.services.ProfilesService;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -47,14 +48,22 @@ import lombok.extern.log4j.Log4j2;
  * <pre>
  * {
  *   "profileType": "^[^:]+:wall:nanoseconds:.*$",       // must match one advertised profile type ID
- *   "labelNames":  ["operation", "thread.state"],        // each must exist on the service's series
- *   "labelValues": { "operation": "^GET /.+$" },         // >=1 value of each label must match
+ *   "labelNames":  ["operation", "thread.state"],        // each must exist on the series
+ *   "labelValues": { "operation": ["^GET /a$", "^GET /b$"] }, // each regex must match >=1 value
  *   "functions":   ["^com\\.amazon\\.sampleapp\\..+"],  // each must match >=1 flame-graph frame
+ *   "absentFunctions": ["\\.so\\."],                     // no flame-graph frame may match
  *   "minTotal":    "1",                                  // flame-graph total must be >= this
  *   "absentLabelNames": ["thread.state"],                // each must NOT exist on the series
- *   "minWindows":  "3"                                   // data in >=3 consecutive export windows
+ *   "minWindows":  "3",                                  // data in >=3 consecutive export windows
+ *   "operations": {                                      // flame graph of one operation's samples
+ *     "GET /a": { "functions": ["\\.handleA$"], "absentFunctions": ["\\.handleB$"] }
+ *   }
  * }
  * </pre>
+ *
+ * <p>Label checks are scoped to the resolved profile type (a {@code __profile_type__} matcher is
+ * added to the selector), so a label carried by one profile type of the service cannot satisfy a
+ * check about another (e.g. allocation samples satisfying a wall-sample label check).
  *
  * <p>The concrete profile type ID (Pyroscope's {@code name:sample_type:sample_unit:period_type:
  * period_unit}) is resolved at query time from {@code ProfileTypes} by the {@code profileType}
@@ -75,7 +84,10 @@ public class ProfileValidator implements IValidator {
   private static final int DEFAULT_LOOKBACK_MINUTES = 30;
   private static final String DEFAULT_LABEL_SELECTOR = "{@resource.service.name=\"{{serviceName}}\"}";
   private static final Pattern SCOPE_PREFIX = Pattern.compile("^@[A-Za-z]+\\.");
-  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+  private static final ObjectMapper OBJECT_MAPPER =
+      new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
+  private static final String PROFILE_TYPE_LABEL = "__profile_type__";
+  private static final String OPERATION_LABEL = "operation";
 
   private final MustacheHelper mustacheHelper = new MustacheHelper();
   private Context context;
@@ -119,10 +131,12 @@ public class ProfileValidator implements IValidator {
           long start = end - lookbackMinutes * 60_000L;
 
           String profileTypeId = resolveProfileTypeId(expected.getProfileType(), start, end);
-          checkLabelNames(expected, selector, start, end);
-          checkAbsentLabelNames(expected, selector, start, end);
-          checkLabelValues(expected, selector, start, end);
+          String typedSelector = withMatcher(selector, PROFILE_TYPE_LABEL, profileTypeId);
+          checkLabelNames(expected, typedSelector, start, end);
+          checkAbsentLabelNames(expected, typedSelector, start, end);
+          checkLabelValues(expected, typedSelector, start, end);
           checkFlameGraph(expected, profileTypeId, selector, start, end);
+          checkOperations(expected, profileTypeId, selector, typedSelector, start, end);
           checkWindows(expected, profileTypeId, selector, start, end);
         });
 
@@ -166,18 +180,20 @@ public class ProfileValidator implements IValidator {
       return;
     }
     List<String> names = labelNames(selector, start, end);
-    for (Map.Entry<String, String> entry : expected.getLabelValues().entrySet()) {
+    for (Map.Entry<String, List<String>> entry : expected.getLabelValues().entrySet()) {
       String actualName = findLabel(names, entry.getKey());
       if (actualName == null) {
         log.info("Label '{}' not present yet on {}; labels: {}", entry.getKey(), selector, names);
         throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
       }
-      Pattern pattern = Pattern.compile(entry.getValue());
       List<String> values =
           textList(field(profilesService.labelValues(actualName, selector, start, end), "names"));
-      if (values.stream().noneMatch(v -> pattern.matcher(v).find())) {
-        log.info("No value of '{}' matches {}; values: {}", actualName, entry.getValue(), values);
-        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+      for (String regex : entry.getValue()) {
+        Pattern pattern = Pattern.compile(regex);
+        if (values.stream().noneMatch(v -> pattern.matcher(v).find())) {
+          log.info("No value of '{}' matches {}; values: {}", actualName, regex, values);
+          throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+        }
       }
     }
   }
@@ -185,13 +201,13 @@ public class ProfileValidator implements IValidator {
   private void checkFlameGraph(
       ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
       throws Exception {
-    boolean checkFunctions = expected.getFunctions() != null && !expected.getFunctions().isEmpty();
-    if (!checkFunctions && expected.getMinTotal() == null) {
+    if (isEmpty(expected.getFunctions())
+        && isEmpty(expected.getAbsentFunctions())
+        && expected.getMinTotal() == null) {
       return;
     }
     JsonNode flamegraph =
         profilesService.selectMergeStacktraces(profileTypeId, selector, start, end).path("flamegraph");
-    List<String> frames = textList(flamegraph.path("names"));
 
     if (expected.getMinTotal() != null) {
       long total = parseLong(flamegraph.path("total").asText("0"));
@@ -201,11 +217,76 @@ public class ProfileValidator implements IValidator {
         throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND);
       }
     }
-    if (checkFunctions) {
-      for (String function : expected.getFunctions()) {
-        Pattern pattern = Pattern.compile(function);
-        if (frames.stream().noneMatch(f -> pattern.matcher(f).find())) {
-          log.info("No frame of {} matches {} ({} frames)", profileTypeId, function, frames.size());
+    checkFrames(
+        flamegraph, expected.getFunctions(), expected.getAbsentFunctions(), profileTypeId);
+  }
+
+  /**
+   * Request attribution: for each operation in {@code operations}, the flame graph of only the
+   * samples carrying that operation must contain its {@code functions} and none of its {@code
+   * absentFunctions}. This catches samples attributed to the wrong request, which label-existence
+   * checks cannot.
+   */
+  private void checkOperations(
+      ExpectedProfile expected,
+      String profileTypeId,
+      String selector,
+      String typedSelector,
+      long start,
+      long end)
+      throws Exception {
+    if (expected.getOperations() == null || expected.getOperations().isEmpty()) {
+      return;
+    }
+    List<String> names = labelNames(typedSelector, start, end);
+    String operationLabel = findLabel(names, OPERATION_LABEL);
+    if (operationLabel == null) {
+      log.info(
+          "Label '{}' not present yet on {}; labels: {}", OPERATION_LABEL, typedSelector, names);
+      throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+    }
+    for (Map.Entry<String, ExpectedFrames> entry : expected.getOperations().entrySet()) {
+      String operationSelector = withMatcher(selector, operationLabel, entry.getKey());
+      JsonNode flamegraph =
+          profilesService
+              .selectMergeStacktraces(profileTypeId, operationSelector, start, end)
+              .path("flamegraph");
+      checkFrames(
+          flamegraph,
+          entry.getValue().getFunctions(),
+          entry.getValue().getAbsentFunctions(),
+          profileTypeId + " " + operationSelector);
+    }
+  }
+
+  /**
+   * Every {@code functions} regex must match a frame of the flame graph and no {@code
+   * absentFunctions} regex may. Absent frames are only checked once the graph has frames, so an
+   * empty graph (no data yet) waits instead of passing.
+   */
+  private static void checkFrames(
+      JsonNode flamegraph, List<String> functions, List<String> absentFunctions, String what)
+      throws BaseException {
+    List<String> frames = textList(flamegraph.path("names"));
+    for (String function : nullToEmpty(functions)) {
+      Pattern pattern = Pattern.compile(function);
+      if (frames.stream().noneMatch(f -> pattern.matcher(f).find())) {
+        log.info("No frame of {} matches {} ({} frames)", what, function, frames.size());
+        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+      }
+    }
+    if (isEmpty(absentFunctions)) {
+      return;
+    }
+    if (frames.stream().noneMatch(f -> !"total".equals(f))) {
+      log.info("No frames yet for {}; waiting for data before checking absent frames", what);
+      throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND);
+    }
+    for (String absent : absentFunctions) {
+      Pattern pattern = Pattern.compile(absent);
+      for (String frame : frames) {
+        if (pattern.matcher(frame).find()) {
+          log.error("Frame '{}' of {} matches forbidden {}", frame, what, absent);
           throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
         }
       }
@@ -334,6 +415,30 @@ public class ProfileValidator implements IValidator {
     return out;
   }
 
+  /**
+   * Add a {@code name="value"} matcher to a label selector such as {@code {a="b"}}, giving {@code
+   * {a="b",name="value"}}.
+   */
+  @VisibleForTesting
+  static String withMatcher(String selector, String name, String value) {
+    String trimmed = selector.trim();
+    if (!trimmed.endsWith("}")) {
+      throw new IllegalArgumentException("label selector must end with '}': " + selector);
+    }
+    String body = trimmed.substring(0, trimmed.length() - 1).trim();
+    String escaped = value.replace("\\", "\\\\").replace("\"", "\\\"");
+    String matcher = name + "=\"" + escaped + "\"";
+    return body.equals("{") ? "{" + matcher + "}" : body + "," + matcher + "}";
+  }
+
+  private static boolean isEmpty(List<?> list) {
+    return list == null || list.isEmpty();
+  }
+
+  private static List<String> nullToEmpty(List<String> list) {
+    return list == null ? new ArrayList<>() : list;
+  }
+
   private static long parseLong(String text) {
     try {
       return Long.parseLong(text.trim());
@@ -353,8 +458,8 @@ public class ProfileValidator implements IValidator {
   }
 
   private ExpectedProfile getExpectedProfile() throws Exception {
-    String rendered = mustacheHelper.render(this.expectedProfileTemplate, context);
-    ExpectedProfile expected = OBJECT_MAPPER.readValue(rendered, ExpectedProfile.class);
+    ExpectedProfile expected =
+        parseExpected(mustacheHelper.render(this.expectedProfileTemplate, context));
     if (expected.getProfileType() == null || expected.getProfileType().isEmpty()) {
       throw new BaseException(
           ExceptionCode.DATA_MODEL_NOT_MATCHED, "profile template must set 'profileType'");
@@ -362,17 +467,35 @@ public class ProfileValidator implements IValidator {
     return expected;
   }
 
-  /** The expected-data template for one profile type. All values are regexes except minTotal. */
+  /** Parse a rendered expected-data template. */
+  @VisibleForTesting
+  static ExpectedProfile parseExpected(String rendered) throws Exception {
+    return OBJECT_MAPPER.readValue(rendered, ExpectedProfile.class);
+  }
+
+  /**
+   * The expected-data template for one profile type. Values are regexes except label names,
+   * operation names, minTotal, minWindows and windowSeconds.
+   */
   @Data
   public static class ExpectedProfile {
     private String profileType;
     private List<String> labelNames;
     private List<String> absentLabelNames;
-    private Map<String, String> labelValues;
+    private Map<String, List<String>> labelValues;
     private List<String> functions;
+    private List<String> absentFunctions;
+    private Map<String, ExpectedFrames> operations;
     private String minTotal;
     private String minWindows;
     private String windowSeconds;
+  }
+
+  /** Frames required in and forbidden from one operation's flame graph (regexes). */
+  @Data
+  public static class ExpectedFrames {
+    private List<String> functions;
+    private List<String> absentFunctions;
   }
 
   @VisibleForTesting

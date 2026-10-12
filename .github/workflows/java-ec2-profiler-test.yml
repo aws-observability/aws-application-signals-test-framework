@@ -11,17 +11,28 @@
 # (monitoring.<region>.amazonaws.com/v1development/profiles). Each validation below then reads the
 # profiles back through the CloudWatch Profiles (Pyroscope-compatible) query API and checks one
 # property:
-#   - wall profile          {wall, nanoseconds} profile present with samples
-#   - operation label       samples on request threads carry the request's operation (GET /...)
-#   - thread.state label    wall samples carry RUNNABLE / SLEEPING
-#   - app stack frames      the flame graph contains the sample app's controller frames
-#   - alloc_space profile   {alloc_space, bytes} profile present with samples
-#   - alloc_objects profile {alloc_objects, count} profile present with samples
+#   - wall profile          {wall, nanoseconds} profile with at least 10s of thread time
+#   - operation label       wall samples carry both driven routes (GET /aws-sdk-call,
+#                           GET /outgoing-http-call) as their operation
+#   - operation attribution each route's wall samples contain its own handler frame and not the
+#                           other route's handler (samples are attributed to the right request)
+#   - thread.state label    wall samples carry both RUNNABLE and SLEEPING
+#   - app stack frames      the flame graph contains the controller and native (start_thread)
+#                           frames, no library-qualified names (libc.so.6.start_thread) and no
+#                           per-run lambda suffixes (Foo$$Lambda/0x...)
+#   - alloc_space profile   {alloc_space, bytes} profile with at least 10 MiB
+#   - alloc_objects profile {alloc_objects, count} profile with at least 10 objects
 #   - sustained rotation    data in >=3 consecutive 60s export windows (keeps rotating/exporting)
+# Minimum totals are deliberately far below what the traffic produces; they catch a missing
+# profile or a wrong unit/period, not small regressions. Label checks are scoped to the checked
+# profile type, so e.g. allocation samples cannot satisfy a wall-sample label check.
 # Two more copies of the app on the same instance cover the other profiler settings:
-#   - <name>-cpu       (cpu mode, OTLP/gRPC, full aggregation): cpu profile present, operation
-#                      label present, no thread.state label
-#   - <name>-unsampled (every trace dropped): operation label still present
+#   - <name>-cpu       (cpu mode, OTLP/gRPC, full aggregation): cpu profile with at least 1s,
+#                      both routes as operation, no thread.state label
+#   - <name>-unsampled (every trace dropped): both routes as operation and correct attribution,
+#                      i.e. request correlation does not depend on trace sampling. That these
+#                      samples carry no trace link is not visible through the query API; the
+#                      AwsProfilerUnsampledContractTest contract test checks it.
 name: Java EC2 Profiler Use Case
 on:
   workflow_call:
@@ -202,7 +213,7 @@ jobs:
               echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
               terraform destroy -auto-approve \
                 -var="test_id=${{ env.TESTING_ID }}"
-              retry_counter=$(($retry_counter+1))
+              retry_counter=$((retry_counter+1))
             else
               break
             fi
@@ -279,6 +290,19 @@ jobs:
         id: app-stack-frames-validation
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
         run: ./gradlew validator:run --args='-c java/ec2/profiler/app-stack-frames-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate operation attribution
+        id: operation-attribution-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/operation-attribution-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
@@ -370,7 +394,7 @@ jobs:
 
       # ---- unsampled variant (every trace dropped): service <name>-unsampled ----
 
-      - name: Validate unsampled operation label
+      - name: Validate unsampled operation label and attribution
         id: unsampled-operation-label-validation
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
         run: ./gradlew validator:run --args='-c java/ec2/profiler/unsampled-operation-label-validation.yml
@@ -394,7 +418,7 @@ jobs:
         if: always()
         id: validation-result
         run: |
-          if [ "${{ steps.wall-profile-validation.outcome }}" = "success" ] && [ "${{ steps.operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.thread-state-label-validation.outcome }}" = "success" ] && [ "${{ steps.app-stack-frames-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-space-profile-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-objects-profile-validation.outcome }}" = "success" ] && [ "${{ steps.rotation-windows-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-profile-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-no-thread-state-validation.outcome }}" = "success" ] && [ "${{ steps.unsampled-operation-label-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.wall-profile-validation.outcome }}" = "success" ] && [ "${{ steps.operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.thread-state-label-validation.outcome }}" = "success" ] && [ "${{ steps.app-stack-frames-validation.outcome }}" = "success" ] && [ "${{ steps.operation-attribution-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-space-profile-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-objects-profile-validation.outcome }}" = "success" ] && [ "${{ steps.rotation-windows-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-profile-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-no-thread-state-validation.outcome }}" = "success" ] && [ "${{ steps.unsampled-operation-label-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,13 @@
+{
+  "profileType": "^[^:]+:wall:nanoseconds:",
+  "operations": {
+    "GET /aws-sdk-call": {
+      "functions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.awssdkCall$"],
+      "absentFunctions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.httpCall$"]
+    },
+    "GET /outgoing-http-call": {
+      "functions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.httpCall$"],
+      "absentFunctions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.awssdkCall$"]
+    }
+  }
+}

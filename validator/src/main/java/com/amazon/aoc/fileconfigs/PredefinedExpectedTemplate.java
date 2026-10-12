@@ -109,6 +109,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
       "/expected-data-template/java/ec2/profiler/thread-state-label.mustache"),
   JAVA_EC2_PROFILER_APP_STACK_FRAMES(
       "/expected-data-template/java/ec2/profiler/app-stack-frames.mustache"),
+  JAVA_EC2_PROFILER_OPERATION_ATTRIBUTION(
+      "/expected-data-template/java/ec2/profiler/operation-attribution.mustache"),
   JAVA_EC2_PROFILER_ALLOC_SPACE_PROFILE(
       "/expected-data-template/java/ec2/profiler/alloc-space-profile.mustache"),
   JAVA_EC2_PROFILER_ALLOC_OBJECTS_PROFILE(

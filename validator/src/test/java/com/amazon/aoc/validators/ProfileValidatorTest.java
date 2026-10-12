@@ -150,7 +150,7 @@ public class ProfileValidatorTest {
     String[] configs = {
       "wall-profile", "operation-label", "thread-state-label",
       "app-stack-frames", "alloc-space-profile", "alloc-objects-profile",
-      "rotation-windows", "cpu-profile", "cpu-operation-label",
+      "operation-attribution", "rotation-windows", "cpu-profile", "cpu-operation-label",
       "cpu-no-thread-state", "unsampled-operation-label"
     };
     for (String name : configs) {
@@ -163,8 +163,7 @@ public class ProfileValidatorTest {
       String rendered =
           new com.amazon.aoc.helpers.MustacheHelper()
               .render(config.getExpectedProfileTemplate(), context);
-      ProfileValidator.ExpectedProfile expected =
-          OBJECT_MAPPER.readValue(rendered, ProfileValidator.ExpectedProfile.class);
+      ProfileValidator.ExpectedProfile expected = ProfileValidator.parseExpected(rendered);
       org.junit.jupiter.api.Assertions.assertNotNull(expected.getProfileType(), name);
     }
   }
@@ -240,6 +239,125 @@ public class ProfileValidatorTest {
             BaseException.class,
             () -> buildValidator(TEMPLATE_ROOT + "profile_absent.mustache").validate());
     assertEquals(ExceptionCode.EXPECTED_METRIC_NOT_FOUND.getCode(), be.getCode());
+  }
+
+  /** Label queries carry the resolved profile type, so other profile types cannot satisfy them. */
+  @Test
+  public void testLabelQueriesAreScopedToProfileType() throws Exception {
+    buildValidator().validate();
+    String typed =
+        "{@resource.service.name=\"serviceName\",__profile_type__=\"" + WALL_TYPE_ID + "\"}";
+    verify(service, org.mockito.Mockito.atLeastOnce()).labelNames(eq(typed), anyLong(), anyLong());
+    verify(service).labelValues(eq("@sample.operation"), eq(typed), anyLong(), anyLong());
+  }
+
+  @Test
+  public void testWithMatcher() {
+    assertEquals("{a=\"b\",c=\"d\"}", ProfileValidator.withMatcher("{a=\"b\"}", "c", "d"));
+    assertEquals("{c=\"d\"}", ProfileValidator.withMatcher("{}", "c", "d"));
+    assertEquals(
+        "{a=\"b\",c=\"x\\\"y\\\\z\"}", ProfileValidator.withMatcher("{a=\"b\"}", "c", "x\"y\\z"));
+    assertThrows(IllegalArgumentException.class, () -> ProfileValidator.withMatcher("a", "c", "d"));
+  }
+
+  /** With a list of regexes, every one must match some value. */
+  @Test
+  public void testLabelValuesListRequiresEveryRegex() throws Exception {
+    buildValidator(TEMPLATE_ROOT + "profile_values_list.mustache").validate();
+
+    stub(TYPES, LABEL_NAMES, "{\"names\":[\"GET /health\"]}", STATE_VALUES, FLAMEGRAPH);
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildValidator(TEMPLATE_ROOT + "profile_values_list.mustache").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** A forbidden frame name (library baked into a native frame) fails the check. */
+  @Test
+  public void testAbsentFunctionFailsWhenPresent() throws Exception {
+    buildValidator(TEMPLATE_ROOT + "profile_absent_functions.mustache").validate();
+
+    stub(TYPES, LABEL_NAMES, OPERATION_VALUES, STATE_VALUES,
+        "{\"flamegraph\":{\"names\":[\"total\",\"java.lang.Thread.run\","
+            + "\"libc.so.6.start_thread\"],\"total\":\"42\"}}");
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildValidator(TEMPLATE_ROOT + "profile_absent_functions.mustache").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** Absent frames are not checked on an empty flame graph: the check waits for data. */
+  @Test
+  public void testAbsentFunctionsWaitForData() throws Exception {
+    stub(TYPES, LABEL_NAMES, OPERATION_VALUES, STATE_VALUES,
+        "{\"flamegraph\":{\"names\":[\"total\"],\"total\":\"0\"}}");
+    String template = TEMPLATE_ROOT + "profile_absent_functions_only.mustache";
+    BaseException be = assertThrows(BaseException.class, () -> buildValidator(template).validate());
+    assertEquals(ExceptionCode.EXPECTED_METRIC_NOT_FOUND.getCode(), be.getCode());
+  }
+
+  private static final String SDK_SELECTOR =
+      "{@resource.service.name=\"serviceName\",@sample.operation=\"GET /aws-sdk-call\"}";
+  private static final String HTTP_SELECTOR =
+      "{@resource.service.name=\"serviceName\",@sample.operation=\"GET /outgoing-http-call\"}";
+
+  private static String graph(String... frames) {
+    StringBuilder names = new StringBuilder("\"total\"");
+    for (String f : frames) {
+      names.append(",\"").append(f).append('"');
+    }
+    return "{\"flamegraph\":{\"names\":[" + names + "],\"total\":\"42\"}}";
+  }
+
+  private void stubOperationGraph(String selector, String json) throws Exception {
+    when(service.selectMergeStacktraces(anyString(), eq(selector), anyLong(), anyLong()))
+        .thenReturn(OBJECT_MAPPER.readTree(json));
+  }
+
+  /** Each operation's samples hold its own handler and not the other route's handler. */
+  @Test
+  public void testOperationAttributionSucceeds() throws Exception {
+    stubOperationGraph(SDK_SELECTOR, graph("java.lang.Thread.run", "c.F.awssdkCall"));
+    stubOperationGraph(HTTP_SELECTOR, graph("java.lang.Thread.run", "c.F.httpCall"));
+    buildValidator(TEMPLATE_ROOT + "profile_operations.mustache").validate();
+  }
+
+  /** Samples of one route containing the other route's handler are misattributed. */
+  @Test
+  public void testOperationAttributionFailsOnMisattribution() throws Exception {
+    stubOperationGraph(SDK_SELECTOR, graph("c.F.awssdkCall", "c.F.httpCall"));
+    stubOperationGraph(HTTP_SELECTOR, graph("c.F.httpCall"));
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildValidator(TEMPLATE_ROOT + "profile_operations.mustache").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** A route whose samples lack its handler frame fails. */
+  @Test
+  public void testOperationAttributionFailsWhenHandlerMissing() throws Exception {
+    stubOperationGraph(SDK_SELECTOR, graph("c.F.awssdkCall"));
+    stubOperationGraph(HTTP_SELECTOR, graph("java.lang.Thread.run"));
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildValidator(TEMPLATE_ROOT + "profile_operations.mustache").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** No operation label on the profile type: attribution cannot pass. */
+  @Test
+  public void testOperationAttributionFailsWithoutOperationLabel() throws Exception {
+    stub(TYPES, "{\"names\":[\"service_name\",\"thread_state\"]}",
+        OPERATION_VALUES, STATE_VALUES, FLAMEGRAPH);
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildValidator(TEMPLATE_ROOT + "profile_operations.mustache").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
   }
 
   private ProfileValidator buildValidator(String template) throws Exception {
