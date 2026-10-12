@@ -204,86 +204,6 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
-      # Validates the collector-less OTLP metrics SigV4 path: metrics exported directly to the
-      # CloudWatch Metrics OTLP endpoint (https://monitoring.<region>.amazonaws.com/v1/metrics)
-      # and signed with SigV4 service "monitoring".
-      #
-      # This is distinct from the "Validate generated metrics" step above, which checks
-      # Application Signals metrics that CloudWatch derives server-side from the spans in
-      # aws/spans. Those appear whether or not any metrics exporter is configured, so they do
-      # not exercise the metrics SigV4 code path at all.
-      #
-      # Intentionally non-blocking on its first runs. Two things are unconfirmed:
-      #   1. whether APP_SIGNALS_EC2_TEST_ROLE has cloudwatch:PutMetricData, which the OTLP
-      #      metrics endpoint requires. No test in this framework has sent OTLP metrics to AWS
-      #      before, so the permission may not be granted yet.
-      #   2. which query path surfaces OTLP-ingested metrics. They are flattened into a
-      #      PromQL-style name/label model on ingestion rather than the classic
-      #      namespace/dimension model, so ListMetrics may not return them.
-      # The step prints what it finds either way, so the first run answers both. Once answered,
-      # drop continue-on-error to make this gate the job.
-      - name: Validate OTLP metrics were accepted via SigV4
-        id: otlp-metric-sigv4-validation
-        continue-on-error: true
-        if: (success() || failure()) && !cancelled()
-        run: |
-          set -u
-          SERVICE_NAME="python-sample-application-${{ env.TESTING_ID }}"
-          echo "Looking for OTLP-ingested metrics from service: $SERVICE_NAME"
-          echo "Endpoint under test: https://monitoring.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/v1/metrics"
-          echo
-
-          # Metrics are reported on a 60s interval by default and the docs note they appear
-          # within 1-2 minutes, so allow time before concluding they are absent.
-          found=""
-          for attempt in 1 2 3 4 5 6; do
-            echo "--- attempt $attempt ---"
-
-            # OTel HTTP server metrics emitted by the auto-instrumented Django app. Both the
-            # dotted (OTel semconv) and underscored (PromQL-flattened) spellings are checked
-            # because the ingestion-side naming is what we are trying to establish.
-            # --max-items bounds the scan: the E2E account carries a lot of metrics and
-            # ListMetrics auto-paginates, so an unbounded sweep would dominate the step runtime.
-            found=$(aws cloudwatch list-metrics \
-              --region "${{ env.E2E_TEST_AWS_REGION }}" \
-              --recently-active PT3H \
-              --max-items 5000 \
-              --output json 2>/dev/null \
-              | jq -r '.Metrics[]? | "\(.Namespace)|\(.MetricName)"' \
-              | grep -iE "http[._]server|request[._]duration" \
-              | sort -u || true)
-
-            if [ -n "$found" ]; then
-              echo "Found candidate OTLP metrics:"
-              echo "$found" | awk '{print "    " $0}'
-              break
-            fi
-
-            echo "none yet; sleeping 30s"
-            sleep 30
-          done
-
-          echo
-          if [ -n "$found" ]; then
-            echo "PASS: OTLP metrics are present in CloudWatch, so the SigV4-signed export was accepted."
-            exit 0
-          fi
-
-          echo "No OTLP metrics found via ListMetrics. This is NOT yet conclusive - it means either:"
-          echo "  (a) the export was rejected (SigV4 or missing cloudwatch:PutMetricData), or"
-          echo "  (b) OTLP metrics are only queryable via PromQL and never appear in ListMetrics."
-          echo
-          echo "Diagnostics - namespaces active in the last 3h (this is the useful output on a"
-          echo "first run: it shows whether OTLP metrics land in a namespace at all, and if so"
-          echo "which one, so this step can become a precise assertion):"
-          aws cloudwatch list-metrics \
-            --region "${{ env.E2E_TEST_AWS_REGION }}" \
-            --recently-active PT3H \
-            --max-items 5000 \
-            --output json 2>/dev/null \
-            | jq -r '[.Metrics[]?.Namespace] | unique | .[]' | awk '{print "    " $0}' || true
-          exit 1
-
       - name: Validate generated traces
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
@@ -317,6 +237,28 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+
+      # Validates the collector-less OTLP metrics SigV4 path end to end. The sample app records
+      # sigv4.custom.requests on the "SigV4.SampleApp" meter through the ADOT-configured global
+      # MeterProvider, and ADOT exports it to https://monitoring.<region>.amazonaws.com/v1/metrics
+      # signed with SigV4 service "monitoring". OTLP metrics have no CloudWatch namespace, so they
+      # are queried through PromQL rather than GetMetricData.
+      #
+      # This differs from "Validate generated metrics" above, which checks Application Signals
+      # metrics that CloudWatch derives from spans and that appear even with metrics export off.
+      #
+      # continue-on-error stays until (1) the python sample app zip is republished with the new
+      # counter via python-sample-app-s3-deploy.yml, and (2) a run confirms APP_SIGNALS_EC2_TEST_ROLE
+      # can call cloudwatch:PutMetricData. Then remove it so this step gates the job.
+      - name: Validate generated OTLP custom metric via PromQL
+        id: custom-metric-validation
+        continue-on-error: true
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.trace-validation.outcome == 'failure' || steps.application-log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/custom-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
           --rollup'
 
       - name: Refresh AWS Credentials

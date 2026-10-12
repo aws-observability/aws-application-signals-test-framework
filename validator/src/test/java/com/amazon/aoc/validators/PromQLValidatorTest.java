@@ -21,11 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.amazon.aoc.exception.BaseException;
 import com.amazon.aoc.exception.ExceptionCode;
 import com.amazon.aoc.fileconfigs.LocalPathExpectedTemplate;
+import com.amazon.aoc.helpers.ConfigLoadHelper;
 import com.amazon.aoc.models.Context;
 import com.amazon.aoc.models.ValidationConfig;
 import com.amazon.aoc.services.PromQLService;
@@ -34,6 +36,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  * Unit tests for {@link PromQLValidator}. The PromQL HTTP call is mocked so the tests exercise the
@@ -151,6 +155,57 @@ public class PromQLValidatorTest {
           JsonNode series = OBJECT_MAPPER.readTree("{\"metric\":{},\"value\":[1700000000,\"5\"]}");
           validator.seriesValueSatisfies(series, "notAComparison");
         });
+  }
+
+  /**
+   * The custom Python metric must have a positive value and belong to this service and Meter. The
+   * wrong-service and wrong-Meter cases guard against passing on telemetry from another test run or
+   * from the sample app's other meters.
+   */
+  @ParameterizedTest
+  @CsvSource({
+    "serviceName, SigV4.SampleApp, aws_ec2, 3, true",
+    "otherService, SigV4.SampleApp, aws_ec2, 3, false",
+    "serviceName, myMeter, aws_ec2, 3, false",
+    "serviceName, SigV4.SampleApp, aws_eks, 3, false",
+    "serviceName, SigV4.SampleApp, aws_ec2, 0, false"
+  })
+  public void shouldValidatePythonCustomMetricForTheConfiguredService(
+      String serviceName, String meterName, String platform, String value, boolean shouldPass)
+      throws Exception {
+    ValidationConfig config =
+        new ConfigLoadHelper()
+            .loadConfigFromFile("python/ec2/adot-aws-otlp/custom-metric-validation.yml")
+            .get(0);
+    JsonNode response =
+        OBJECT_MAPPER.readTree(
+            "{\"status\":\"success\",\"data\":{\"resultType\":\"vector\",\"result\":["
+                + "{\"metric\":{\"__name__\":\"sigv4.custom.requests\",\"__type__\":\"Sum\","
+                + "\"__unit__\":\"{request}\",\"@resource.cloud.provider\":\"aws\","
+                + "\"@resource.cloud.region\":\"us-east-1\",\"@resource.cloud.platform\":\""
+                + platform
+                + "\",\"@resource.service.name\":\""
+                + serviceName
+                + "\",\"@instrumentation.@name\":\""
+                + meterName
+                + "\"},\"value\":[1700000000,\""
+                + value
+                + "\"]}]}}");
+    PromQLService service = mock(PromQLService.class);
+    when(service.query(any())).thenReturn(response);
+    PromQLValidator validator = new PromQLValidator(service);
+    validator.init(context, config, config.getExpectedMetricTemplate());
+    validator.setMaxRetryCount(1);
+
+    if (shouldPass) {
+      validator.validate();
+    } else {
+      assertThrows(BaseException.class, validator::validate);
+    }
+    verify(service)
+        .query(
+            "{\"sigv4.custom.requests\", \"@resource.service.name\"=\"serviceName\","
+                + " \"@instrumentation.@name\"=\"SigV4.SampleApp\"}");
   }
 
   private PromQLValidator buildValidator(String cannedResponse) throws Exception {

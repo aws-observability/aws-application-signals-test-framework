@@ -1,0 +1,4 @@
+-
+  validationType: "promql"
+  expectedMetricTemplate: "PYTHON_EC2_ADOT_SIGV4_CUSTOM_METRIC"
+  promQlQuery: '{"sigv4.custom.requests", "@resource.service.name"="{{serviceName}}", "@instrumentation.@name"="SigV4.SampleApp"}'

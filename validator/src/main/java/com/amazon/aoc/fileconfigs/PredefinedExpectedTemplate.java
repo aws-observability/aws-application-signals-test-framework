@@ -265,6 +265,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/asg/client-call-trace.mustache"),
 
   /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  PYTHON_EC2_ADOT_SIGV4_CUSTOM_METRIC(
+      "/expected-data-template/python/ec2/adot-aws-otlp/custom-metric.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/python/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(

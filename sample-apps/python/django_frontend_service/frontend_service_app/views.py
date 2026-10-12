@@ -53,6 +53,14 @@ agent_based_counter = meter.create_counter("agent_based_counter", unit="1", desc
 agent_based_histogram = meter.create_histogram("agent_based_histogram", description="agent export histogram")
 agent_based_gauge = meter.create_up_down_counter("agent_based_gauge", unit="1", description="agent export gauge")
 
+# Dedicated metric for the adot-sigv4 E2E test. It goes only through the ADOT-configured global
+# MeterProvider, so finding it in CloudWatch proves the collector-less OTLP metrics SigV4 export
+# worked. Meter and metric names match the .NET sample app so all SDKs assert on the same series.
+sigv4_meter = metrics.get_meter("SigV4.SampleApp")
+sigv4_custom_request_counter = sigv4_meter.create_counter(
+    "sigv4.custom.requests", unit="{request}", description="Requests handled by the SigV4 validation sample."
+)
+
 # Create pipeline metrics only if pipeline exists
 custom_pipeline_counter = None
 custom_pipeline_histogram = None
@@ -161,6 +169,7 @@ def async_service(request):
     return JsonResponse({'traceId': '1-00000000-000000000000000000000000'})
 
 def get_xray_trace_id():
+    sigv4_custom_request_counter.add(1)
     span = trace.get_current_span()
     trace_id = format_trace_id(span.get_span_context().trace_id)
     xray_trace_id = f"1-{trace_id[:8]}-{trace_id[8:]}"
