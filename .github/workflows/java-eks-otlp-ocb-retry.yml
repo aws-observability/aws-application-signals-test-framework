@@ -8,6 +8,11 @@ name: Java EKS OTLP/OCB Retry
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       aws-region:
         required: true
         type: string
@@ -34,6 +39,7 @@ jobs:
     uses: ./.github/workflows/java-eks-otlp-ocb-test.yml
     secrets: inherit
     with:
+      runs-on: ${{ inputs.runs-on }}
       aws-region: ${{ inputs.aws-region }}
       test-cluster-name: ${{ inputs.test-cluster-name }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
@@ -45,6 +51,7 @@ jobs:
     uses: ./.github/workflows/java-eks-otlp-ocb-test.yml
     secrets: inherit
     with:
+      runs-on: ${{ inputs.runs-on }}
       aws-region: ${{ inputs.aws-region }}
       test-cluster-name: ${{ inputs.test-cluster-name }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
@@ -56,6 +63,7 @@ jobs:
     uses: ./.github/workflows/enablement-test-publish-result.yml
     secrets: inherit
     with:
+      runs-on: ${{ inputs.runs-on }}
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       validation-result: ${{ needs.java-eks-otlp-ocb-attempt-1.outputs.validation-result || needs.java-eks-otlp-ocb-attempt-2.outputs.validation-result }}
@@ -66,6 +74,7 @@ jobs:
     uses: ./.github/workflows/enablement-test-publish-result.yml
     secrets: inherit
     with:
+      runs-on: ${{ inputs.runs-on }}
       aws-region: ${{ inputs.aws-region }}
       caller-workflow-name: ${{ inputs.caller-workflow-name }}
       validation-result: ${{ needs.java-eks-otlp-ocb-attempt-1.outputs.validation-result || needs.java-eks-otlp-ocb-attempt-2.outputs.validation-result }}

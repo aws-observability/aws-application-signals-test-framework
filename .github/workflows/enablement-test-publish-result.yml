@@ -2,6 +2,11 @@ name: Publish Canary Test Result
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       aws-region:
         required: true
         type: string
@@ -28,7 +33,7 @@ env:
 
 jobs:
   publish-result:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
     steps:

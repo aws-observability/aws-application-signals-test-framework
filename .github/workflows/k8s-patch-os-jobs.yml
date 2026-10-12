@@ -5,6 +5,11 @@ name: K8s Patch OS Job
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       jitter_index:
         required: true
         type: number
@@ -33,7 +38,7 @@ env:
 
 jobs:
   create-k8s-on-ec2:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     steps:
       # Sleep 20 seconds between each job's start
       - name: Sleep to avoid throttling limits
@@ -106,6 +111,7 @@ jobs:
     uses: ./.github/workflows/java-k8s-test.yml
     secrets: inherit
     with:
+      runs-on: ${{ inputs.runs-on }}
       aws-region: 'us-east-1'
       caller-workflow-name: 'k8s-os-patching'
       caller-repository: ${{ inputs.repo_name }}
@@ -116,6 +122,7 @@ jobs:
     uses: ./.github/workflows/python-k8s-test.yml
     secrets: inherit
     with:
+      runs-on: ${{ inputs.runs-on }}
       aws-region: 'us-east-1'
       caller-workflow-name: 'k8s-os-patching'
       caller-repository: ${{ inputs.repo_name }}
@@ -126,6 +133,7 @@ jobs:
     uses: ./.github/workflows/dotnet-k8s-test.yml
     secrets: inherit
     with:
+      runs-on: ${{ inputs.runs-on }}
       aws-region: 'us-east-1'
       caller-workflow-name: 'k8s-os-patching'
       caller-repository: ${{ inputs.repo_name }}
@@ -136,6 +144,7 @@ jobs:
     uses: ./.github/workflows/node-k8s-test.yml
     secrets: inherit
     with:
+      runs-on: ${{ inputs.runs-on }}
       aws-region: 'us-east-1'
       caller-workflow-name: 'k8s-os-patching'
       caller-repository: ${{ inputs.repo_name }}
@@ -143,7 +152,7 @@ jobs:
   update-secrets:
     needs: [ run-java-k8s-test, run-python-k8s-test, run-dotnet-k8s-test, run-node-k8s-test ]
     if: ${{ always() && (needs.run-java-k8s-test.result == 'success' || needs.run-python-k8s-test.result == 'success'  || needs.run-dotnet-k8s-test.result == 'success'  || needs.run-node-k8s-test.result == 'success') }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -193,6 +202,7 @@ jobs:
     uses: ./.github/workflows/enablement-test-publish-result.yml
     secrets: inherit
     with:
+      runs-on: ${{ inputs.runs-on }}
       aws-region: 'us-east-1'
       caller-workflow-name: 'enablement-test-k8s-patch-os'
       validation-result: ${{ needs.update-secrets.result }}
@@ -200,7 +210,7 @@ jobs:
   cleanup-if-failed:
     needs: [ run-java-k8s-test, run-python-k8s-test, run-dotnet-k8s-test, run-node-k8s-test ]
     if: ${{ always() && (needs.run-java-k8s-test.result != 'success' && needs.run-python-k8s-test.result != 'success' && needs.run-dotnet-k8s-test.result != 'success' && needs.run-node-k8s-test.result != 'success') }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     steps:
       - name: Delete Key Pair and EC2 Instance
         run: |

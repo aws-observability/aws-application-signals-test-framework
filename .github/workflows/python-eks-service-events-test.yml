@@ -9,6 +9,11 @@ name: Python EKS Service Events Use Case
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       aws-region:
         required: false
         type: string
@@ -76,7 +81,7 @@ env:
 
 jobs:
   python-eks-service-events:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     timeout-minutes: 30
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
@@ -202,7 +207,7 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
-          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release && echo "$VERSION_CODENAME") main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
               && sudo apt update && sudo apt install terraform'
           sleep_time: 60
 
