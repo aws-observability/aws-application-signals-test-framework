@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
+    values = ["al2023-ami-minimal-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -158,6 +158,7 @@ resource "null_resource" "main_service_setup" {
       tmux send-keys -t frontend 'export OTEL_LOGS_EXPORTER=otlp' C-m
       tmux send-keys -t frontend 'export OTEL_METRICS_EXPORTER=none' C-m
       tmux send-keys -t frontend 'export OTEL_TRACES_EXPORTER=otlp' C-m
+      tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression}' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t frontend 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces' C-m
@@ -271,6 +272,7 @@ resource "null_resource" "remote_service_setup" {
       tmux send-keys -t remote 'export OTEL_LOGS_EXPORTER=otlp' C-m
       tmux send-keys -t remote 'export OTEL_METRICS_EXPORTER=none' C-m
       tmux send-keys -t remote 'export OTEL_TRACES_EXPORTER=otlp' C-m
+      tmux send-keys -t remote 'export OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression}' C-m
       tmux send-keys -t remote 'export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t remote 'export OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf' C-m
       tmux send-keys -t remote 'export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces' C-m
