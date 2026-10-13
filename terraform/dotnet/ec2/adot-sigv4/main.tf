@@ -161,7 +161,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
       OTEL_LOGS_EXPORTER=none \
       OTEL_METRICS_EXPORTER=none \
-      OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression} \
+      ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id} \
@@ -261,7 +261,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
       OTEL_LOGS_EXPORTER=none \
       OTEL_METRICS_EXPORTER=none \
-      OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression} \
+      ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id} \
