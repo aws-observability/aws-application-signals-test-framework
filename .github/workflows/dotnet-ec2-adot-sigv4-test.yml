@@ -39,14 +39,24 @@ env:
 
 jobs:
   dotnet-ec2-adot-sigv4:
-    name: DotNet ${{ inputs.dotnet-version }} SigV4 (traces-use-legacy-path=${{ matrix.traces-use-legacy-path }})
+    name: ${{ matrix.job-name }}${{ matrix.otlp-compression == 'gzip' && ' (gzip)' || '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        traces-use-legacy-path: [true, false]
+        include:
+          - job-name: dotnet-ec2-sigv4-legacy
+            traces-use-legacy-path: true
+            otlp-compression: none
+          - job-name: dotnet-ec2-sigv4
+            traces-use-legacy-path: false
+            otlp-compression: none
+          - job-name: dotnet-ec2-sigv4
+            traces-use-legacy-path: false
+            otlp-compression: gzip
     env:
       TF_VAR_traces_use_legacy_path: ${{ matrix.traces-use-legacy-path }}
+      TF_VAR_otlp_compression: ${{ matrix.otlp-compression }}
     steps:
       - name: Check if the job started
         id: job-started
@@ -69,7 +79,7 @@ jobs:
           sleep_time: 60
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${{ matrix.traces-use-legacy-path }}-${RANDOM}" >> "$GITHUB_ENV"
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -164,7 +174,7 @@ jobs:
           sleep_time: 60
 
       # Validation for pulse telemetry data
-      - name: Validate generated EMF logs
+      - name: Validate Transaction Search generated EMF logs
         id: log-validation
         run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
@@ -180,7 +190,7 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
-      - name: Validate generated metrics
+      - name: Validate Transaction Search generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/metric-validation.yml

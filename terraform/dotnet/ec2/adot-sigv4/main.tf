@@ -60,7 +60,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al2023-ami-minimal-*-x86_64"]
   }
   filter {
     name   = "state"
@@ -161,6 +161,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
       OTEL_LOGS_EXPORTER=none \
       OTEL_METRICS_EXPORTER=none \
+      ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id} \
@@ -176,8 +177,7 @@ resource "null_resource" "main_service_setup" {
       until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8080" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-          deployment_failed=1
-          break
+          exit 1
         fi
         echo "Attempting to connect to the main endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
@@ -261,6 +261,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
       OTEL_LOGS_EXPORTER=none \
       OTEL_METRICS_EXPORTER=none \
+      ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id} \
@@ -276,8 +277,7 @@ resource "null_resource" "remote_service_setup" {
       until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8081" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-          deployment_failed=1
-          break
+          exit 1
         fi
         echo "Attempting to connect to the remote endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))

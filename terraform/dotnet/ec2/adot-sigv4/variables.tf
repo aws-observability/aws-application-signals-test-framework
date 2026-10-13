@@ -42,3 +42,14 @@ variable "traces_use_legacy_path" {
   type        = bool
   default     = true
 }
+
+variable "otlp_compression" {
+  description = "Compression applied to the OTLP exporters."
+  type        = string
+  default     = "none"
+
+  validation {
+    condition     = contains(["none", "gzip"], var.otlp_compression)
+    error_message = "OTLP compression must be none or gzip."
+  }
+}
