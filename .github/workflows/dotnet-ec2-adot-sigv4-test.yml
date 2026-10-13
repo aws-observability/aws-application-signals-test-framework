@@ -158,7 +158,6 @@ jobs:
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> "$GITHUB_ENV"
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
-          echo "TEST_CASE_ID=$(terraform output -raw test_case_id)" >> "$GITHUB_ENV"
 
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew.outcome == 'failure'
@@ -180,8 +179,8 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name dotnet-sample-application-${{ env.TEST_CASE_ID }}
-          --remote-service-name dotnet-sample-remote-application-${{ env.TEST_CASE_ID }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
@@ -193,12 +192,12 @@ jobs:
         run: &validate-metrics ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8080
-          --remote-service-deployment-name dotnet-sample-remote-application-${{ env.TEST_CASE_ID }}
+          --remote-service-deployment-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name dotnet-sample-application-${{ env.TEST_CASE_ID }}
-          --remote-service-name dotnet-sample-remote-application-${{ env.TEST_CASE_ID }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
@@ -215,8 +214,8 @@ jobs:
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
           --log-group ${{ env.LOG_GROUP_NAME }}
-          --service-name dotnet-sample-application-${{ env.TEST_CASE_ID }}
-          --remote-service-name dotnet-sample-remote-application-${{ env.TEST_CASE_ID }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
@@ -227,15 +226,16 @@ jobs:
         if: steps.sample-app-outputs.outcome == 'success' && !cancelled()
         working-directory: terraform/dotnet/ec2/adot-sigv4
         run: |
+          TESTING_ID="${TESTING_ID}-${RANDOM}"
+          echo "TESTING_ID=$TESTING_ID" >> "$GITHUB_ENV"
           terraform apply -auto-approve \
             -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
-            -var="test_id=${{ env.TESTING_ID }}" \
+            -var="test_id=$TESTING_ID" \
             -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
             -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
             -var="language_version=${{ env.DOTNET_VERSION }}" \
             -var="traces_use_legacy_path=${{ matrix.traces-use-legacy-path }}" \
             -var="otlp_compression=gzip"
-          echo "TEST_CASE_ID=$(terraform output -raw test_case_id)" >> "$GITHUB_ENV"
 
       - name: Validate Transaction Search generated EMF logs
         id: gzip-log-validation

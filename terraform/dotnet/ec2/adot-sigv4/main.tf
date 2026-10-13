@@ -32,8 +32,8 @@ resource "tls_private_key" "ssh_key" {
 }
 
 resource "aws_key_pair" "aws_ssh_key" {
-  key_name   = "instance_key-${var.test_id}"
-  public_key = tls_private_key.ssh_key.public_key_openssh
+  key_name_prefix = "instance_key-"
+  public_key      = tls_private_key.ssh_key.public_key_openssh
 }
 
 locals {
@@ -53,8 +53,6 @@ locals {
   traces_environment = join(" ", [
     for name, value in(var.traces_use_legacy_path ? local.legacy_traces_environment : local.non_legacy_traces_environment) : "${name}=${value}"
   ])
-  test_case_name = "${var.traces_use_legacy_path ? "legacy-traces" : "otlp"}-${var.otlp_compression}"
-  test_case_id   = "${var.test_id}-${local.test_case_name}"
 }
 
 data "aws_ami" "ami" {
@@ -123,6 +121,7 @@ resource "aws_instance" "main_service_instance" {
 resource "null_resource" "main_service_setup" {
   triggers = {
     instance_id            = aws_instance.main_service_instance.id
+    test_id                = var.test_id
     traces_use_legacy_path = var.traces_use_legacy_path
     otlp_compression       = var.otlp_compression
   }
@@ -190,7 +189,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${local.test_case_id} \
+      OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8080 \
       nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_frontend_service.dll &> nohup.out &
       echo $! > sample-app.pid
@@ -248,6 +247,7 @@ resource "aws_instance" "remote_service_instance" {
 resource "null_resource" "remote_service_setup" {
   triggers = {
     instance_id            = aws_instance.remote_service_instance.id
+    test_id                = var.test_id
     traces_use_legacy_path = var.traces_use_legacy_path
     otlp_compression       = var.otlp_compression
   }
@@ -315,7 +315,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${local.test_case_id} \
+      OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8081 \
       nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_remote_service.dll &> nohup.out &
       echo $! > sample-app.pid
@@ -344,6 +344,11 @@ resource "null_resource" "remote_service_setup" {
 }
 
 resource "null_resource" "traffic_generator_setup" {
+  triggers = {
+    instance_id = aws_instance.main_service_instance.id
+    test_id     = var.test_id
+  }
+
   connection {
     type        = "ssh"
     user        = var.user
@@ -354,16 +359,20 @@ resource "null_resource" "traffic_generator_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-        sudo yum install nodejs aws-cli unzip tmux -y
+        if ! tmux has-session -t traffic-generator 2>/dev/null; then
+          sudo yum install nodejs aws-cli unzip tmux -y
 
-        # Bring in the traffic generator files to EC2 Instance
-        aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/traffic-generator.zip ./traffic-generator.zip
-        unzip ./traffic-generator.zip -d ./
+          # Bring in the traffic generator files to EC2 Instance
+          aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/traffic-generator.zip ./traffic-generator.zip
+          unzip -o ./traffic-generator.zip -d ./
 
-        # Install the traffic generator dependencies
-        npm install
+          # Install the traffic generator dependencies
+          npm install
 
-        tmux new -s traffic-generator -d
+          tmux new -s traffic-generator -d
+        else
+          tmux send-keys -t traffic-generator C-c
+        fi
         tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8080\"" C-m
         tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"${aws_instance.remote_service_instance.private_ip}\"" C-m
         tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
