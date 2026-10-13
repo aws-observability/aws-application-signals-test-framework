@@ -164,6 +164,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+      ${var.otlp_compression == "gzip" ? "export OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       export OTEL_LOGS_EXPORTER=otlp \
       export OTEL_METRICS_EXPORTER=none \
       export OTEL_TRACES_EXPORTER=otlp \
@@ -290,6 +291,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+      ${var.otlp_compression == "gzip" ? "export OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       export OTEL_LOGS_EXPORTER=otlp \
       export OTEL_METRICS_EXPORTER=none \
       export OTEL_TRACES_EXPORTER=otlp \
