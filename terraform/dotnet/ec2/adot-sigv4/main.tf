@@ -138,7 +138,9 @@ resource "null_resource" "main_service_setup" {
       <<-EOF
       #!/bin/bash
 
+      # Get Absolute Path
       current_dir=$(pwd)
+      echo $current_dir
       if [ ! -f ./asp_frontend_service/.adot-setup-complete ]; then
       # Install DotNet and wget
       sudo yum install -y wget
@@ -264,7 +266,9 @@ resource "null_resource" "remote_service_setup" {
       <<-EOF
       #!/bin/bash
 
+      # Get Absolute Path
       current_dir=$(pwd)
+      echo $current_dir
       if [ ! -f ./asp_remote_service/.adot-setup-complete ]; then
       # Install DotNet and wget
       sudo yum install -y wget

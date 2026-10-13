@@ -41,7 +41,6 @@ jobs:
   dotnet-ec2-adot-sigv4:
     name: ${{ matrix.job-name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -234,7 +233,6 @@ jobs:
             -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
             -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
             -var="language_version=${{ env.DOTNET_VERSION }}" \
-            -var="traces_use_legacy_path=${{ matrix.traces-use-legacy-path }}" \
             -var="otlp_compression=gzip"
 
       - name: Validate Transaction Search generated EMF logs
