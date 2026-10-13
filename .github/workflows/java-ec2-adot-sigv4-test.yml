@@ -65,7 +65,7 @@ jobs:
         run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-java-${{ matrix.otlp-compression }}-${RANDOM}" >> "$GITHUB_ENV"
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
