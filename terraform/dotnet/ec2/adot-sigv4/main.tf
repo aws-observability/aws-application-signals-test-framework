@@ -53,6 +53,8 @@ locals {
   traces_environment = join(" ", [
     for name, value in(var.traces_use_legacy_path ? local.legacy_traces_environment : local.non_legacy_traces_environment) : "${name}=${value}"
   ])
+  test_case_name = "${var.traces_use_legacy_path ? "legacy-traces" : "otlp"}-${var.otlp_compression}"
+  test_case_id   = "${var.test_id}-${local.test_case_name}"
 }
 
 data "aws_ami" "ami" {
@@ -60,7 +62,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al2023-ami-minimal-*-x86_64"]
   }
   filter {
     name   = "state"
@@ -112,9 +114,19 @@ resource "aws_instance" "main_service_instance" {
   tags = {
     Name = "main-service-${var.test_id}"
   }
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 resource "null_resource" "main_service_setup" {
+  triggers = {
+    instance_id            = aws_instance.main_service_instance.id
+    traces_use_legacy_path = var.traces_use_legacy_path
+    otlp_compression       = var.otlp_compression
+  }
+
   connection {
     type        = "ssh"
     user        = var.user
@@ -127,6 +139,8 @@ resource "null_resource" "main_service_setup" {
       <<-EOF
       #!/bin/bash
 
+      current_dir=$(pwd)
+      if [ ! -f ./asp_frontend_service/.adot-setup-complete ]; then
       # Install DotNet and wget
       sudo yum install -y wget
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
@@ -144,13 +158,25 @@ resource "null_resource" "main_service_setup" {
       aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
       unzip -o dotnet-sample-app.zip
 
-      # Get Absolute Path
-      current_dir=$(pwd)
-      echo $current_dir
+      cd ./asp_frontend_service
+      dotnet build || exit 1
+      touch .adot-setup-complete
+      else
+        cd ./asp_frontend_service
+      fi
+
+      if [ -f sample-app.pid ]; then
+        app_pid=$(cat sample-app.pid)
+        if kill -0 "$app_pid" 2>/dev/null; then
+          kill -TERM "$app_pid"
+          if ! timeout 60 tail --pid="$app_pid" -f /dev/null; then
+            echo "Sample app did not stop within 60 seconds; stopping the recorded process."
+            kill -KILL "$app_pid" || exit 1
+          fi
+        fi
+      fi
 
       # Export environment variables for instrumentation
-      cd ./asp_frontend_service
-      dotnet build
       CORECLR_ENABLE_PROFILING=1 \
       CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318} \
       CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so \
@@ -161,11 +187,13 @@ resource "null_resource" "main_service_setup" {
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
       OTEL_LOGS_EXPORTER=none \
       OTEL_METRICS_EXPORTER=none \
+      OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id} \
+      OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${local.test_case_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8080 \
       nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_frontend_service.dll &> nohup.out &
+      echo $! > sample-app.pid
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -176,8 +204,7 @@ resource "null_resource" "main_service_setup" {
       until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8080" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-          deployment_failed=1
-          break
+          exit 1
         fi
         echo "Attempting to connect to the main endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
@@ -212,9 +239,19 @@ resource "aws_instance" "remote_service_instance" {
   tags = {
     Name = "remote-service-${var.test_id}"
   }
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 resource "null_resource" "remote_service_setup" {
+  triggers = {
+    instance_id            = aws_instance.remote_service_instance.id
+    traces_use_legacy_path = var.traces_use_legacy_path
+    otlp_compression       = var.otlp_compression
+  }
+
   connection {
     type        = "ssh"
     user        = var.user
@@ -227,6 +264,8 @@ resource "null_resource" "remote_service_setup" {
       <<-EOF
       #!/bin/bash
 
+      current_dir=$(pwd)
+      if [ ! -f ./asp_remote_service/.adot-setup-complete ]; then
       # Install DotNet and wget
       sudo yum install -y wget
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
@@ -244,13 +283,25 @@ resource "null_resource" "remote_service_setup" {
       aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
       unzip -o dotnet-sample-app.zip
 
-      # Get Absolute Path
-      current_dir=$(pwd)
-      echo $current_dir
+      cd ./asp_remote_service
+      dotnet build || exit 1
+      touch .adot-setup-complete
+      else
+        cd ./asp_remote_service
+      fi
+
+      if [ -f sample-app.pid ]; then
+        app_pid=$(cat sample-app.pid)
+        if kill -0 "$app_pid" 2>/dev/null; then
+          kill -TERM "$app_pid"
+          if ! timeout 60 tail --pid="$app_pid" -f /dev/null; then
+            echo "Sample app did not stop within 60 seconds; stopping the recorded process."
+            kill -KILL "$app_pid" || exit 1
+          fi
+        fi
+      fi
 
       # Export environment variables for instrumentation
-      cd ./asp_remote_service
-      dotnet build
       CORECLR_ENABLE_PROFILING=1 \
       CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318} \
       CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so \
@@ -261,11 +312,13 @@ resource "null_resource" "remote_service_setup" {
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
       OTEL_LOGS_EXPORTER=none \
       OTEL_METRICS_EXPORTER=none \
+      OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
-      OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id} \
+      OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${local.test_case_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8081 \
       nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_remote_service.dll &> nohup.out &
+      echo $! > sample-app.pid
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -276,8 +329,7 @@ resource "null_resource" "remote_service_setup" {
       until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8081" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-          deployment_failed=1
-          break
+          exit 1
         fi
         echo "Attempting to connect to the remote endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))

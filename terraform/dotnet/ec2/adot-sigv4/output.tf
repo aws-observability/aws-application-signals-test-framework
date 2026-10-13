@@ -24,3 +24,7 @@ output "main_service_instance_id" {
 output "ec2_instance_ami" {
   value = data.aws_ami.ami.id
 }
+
+output "test_case_id" {
+  value = local.test_case_id
+}
