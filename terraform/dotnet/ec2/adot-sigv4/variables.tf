@@ -44,7 +44,7 @@ variable "traces_use_legacy_path" {
 }
 
 variable "otlp_compression" {
-  description = "Compression applied to the trace exporter."
+  description = "Compression applied to the OTLP exporters."
   type        = string
   default     = "none"
 

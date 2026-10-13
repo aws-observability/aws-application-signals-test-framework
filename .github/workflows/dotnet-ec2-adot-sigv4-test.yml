@@ -39,7 +39,7 @@ env:
 
 jobs:
   dotnet-ec2-adot-sigv4:
-    name: ${{ matrix.job-name }}
+    name: ${{ matrix.job-name }}${{ matrix.otlp-compression == 'gzip' && ' (gzip)' || '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -47,10 +47,16 @@ jobs:
         include:
           - job-name: dotnet-ec2-sigv4-legacy
             traces-use-legacy-path: true
+            otlp-compression: none
           - job-name: dotnet-ec2-sigv4
             traces-use-legacy-path: false
+            otlp-compression: none
+          - job-name: dotnet-ec2-sigv4
+            traces-use-legacy-path: false
+            otlp-compression: gzip
     env:
       TF_VAR_traces_use_legacy_path: ${{ matrix.traces-use-legacy-path }}
+      TF_VAR_otlp_compression: ${{ matrix.otlp-compression }}
     steps:
       - name: Check if the job started
         id: job-started
@@ -73,7 +79,7 @@ jobs:
           sleep_time: 60
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${{ matrix.traces-use-legacy-path }}-${RANDOM}" >> "$GITHUB_ENV"
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-dotnet-${{ matrix.traces-use-legacy-path }}-${{ matrix.otlp-compression }}-${RANDOM}" >> "$GITHUB_ENV"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -151,7 +157,6 @@ jobs:
           done
 
       - name: Get the sample app endpoint
-        id: sample-app-outputs
         working-directory: terraform/dotnet/ec2/adot-sigv4
         run: |
           echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
@@ -171,7 +176,7 @@ jobs:
       # Validation for pulse telemetry data
       - name: Validate Transaction Search generated EMF logs
         id: log-validation
-        run: &validate-emf-logs ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/log-validation.yml
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8080
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
@@ -188,7 +193,7 @@ jobs:
       - name: Validate Transaction Search generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: &validate-metrics ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/metric-validation.yml
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8080
           --remote-service-deployment-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
@@ -205,7 +210,7 @@ jobs:
       - name: Validate generated traces
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: &validate-traces ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/trace-validation.yml
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8080
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
@@ -219,36 +224,6 @@ jobs:
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
-
-      - name: Restart sample app with OTEL_EXPORTER_OTLP_COMPRESSION=gzip
-        id: restart-gzip
-        if: steps.sample-app-outputs.outcome == 'success' && !cancelled()
-        working-directory: terraform/dotnet/ec2/adot-sigv4
-        run: |
-          TESTING_ID="${TESTING_ID}-${RANDOM}"
-          echo "TESTING_ID=$TESTING_ID" >> "$GITHUB_ENV"
-          terraform apply -auto-approve \
-            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
-            -var="test_id=$TESTING_ID" \
-            -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
-            -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
-            -var="language_version=${{ env.DOTNET_VERSION }}" \
-            -var="otlp_compression=gzip"
-
-      - name: Validate Transaction Search generated EMF logs
-        id: gzip-log-validation
-        if: steps.restart-gzip.outcome == 'success' && !cancelled()
-        run: *validate-emf-logs
-
-      - name: Validate Transaction Search generated metrics
-        id: gzip-metric-validation
-        if: steps.restart-gzip.outcome == 'success' && !cancelled()
-        run: *validate-metrics
-
-      - name: Validate generated traces
-        id: gzip-trace-validation
-        if: steps.restart-gzip.outcome == 'success' && !cancelled()
-        run: *validate-traces
 
       - name: Refresh AWS Credentials
         if: always()
