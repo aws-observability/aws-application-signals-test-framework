@@ -155,6 +155,7 @@ jobs:
         working-directory: terraform/python/ec2/adot-sigv4
 
       - name: Get the sample app endpoint
+        id: sample-app-outputs
         run: |
           echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> "$GITHUB_ENV"
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
@@ -171,9 +172,9 @@ jobs:
           sleep_time: 60
 
       # Validation for pulse telemetry data
-      - name: Validate generated EMF logs
+      - name: Validate Transaction Search generated EMF logs
         id: log-validation
-        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/log-validation.yml
+        run: &validate-emf-logs ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
@@ -187,10 +188,10 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
-      - name: Validate generated metrics
+      - name: Validate Transaction Search generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/metric-validation.yml
+        run: &validate-metrics ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --remote-service-deployment-name python-sample-remote-application-${{ env.TESTING_ID }}
@@ -207,7 +208,7 @@ jobs:
       - name: Validate generated traces
         id: trace-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/trace-validation.yml
+        run: &validate-traces ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/trace-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
@@ -224,7 +225,8 @@ jobs:
       
       - name: Validate generated otlp logs
         id: application-log-validation
-        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/application-log-validation.yml
+        if: steps.sample-app-outputs.outcome == 'success' && !cancelled()
+        run: &validate-application-logs ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/application-log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
@@ -238,6 +240,43 @@ jobs:
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
+
+      - name: Restart sample app with OTEL_EXPORTER_OTLP_COMPRESSION=gzip
+        id: restart-gzip
+        if: steps.sample-app-outputs.outcome == 'success' && !cancelled()
+        working-directory: terraform/python/ec2/adot-sigv4
+        run: |
+          TESTING_ID="${TESTING_ID}-${RANDOM}"
+          echo "TESTING_ID=$TESTING_ID" >> "$GITHUB_ENV"
+          terraform apply -auto-approve \
+            -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+            -var="test_id=$TESTING_ID" \
+            -var="sample_app_zip=s3://aws-appsignals-sample-app-prod-us-east-1/python-sample-app.zip" \
+            -var="get_adot_wheel_command=${{ env.GET_ADOT_WHEEL_COMMAND }}" \
+            -var="language_version=${{ env.PYTHON_VERSION }}" \
+            -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+            -var="application_logs_log_group=${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}" \
+            -var="otlp_compression=gzip"
+
+      - name: Validate Transaction Search generated EMF logs
+        id: gzip-log-validation
+        if: steps.restart-gzip.outcome == 'success' && !cancelled()
+        run: *validate-emf-logs
+
+      - name: Validate Transaction Search generated metrics
+        id: gzip-metric-validation
+        if: steps.restart-gzip.outcome == 'success' && !cancelled()
+        run: *validate-metrics
+
+      - name: Validate generated traces
+        id: gzip-trace-validation
+        if: steps.restart-gzip.outcome == 'success' && !cancelled()
+        run: *validate-traces
+
+      - name: Validate generated otlp logs
+        id: gzip-application-log-validation
+        if: steps.restart-gzip.outcome == 'success' && !cancelled()
+        run: *validate-application-logs
 
       - name: Refresh AWS Credentials
         if: always()

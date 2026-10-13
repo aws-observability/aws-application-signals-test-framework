@@ -32,8 +32,8 @@ resource "tls_private_key" "ssh_key" {
 }
 
 resource "aws_key_pair" "aws_ssh_key" {
-  key_name   = "instance_key-${var.test_id}"
-  public_key = tls_private_key.ssh_key.public_key_openssh
+  key_name_prefix = "instance_key-"
+  public_key      = tls_private_key.ssh_key.public_key_openssh
 }
 
 locals {
@@ -98,9 +98,19 @@ resource "aws_instance" "main_service_instance" {
   tags = {
     Name = "main-service-${var.test_id}"
   }
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 resource "null_resource" "main_service_setup" {
+  triggers = {
+    instance_id      = aws_instance.main_service_instance.id
+    test_id          = var.test_id
+    otlp_compression = var.otlp_compression
+  }
+
   connection {
     type        = "ssh"
     user        = var.user
@@ -113,6 +123,7 @@ resource "null_resource" "main_service_setup" {
       <<-EOF
       #!/bin/bash
 
+      if [ ! -f ./django_frontend_service/.adot-setup-complete ]; then
       # Install Python and wget
       sudo yum install wget -y
       sudo yum install unzip -y
@@ -158,12 +169,29 @@ resource "null_resource" "main_service_setup" {
 
       # Export environment variables for instrumentation
       cd ./django_frontend_service
-      sudo python${var.language_version} -m pip install -r ec2-requirements.txt
+      sudo python${var.language_version} -m pip install -r ec2-requirements.txt || exit 1
+      touch .adot-setup-complete
+      else
+        cd ./django_frontend_service
+      fi
+
+      if [ -f sample-app.pid ]; then
+        app_pid=$(cat sample-app.pid)
+        if kill -0 "$app_pid" 2>/dev/null; then
+          kill -TERM "$app_pid"
+          if ! timeout 60 tail --pid="$app_pid" -f /dev/null; then
+            echo "Sample app did not stop within 60 seconds; stopping the recorded process."
+            kill -KILL "$app_pid" || exit 1
+          fi
+        fi
+      fi
+
       export DJANGO_SETTINGS_MODULE="django_frontend_service.settings"
       export OTEL_PYTHON_DISTRO="aws_distro"
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+      export OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression} \
       export OTEL_LOGS_EXPORTER=otlp \
       export OTEL_METRICS_EXPORTER=none \
       export OTEL_TRACES_EXPORTER=otlp \
@@ -176,6 +204,7 @@ resource "null_resource" "main_service_setup" {
       export OTEL_TRACES_SAMPLER=always_on
       python${var.language_version} manage.py migrate
       nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
+      echo $! > sample-app.pid
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -223,9 +252,19 @@ resource "aws_instance" "remote_service_instance" {
   tags = {
     Name = "remote-service-${var.test_id}"
   }
+
+  lifecycle {
+    ignore_changes = [ami]
+  }
 }
 
 resource "null_resource" "remote_service_setup" {
+  triggers = {
+    instance_id      = aws_instance.remote_service_instance.id
+    test_id          = var.test_id
+    otlp_compression = var.otlp_compression
+  }
+
   connection {
     type        = "ssh"
     user        = var.user
@@ -238,6 +277,7 @@ resource "null_resource" "remote_service_setup" {
       <<-EOF
       #!/bin/bash
 
+      if [ ! -f ./django_remote_service/.adot-setup-complete ]; then
       # Install Python and wget
       sudo yum install wget -y
       sudo yum install unzip -y
@@ -283,13 +323,30 @@ resource "null_resource" "remote_service_setup" {
 
       # Export environment variables for instrumentation
       cd ./django_remote_service
-      sudo python${var.language_version} -m pip install -r requirements.txt --force-reinstall
-      sudo python${var.language_version} -m pip install "boto3~=1.34.3"
+      sudo python${var.language_version} -m pip install -r requirements.txt --force-reinstall || exit 1
+      sudo python${var.language_version} -m pip install "boto3~=1.34.3" || exit 1
+      touch .adot-setup-complete
+      else
+        cd ./django_remote_service
+      fi
+
+      if [ -f sample-app.pid ]; then
+        app_pid=$(cat sample-app.pid)
+        if kill -0 "$app_pid" 2>/dev/null; then
+          kill -TERM "$app_pid"
+          if ! timeout 60 tail --pid="$app_pid" -f /dev/null; then
+            echo "Sample app did not stop within 60 seconds; stopping the recorded process."
+            kill -KILL "$app_pid" || exit 1
+          fi
+        fi
+      fi
+
       export DJANGO_SETTINGS_MODULE="django_remote_service.settings"
       export OTEL_PYTHON_DISTRO="aws_distro"
       export OTEL_PYTHON_CONFIGURATOR="aws_configurator"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
+      export OTEL_EXPORTER_OTLP_COMPRESSION=${var.otlp_compression} \
       export OTEL_LOGS_EXPORTER=otlp \
       export OTEL_METRICS_EXPORTER=none \
       export OTEL_TRACES_EXPORTER=otlp \
@@ -302,6 +359,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_TRACES_SAMPLER=always_on
       python${var.language_version} manage.py migrate
       nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8001 --noreload &
+      echo $! > sample-app.pid
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -331,6 +389,11 @@ resource "null_resource" "remote_service_setup" {
 }
 
 resource "null_resource" "traffic_generator_setup" {
+  triggers = {
+    instance_id = aws_instance.main_service_instance.id
+    test_id     = var.test_id
+  }
+
   connection {
     type        = "ssh"
     user        = var.user
@@ -341,16 +404,20 @@ resource "null_resource" "traffic_generator_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
-        sudo yum install nodejs aws-cli unzip tmux -y
+        if ! tmux has-session -t traffic-generator 2>/dev/null; then
+          sudo yum install nodejs aws-cli unzip tmux -y
 
-        # Bring in the traffic generator files to EC2 Instance
-        aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/traffic-generator.zip ./traffic-generator.zip
-        unzip ./traffic-generator.zip -d ./
+          # Bring in the traffic generator files to EC2 Instance
+          aws s3 cp s3://aws-appsignals-sample-app-prod-us-east-1/traffic-generator.zip ./traffic-generator.zip
+          unzip -o ./traffic-generator.zip -d ./
 
-        # Install the traffic generator dependencies
-        npm install
+          # Install the traffic generator dependencies
+          npm install
 
-        tmux new -s traffic-generator -d
+          tmux new -s traffic-generator -d
+        else
+          tmux send-keys -t traffic-generator C-c
+        fi
         tmux send-keys -t traffic-generator "export MAIN_ENDPOINT=\"localhost:8000\"" C-m
         tmux send-keys -t traffic-generator "export REMOTE_ENDPOINT=\"${aws_instance.remote_service_instance.private_ip}\"" C-m
         tmux send-keys -t traffic-generator "export ID=\"${var.test_id}\"" C-m
