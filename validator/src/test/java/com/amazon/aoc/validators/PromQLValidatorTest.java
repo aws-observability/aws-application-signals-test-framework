@@ -162,10 +162,10 @@ public class PromQLValidatorTest {
   /** The custom .NET metric must have a positive value and belong to this service and Meter. */
   @ParameterizedTest
   @CsvSource({
-    "serviceName, CustomMetrics, 3, true",
-    "otherService, CustomMetrics, 3, false",
+    "serviceName, CustomOTLPMetrics, 3, true",
+    "otherService, CustomOTLPMetrics, 3, false",
     "serviceName, OtherMeter, 3, false",
-    "serviceName, CustomMetrics, 0, false"
+    "serviceName, CustomOTLPMetrics, 0, false"
   })
   public void shouldValidateCustomMetricForTheConfiguredService(
       String serviceName, String meterName, String value, boolean shouldPass) throws Exception {
@@ -183,7 +183,7 @@ public class PromQLValidatorTest {
     verify(service)
         .query(
             "{\"custom.requests\", \"@resource.service.name\"=\"serviceName\","
-                + " \"@instrumentation.@name\"=\"CustomMetrics\"}");
+                + " \"@instrumentation.@name\"=\"CustomOTLPMetrics\"}");
   }
 
   /** Each custom metric attribute must be present with its expected value. */
@@ -198,7 +198,7 @@ public class PromQLValidatorTest {
   })
   public void shouldRejectMissingOrIncorrectCustomMetricAttributes(
       String attributeName, String attributeValue) throws Exception {
-    JsonNode response = customMetricResponse("serviceName", "CustomMetrics", "3");
+    JsonNode response = customMetricResponse("serviceName", "CustomOTLPMetrics", "3");
     ObjectNode metric = (ObjectNode) response.path("data").path("result").get(0).path("metric");
     PromQLService service = mock(PromQLService.class);
     PromQLValidator validator = buildCustomMetricValidator(service);
@@ -217,13 +217,15 @@ public class PromQLValidatorTest {
   @ParameterizedTest
   @ValueSource(strings = {"", "@datapoint."})
   public void shouldValidateCustomMetricAttributes(String prefix) throws Exception {
-    JsonNode response = customMetricResponse("serviceName", "CustomMetrics", "3");
+    JsonNode response = customMetricResponse("serviceName", "CustomOTLPMetrics", "3");
     ObjectNode metric = (ObjectNode) response.path("data").path("result").get(0).path("metric");
     PromQLService service = mock(PromQLService.class);
     PromQLValidator validator = buildCustomMetricValidator(service);
 
     for (String attribute :
-        new String[] {"custom.operation", "custom.component", "custom.environment"}) {
+        new String[] {
+          "custom.operation", "custom.component", "custom.environment", "custom.description"
+        }) {
       metric.set(prefix + attribute, metric.remove(attribute));
     }
     when(service.query(any())).thenReturn(response);
@@ -249,6 +251,7 @@ public class PromQLValidatorTest {
     metric.put("custom.operation", "request");
     metric.put("custom.component", "frontend");
     metric.put("custom.environment", "validation");
+    metric.put("custom.description", "This is a custom metric for validation testing");
     series.putArray("value").add(1700000000).add(value);
     return response;
   }

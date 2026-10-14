@@ -166,7 +166,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_METRICS_EXPORTER=otlp \
       OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics \
-      OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=CustomMetrics \
+      OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=CustomOTLPMetrics \
       ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
@@ -272,7 +272,7 @@ resource "null_resource" "remote_service_setup" {
       OTEL_METRICS_EXPORTER=otlp \
       OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf \
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics \
-      OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=CustomMetrics \
+      OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=CustomOTLPMetrics \
       ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
       ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \

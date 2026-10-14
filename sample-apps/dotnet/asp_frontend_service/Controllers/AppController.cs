@@ -18,11 +18,11 @@ namespace asp_frontend_service.Controllers;
 [Route("[controller]")]
 public class AppController : ControllerBase
 {
-    private static readonly Meter CustomMeter = new Meter("CustomMetrics");
+    private static readonly Meter CustomMeter = new Meter("CustomOTLPMetrics");
     private static readonly Counter<long> CustomRequestCounter = CustomMeter.CreateCounter<long>(
         "custom.requests",
         unit: "{request}",
-        description: "Requests handled by the custom metric validation sample.");
+        description: "This is a custom metric for validation testing");
 
     // reads and writes to bool are atomic according to spec:
     // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/variables#96-atomicity-of-variable-references
@@ -177,6 +177,7 @@ public class AppController : ControllerBase
             { "custom.operation", "request" },
             { "custom.component", "frontend" },
             { "custom.environment", "validation" },
+            { "custom.description", CustomRequestCounter.Description },
         });
         this.logger.LogWarning("This is a custom log for validation testing");
         var traceId = Activity.Current.TraceId.ToHexString();
