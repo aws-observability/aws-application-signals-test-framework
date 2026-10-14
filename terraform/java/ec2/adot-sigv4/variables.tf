@@ -48,3 +48,14 @@ variable "cpu_architecture" {
 variable "application_logs_log_group" {
   default = "otlp_logs"
 }
+
+variable "otlp_compression" {
+  description = "Compression applied to the OTLP exporters."
+  type        = string
+  default     = "none"
+
+  validation {
+    condition     = contains(["none", "gzip"], var.otlp_compression)
+    error_message = "OTLP compression must be none or gzip."
+  }
+}

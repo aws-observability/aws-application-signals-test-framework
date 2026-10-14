@@ -223,6 +223,7 @@ resource "null_resource" "remote_service_setup" {
     inline = [
       <<-EOF
       #!/bin/bash
+      set -e
 
       # Install DotNet and wget
       sudo yum install wget -y
