@@ -243,7 +243,7 @@ jobs:
       - name: Validate generated OTLP application logs
         id: application-log-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.trace-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/application-log-validation.yml
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/custom-otlp-log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
@@ -254,7 +254,7 @@ jobs:
       - name: Validate generated OTLP custom metric via PromQL
         id: custom-metric-validation
         if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.trace-validation.outcome == 'failure' || steps.application-log-validation.outcome == 'failure') && !cancelled()
-        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/custom-metric-validation.yml
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/custom-otlp-metric-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --service-name dotnet-sample-application-${{ env.TESTING_ID }}

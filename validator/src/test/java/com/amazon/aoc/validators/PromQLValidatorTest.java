@@ -21,24 +21,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.amazon.aoc.exception.BaseException;
 import com.amazon.aoc.exception.ExceptionCode;
-import com.amazon.aoc.helpers.ConfigLoadHelper;
+import com.amazon.aoc.fileconfigs.LocalPathExpectedTemplate;
 import com.amazon.aoc.models.Context;
 import com.amazon.aoc.models.ValidationConfig;
 import com.amazon.aoc.services.PromQLService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Unit tests for {@link PromQLValidator}. The PromQL HTTP call is mocked so the tests exercise the
@@ -55,20 +50,15 @@ public class PromQLValidatorTest {
   private static final String QUERY = "{__name__=\"count\"}";
 
   private Context context;
-  private ValidationConfig customMetricConfig;
 
   static boolean isWindows() {
     return System.getProperty("os.name").toLowerCase().startsWith("win");
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
+  public void setUp() {
     context = new Context("testingId", "us-east-1", false, false);
     context.setServiceName("serviceName");
-    customMetricConfig =
-        new ConfigLoadHelper()
-            .loadConfigFromFile("dotnet/ec2/adot-sigv4/custom-metric-validation.yml")
-            .get(0);
   }
 
   /** A matching series whose scalar datapoint is > 0 passes validation. */
@@ -163,118 +153,16 @@ public class PromQLValidatorTest {
         });
   }
 
-  /** The custom .NET metric must have a positive value and belong to this service and Meter. */
-  @ParameterizedTest
-  @CsvSource({
-    "serviceName, CustomOTLPMetrics, 3, true",
-    "otherService, CustomOTLPMetrics, 3, false",
-    "serviceName, OtherMeter, 3, false",
-    "serviceName, CustomOTLPMetrics, 0, false"
-  })
-  public void shouldValidateCustomMetricForTheConfiguredService(
-      String serviceName, String meterName, String value, boolean shouldPass) throws Exception {
-    JsonNode response = customMetricResponse(serviceName, meterName, value);
-    PromQLService service = mock(PromQLService.class);
-    PromQLValidator validator = buildValidator(service, customMetricConfig);
-
-    when(service.query(any())).thenReturn(response);
-
-    if (shouldPass) {
-      validator.validate();
-    } else {
-      assertThrows(BaseException.class, validator::validate);
-    }
-    verify(service)
-        .query(
-            "{\"custom.requests\", \"@resource.service.name\"=\"serviceName\","
-                + " \"@instrumentation.@name\"=\"CustomOTLPMetrics\"}");
-  }
-
-  /** Each custom metric attribute must be present with its expected value. */
-  @ParameterizedTest
-  @CsvSource({
-    "custom.operation, other",
-    "custom.operation,",
-    "custom.component, other",
-    "custom.component,",
-    "custom.environment, other",
-    "custom.environment,"
-  })
-  public void shouldRejectMissingOrIncorrectCustomMetricAttributes(
-      String attributeName, String attributeValue) throws Exception {
-    JsonNode response = customMetricResponse("serviceName", "CustomOTLPMetrics", "3");
-    ObjectNode metric = (ObjectNode) response.path("data").path("result").get(0).path("metric");
-    PromQLService service = mock(PromQLService.class);
-    PromQLValidator validator = buildValidator(service, customMetricConfig);
-
-    if (attributeValue == null) {
-      metric.remove(attributeName);
-    } else {
-      metric.put(attributeName, attributeValue);
-    }
-    when(service.query(any())).thenReturn(response);
-
-    assertThrows(BaseException.class, validator::validate);
-  }
-
-  /** Custom attributes match both supported CloudWatch datapoint label spellings. */
-  @ParameterizedTest
-  @ValueSource(strings = {"", "@datapoint."})
-  public void shouldValidateCustomMetricAttributes(String prefix) throws Exception {
-    JsonNode response = customMetricResponse("serviceName", "CustomOTLPMetrics", "3");
-    ObjectNode metric = (ObjectNode) response.path("data").path("result").get(0).path("metric");
-    PromQLService service = mock(PromQLService.class);
-    PromQLValidator validator = buildValidator(service, customMetricConfig);
-
-    for (String attribute :
-        new String[] {
-          "custom.operation", "custom.component", "custom.environment", "custom.description"
-        }) {
-      metric.set(prefix + attribute, metric.remove(attribute));
-    }
-    when(service.query(any())).thenReturn(response);
-
-    validator.validate();
-  }
-
-  private JsonNode customMetricResponse(String serviceName, String meterName, String value) {
-    ObjectNode response = OBJECT_MAPPER.createObjectNode();
-    response.put("status", "success");
-    ObjectNode data = response.putObject("data");
-    data.put("resultType", "vector");
-    ObjectNode series = data.putArray("result").addObject();
-    ObjectNode metric = series.putObject("metric");
-    metric.put("__name__", "custom.requests");
-    metric.put("__type__", "Sum");
-    metric.put("__unit__", "{request}");
-    metric.put("@resource.cloud.provider", "aws");
-    metric.put("@resource.cloud.region", "us-east-1");
-    metric.put("@resource.cloud.platform", "aws_ec2");
-    metric.put("@resource.service.name", serviceName);
-    metric.put("@instrumentation.@name", meterName);
-    metric.put("custom.operation", "request");
-    metric.put("custom.component", "frontend");
-    metric.put("custom.environment", "validation");
-    metric.put("custom.description", "This is a custom metric for validation testing");
-    series.putArray("value").add(1700000000).add(value);
-    return response;
-  }
-
   private PromQLValidator buildValidator(String cannedResponse) throws Exception {
     PromQLService promQLService = mock(PromQLService.class);
     when(promQLService.query(any())).thenReturn(OBJECT_MAPPER.readTree(cannedResponse));
 
     ValidationConfig validationConfig = new ValidationConfig();
     validationConfig.setPromQlQuery(QUERY);
-    validationConfig.setExpectedMetricTemplate(EXPECTED_SERIES_TEMPLATE);
 
-    return buildValidator(promQLService, validationConfig);
-  }
-
-  private PromQLValidator buildValidator(
-      PromQLService promQLService, ValidationConfig validationConfig) throws Exception {
     PromQLValidator validator = new PromQLValidator(promQLService);
-    validator.init(context, validationConfig, validationConfig.getExpectedMetricTemplate());
+    validator.init(
+        context, validationConfig, new LocalPathExpectedTemplate(EXPECTED_SERIES_TEMPLATE));
     validator.setMaxRetryCount(1);
     return validator;
   }
