@@ -53,6 +53,11 @@ agent_based_counter = meter.create_counter("agent_based_counter", unit="1", desc
 agent_based_histogram = meter.create_histogram("agent_based_histogram", description="agent export histogram")
 agent_based_gauge = meter.create_up_down_counter("agent_based_gauge", unit="1", description="agent export gauge")
 
+custom_meter = metrics.get_meter("CustomOTLPMetrics")
+custom_request_counter = custom_meter.create_counter(
+    "custom.requests", unit="{request}", description="This is a custom metric for validation testing"
+)
+
 # Create pipeline metrics only if pipeline exists
 custom_pipeline_counter = None
 custom_pipeline_histogram = None
@@ -161,6 +166,12 @@ def async_service(request):
     return JsonResponse({'traceId': '1-00000000-000000000000000000000000'})
 
 def get_xray_trace_id():
+    custom_request_counter.add(1, {
+        "custom.operation": "request",
+        "custom.component": "frontend",
+        "custom.environment": "validation",
+        "custom.description": "This is a custom metric for validation testing",
+    })
     span = trace.get_current_span()
     trace_id = format_trace_id(span.get_span_context().trace_id)
     xray_trace_id = f"1-{trace_id[:8]}-{trace_id[8:]}"
