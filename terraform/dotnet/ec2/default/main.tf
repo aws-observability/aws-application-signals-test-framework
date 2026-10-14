@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al2023-ami-minimal-*-x86_64"]
   }
   filter {
     name   = "state"
@@ -112,6 +112,7 @@ resource "null_resource" "main_service_setup" {
     inline = [
       <<-EOF
       #!/bin/bash
+      set -e
 
       # Install DotNet and wget
       sudo yum install -y wget unzip
@@ -225,6 +226,7 @@ resource "null_resource" "remote_service_setup" {
     inline = [
       <<-EOF
       #!/bin/bash
+      set -e
 
       # Install DotNet and wget
       sudo yum install -y wget unzip
@@ -314,6 +316,8 @@ resource "null_resource" "traffic_generator_setup" {
   provisioner "remote-exec" {
     inline = [
       <<-EOF
+        set -e
+
         sudo yum install nodejs aws-cli unzip tmux -y
 
         # Bring in the traffic generator files to EC2 Instance
