@@ -421,9 +421,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
 
   /** DotNet EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
   DOTNET_EC2_ADOT_SIGV4_OTLP_METRIC(
-      "/expected-data-template/dotnet/ec2/adot-sigv4/custom-metric.mustache"),
+      "/expected-data-template/dotnet/ec2/adot-sigv4/custom-otlp-metric.mustache"),
   DOTNET_EC2_ADOT_SIGV4_OTLP_LOG(
-      "/expected-data-template/dotnet/ec2/adot-sigv4/application-log.mustache"),
+      "/expected-data-template/dotnet/ec2/adot-sigv4/custom-otlp-log.mustache"),
   DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/dotnet/ec2/adot-sigv4/outgoing-http-call-log.mustache"),
   DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
