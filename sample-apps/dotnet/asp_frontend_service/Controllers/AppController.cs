@@ -7,8 +7,9 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.S3;
-using Microsoft.AspNetCore.Mvc;
 using Amazon.S3.Model;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace asp_frontend_service.Controllers;
 
@@ -22,6 +23,7 @@ public class AppController : ControllerBase
     private static bool threadStarted = false;
     private readonly AmazonS3Client s3Client = new AmazonS3Client();
     private readonly HttpClient httpClient = new HttpClient();
+    private readonly ILogger<AppController> logger;
 
     private static readonly Thread thread = new Thread(() =>
             {
@@ -46,8 +48,9 @@ public class AppController : ControllerBase
                 }
             });
 
-    public AppController()
+    public AppController(ILogger<AppController> logger)
     {
+        this.logger = logger;
         if (!threadStarted)
         {
             Console.WriteLine("Starting thread");
@@ -162,6 +165,7 @@ public class AppController : ControllerBase
 
     private string GetTraceId()
     {
+        this.logger.LogWarning("This is a custom log for validation testing");
         var traceId = Activity.Current.TraceId.ToHexString();
         var version = "1";
         var epoch = traceId.Substring(0, 8);
