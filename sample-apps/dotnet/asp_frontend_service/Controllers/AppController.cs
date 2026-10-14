@@ -18,11 +18,11 @@ namespace asp_frontend_service.Controllers;
 [Route("[controller]")]
 public class AppController : ControllerBase
 {
-    private static readonly Meter CustomMeter = new Meter("SigV4.SampleApp");
+    private static readonly Meter CustomMeter = new Meter("CustomMetrics");
     private static readonly Counter<long> CustomRequestCounter = CustomMeter.CreateCounter<long>(
-        "sigv4.custom.requests",
+        "custom.requests",
         unit: "{request}",
-        description: "Requests handled by the SigV4 validation sample.");
+        description: "Requests handled by the custom metric validation sample.");
 
     // reads and writes to bool are atomic according to spec:
     // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/variables#96-atomicity-of-variable-references
@@ -172,7 +172,12 @@ public class AppController : ControllerBase
 
     private string GetTraceId()
     {
-        CustomRequestCounter.Add(1);
+        CustomRequestCounter.Add(1, new TagList
+        {
+            { "custom.operation", "request" },
+            { "custom.component", "frontend" },
+            { "custom.environment", "validation" },
+        });
         this.logger.LogWarning("This is a custom log for validation testing");
         var traceId = Activity.Current.TraceId.ToHexString();
         var version = "1";
