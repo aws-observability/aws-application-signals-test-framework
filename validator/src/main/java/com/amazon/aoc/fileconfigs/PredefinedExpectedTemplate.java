@@ -265,6 +265,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/asg/client-call-trace.mustache"),
 
   /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  PYTHON_EC2_ADOT_SIGV4_OTLP_METRIC(
+      "/expected-data-template/python/ec2/adot-aws-otlp/custom-otlp-metric.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/python/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
@@ -285,7 +287,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/client-call-trace.mustache"),
 
   /** Python EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  PYTHON_EC2_ADOT_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/application-log.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/custom-otlp-log.mustache"),
 
   /** Python EC2 ADOT Gen AI v1 Test Case Validation */
   PYTHON_EC2_ADOT_GENAI_LOG("/expected-data-template/python/ec2/adot-genai-v1/genai-log.mustache"),

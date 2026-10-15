@@ -244,7 +244,7 @@ jobs:
       
       - name: Validate generated otlp logs
         id: application-log-validation
-        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/application-log-validation.yml
+        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/custom-otlp-log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
           --endpoint http://localhost:8000
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8001
@@ -257,6 +257,15 @@ jobs:
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+
+      - name: Validate generated OTLP custom metric via PromQL
+        id: custom-metric-validation
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.trace-validation.outcome == 'failure' || steps.application-log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c python/ec2/adot-aws-otlp/custom-otlp-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name python-sample-application-${{ env.TESTING_ID }}
           --rollup'
 
       - name: Refresh AWS Credentials
