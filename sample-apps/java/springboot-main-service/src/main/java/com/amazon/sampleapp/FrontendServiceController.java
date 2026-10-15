@@ -105,6 +105,14 @@ public class FrontendServiceController {
     if (testingId != null) {
       bucketName += "-" + testingId;
     }
+    customRequestCounter.add(
+        1,
+        Attributes.builder()
+            .put("custom.operation", "request")
+            .put("custom.component", "frontend")
+            .put("custom.environment", "validation")
+            .put("custom.description", "This is a custom metric for validation testing")
+            .build());
     logger.warn("This is a custom log for validation testing");
     GetBucketLocationRequest bucketLocationRequest =
             GetBucketLocationRequest.builder().bucket(bucketName).build();
@@ -191,14 +199,6 @@ public ResponseEntity<String> status(@PathVariable int code, @RequestParam(name 
 
   // get x-ray trace id
   private String getXrayTraceId() {
-    customRequestCounter.add(
-        1,
-        Attributes.builder()
-            .put("custom.operation", "request")
-            .put("custom.component", "frontend")
-            .put("custom.environment", "validation")
-            .put("custom.description", "This is a custom metric for validation testing")
-            .build());
     String traceId = Span.current().getSpanContext().getTraceId();
     String xrayTraceId = "1-" + traceId.substring(0, 8) + "-" + traceId.substring(8);
     return String.format("{\"traceId\": \"%s\"}", xrayTraceId);
