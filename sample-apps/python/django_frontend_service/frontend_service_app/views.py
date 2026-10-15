@@ -118,6 +118,12 @@ def aws_sdk_call(request):
     testing_id = request.GET.get('testingId', None)
     if testing_id is not None:
         bucket_name += "-" + testing_id
+    custom_request_counter.add(1, {
+        "custom.operation": "request",
+        "custom.component": "frontend",
+        "custom.environment": "validation",
+        "custom.description": "This is a custom metric for validation testing",
+    })
     logger.warning("This is a custom log for validation testing")
     s3_client = boto3.client("s3")
     try:
@@ -166,12 +172,6 @@ def async_service(request):
     return JsonResponse({'traceId': '1-00000000-000000000000000000000000'})
 
 def get_xray_trace_id():
-    custom_request_counter.add(1, {
-        "custom.operation": "request",
-        "custom.component": "frontend",
-        "custom.environment": "validation",
-        "custom.description": "This is a custom metric for validation testing",
-    })
     span = trace.get_current_span()
     trace_id = format_trace_id(span.get_span_context().trace_id)
     xray_trace_id = f"1-{trace_id[:8]}-{trace_id[8:]}"
