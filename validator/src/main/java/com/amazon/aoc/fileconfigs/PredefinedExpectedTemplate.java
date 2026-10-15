@@ -150,6 +150,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_UBUNTU_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/ubuntu/client-call-trace.mustache"),
 
   /** Java EC2 ADOT SigV4 (ADOT Stand-Alone) Test Case Validations */
+  JAVA_EC2_ADOT_SIGV4_OTLP_METRIC(
+      "/expected-data-template/java/ec2/adot-aws-otlp/custom-otlp-metric.mustache"),
   JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
       "/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-metric.mustache"),
@@ -169,7 +171,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/client-call-trace.mustache"),
 
   /** Java EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  JAVA_EC2_ADOT_OTLP_LOG("/expected-data-template/java/ec2/adot-aws-otlp/application-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_OTLP_LOG("/expected-data-template/java/ec2/adot-aws-otlp/custom-otlp-log.mustache"),
 
   /** Java EC2 X-Ray Adaptive Sampling Test Case Validation */
   JAVA_EC2_ADAPTIVE_SAMPLING_FULL_TRACE("/expected-data-template/java/ec2/adaptive-sampling/full-trace.mustache"),

@@ -241,7 +241,7 @@ jobs:
       
       - name: Validate generated otlp logs
         id: application-log-validation
-        run: ./gradlew validator:run --args='-c java/ec2/adot-aws-otlp/application-log-validation.yml
+        run: ./gradlew validator:run --args='-c java/ec2/adot-aws-otlp/custom-otlp-log-validation.yml
               --testing-id ${{ env.TESTING_ID }}
               --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
               --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8080
@@ -256,6 +256,15 @@ jobs:
               --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
               --rollup'
 
+      - name: Validate generated OTLP custom metric via PromQL
+        id: custom-metric-validation
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.trace-validation.outcome == 'failure' || steps.application-log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c java/ec2/adot-aws-otlp/custom-otlp-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name sample-application-${{ env.TESTING_ID }}
+          --rollup'
+
       - name: Refresh AWS Credentials
         if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -267,7 +276,7 @@ jobs:
         if: always()
         id: validation-result
         run: |
-          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ] && [ "${{ steps.application-log-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ] && [ "${{ steps.application-log-validation.outcome }}" = "success" ] && [ "${{ steps.custom-metric-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"
