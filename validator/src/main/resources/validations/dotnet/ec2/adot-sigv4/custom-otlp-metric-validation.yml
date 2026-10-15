@@ -1,0 +1,4 @@
+-
+  validationType: "promql"
+  expectedMetricTemplate: "DOTNET_EC2_ADOT_SIGV4_OTLP_METRIC"
+  promQlQuery: '{"custom.requests", "@resource.service.name"="{{serviceName}}", "@instrumentation.@name"="CustomOTLPMetrics"}'
