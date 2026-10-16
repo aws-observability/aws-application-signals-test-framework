@@ -8,7 +8,7 @@
       "CodeLocation": {
         "Language": "Java",
         "FilePath": "FrontendServiceController.java",
-        "LineNumber": 117,
+        "LineNumber": 134,
         "CodeUnit": "com.amazon.sampleapp",
         "ClassName": "FrontendServiceController",
         "MethodName": "httpCall"
