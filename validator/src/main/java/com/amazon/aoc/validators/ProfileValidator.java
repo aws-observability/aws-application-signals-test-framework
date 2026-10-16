@@ -54,12 +54,17 @@ import lombok.extern.log4j.Log4j2;
  *   "absentFunctions": ["\\.so\\."],                     // no flame-graph frame may match
  *   "minTotal":    "1",                                  // flame-graph total must be >= this
  *   "absentLabelNames": ["thread.state"],                // each must NOT exist on the series
- *   "minWindows":  "3",                                  // data in >=3 consecutive export windows
+ *   "minWindows":  "3",                                  // data in >=3 consecutive windows
+ *   "windowSeconds": "300",                              // width of those windows (default 60)
  *   "operations": {                                      // flame graph of one operation's samples
- *     "GET /a": { "functions": ["\\.handleA$"], "absentFunctions": ["\\.handleB$"] }
+ *     "GET /a": { "functions": ["\\.handleA( |$)"], "absentFunctions": ["\\.handleB( |$)"] }
  *   }
  * }
  * </pre>
+ *
+ * <p>CloudWatch Profiles appends the source file and line to Java frame names in the flame graph
+ * (e.g. {@code com.example.Foo.bar Foo.java:42}), while native frames stay bare ({@code
+ * start_thread}). End a Java frame regex with {@code ( |$)} rather than {@code $}.
  *
  * <p>Label checks are scoped to the resolved profile type (a {@code __profile_type__} matcher is
  * added to the selector), so a label carried by one profile type of the service cannot satisfy a
@@ -316,9 +321,12 @@ public class ProfileValidator implements IValidator {
 
   /**
    * Sustained export: the profile must have data in at least {@code minWindows} consecutive
-   * {@code windowSeconds}-wide windows (default 60s, the profiler's export window). Each window is
-   * one JFR rotation exported, so this proves the profiler keeps rotating and exporting, not just
-   * once.
+   * {@code windowSeconds}-wide windows (default 60s). Set {@code windowSeconds} to the query
+   * resolution the backend actually returns: CloudWatch Profiles answers in 5-minute buckets even
+   * when a 60s step is requested, so 60s points are never "consecutive" there. Data in several
+   * consecutive buckets proves the profiler keeps rotating and exporting, not just once (3
+   * five-minute buckets need data spread over more than 5 minutes, i.e. several 60s profiler
+   * windows).
    */
   private void checkWindows(
       ExpectedProfile expected, String profileTypeId, String selector, long start, long end)

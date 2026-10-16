@@ -360,6 +360,83 @@ public class ProfileValidatorTest {
     assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
   }
 
+  // CloudWatch Profiles renders Java frames with the source file and line appended.
+  private static final String CW_SDK_HANDLER =
+      "com.amazon.sampleapp.FrontendServiceController.awssdkCall FrontendServiceController.java:94";
+  private static final String CW_HTTP_HANDLER =
+      "com.amazon.sampleapp.FrontendServiceController.httpCall FrontendServiceController.java:113";
+  private static final String BOTH_ROUTES =
+      "{\"names\":[\"GET /\",\"GET /aws-sdk-call\",\"GET /outgoing-http-call\"]}";
+
+  /** The shipped attribution templates match handler frames as CloudWatch names them. */
+  @Test
+  public void testShippedAttributionMatchesCloudWatchFrameNames() throws Exception {
+    stub(TYPES, LABEL_NAMES, BOTH_ROUTES, STATE_VALUES, FLAMEGRAPH);
+    stubOperationGraph(SDK_SELECTOR, graph("java.lang.Thread.run", CW_SDK_HANDLER));
+    stubOperationGraph(HTTP_SELECTOR, graph("java.lang.Thread.run", CW_HTTP_HANDLER));
+    buildShippedValidator("operation-attribution").validate();
+    buildShippedValidator("unsampled-operation-label").validate();
+  }
+
+  /** The shipped attribution templates still catch the other route's handler with the suffix. */
+  @Test
+  public void testShippedAttributionRejectsOtherHandlerWithCloudWatchSuffix() throws Exception {
+    stub(TYPES, LABEL_NAMES, BOTH_ROUTES, STATE_VALUES, FLAMEGRAPH);
+    stubOperationGraph(SDK_SELECTOR, graph(CW_SDK_HANDLER, CW_HTTP_HANDLER));
+    stubOperationGraph(HTTP_SELECTOR, graph(CW_HTTP_HANDLER));
+    for (String name : new String[] {"operation-attribution", "unsampled-operation-label"}) {
+      BaseException be =
+          assertThrows(BaseException.class, () -> buildShippedValidator(name).validate(), name);
+      assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode(), name);
+    }
+  }
+
+  /** A method whose name only starts with the handler's name is not the handler. */
+  @Test
+  public void testShippedAttributionDoesNotMatchHandlerNamePrefix() throws Exception {
+    stub(TYPES, LABEL_NAMES, BOTH_ROUTES, STATE_VALUES, FLAMEGRAPH);
+    stubOperationGraph(SDK_SELECTOR,
+        graph("com.amazon.sampleapp.FrontendServiceController.awssdkCallHelper F.java:1"));
+    stubOperationGraph(HTTP_SELECTOR, graph(CW_HTTP_HANDLER));
+    BaseException be =
+        assertThrows(
+            BaseException.class, () -> buildShippedValidator("operation-attribution").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** The shipped rotation check reads 5-minute buckets, the resolution CloudWatch returns. */
+  @Test
+  public void testShippedRotationWindowsUsesFiveMinuteBuckets() throws Exception {
+    when(service.selectSeries(anyString(), anyString(), anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyDouble()))
+        .thenReturn(OBJECT_MAPPER.readTree(series(300_000, 600_000, 900_000)));
+    buildShippedValidator("rotation-windows").validate();
+    verify(service)
+        .selectSeries(eq(WALL_TYPE_ID), anyString(), anyLong(), anyLong(), eq(300.0));
+  }
+
+  /** Two 5-minute buckets (a single short burst can straddle one boundary) are not enough. */
+  @Test
+  public void testShippedRotationWindowsFailsWithTwoBuckets() throws Exception {
+    when(service.selectSeries(anyString(), anyString(), anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyDouble()))
+        .thenReturn(OBJECT_MAPPER.readTree(series(300_000, 600_000)));
+    BaseException be =
+        assertThrows(
+            BaseException.class, () -> buildShippedValidator("rotation-windows").validate());
+    assertEquals(ExceptionCode.EXPECTED_METRIC_NOT_FOUND.getCode(), be.getCode());
+  }
+
+  /** A validator built from a shipped java/ec2/profiler validation YAML and its template. */
+  private ProfileValidator buildShippedValidator(String name) throws Exception {
+    ValidationConfig config =
+        new com.amazon.aoc.helpers.ConfigLoadHelper()
+            .loadConfigFromFile("java/ec2/profiler/" + name + "-validation.yml")
+            .get(0);
+    ProfileValidator validator = new ProfileValidator(service);
+    validator.init(context, config, config.getExpectedProfileTemplate());
+    validator.setMaxRetryCount(1);
+    return validator;
+  }
+
   private ProfileValidator buildValidator(String template) throws Exception {
     ProfileValidator validator = new ProfileValidator(service);
     validator.init(context, new ValidationConfig(), new LocalPathExpectedTemplate(template));

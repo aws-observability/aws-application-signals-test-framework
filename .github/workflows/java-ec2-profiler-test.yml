@@ -22,7 +22,8 @@
 #                           per-run lambda suffixes (Foo$$Lambda/0x...)
 #   - alloc_space profile   {alloc_space, bytes} profile with at least 10 MiB
 #   - alloc_objects profile {alloc_objects, count} profile with at least 10 objects
-#   - sustained rotation    data in >=3 consecutive 60s export windows (keeps rotating/exporting)
+#   - sustained rotation    data in >=3 consecutive 5-minute buckets (CloudWatch Profiles' query
+#                           resolution), so the profiler keeps rotating and exporting its 60s windows
 # Minimum totals are deliberately far below what the traffic produces; they catch a missing
 # profile or a wrong unit/period, not small regressions. Label checks are scoped to the checked
 # profile type, so e.g. allocation samples cannot satisfy a wall-sample label check.
@@ -37,6 +38,11 @@ name: Java EC2 Profiler Use Case
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       aws-region:
         required: false
         type: string
@@ -55,10 +61,10 @@ on:
         type: string
         default: "x86_64"
       adot-jar-s3-uri:
-        description: "S3 URI of an ADOT Java agent build that includes the profiler"
+        description: "S3 URI of the ADOT Java agent to test (default: the latest main build)"
         required: false
         type: string
-        default: 's3://adot-java-profiler-beta/adot-autoinstrumentation-java/dist/aws-opentelemetry-agent-2.31.0-SNAPSHOT.jar'
+        default: 's3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar'
       profiles-role-arn:
         description: "Optional role in a CloudWatch Profiles-enabled account to send/query profiles as"
         required: false
@@ -80,10 +86,10 @@ on:
         type: string
         default: '17'
       adot-jar-s3-uri:
-        description: "S3 URI of an ADOT Java agent build that includes the profiler"
+        description: "S3 URI of the ADOT Java agent to test (default: the latest main build)"
         required: false
         type: string
-        default: 's3://adot-java-profiler-beta/adot-autoinstrumentation-java/dist/aws-opentelemetry-agent-2.31.0-SNAPSHOT.jar'
+        default: 's3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar'
       profiles-role-arn:
         description: "Optional role in a CloudWatch Profiles-enabled account to send/query profiles as"
         required: false
@@ -100,7 +106,7 @@ env:
   JAVA_VERSION: ${{ inputs.java-version || '17' }}
   CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
   SAMPLE_APP_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region || 'us-east-1' }}/java-main-service-v${{ inputs.java-version || '17' }}.jar
-  ADOT_JAR_S3_URI: ${{ inputs.adot-jar-s3-uri || 's3://adot-java-profiler-beta/adot-autoinstrumentation-java/dist/aws-opentelemetry-agent-2.31.0-SNAPSHOT.jar' }}
+  ADOT_JAR_S3_URI: ${{ inputs.adot-jar-s3-uri || 's3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar' }}
   PROFILES_ROLE_ARN: ${{ inputs.profiles-role-arn || '' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
@@ -109,7 +115,7 @@ env:
 
 jobs:
   java-ec2-profiler:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     timeout-minutes: 45
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
@@ -124,6 +130,14 @@ jobs:
           repository: 'aws-observability/aws-application-signals-test-framework'
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
+
+      # Pin the JDK used to build the validator. Without it Gradle uses the machine's default JDK, which is
+      # Java 17 on GitHub-hosted runners but Java 25 on CodeBuild's image, which Gradle 8.10 cannot run on.
+      - name: Set up Java for the validator
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
 
         # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
         # fails due to transient issues. If it fails here, then we will try again later before the validators
@@ -167,8 +181,8 @@ jobs:
           if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-java-instrumentation" ]; then
             echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> "$GITHUB_ENV"
           else
-            # The profiler is not in main or any tagged ADOT Java release yet, so default to the
-            # profiler beta build. Switch to the main-build staging jar once the profiler merges.
+            # The profiler is in main but not yet in a tagged ADOT Java release, so default to the
+            # latest main build (adot-jar-s3-uri overrides it, e.g. to test a feature-branch build).
             echo GET_ADOT_JAR_COMMAND="aws s3 cp ${{ env.ADOT_JAR_S3_URI }} ./adot.jar" >> "$GITHUB_ENV"
           fi
 
@@ -176,7 +190,7 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
-          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release && echo "$VERSION_CODENAME") main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
               && sudo apt update && sudo apt install terraform'
           sleep_time: 60
 
