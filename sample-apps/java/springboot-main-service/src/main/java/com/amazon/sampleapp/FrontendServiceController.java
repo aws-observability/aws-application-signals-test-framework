@@ -15,6 +15,9 @@
 
 package com.amazon.sampleapp;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.trace.Span;
 import java.net.URI;
 import java.sql.DriverManager;
@@ -48,6 +51,12 @@ import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
 @Controller
 public class FrontendServiceController {
   private static final Logger logger = LoggerFactory.getLogger(FrontendServiceController.class);
+  private static final LongCounter customRequestCounter =
+      GlobalOpenTelemetry.getMeter("CustomOTLPMetrics")
+          .counterBuilder("custom.requests")
+          .setUnit("{request}")
+          .setDescription("This is a custom metric for validation testing")
+          .build();
   private final CloseableHttpClient httpClient;
   private final S3Client s3;
   private AtomicBoolean shouldSendLocalRootClientCall = new AtomicBoolean(false);
@@ -96,6 +105,14 @@ public class FrontendServiceController {
     if (testingId != null) {
       bucketName += "-" + testingId;
     }
+    customRequestCounter.add(
+        1,
+        Attributes.builder()
+            .put("custom.operation", "request")
+            .put("custom.component", "frontend")
+            .put("custom.environment", "validation")
+            .put("custom.description", "This is a custom metric for validation testing")
+            .build());
     logger.warn("This is a custom log for validation testing");
     GetBucketLocationRequest bucketLocationRequest =
             GetBucketLocationRequest.builder().bucket(bucketName).build();

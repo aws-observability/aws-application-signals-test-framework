@@ -134,7 +134,9 @@ resource "null_resource" "main_service_setup" {
       # OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       export JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar'
       export OTEL_LOGS_EXPORTER=otlp
-      export OTEL_METRICS_EXPORTER=none
+      export OTEL_METRICS_EXPORTER=otlp
+      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics
       export OTEL_TRACES_EXPORTER=otlp
       ${var.otlp_compression == "gzip" ? "export OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""}
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf
@@ -227,7 +229,9 @@ resource "null_resource" "remote_service_setup" {
       # OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED=true \
       export JAVA_TOOL_OPTIONS=' -javaagent:/home/ec2-user/adot.jar'
       export OTEL_LOGS_EXPORTER=otlp
-      export OTEL_METRICS_EXPORTER=none
+      export OTEL_METRICS_EXPORTER=otlp
+      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics
       export OTEL_TRACES_EXPORTER=otlp
       ${var.otlp_compression == "gzip" ? "export OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""}
       export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf
