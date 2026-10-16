@@ -39,6 +39,16 @@ resource "aws_key_pair" "aws_ssh_key" {
 locals {
   ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
   private_key_content = tls_private_key.ssh_key.private_key_pem
+  otlp_exporter       = var.use_otlp_proxy ? "otlp/sigv4" : "otlp"
+  traces_endpoint     = var.use_otlp_proxy ? "http://127.0.0.1:4318/v1/traces" : "https://xray.${var.aws_region}.amazonaws.com/v1/traces"
+  logs_endpoint       = var.use_otlp_proxy ? "http://127.0.0.1:4318/v1/logs" : "https://logs.${var.aws_region}.amazonaws.com/v1/logs"
+  metrics_endpoint    = var.use_otlp_proxy ? "http://127.0.0.1:4318/v1/metrics" : "https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics"
+  proxy_setup = (var.use_otlp_proxy ? <<-EOF
+      nohup python${var.language_version} "$HOME/otlp-forwarding-proxy.py" ${var.aws_region} > "$HOME/otlp-forwarding-proxy.log" 2>&1 &
+      curl --fail --silent --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:4318/healthcheck || exit 1
+      export AWS_REGION=${var.aws_region}
+      EOF
+  : "")
 }
 
 data "aws_ami" "ami" {
@@ -108,6 +118,11 @@ resource "null_resource" "main_service_setup" {
     host        = aws_instance.main_service_instance.public_ip
   }
 
+  provisioner "file" {
+    source      = "${path.module}/../../../common/otlp-forwarding-proxy.py"
+    destination = "otlp-forwarding-proxy.py"
+  }
+
   provisioner "remote-exec" {
     inline = [
       <<-EOF
@@ -156,6 +171,8 @@ resource "null_resource" "main_service_setup" {
       aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip
       unzip -o python-sample-app.zip
 
+      ${local.proxy_setup}
+
       # Export environment variables for instrumentation
       cd ./django_frontend_service
       sudo python${var.language_version} -m pip install -r ec2-requirements.txt
@@ -165,20 +182,20 @@ resource "null_resource" "main_service_setup" {
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       ${var.otlp_compression == "gzip" ? "export OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
-      export OTEL_LOGS_EXPORTER=otlp \
-      export OTEL_METRICS_EXPORTER=otlp \
+      export OTEL_LOGS_EXPORTER=${local.otlp_exporter} \
+      export OTEL_METRICS_EXPORTER=${local.otlp_exporter} \
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf \
-      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics \
-      export OTEL_TRACES_EXPORTER=otlp \
-      export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
-      export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=${local.metrics_endpoint} \
+      export OTEL_TRACES_EXPORTER=${local.otlp_exporter} \
+      export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${local.traces_endpoint} \
+      export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=${local.logs_endpoint} \
       export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
       export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true \
       export OTEL_PYTHON_LOG_CORRELATION=true \
       export OTEL_SERVICE_NAME=python-sample-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
       python${var.language_version} manage.py migrate
-      nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8000 --noreload &
+      nohup opentelemetry-instrument python${var.language_version} manage.py runserver 127.0.0.1:8000 --noreload &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -236,6 +253,11 @@ resource "null_resource" "remote_service_setup" {
     host        = aws_instance.remote_service_instance.public_ip
   }
 
+  provisioner "file" {
+    source      = "${path.module}/../../../common/otlp-forwarding-proxy.py"
+    destination = "otlp-forwarding-proxy.py"
+  }
+
   provisioner "remote-exec" {
     inline = [
       <<-EOF
@@ -284,6 +306,8 @@ resource "null_resource" "remote_service_setup" {
       aws s3 cp ${var.sample_app_zip} ./python-sample-app.zip
       unzip -o python-sample-app.zip
 
+      ${local.proxy_setup}
+
       # Export environment variables for instrumentation
       cd ./django_remote_service
       sudo python${var.language_version} -m pip install -r requirements.txt --force-reinstall
@@ -294,20 +318,20 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=false
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
       ${var.otlp_compression == "gzip" ? "export OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
-      export OTEL_LOGS_EXPORTER=otlp \
-      export OTEL_METRICS_EXPORTER=otlp \
+      export OTEL_LOGS_EXPORTER=${local.otlp_exporter} \
+      export OTEL_METRICS_EXPORTER=${local.otlp_exporter} \
       export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf \
-      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics \
-      export OTEL_TRACES_EXPORTER=otlp \
-      export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
-      export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=${local.metrics_endpoint} \
+      export OTEL_TRACES_EXPORTER=${local.otlp_exporter} \
+      export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=${local.traces_endpoint} \
+      export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=${local.logs_endpoint} \
       export OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
       export OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true \
       export OTEL_PYTHON_LOG_CORRELATION=true \
       export OTEL_SERVICE_NAME=python-sample-remote-application-${var.test_id}
       export OTEL_TRACES_SAMPLER=always_on
       python${var.language_version} manage.py migrate
-      nohup opentelemetry-instrument python${var.language_version} manage.py runserver 0.0.0.0:8001 --noreload &
+      nohup opentelemetry-instrument python${var.language_version} manage.py runserver ${aws_instance.remote_service_instance.private_ip}:8001 --noreload &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -315,7 +339,7 @@ resource "null_resource" "remote_service_setup" {
       # Check if the application is up. If it is not up, then exit 1.
       attempt_counter=0
       max_attempts=30
-      until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "http://localhost:8001/healthcheck" | tr -d '"')); do
+      until $(curl --output /dev/null --silent --head --fail --max-time 5 $(echo "http://${aws_instance.remote_service_instance.private_ip}:8001/healthcheck" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint."
           exit 1
