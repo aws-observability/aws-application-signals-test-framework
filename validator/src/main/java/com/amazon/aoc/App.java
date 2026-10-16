@@ -87,6 +87,10 @@ public class App implements Callable<Integer> {
   @CommandLine.Option(names = {"--endpoint"})
   private String endpoint;
 
+  /** Optional role to assume for CloudWatch Profiles queries ("profile" validations). */
+  @CommandLine.Option(names = {"--profiles-role-arn"})
+  private String profilesRoleArn;
+
   @CommandLine.Option(names = {"--query-string"})
   private String queryString;
 
@@ -166,6 +170,12 @@ public class App implements Callable<Integer> {
   @CommandLine.Option(names = {"--service-events-git-commit-sha"})
   private String serviceEventsGitCommitSha;
 
+  @CommandLine.Option(
+      names = {"--profile-context-file"},
+      description =
+          "Path of a JSON object of string values recorded at deploy time, for profile templates")
+  private String profileContextFile;
+
   private static final String TEST_CASE_DIM_KEY = "testcase";
   private static final String CANARY_NAMESPACE = "Otel/Canary";
   private static final String CANARY_METRIC_NAME = "Success";
@@ -192,6 +202,7 @@ public class App implements Callable<Integer> {
     context.setRemoteResourceIdentifier(this.remoteResourceIdentifier);
     context.setRemoteDbUser(this.remoteDbUser);
     context.setEndpoint(this.endpoint);
+    context.setProfilesRoleArn(this.profilesRoleArn);
     context.setQueryString(this.queryString);
     context.setLogGroup(this.logGroup);
     context.setEcsContext(buildJsonContext(ecsContext, ECSContext.class));
@@ -208,6 +219,7 @@ public class App implements Callable<Integer> {
     context.setTraceId(this.traceId);
     context.setLocationHash(this.locationHash);
     context.setServiceEventsGitCommitSha(this.serviceEventsGitCommitSha);
+    context.setProfileContext(buildProfileContext(this.profileContextFile));
 
     log.info(context);
 
@@ -265,6 +277,16 @@ public class App implements Callable<Integer> {
       return null;
     }
     return new ObjectMapper().convertValue(ecsContextMap, ECSContext.class);
+  }
+
+  private static Map<String, String> buildProfileContext(String path) throws java.io.IOException {
+    if (path == null || path.isEmpty()) {
+      return null;
+    }
+    return new ObjectMapper()
+        .readValue(
+            new java.io.File(path),
+            new com.fasterxml.jackson.core.type.TypeReference<Map<String, String>>() {});
   }
 
   private <T> T buildJsonContext(String metricContext, Class<T> clazz)

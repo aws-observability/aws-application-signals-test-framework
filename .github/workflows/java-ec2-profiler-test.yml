@@ -1,0 +1,509 @@
+## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+## SPDX-License-Identifier: Apache-2.0
+
+# This is a reusable workflow for running the Java EC2 Profiler E2E test. It is meant to be called
+# from another workflow (matrixed over Java versions) and can also be dispatched manually.
+# Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
+#
+# The springboot sample app runs under the ADOT Java agent with the continuous profiler enabled
+# (wall mode + allocation profiling). The agent exports OTLP profiles to a local OTel Collector,
+# which SigV4-signs and forwards them to CloudWatch Profiles
+# (monitoring.<region>.amazonaws.com/v1development/profiles). Each validation below then reads the
+# profiles back through the CloudWatch Profiles (Pyroscope-compatible) query API and checks one
+# property:
+#   - wall profile          {wall, nanoseconds} profile with at least 10s of thread time
+#   - operation label       wall samples carry both driven routes (GET /aws-sdk-call,
+#                           GET /outgoing-http-call) as their operation
+#   - operation attribution each route's wall samples contain its own handler frame and not the
+#                           other route's handler (samples are attributed to the right request)
+#   - thread.state label    wall samples carry both RUNNABLE and SLEEPING
+#   - app stack frames      the flame graph contains the controller and native (start_thread)
+#                           frames, no library-qualified names (libc.so.6.start_thread) and no
+#                           per-run lambda suffixes (Foo$$Lambda/0x...)
+#   - alloc_space profile   {alloc_space, bytes} profile with at least 10 MiB
+#   - alloc_objects profile {alloc_objects, count} profile with at least 10 objects
+#   - sustained rotation    data in >=3 consecutive 5-minute buckets (CloudWatch Profiles' query
+#                           resolution), so the profiler keeps rotating and exporting its 60s windows
+#   - identity              the service's samples carry exactly its own JVM's process.pid, the
+#                           instance's host.id/host.name and the deployed agent version, a single
+#                           service.instance.id, and every request sample is on a request thread
+#                           (also for the -cpu and -unsampled services)
+# Minimum totals are deliberately far below what the traffic produces; they catch a missing
+# profile or a wrong unit/period, not small regressions. Label checks are scoped to the checked
+# profile type, so e.g. allocation samples cannot satisfy a wall-sample label check.
+# Two more copies of the app on the same instance cover the other profiler settings:
+#   - <name>-cpu       (cpu mode, OTLP/gRPC, full aggregation): cpu profile with at least 1s,
+#                      both routes as operation, no thread.state label
+#   - <name>-unsampled (every trace dropped): both routes as operation and correct attribution,
+#                      i.e. request correlation does not depend on trace sampling. That these
+#                      samples carry no trace link is not visible through the query API; the
+#                      AwsProfilerUnsampledContractTest contract test checks it.
+name: Java EC2 Profiler Use Case
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+      aws-region:
+        required: false
+        type: string
+        default: 'us-east-1'
+      caller-workflow-name:
+        required: true
+        type: string
+      java-version:
+        description: "Currently support version 8, 11, 17, 21, 22"
+        required: false
+        type: string
+        default: '17'
+      cpu-architecture:
+        description: "Permitted values: x86_64 or arm64"
+        required: false
+        type: string
+        default: "x86_64"
+      adot-jar-s3-uri:
+        description: "S3 URI of the ADOT Java agent to test (default: the latest main build)"
+        required: false
+        type: string
+        default: 's3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar'
+      profiles-role-arn:
+        description: "Optional role in a CloudWatch Profiles-enabled account to send/query profiles as"
+        required: false
+        type: string
+        default: ''
+    outputs:
+      job-started:
+        value: ${{ jobs.java-ec2-profiler.outputs.job-started }}
+      validation-result:
+        value: ${{ jobs.java-ec2-profiler.outputs.validation-result }}
+  workflow_dispatch:
+    inputs:
+      aws-region:
+        required: false
+        type: string
+        default: 'us-east-1'
+      java-version:
+        required: false
+        type: string
+        default: '17'
+      adot-jar-s3-uri:
+        description: "S3 URI of the ADOT Java agent to test (default: the latest main build)"
+        required: false
+        type: string
+        default: 's3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar'
+      profiles-role-arn:
+        description: "Optional role in a CloudWatch Profiles-enabled account to send/query profiles as"
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  E2E_TEST_AWS_REGION: ${{ inputs.aws-region || 'us-east-1' }}
+  CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name || 'manual-dispatch' }}
+  JAVA_VERSION: ${{ inputs.java-version || '17' }}
+  CPU_ARCHITECTURE: ${{ inputs.cpu-architecture || 'x86_64' }}
+  SAMPLE_APP_JAR: s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region || 'us-east-1' }}/java-main-service-v${{ inputs.java-version || '17' }}.jar
+  ADOT_JAR_S3_URI: ${{ inputs.adot-jar-s3-uri || 's3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar' }}
+  PROFILES_ROLE_ARN: ${{ inputs.profiles-role-arn || '' }}
+  E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
+  E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
+  TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
+  REPOSITORY_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  java-ec2-profiler:
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    outputs:
+      job-started: ${{ steps.job-started.outputs.job-started }}
+      validation-result: ${{ steps.validation-result.outputs.validation-result }}
+    steps:
+      - name: Check if the job started
+        id: job-started
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: 'aws-observability/aws-application-signals-test-framework'
+          ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
+          fetch-depth: 0
+
+      # Pin the JDK used to build the validator. Without it Gradle uses the machine's default JDK, which is
+      # Java 17 on GitHub-hosted runners but Java 25 on CodeBuild's image, which Gradle 8.10 cannot run on.
+      - name: Set up Java for the validator
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
+        # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
+        # fails due to transient issues. If it fails here, then we will try again later before the validators
+      - name: Initiate Gradlew Daemon
+        id: initiate-gradlew
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      - name: Generate testing id
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
+
+      - name: Set Service Name
+        run: echo SERVICE_NAME="java-sample-application-${{ env.TESTING_ID }}" >> "$GITHUB_ENV"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 # v2.0.10
+        with:
+          secret-ids:
+            ACCOUNT_ID, region-account/${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Configure AWS Credentials
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Set Get ADOT Jar command environment variable
+        run: |
+          if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-java-instrumentation" ]; then
+            echo GET_ADOT_JAR_COMMAND="aws s3 cp s3://adot-main-build-staging-jar/aws-opentelemetry-agent.jar ./adot.jar" >> "$GITHUB_ENV"
+          else
+            # The profiler is in main but not yet in a tagged ADOT Java release, so default to the
+            # latest main build (adot-jar-s3-uri overrides it, e.g. to test a feature-branch build).
+            echo GET_ADOT_JAR_COMMAND="aws s3 cp ${{ env.ADOT_JAR_S3_URI }} ./adot.jar" >> "$GITHUB_ENV"
+          fi
+
+      - name: Set up terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release && echo "$VERSION_CODENAME") main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+              && sudo apt update && sudo apt install terraform'
+          sleep_time: 60
+
+      - name: Initiate Terraform
+        uses: ./.github/workflows/actions/execute_and_retry
+        with:
+          command: "cd ${{ env.TEST_RESOURCES_FOLDER }}/terraform/java/ec2/profiler && terraform init && terraform validate"
+          cleanup: "rm -rf .terraform && rm -rf .terraform.lock.hcl"
+          max_retry: 6
+          sleep_time: 60
+
+      - name: Deploy sample app via terraform and wait for endpoint to come online
+        id: deploy
+        working-directory: terraform/java/ec2/profiler
+        run: |
+          # Attempt to deploy the sample app on an EC2 instance and wait for its endpoint to come online.
+          # There may be occasional failures due to transitivity issues, so try up to 2 times.
+          retry_counter=0
+          max_retry=2
+          while [ $retry_counter -lt $max_retry ]; do
+            echo "Attempt $retry_counter"
+            deployment_failed=0
+            terraform apply -auto-approve \
+              -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
+              -var="test_id=${{ env.TESTING_ID }}" \
+              -var="sample_app_jar=${{ env.SAMPLE_APP_JAR }}" \
+              -var="get_adot_jar_command=${{ env.GET_ADOT_JAR_COMMAND }}" \
+              -var="language_version=${{ env.JAVA_VERSION }}" \
+              -var="cpu_architecture=${{ env.CPU_ARCHITECTURE }}" \
+              -var="profiles_role_arn=${{ env.PROFILES_ROLE_ARN }}" \
+            || deployment_failed=$?
+
+            if [ $deployment_failed -eq 1 ]; then
+              echo "Terraform deployment was unsuccessful. Will attempt to retry deployment."
+              terraform destroy -auto-approve \
+                -var="test_id=${{ env.TESTING_ID }}"
+              retry_counter=$((retry_counter+1))
+            else
+              break
+            fi
+
+            if [ $retry_counter -eq $max_retry ]; then
+              echo "Max retry reached, failed to deploy terraform and connect to the endpoint. Exiting code"
+              exit 1
+            fi
+          done
+
+      - name: Get the ec2 instance ami id
+        run: echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
+        working-directory: terraform/java/ec2/profiler
+
+      - name: Get the sample app endpoint
+        run: |
+          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> "$GITHUB_ENV"
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
+        working-directory: terraform/java/ec2/profiler
+
+      # The identity checks compare the profiles' resource labels with what deploy recorded on the
+      # instance: each JVM's PID, the instance id/hostname and the agent version.
+      - name: Get the profiler context recorded at deploy
+        working-directory: terraform/java/ec2/profiler
+        run: |
+          key="$RUNNER_TEMP/profiler-ssh-key.pem"
+          terraform output -raw ssh_private_key > "$key"
+          chmod 600 "$key"
+          ssh -i "$key" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "ec2-user@$(terraform output -raw main_service_public_ip)" cat profiler-context.json \
+            > "$RUNNER_TEMP/profiler-context.json"
+          rm -f "$key"
+          cat "$RUNNER_TEMP/profiler-context.json"
+          echo "PROFILE_CONTEXT_FILE=$RUNNER_TEMP/profiler-context.json" >> "$GITHUB_ENV"
+
+      - name: Initiate Gradlew Daemon
+        if: steps.initiate-gradlew.outcome == 'failure'
+        uses: ./.github/workflows/actions/execute_and_retry
+        continue-on-error: true
+        with:
+          command: "./gradlew :validator:build"
+          cleanup: "./gradlew clean"
+          max_retry: 3
+          sleep_time: 60
+
+      # ---- Profiles (CloudWatch Profiles query API). Each check runs whenever the deploy succeeded,
+      # independent of the others, so one failing property does not hide the rest. ----
+
+      - name: Validate wall profile
+        id: wall-profile-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/wall-profile-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate operation label
+        id: operation-label-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/operation-label-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate thread.state label
+        id: thread-state-label-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/thread-state-label-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate application stack frames
+        id: app-stack-frames-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/app-stack-frames-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate operation attribution
+        id: operation-attribution-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/operation-attribution-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate alloc_space profile
+        id: alloc-space-profile-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/alloc-space-profile-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate alloc_objects profile
+        id: alloc-objects-profile-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/alloc-objects-profile-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate sustained rotation (consecutive export windows)
+        id: rotation-windows-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/rotation-windows-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate profile identity (PID, host, agent version, threads)
+        id: identity-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/identity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.PROFILE_CONTEXT_FILE }}
+          --rollup'
+
+      # ---- cpu variant (cpu mode, OTLP/gRPC, full aggregation): service <name>-cpu ----
+
+      - name: Validate cpu profile (cpu mode over gRPC)
+        id: cpu-profile-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/cpu-profile-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-cpu
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate cpu operation label
+        id: cpu-operation-label-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/cpu-operation-label-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-cpu
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate cpu samples carry no thread.state
+        id: cpu-no-thread-state-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/cpu-no-thread-state-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-cpu
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate cpu profile identity
+        id: cpu-identity-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/cpu-identity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-cpu
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.PROFILE_CONTEXT_FILE }}
+          --rollup'
+
+      # ---- unsampled variant (every trace dropped): service <name>-unsampled ----
+
+      - name: Validate unsampled operation label and attribution
+        id: unsampled-operation-label-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/unsampled-operation-label-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-unsampled
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate unsampled profile identity
+        id: unsampled-identity-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/unsampled-identity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-unsampled
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.PROFILE_CONTEXT_FILE }}
+          --rollup'
+
+      - name: Refresh AWS Credentials
+        if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: ${{ env.E2E_TEST_AWS_REGION }}
+
+      - name: Save test results
+        if: always()
+        id: validation-result
+        run: |
+          if [ "${{ steps.wall-profile-validation.outcome }}" = "success" ] && [ "${{ steps.operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.thread-state-label-validation.outcome }}" = "success" ] && [ "${{ steps.app-stack-frames-validation.outcome }}" = "success" ] && [ "${{ steps.operation-attribution-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-space-profile-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-objects-profile-validation.outcome }}" = "success" ] && [ "${{ steps.rotation-windows-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-profile-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-no-thread-state-validation.outcome }}" = "success" ] && [ "${{ steps.unsampled-operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.identity-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-identity-validation.outcome }}" = "success" ] && [ "${{ steps.unsampled-identity-validation.outcome }}" = "success" ]; then
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Clean up Procedures
+      - name: Terraform destroy
+        if: always()
+        continue-on-error: true
+        working-directory: terraform/java/ec2/profiler
+        run: |
+          terraform destroy -auto-approve \
+            -var="test_id=${{ env.TESTING_ID }}"
