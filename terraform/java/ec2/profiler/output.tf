@@ -20,3 +20,14 @@ output "main_service_instance_id" {
 output "ec2_instance_ami" {
   value = data.aws_ami.ami.id
 }
+
+output "main_service_public_ip" {
+  value = aws_instance.main_service_instance.public_ip
+}
+
+# The per-run SSH key Terraform generated for the instance; the workflow uses it to read
+# profiler-context.json (PIDs and host identity recorded at deploy) for the identity checks.
+output "ssh_private_key" {
+  value     = tls_private_key.ssh_key.private_key_pem
+  sensitive = true
+}

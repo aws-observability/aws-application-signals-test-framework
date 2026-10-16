@@ -24,6 +24,10 @@
 #   - alloc_objects profile {alloc_objects, count} profile with at least 10 objects
 #   - sustained rotation    data in >=3 consecutive 5-minute buckets (CloudWatch Profiles' query
 #                           resolution), so the profiler keeps rotating and exporting its 60s windows
+#   - identity              the service's samples carry exactly its own JVM's process.pid, the
+#                           instance's host.id/host.name and the deployed agent version, a single
+#                           service.instance.id, and every request sample is on a request thread
+#                           (also for the -cpu and -unsampled services)
 # Minimum totals are deliberately far below what the traffic produces; they catch a missing
 # profile or a wrong unit/period, not small regressions. Label checks are scoped to the checked
 # profile type, so e.g. allocation samples cannot satisfy a wall-sample label check.
@@ -248,6 +252,21 @@ jobs:
           echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
         working-directory: terraform/java/ec2/profiler
 
+      # The identity checks compare the profiles' resource labels with what deploy recorded on the
+      # instance: each JVM's PID, the instance id/hostname and the agent version.
+      - name: Get the profiler context recorded at deploy
+        working-directory: terraform/java/ec2/profiler
+        run: |
+          key="$RUNNER_TEMP/profiler-ssh-key.pem"
+          terraform output -raw ssh_private_key > "$key"
+          chmod 600 "$key"
+          ssh -i "$key" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "ec2-user@$(terraform output -raw main_service_public_ip)" cat profiler-context.json \
+            > "$RUNNER_TEMP/profiler-context.json"
+          rm -f "$key"
+          cat "$RUNNER_TEMP/profiler-context.json"
+          echo "PROFILE_CONTEXT_FILE=$RUNNER_TEMP/profiler-context.json" >> "$GITHUB_ENV"
+
       - name: Initiate Gradlew Daemon
         if: steps.initiate-gradlew.outcome == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
@@ -365,6 +384,20 @@ jobs:
           --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
           --rollup'
 
+      - name: Validate profile identity (PID, host, agent version, threads)
+        id: identity-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/identity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.PROFILE_CONTEXT_FILE }}
+          --rollup'
+
       # ---- cpu variant (cpu mode, OTLP/gRPC, full aggregation): service <name>-cpu ----
 
       - name: Validate cpu profile (cpu mode over gRPC)
@@ -406,6 +439,20 @@ jobs:
           --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
           --rollup'
 
+      - name: Validate cpu profile identity
+        id: cpu-identity-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/cpu-identity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-cpu
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.PROFILE_CONTEXT_FILE }}
+          --rollup'
+
       # ---- unsampled variant (every trace dropped): service <name>-unsampled ----
 
       - name: Validate unsampled operation label and attribution
@@ -421,6 +468,20 @@ jobs:
           --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
           --rollup'
 
+      - name: Validate unsampled profile identity
+        id: unsampled-identity-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/unsampled-identity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-unsampled
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.PROFILE_CONTEXT_FILE }}
+          --rollup'
+
       - name: Refresh AWS Credentials
         if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -432,7 +493,7 @@ jobs:
         if: always()
         id: validation-result
         run: |
-          if [ "${{ steps.wall-profile-validation.outcome }}" = "success" ] && [ "${{ steps.operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.thread-state-label-validation.outcome }}" = "success" ] && [ "${{ steps.app-stack-frames-validation.outcome }}" = "success" ] && [ "${{ steps.operation-attribution-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-space-profile-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-objects-profile-validation.outcome }}" = "success" ] && [ "${{ steps.rotation-windows-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-profile-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-no-thread-state-validation.outcome }}" = "success" ] && [ "${{ steps.unsampled-operation-label-validation.outcome }}" = "success" ]; then
+          if [ "${{ steps.wall-profile-validation.outcome }}" = "success" ] && [ "${{ steps.operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.thread-state-label-validation.outcome }}" = "success" ] && [ "${{ steps.app-stack-frames-validation.outcome }}" = "success" ] && [ "${{ steps.operation-attribution-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-space-profile-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-objects-profile-validation.outcome }}" = "success" ] && [ "${{ steps.rotation-windows-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-profile-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-no-thread-state-validation.outcome }}" = "success" ] && [ "${{ steps.unsampled-operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.identity-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-identity-validation.outcome }}" = "success" ] && [ "${{ steps.unsampled-identity-validation.outcome }}" = "success" ]; then
             echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
             echo "validation-result=failure" >> "$GITHUB_OUTPUT"

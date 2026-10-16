@@ -202,6 +202,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_RESOURCE_ATTRIBUTES="service.name=${local.service_name},deployment.environment.name=ec2:profiler" \
       AWS_REGION='${var.aws_region}' \
       nohup java -XX:+UseG1GC -Xmx512m -jar main-service.jar --server.port=8080 &> nohup.out &
+      echo $! > main.pid
 
       # cpu mode over OTLP/gRPC (shared OTEL_EXPORTER_OTLP_PROTOCOL; endpoint is host:port, no path)
       # with full aggregation. cpu samples carry no thread.state.
@@ -218,6 +219,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_RESOURCE_ATTRIBUTES="service.name=${local.service_name}-cpu,deployment.environment.name=ec2:profiler" \
       AWS_REGION='${var.aws_region}' \
       nohup java -XX:+UseG1GC -Xmx512m -jar main-service.jar --server.port=8081 &> nohup-cpu.out &
+      echo $! > cpu.pid
 
       # Unsampled traces: App Signals keeps request spans recording (AlwaysRecordSampler) while the
       # ratio sampler drops every trace, so samples still get the operation but no trace Link.
@@ -236,6 +238,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_RESOURCE_ATTRIBUTES="service.name=${local.service_name}-unsampled,deployment.environment.name=ec2:profiler" \
       AWS_REGION='${var.aws_region}' \
       nohup java -XX:+UseG1GC -Xmx512m -jar main-service.jar --server.port=8082 &> nohup-unsampled.out &
+      echo $! > unsampled.pid
 
       # The applications need time to come up and reach a steady state
       sleep 30
@@ -265,6 +268,17 @@ resource "null_resource" "main_service_setup" {
       wait_for_app 8080 nohup.out
       wait_for_app 8081 nohup-cpu.out
       wait_for_app 8082 nohup-unsampled.out
+
+      # Record what each app's profiles must identify as, for the identity checks: each JVM's PID,
+      # the instance (host.id / host.name, as the agent's EC2 resource detector reports them from
+      # instance metadata) and the agent version from its startup log.
+      IMDS_TOKEN=$(curl -s -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
+      HOST_ID=$(curl -s -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+      HOST_NAME=$(curl -s -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/hostname)
+      DISTRO_VERSION=$(grep -m1 -o 'opentelemetry-javaagent - version: [^ ]*' nohup.out | awk '{print $NF}')
+      printf '{"mainPid":"%s","cpuPid":"%s","unsampledPid":"%s","hostId":"%s","hostName":"%s","distroVersion":"%s"}\n' \
+        "$(cat main.pid)" "$(cat cpu.pid)" "$(cat unsampled.pid)" "$HOST_ID" "$HOST_NAME" "$DISTRO_VERSION" > profiler-context.json
+      cat profiler-context.json
 
       EOF
     ]

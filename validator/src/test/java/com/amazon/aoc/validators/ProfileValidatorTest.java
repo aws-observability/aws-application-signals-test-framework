@@ -87,7 +87,7 @@ public class ProfileValidatorTest {
   @Test
   public void testResolvedProfileTypeIdIsUsedForFlameGraph() throws Exception {
     buildValidator().validate();
-    verify(service)
+    verify(service, org.mockito.Mockito.atLeastOnce())
         .selectMergeStacktraces(eq(WALL_TYPE_ID), anyString(), anyLong(), anyLong());
   }
 
@@ -151,7 +151,8 @@ public class ProfileValidatorTest {
       "wall-profile", "operation-label", "thread-state-label",
       "app-stack-frames", "alloc-space-profile", "alloc-objects-profile",
       "operation-attribution", "rotation-windows", "cpu-profile", "cpu-operation-label",
-      "cpu-no-thread-state", "unsampled-operation-label"
+      "cpu-no-thread-state", "unsampled-operation-label", "identity", "cpu-identity",
+      "unsampled-identity"
     };
     for (String name : configs) {
       java.util.List<ValidationConfig> loaded =
@@ -230,10 +231,11 @@ public class ProfileValidatorTest {
     assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
   }
 
-  /** With no labels at all (no data yet), an absent-label check waits rather than passing. */
+  /** With no samples of the type yet, an absent-label check waits rather than passing. */
   @Test
   public void testAbsentLabelWaitsForData() throws Exception {
-    stub(TYPES, "{\"names\":[]}", OPERATION_VALUES, STATE_VALUES, FLAMEGRAPH);
+    stub(TYPES, LABEL_NAMES, OPERATION_VALUES, STATE_VALUES,
+        "{\"flamegraph\":{\"names\":[],\"total\":\"0\"}}");
     BaseException be =
         assertThrows(
             BaseException.class,
@@ -241,14 +243,44 @@ public class ProfileValidatorTest {
     assertEquals(ExceptionCode.EXPECTED_METRIC_NOT_FOUND.getCode(), be.getCode());
   }
 
-  /** Label queries carry the resolved profile type, so other profile types cannot satisfy them. */
+  /**
+   * Label values are confirmed with a stacktraces query for the resolved profile type and that
+   * exact value, since CloudWatch's LabelValues ignores the profile type.
+   */
   @Test
-  public void testLabelQueriesAreScopedToProfileType() throws Exception {
+  public void testLabelValuesAreConfirmedOnTheProfileType() throws Exception {
     buildValidator().validate();
-    String typed =
-        "{@resource.service.name=\"serviceName\",__profile_type__=\"" + WALL_TYPE_ID + "\"}";
-    verify(service, org.mockito.Mockito.atLeastOnce()).labelNames(eq(typed), anyLong(), anyLong());
-    verify(service).labelValues(eq("@sample.operation"), eq(typed), anyLong(), anyLong());
+    verify(service)
+        .selectMergeStacktraces(
+            eq(WALL_TYPE_ID),
+            eq("{@resource.service.name=\"serviceName\",@sample.operation=\"GET /health\"}"),
+            anyLong(),
+            anyLong());
+  }
+
+  /**
+   * A value the service has (LabelValues lists it) but no sample of the checked profile type
+   * carries does not satisfy the check — the scoping bug LabelValues alone would hide.
+   */
+  @Test
+  public void testLabelValueOnlyOnAnotherProfileTypeFails() throws Exception {
+    // Both operation values are listed service-wide, but no wall sample carries either.
+    stubStacktraces(sel -> sel.contains("@sample.operation=\"") ? EMPTY : FLAMEGRAPH);
+    assertCode(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+  }
+
+  /** A label the service has but the profile type's samples lack is not "present". */
+  @Test
+  public void testLabelNameOnlyOnAnotherProfileTypeFails() throws Exception {
+    stubStacktraces(sel -> sel.contains("thread_state=~") ? EMPTY : FLAMEGRAPH);
+    assertCode(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+  }
+
+  /** An absent label the service has, but not on this profile type's samples, passes. */
+  @Test
+  public void testAbsentLabelOnlyOnAnotherProfileTypePasses() throws Exception {
+    stubStacktraces(sel -> sel.contains("thread_state=~") ? EMPTY : FLAMEGRAPH);
+    buildValidator(TEMPLATE_ROOT + "profile_absent.mustache").validate();
   }
 
   @Test
@@ -435,6 +467,110 @@ public class ProfileValidatorTest {
     validator.init(context, config, config.getExpectedProfileTemplate());
     validator.setMaxRetryCount(1);
     return validator;
+  }
+
+  // ---- identity checks: exactLabelValues, labelValueCounts, allLabelValuesMatch ----
+
+  private static final String EMPTY = "{\"flamegraph\":{\"names\":[],\"total\":\"0\"}}";
+  private static final String IDENTITY_LABELS =
+      "{\"names\":[\"service_name\",\"@sample.operation\",\"@sample.thread.name\","
+          + "\"@resource.process.pid\",\"@resource.service.instance.id\"]}";
+
+  /** Stub the stacktraces query per selector (any profile type). */
+  private void stubStacktraces(java.util.function.Function<String, String> bySelector)
+      throws Exception {
+    when(service.selectMergeStacktraces(anyString(), anyString(), anyLong(), anyLong()))
+        .thenAnswer(
+            inv -> OBJECT_MAPPER.readTree(bySelector.apply(inv.getArgument(1, String.class))));
+  }
+
+  private void stubIdentity(String pids, String instanceIds) throws Exception {
+    when(service.labelNames(anyString(), anyLong(), anyLong()))
+        .thenReturn(OBJECT_MAPPER.readTree(IDENTITY_LABELS));
+    when(service.labelValues(eq("@resource.process.pid"), anyString(), anyLong(), anyLong()))
+        .thenReturn(OBJECT_MAPPER.readTree("{\"names\":" + pids + "}"));
+    when(service.labelValues(eq("@resource.service.instance.id"), anyString(), anyLong(), anyLong()))
+        .thenReturn(OBJECT_MAPPER.readTree("{\"names\":" + instanceIds + "}"));
+  }
+
+  private ProfileValidator buildIdentityValidator(String pid) throws Exception {
+    java.util.Map<String, String> profileContext = new java.util.HashMap<>();
+    profileContext.put("pid", pid);
+    context.setProfileContext(profileContext);
+    return buildValidator(TEMPLATE_ROOT + "profile_identity.mustache");
+  }
+
+  /** The service's samples carry exactly its own PID and one instance id; request threads only. */
+  @Test
+  public void testIdentitySucceeds() throws Exception {
+    stubIdentity("[\"1234\"]", "[\"i-1\"]");
+    stubStacktraces(sel -> sel.contains("!~") ? EMPTY : FLAMEGRAPH);
+    buildIdentityValidator("1234").validate();
+    verify(service)
+        .selectMergeStacktraces(
+            eq(WALL_TYPE_ID),
+            eq("{@resource.service.name=\"serviceName\",@sample.operation=\"GET /a\","
+                + "@sample.thread.name!~\"http-nio-8080-exec-[0-9]+\"}"),
+            anyLong(),
+            anyLong());
+  }
+
+  /** Samples of another process (a second PID) under the service fail the exact-PID check. */
+  @Test
+  public void testIdentityFailsOnForeignPid() throws Exception {
+    stubIdentity("[\"1234\",\"999\"]", "[\"i-1\"]");
+    stubStacktraces(sel -> sel.contains("!~") ? EMPTY : FLAMEGRAPH);
+    BaseException be =
+        assertThrows(BaseException.class, () -> buildIdentityValidator("1234").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** A PID only listed service-wide but on no sample of the type is not counted. */
+  @Test
+  public void testIdentityIgnoresPidWithoutSamplesOfTheType() throws Exception {
+    stubIdentity("[\"1234\",\"999\"]", "[\"i-1\"]");
+    stubStacktraces(
+        sel -> sel.contains("!~") || sel.contains("process.pid=\"999\"") ? EMPTY : FLAMEGRAPH);
+    buildIdentityValidator("1234").validate();
+  }
+
+  /** Two service.instance.id values (samples from two agent instances) fail the count check. */
+  @Test
+  public void testIdentityFailsOnTwoInstanceIds() throws Exception {
+    stubIdentity("[\"1234\"]", "[\"i-1\",\"i-2\"]");
+    stubStacktraces(sel -> sel.contains("!~") ? EMPTY : FLAMEGRAPH);
+    BaseException be =
+        assertThrows(BaseException.class, () -> buildIdentityValidator("1234").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** A request sample on a non-request thread fails allLabelValuesMatch. */
+  @Test
+  public void testIdentityFailsWhenRequestSampleOnOtherThread() throws Exception {
+    stubIdentity("[\"1234\"]", "[\"i-1\"]");
+    stubStacktraces(sel -> FLAMEGRAPH);
+    BaseException be =
+        assertThrows(BaseException.class, () -> buildIdentityValidator("1234").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** A missing deploy-time value (no --profile-context) fails instead of matching nothing. */
+  @Test
+  public void testIdentityFailsWithoutProfileContext() throws Exception {
+    stubIdentity("[\"1234\"]", "[\"i-1\"]");
+    stubStacktraces(sel -> sel.contains("!~") ? EMPTY : FLAMEGRAPH);
+    context.setProfileContext(null);
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildValidator(TEMPLATE_ROOT + "profile_identity.mustache").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  @Test
+  public void testWithMatcherOperators() {
+    assertEquals("{a=\"b\",c=~\".+\"}", ProfileValidator.withMatcher("{a=\"b\"}", "c", "=~", ".+"));
+    assertEquals("{a=\"b\",c!~\"x\"}", ProfileValidator.withMatcher("{a=\"b\"}", "c", "!~", "x"));
   }
 
   private ProfileValidator buildValidator(String template) throws Exception {

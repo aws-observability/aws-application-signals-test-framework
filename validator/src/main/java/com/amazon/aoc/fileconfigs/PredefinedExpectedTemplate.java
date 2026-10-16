@@ -124,6 +124,10 @@ public enum PredefinedExpectedTemplate implements FileConfig {
       "/expected-data-template/java/ec2/profiler/cpu-no-thread-state.mustache"),
   JAVA_EC2_PROFILER_UNSAMPLED_OPERATION_LABEL(
       "/expected-data-template/java/ec2/profiler/unsampled-operation-label.mustache"),
+  JAVA_EC2_PROFILER_IDENTITY("/expected-data-template/java/ec2/profiler/identity.mustache"),
+  JAVA_EC2_PROFILER_CPU_IDENTITY("/expected-data-template/java/ec2/profiler/cpu-identity.mustache"),
+  JAVA_EC2_PROFILER_UNSAMPLED_IDENTITY(
+      "/expected-data-template/java/ec2/profiler/unsampled-identity.mustache"),
 
   /** Java EKS Service Events Test Case Validations */
   JAVA_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(

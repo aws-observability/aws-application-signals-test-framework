@@ -56,19 +56,32 @@ import lombok.extern.log4j.Log4j2;
  *   "absentLabelNames": ["thread.state"],                // each must NOT exist on the series
  *   "minWindows":  "3",                                  // data in >=3 consecutive windows
  *   "windowSeconds": "300",                              // width of those windows (default 60)
+ *   "exactLabelValues": { "process.pid": ["1234"] },     // the label's values are exactly these
+ *   "labelValueCounts": { "service.instance.id": "1" },  // the label has exactly this many values
  *   "operations": {                                      // flame graph of one operation's samples
- *     "GET /a": { "functions": ["\\.handleA( |$)"], "absentFunctions": ["\\.handleB( |$)"] }
+ *     "GET /a": {
+ *       "functions": ["\\.handleA( |$)"], "absentFunctions": ["\\.handleB( |$)"],
+ *       "allLabelValuesMatch": { "thread.name": "http-nio-8080-exec-[0-9]+" } // every sample's value
+ *     }
  *   }
  * }
  * </pre>
+ *
+ * <p>Deploy-time values (e.g. each JVM's PID) reach templates through {@code
+ * --profile-context-file}, as {@code {{profileContext.<key>}}}.
  *
  * <p>CloudWatch Profiles appends the source file and line to Java frame names in the flame graph
  * (e.g. {@code com.example.Foo.bar Foo.java:42}), while native frames stay bare ({@code
  * start_thread}). End a Java frame regex with {@code ( |$)} rather than {@code $}.
  *
- * <p>Label checks are scoped to the resolved profile type (a {@code __profile_type__} matcher is
- * added to the selector), so a label carried by one profile type of the service cannot satisfy a
- * check about another (e.g. allocation samples satisfying a wall-sample label check).
+ * <p>Label checks are scoped to the resolved profile type, so a label carried by one profile type of
+ * the service cannot satisfy a check about another (e.g. allocation samples satisfying a wall-sample
+ * label check). CloudWatch's {@code LabelNames}/{@code LabelValues} ignore {@code __profile_type__}
+ * and sample-attribute matchers, so they only supply candidate names and values for the whole
+ * service; whether a label or value is actually on the checked profile type's samples is decided by
+ * a {@code SelectMergeStacktraces} query for that type with a matcher on it (non-empty result).
+ * {@code allLabelValuesMatch} regexes go to the backend as a {@code !~} matcher, so they use its
+ * (RE2, fully anchored) syntax; every other regex is a Java regex matched with {@code find()}.
  *
  * <p>The concrete profile type ID (Pyroscope's {@code name:sample_type:sample_unit:period_type:
  * period_unit}) is resolved at query time from {@code ProfileTypes} by the {@code profileType}
@@ -91,7 +104,7 @@ public class ProfileValidator implements IValidator {
   private static final Pattern SCOPE_PREFIX = Pattern.compile("^@[A-Za-z]+\\.");
   private static final ObjectMapper OBJECT_MAPPER =
       new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
-  private static final String PROFILE_TYPE_LABEL = "__profile_type__";
+  private static final String ANY_VALUE = ".+";
   private static final String OPERATION_LABEL = "operation";
 
   private final MustacheHelper mustacheHelper = new MustacheHelper();
@@ -136,12 +149,13 @@ public class ProfileValidator implements IValidator {
           long start = end - lookbackMinutes * 60_000L;
 
           String profileTypeId = resolveProfileTypeId(expected.getProfileType(), start, end);
-          String typedSelector = withMatcher(selector, PROFILE_TYPE_LABEL, profileTypeId);
-          checkLabelNames(expected, typedSelector, start, end);
-          checkAbsentLabelNames(expected, typedSelector, start, end);
-          checkLabelValues(expected, typedSelector, start, end);
           checkFlameGraph(expected, profileTypeId, selector, start, end);
-          checkOperations(expected, profileTypeId, selector, typedSelector, start, end);
+          checkLabelNames(expected, profileTypeId, selector, start, end);
+          checkAbsentLabelNames(expected, profileTypeId, selector, start, end);
+          checkLabelValues(expected, profileTypeId, selector, start, end);
+          checkExactLabelValues(expected, profileTypeId, selector, start, end);
+          checkLabelValueCounts(expected, profileTypeId, selector, start, end);
+          checkOperations(expected, profileTypeId, selector, start, end);
           checkWindows(expected, profileTypeId, selector, start, end);
         });
 
@@ -165,40 +179,114 @@ public class ProfileValidator implements IValidator {
     throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND);
   }
 
-  private void checkLabelNames(ExpectedProfile expected, String selector, long start, long end)
+  /** Each label in {@code labelNames} must be on samples of the profile type. */
+  private void checkLabelNames(
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
       throws Exception {
-    if (expected.getLabelNames() == null || expected.getLabelNames().isEmpty()) {
+    if (isEmpty(expected.getLabelNames())) {
       return;
     }
-    List<String> actual = labelNames(selector, start, end);
+    List<String> names = labelNames(selector, start, end);
     for (String name : expected.getLabelNames()) {
-      if (findLabel(actual, name) == null) {
-        log.info("Label '{}' not present yet on {}; labels: {}", name, selector, actual);
+      String actual = requireLabel(names, name, selector);
+      if (!hasSamples(profileTypeId, withMatcher(selector, actual, "=~", ANY_VALUE), start, end)) {
+        log.info("Label '{}' not on any {} sample yet ({})", actual, profileTypeId, selector);
         throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
       }
     }
   }
 
-  private void checkLabelValues(ExpectedProfile expected, String selector, long start, long end)
+  /** Each {@code labelValues} regex must match a value carried by samples of the profile type. */
+  private void checkLabelValues(
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
       throws Exception {
     if (expected.getLabelValues() == null || expected.getLabelValues().isEmpty()) {
       return;
     }
     List<String> names = labelNames(selector, start, end);
     for (Map.Entry<String, List<String>> entry : expected.getLabelValues().entrySet()) {
-      String actualName = findLabel(names, entry.getKey());
-      if (actualName == null) {
-        log.info("Label '{}' not present yet on {}; labels: {}", entry.getKey(), selector, names);
-        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
-      }
-      List<String> values =
-          textList(field(profilesService.labelValues(actualName, selector, start, end), "names"));
+      String actualName = requireLabel(names, entry.getKey(), selector);
+      List<String> candidates = labelValues(actualName, selector, start, end);
       for (String regex : entry.getValue()) {
         Pattern pattern = Pattern.compile(regex);
-        if (values.stream().noneMatch(v -> pattern.matcher(v).find())) {
-          log.info("No value of '{}' matches {}; values: {}", actualName, regex, values);
+        boolean found = false;
+        for (String value : candidates) {
+          if (pattern.matcher(value).find()
+              && hasSamples(
+                  profileTypeId, withMatcher(selector, actualName, "=", value), start, end)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          log.info(
+              "No {} sample has a '{}' value matching {}; service-wide values: {}",
+              profileTypeId,
+              actualName,
+              regex,
+              candidates);
           throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
         }
+      }
+    }
+  }
+
+  /**
+   * Identity: each {@code exactLabelValues} label's values on samples of the profile type must be
+   * exactly the given set (e.g. a service's {@code process.pid} is only the PID of its own JVM).
+   */
+  private void checkExactLabelValues(
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
+      throws Exception {
+    if (expected.getExactLabelValues() == null || expected.getExactLabelValues().isEmpty()) {
+      return;
+    }
+    List<String> names = labelNames(selector, start, end);
+    for (Map.Entry<String, List<String>> entry : expected.getExactLabelValues().entrySet()) {
+      java.util.Set<String> want = new java.util.TreeSet<>(entry.getValue());
+      if (want.isEmpty() || want.stream().anyMatch(v -> v == null || v.trim().isEmpty())) {
+        throw new BaseException(
+            ExceptionCode.DATA_MODEL_NOT_MATCHED,
+            "exactLabelValues '"
+                + entry.getKey()
+                + "' has an empty expected value; check the --profile-context passed in");
+      }
+      String actualName = requireLabel(names, entry.getKey(), selector);
+      java.util.Set<String> got =
+          new java.util.TreeSet<>(scopedValues(profileTypeId, selector, actualName, start, end));
+      if (!got.equals(want)) {
+        log.info(
+            "'{}' values on {} samples are {}, expected exactly {}",
+            actualName,
+            profileTypeId,
+            got,
+            want);
+        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+      }
+    }
+  }
+
+  /** Each {@code labelValueCounts} label must have exactly that many values on the samples. */
+  private void checkLabelValueCounts(
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
+      throws Exception {
+    if (expected.getLabelValueCounts() == null || expected.getLabelValueCounts().isEmpty()) {
+      return;
+    }
+    List<String> names = labelNames(selector, start, end);
+    for (Map.Entry<String, String> entry : expected.getLabelValueCounts().entrySet()) {
+      String actualName = requireLabel(names, entry.getKey(), selector);
+      List<String> got = scopedValues(profileTypeId, selector, actualName, start, end);
+      long want = parseLong(entry.getValue());
+      if (got.size() != want) {
+        log.info(
+            "'{}' has {} value(s) on {} samples, expected {}: {}",
+            actualName,
+            got.size(),
+            profileTypeId,
+            want,
+            got);
+        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
       }
     }
   }
@@ -233,34 +321,64 @@ public class ProfileValidator implements IValidator {
    * checks cannot.
    */
   private void checkOperations(
-      ExpectedProfile expected,
-      String profileTypeId,
-      String selector,
-      String typedSelector,
-      long start,
-      long end)
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
       throws Exception {
     if (expected.getOperations() == null || expected.getOperations().isEmpty()) {
       return;
     }
-    List<String> names = labelNames(typedSelector, start, end);
-    String operationLabel = findLabel(names, OPERATION_LABEL);
-    if (operationLabel == null) {
-      log.info(
-          "Label '{}' not present yet on {}; labels: {}", OPERATION_LABEL, typedSelector, names);
-      throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
-    }
+    List<String> names = labelNames(selector, start, end);
+    String operationLabel = requireLabel(names, OPERATION_LABEL, selector);
     for (Map.Entry<String, ExpectedFrames> entry : expected.getOperations().entrySet()) {
       String operationSelector = withMatcher(selector, operationLabel, entry.getKey());
       JsonNode flamegraph =
           profilesService
               .selectMergeStacktraces(profileTypeId, operationSelector, start, end)
               .path("flamegraph");
+      String what = profileTypeId + " " + operationSelector;
       checkFrames(
-          flamegraph,
-          entry.getValue().getFunctions(),
-          entry.getValue().getAbsentFunctions(),
-          profileTypeId + " " + operationSelector);
+          flamegraph, entry.getValue().getFunctions(), entry.getValue().getAbsentFunctions(), what);
+      checkAllLabelValuesMatch(
+          entry.getValue().getAllLabelValuesMatch(),
+          names,
+          profileTypeId,
+          operationSelector,
+          start,
+          end);
+    }
+  }
+
+  /**
+   * Every sample selected by {@code selector} must have a value of each label matching its regex
+   * (backend RE2 syntax): no sample may match {@code label!~"regex"}. E.g. every sample of a request
+   * is on a request-handler thread. Waits while the selector has no samples at all.
+   */
+  private void checkAllLabelValuesMatch(
+      Map<String, String> expected,
+      List<String> names,
+      String profileTypeId,
+      String selector,
+      long start,
+      long end)
+      throws Exception {
+    if (expected == null || expected.isEmpty()) {
+      return;
+    }
+    if (!hasSamples(profileTypeId, selector, start, end)) {
+      log.info("No {} samples yet on {}", profileTypeId, selector);
+      throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND);
+    }
+    for (Map.Entry<String, String> entry : expected.entrySet()) {
+      String actualName = requireLabel(names, entry.getKey(), selector);
+      if (hasSamples(
+          profileTypeId, withMatcher(selector, actualName, "!~", entry.getValue()), start, end)) {
+        log.error(
+            "Some {} samples of {} have a '{}' value not matching {}",
+            profileTypeId,
+            selector,
+            actualName,
+            entry.getValue());
+        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+      }
     }
   }
 
@@ -298,22 +416,24 @@ public class ProfileValidator implements IValidator {
     }
   }
 
-  /** Each label in {@code absentLabelNames} must NOT exist on the service's series. */
+  /** Each label in {@code absentLabelNames} must NOT be on any sample of the profile type. */
   private void checkAbsentLabelNames(
-      ExpectedProfile expected, String selector, long start, long end) throws Exception {
-    if (expected.getAbsentLabelNames() == null || expected.getAbsentLabelNames().isEmpty()) {
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
+      throws Exception {
+    if (isEmpty(expected.getAbsentLabelNames())) {
       return;
     }
-    List<String> actual = labelNames(selector, start, end);
-    if (actual.isEmpty()) {
+    if (!hasSamples(profileTypeId, selector, start, end)) {
       // No data yet: an absent label would trivially "pass", so wait for data instead.
-      log.info("No labels yet on {}; waiting for data before checking absent labels", selector);
+      log.info("No {} samples yet on {}; waiting before checking absent labels", profileTypeId, selector);
       throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND);
     }
+    List<String> names = labelNames(selector, start, end);
     for (String name : expected.getAbsentLabelNames()) {
-      String found = findLabel(actual, name);
-      if (found != null) {
-        log.error("Label '{}' must be absent on {} but is present as '{}'", name, selector, found);
+      String found = findLabel(names, name);
+      if (found != null
+          && hasSamples(profileTypeId, withMatcher(selector, found, "=~", ANY_VALUE), start, end)) {
+        log.error("Label '{}' must be absent on {} samples but is present", found, profileTypeId);
         throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
       }
     }
@@ -383,6 +503,44 @@ public class ProfileValidator implements IValidator {
     return textList(field(profilesService.labelNames(selector, start, end), "names"));
   }
 
+  /** Service-wide values of a label: candidates only, since LabelValues is not type-scoped. */
+  private List<String> labelValues(String labelName, String selector, long start, long end)
+      throws Exception {
+    return textList(field(profilesService.labelValues(labelName, selector, start, end), "names"));
+  }
+
+  /** The values of {@code labelName} that samples of the profile type actually carry. */
+  private List<String> scopedValues(
+      String profileTypeId, String selector, String labelName, long start, long end)
+      throws Exception {
+    List<String> out = new ArrayList<>();
+    for (String value : labelValues(labelName, selector, start, end)) {
+      if (hasSamples(profileTypeId, withMatcher(selector, labelName, "=", value), start, end)) {
+        out.add(value);
+      }
+    }
+    return out;
+  }
+
+  /** Whether any sample of the profile type matches the selector (non-empty flame graph). */
+  private boolean hasSamples(String profileTypeId, String selector, long start, long end)
+      throws Exception {
+    JsonNode flamegraph =
+        profilesService.selectMergeStacktraces(profileTypeId, selector, start, end).path("flamegraph");
+    return parseLong(flamegraph.path("total").asText("0")) > 0;
+  }
+
+  /** The actual name of an expected label on the service, or wait (retry) while it is missing. */
+  private static String requireLabel(List<String> names, String expected, String selector)
+      throws BaseException {
+    String actual = findLabel(names, expected);
+    if (actual == null) {
+      log.info("Label '{}' not present yet on {}; labels: {}", expected, selector, names);
+      throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+    }
+    return actual;
+  }
+
   /**
    * Return the actual label name that {@code expected} refers to, or null. Both sides are
    * normalized (scope prefix such as {@code @sample.} stripped, dots mapped to underscores,
@@ -429,13 +587,19 @@ public class ProfileValidator implements IValidator {
    */
   @VisibleForTesting
   static String withMatcher(String selector, String name, String value) {
+    return withMatcher(selector, name, "=", value);
+  }
+
+  /** As {@link #withMatcher(String, String, String)} with the given operator (=, =~, !~). */
+  @VisibleForTesting
+  static String withMatcher(String selector, String name, String op, String value) {
     String trimmed = selector.trim();
     if (!trimmed.endsWith("}")) {
       throw new IllegalArgumentException("label selector must end with '}': " + selector);
     }
     String body = trimmed.substring(0, trimmed.length() - 1).trim();
     String escaped = value.replace("\\", "\\\\").replace("\"", "\\\"");
-    String matcher = name + "=\"" + escaped + "\"";
+    String matcher = name + op + "\"" + escaped + "\"";
     return body.equals("{") ? "{" + matcher + "}" : body + "," + matcher + "}";
   }
 
@@ -483,7 +647,8 @@ public class ProfileValidator implements IValidator {
 
   /**
    * The expected-data template for one profile type. Values are regexes except label names,
-   * operation names, minTotal, minWindows and windowSeconds.
+   * operation names, exactLabelValues/labelValueCounts values, minTotal, minWindows and
+   * windowSeconds.
    */
   @Data
   public static class ExpectedProfile {
@@ -491,6 +656,8 @@ public class ProfileValidator implements IValidator {
     private List<String> labelNames;
     private List<String> absentLabelNames;
     private Map<String, List<String>> labelValues;
+    private Map<String, List<String>> exactLabelValues;
+    private Map<String, String> labelValueCounts;
     private List<String> functions;
     private List<String> absentFunctions;
     private Map<String, ExpectedFrames> operations;
@@ -499,11 +666,15 @@ public class ProfileValidator implements IValidator {
     private String windowSeconds;
   }
 
-  /** Frames required in and forbidden from one operation's flame graph (regexes). */
+  /**
+   * Checks on one operation's samples: frames required in and forbidden from its flame graph
+   * (regexes), and labels every one of its samples must match ({@code allLabelValuesMatch}).
+   */
   @Data
   public static class ExpectedFrames {
     private List<String> functions;
     private List<String> absentFunctions;
+    private Map<String, String> allLabelValuesMatch;
   }
 
   @VisibleForTesting
