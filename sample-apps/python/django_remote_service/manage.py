@@ -8,6 +8,11 @@ import sys
 def main():
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_remote_service.settings")
+    if os.environ.get("OTLP_PROXY_ENABLED") == "true":
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from otlp_forwarding_proxy import start_proxy
+
+        start_proxy()
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

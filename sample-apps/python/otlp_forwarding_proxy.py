@@ -4,11 +4,13 @@
 """Forward original OTLP HTTP request bytes to AWS over TLS, without signing."""
 
 import logging
+import os
 import select
 import socket
 import socketserver
 import ssl
 import sys
+import threading
 
 
 class OtlpForwardingHandler(socketserver.BaseRequestHandler):
@@ -42,7 +44,6 @@ class OtlpForwardingHandler(socketserver.BaseRequestHandler):
             host = self.server.destinations[path]
             with socket.create_connection((host, 443), timeout=10) as connection:
                 with self.server.tls.wrap_socket(connection, server_hostname=host) as upstream:
-                    logging.info("Forwarding %s to %s", path, host)
                     upstream.sendall(request)
                     upstream.setblocking(False)
                     want_write = False
@@ -95,6 +96,21 @@ class OtlpForwardingProxy(socketserver.ThreadingTCPServer):
         }
         self.tls = ssl.create_default_context()
         super().__init__(address, OtlpForwardingHandler)
+
+
+def start_proxy():
+    """Start the opt-in test proxy with the Django sample app."""
+    if (
+        os.environ.get("OTLP_PROXY_ENABLED") != "true"
+        or sys.argv[1:2] != ["runserver"]
+        or ("--noreload" not in sys.argv and os.environ.get("RUN_MAIN") != "true")
+    ):
+        return
+    region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION")
+    if not region:
+        raise ValueError("OTLP_PROXY_ENABLED requires AWS_REGION or AWS_DEFAULT_REGION")
+    proxy = OtlpForwardingProxy(region)
+    threading.Thread(target=proxy.serve_forever, daemon=True).start()
 
 
 if __name__ == "__main__":

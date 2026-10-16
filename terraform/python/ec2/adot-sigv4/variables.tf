@@ -55,9 +55,3 @@ variable "otlp_compression" {
     error_message = "OTLP compression must be none or gzip."
   }
 }
-
-variable "use_otlp_proxy" {
-  description = "Use otlp/sigv4 exporters with a local proxy that forwards signed requests unchanged."
-  type        = bool
-  default     = false
-}
