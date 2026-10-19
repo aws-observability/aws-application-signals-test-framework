@@ -8,7 +8,7 @@
       "CodeLocation": {
         "Language": "Python",
         "FilePath": "/home/ec2-user/django_frontend_service/frontend_service_app/views.py",
-        "LineNumber": 135,
+        "LineNumber": 145,
         "CodeUnit": "frontend_service_app.views",
         "MethodName": "http_call"
       }
