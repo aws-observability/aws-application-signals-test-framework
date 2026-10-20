@@ -1,0 +1,12 @@
+{
+  "profileType": "^[^:]+:wall:nanoseconds:",
+  "functions": [
+    "^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.",
+    "^start_thread$"
+  ],
+  "absentFunctions": [
+    "\\.so(\\.[0-9]+)*\\.[A-Za-z_]",
+    "\\$\\$Lambda[^.]*\\.(0x|[0-9])",
+    "LambdaForm\\$[A-Za-z]+\\.0x"
+  ]
+}

@@ -1,0 +1,4 @@
+-
+  validationType: "profile"
+  expectedProfileTemplate: "JAVA_EC2_PROFILER_WALL_PROFILE"
+  profileLabelSelector: "{@resource.service.name=\"{{serviceName}}\"}"
