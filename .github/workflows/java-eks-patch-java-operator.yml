@@ -11,6 +11,11 @@ name: Java EKS Patch Operator Image
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       test-cluster-name:
         required: true
         type: string
@@ -36,7 +41,7 @@ env:
 
 jobs:
   patch-java-operator:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     timeout-minutes: 15
     steps:
       - name: Validate input
