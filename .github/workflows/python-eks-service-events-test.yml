@@ -271,7 +271,7 @@ jobs:
 
               # Restart pods so the now-installed operator injects ADOT instrumentation, then wait.
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
+              execute_and_retry 2 "kubectl wait --for=condition=Ready --timeout=5m pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
             fi
 
             if [ $deployment_failed -ne 0 ]; then
