@@ -86,9 +86,9 @@ data "aws_ami" "ami" {
 resource "aws_instance" "main_service_instance" {
   # Amazon Linux 2023 is glibc-based, which async-profiler needs to unwind native wall stacks.
   ami = data.aws_ami.ami.id
-  # .medium (4 GiB): three profiled JVMs (main, cpu, unsampled variants) and the collector share the
-  # instance.
-  instance_type                        = var.cpu_architecture == "x86_64" ? "t3.medium" : "t4g.medium"
+  # .large (8 GiB): four profiled JVMs (main, cpu, unsampled, none variants; ~0.5 GB RSS each) and the
+  # collector share the instance.
+  instance_type                        = var.cpu_architecture == "x86_64" ? "t3.large" : "t4g.large"
   key_name                             = local.ssh_key_name
   iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
   vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
@@ -144,6 +144,13 @@ resource "null_resource" "main_service_setup" {
     destination = "/home/${var.user}/otel-collector-config.yaml"
   }
 
+  # Run by the workflow after the first checks: what each agent exported, live thread counts and
+  # the collector's delivery counters, for the data integrity, thread count and delivery checks.
+  provisioner "file" {
+    source      = "./profiler-accounting.sh"
+    destination = "/home/${var.user}/profiler-accounting.sh"
+  }
+
   provisioner "remote-exec" {
     inline = [
       <<-EOF
@@ -181,11 +188,12 @@ resource "null_resource" "main_service_setup" {
       # Get and run the sample application with configuration
       aws s3 cp ${var.sample_app_jar} ./main-service.jar
 
-      # Three copies of the sample app, each a profiler config variant with its own port, service.name
+      # Four copies of the sample app, each a profiler config variant with its own port, service.name
       # and log, so one instance covers every profiler setting value at least once:
-      #   main      :8080  wall, OTLP/HTTP, aggregation=sum,  memory on, sampled traces
+      #   main      :8080  wall, OTLP/HTTP, aggregation=agent default (full), memory on, sampled traces
       #   cpu       :8081  cpu,  OTLP/gRPC, aggregation=full, memory off, sampled traces
       #   unsampled :8082  wall, OTLP/HTTP, aggregation=sum,  memory off, every trace dropped
+      #   none      :8083  wall, OTLP/HTTP, aggregation=none, memory off, sampled traces
       # Traces/metrics/logs are not exported (only the profiles pipeline is under test), but spans are
       # still created, so samples on request threads carry the request's operation.
 
@@ -197,7 +205,7 @@ resource "null_resource" "main_service_setup" {
       OTEL_AWS_PROFILER_ENABLED=true \
       OTEL_AWS_PROFILER_MODE='${var.profiler_mode}' \
       OTEL_AWS_PROFILER_MEMORY_ENABLED=true \
-      OTEL_AWS_PROFILER_AGGREGATION_MODE='${var.profiler_aggregation_mode}' \
+      ${var.profiler_aggregation_mode != "" ? "OTEL_AWS_PROFILER_AGGREGATION_MODE=${var.profiler_aggregation_mode}" : ""} \
       OTEL_AWS_PROFILER_ENDPOINT=http://127.0.0.1:4318/v1development/profiles \
       OTEL_RESOURCE_ATTRIBUTES="service.name=${local.service_name},deployment.environment.name=ec2:profiler" \
       AWS_REGION='${var.aws_region}' \
@@ -240,6 +248,22 @@ resource "null_resource" "main_service_setup" {
       nohup java -XX:+UseG1GC -Xmx512m -jar main-service.jar --server.port=8082 &> nohup-unsampled.out &
       echo $! > unsampled.pid
 
+      # aggregation=none (kept for backwards compatibility): one OTLP sample per profiler sample, with
+      # its timestamp. This is the mode most likely to exceed a backend's per-profile sample limit.
+      JAVA_TOOL_OPTIONS=' -javaagent:/home/${var.user}/adot.jar' \
+      OTEL_TRACES_EXPORTER=none \
+      OTEL_METRICS_EXPORTER=none \
+      OTEL_LOGS_EXPORTER=none \
+      OTEL_TRACES_SAMPLER=always_on \
+      OTEL_AWS_PROFILER_ENABLED=true \
+      OTEL_AWS_PROFILER_MODE=wall \
+      OTEL_AWS_PROFILER_AGGREGATION_MODE=none \
+      OTEL_AWS_PROFILER_ENDPOINT=http://127.0.0.1:4318/v1development/profiles \
+      OTEL_RESOURCE_ATTRIBUTES="service.name=${local.service_name}-none,deployment.environment.name=ec2:profiler" \
+      AWS_REGION='${var.aws_region}' \
+      nohup java -XX:+UseG1GC -Xmx512m -jar main-service.jar --server.port=8083 &> nohup-none.out &
+      echo $! > none.pid
+
       # The applications need time to come up and reach a steady state
       sleep 30
 
@@ -268,6 +292,7 @@ resource "null_resource" "main_service_setup" {
       wait_for_app 8080 nohup.out
       wait_for_app 8081 nohup-cpu.out
       wait_for_app 8082 nohup-unsampled.out
+      wait_for_app 8083 nohup-none.out
 
       # Record what each app's profiles must identify as, for the identity checks: each JVM's PID,
       # the instance (host.id / host.name, as the agent's EC2 resource detector reports them from
@@ -306,7 +331,7 @@ resource "null_resource" "traffic_generator_setup" {
 
         tmux new -s traffic-generator -d
         tmux send-keys -t traffic-generator "while true; do \
-          for port in 8080 8081 8082; do \
+          for port in 8080 8081 8082 8083; do \
             curl -s -o /dev/null http://localhost:\$port/ ; \
             curl -s -o /dev/null http://localhost:\$port/outgoing-http-call ; \
             curl -s -o /dev/null http://localhost:\$port/aws-sdk-call ; \

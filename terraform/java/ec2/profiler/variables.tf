@@ -67,8 +67,9 @@ variable "profiler_mode" {
   default = "wall"
 }
 
-# CloudWatch Profiles caps the number of samples per request; "sum" merges identical stacks into
-# totals so a window stays under that cap.
+# Sample aggregation for the main app: "none" | "full" | "sum", or empty (the default) to leave
+# OTEL_AWS_PROFILER_AGGREGATION_MODE unset so the main app tests the agent's default (full). The
+# other variants cover the remaining modes.
 variable "profiler_aggregation_mode" {
-  default = "sum"
+  default = ""
 }

@@ -36,6 +36,17 @@ exporters:
 
 service:
   extensions: [sigv4auth]
+  # The collector's own counters (otelcol_exporter_sent/send_failed_profile_samples_total) on
+  # 127.0.0.1:8888, read by profiler-accounting.sh to check every exported profile reached the backend.
+  telemetry:
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 127.0.0.1
+                port: 8888
   pipelines:
     # No batch processor: it does not support the profiles signal, and the collector fails to start
     # with it in a profiles pipeline.
