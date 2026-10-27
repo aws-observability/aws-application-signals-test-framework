@@ -11,8 +11,10 @@
 #
 # The AWS profile's account must be enabled for CloudWatch Profiles (or pass --profiles-role-arn for
 # one that is). Its credentials are only exported into the environment of this script, the
-# container's collector and the validator; they are not written to disk.
+# container's collector and the validator; they are not written to disk. Set DOCKER=finch to use
+# Finch instead of Docker.
 set -o errexit -o nounset -o pipefail
+DOCKER="${DOCKER:-docker}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../../.." && pwd)"
@@ -44,7 +46,7 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$AWS_PROFILE_NAME" ] || { echo "--profile is required"; usage; }
 [ -n "$AGENT_JAR" ] || [ -n "$JAVA_REPO" ] || { echo "--agent-jar or --java-repo is required"; usage; }
-for tool in docker aws python3; do
+for tool in "$DOCKER" aws python3; do
   command -v "$tool" > /dev/null || { echo "$tool is required"; exit 1; }
 done
 
@@ -63,16 +65,16 @@ echo "AWS identity: $(aws sts get-caller-identity --query Arn --output text)"
 
 TESTING_ID="local-$(date +%m%d%H%M)-$RANDOM"
 SERVICE_NAME="java-sample-application-$TESTING_ID"
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/profiler-local-$TESTING_ID.XXXX")"
-CONTAINER="profiler-local-$TESTING_ID"
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/profiler-$TESTING_ID.XXXX")"
+CONTAINER="profiler-$TESTING_ID"
 mkdir -p "$WORK_DIR/logs"
 echo "Test id: $TESTING_ID   work dir: $WORK_DIR"
 
 cleanup() {
   if [ "$KEEP" = true ]; then
-    echo "Container $CONTAINER left running (--keep). Remove it with: docker rm -f $CONTAINER"
+    echo "Container $CONTAINER left running (--keep). Remove it with: $DOCKER rm -f $CONTAINER"
   else
-    docker rm -f "$CONTAINER" > /dev/null 2>&1 || true
+    "$DOCKER" rm -f "$CONTAINER" > /dev/null 2>&1 || true
   fi
 }
 trap cleanup EXIT
@@ -115,60 +117,93 @@ for line in open(src):
         out.append(line.replace("${region}", region).replace("${profiles_role_arn}", role))
 open(dst, "w").writelines(out)
 EOF
-cp "$SCRIPT_DIR/container-setup.sh" "$WORK_DIR/"
+cp "$SCRIPT_DIR/container-setup.sh" "$PROFILER_TF_DIR/profiler-accounting.sh" "$WORK_DIR/"
 COLLECTOR_VERSION="$(grep -A1 'variable "otel_collector_version"' "$PROFILER_TF_DIR/variables.tf" \
   | grep -o '"[0-9.]*"' | tr -d '"')"
 
 # grep without -q reads all input, so the pipe can't fail with SIGPIPE under pipefail.
-logs_have() { docker logs "$CONTAINER" 2>&1 | grep "$1" > /dev/null; }
+logs_have() { "$DOCKER" logs "$CONTAINER" 2>&1 | grep "$1" > /dev/null; }
 
 # ---- Start the apps ----
 echo "Starting the container (sample apps + collector)..."
-docker run -d --name "$CONTAINER" --memory 4g \
+"$DOCKER" run -d --name "$CONTAINER" --memory 4g \
   -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN -e AWS_REGION \
   -e SERVICE_NAME="$SERVICE_NAME" -e OTEL_COLLECTOR_VERSION="$COLLECTOR_VERSION" \
   -v "$WORK_DIR:/work" "public.ecr.aws/amazoncorretto/amazoncorretto:${JAVA_VERSION}-al2023" \
   /work/container-setup.sh > /dev/null
 for _ in $(seq 1 60); do
   if logs_have TRAFFIC_STARTED; then break; fi
-  if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER")" != "true" ]; then
-    echo "Container setup failed:"; docker logs "$CONTAINER" 2>&1 | tail -n 40; exit 1
+  # Last line only: some docker-compatible CLI wrappers print banner lines first.
+  if [ "$("$DOCKER" inspect -f '{{.State.Running}}' "$CONTAINER" | tail -n 1)" != "true" ]; then
+    echo "Container setup failed:"; "$DOCKER" logs "$CONTAINER" 2>&1 | tail -n 40; exit 1
   fi
   sleep 10
 done
 logs_have TRAFFIC_STARTED \
-  || { echo "Apps did not come up in 10 minutes:"; docker logs "$CONTAINER" 2>&1 | tail -n 40; exit 1; }
-docker logs "$CONTAINER" 2>&1 | grep "App on port"
+  || { echo "Apps did not come up in 10 minutes:"; "$DOCKER" logs "$CONTAINER" 2>&1 | tail -n 40; exit 1; }
+"$DOCKER" logs "$CONTAINER" 2>&1 | grep "App on port"
 echo "Deploy-time context: $(cat "$WORK_DIR/profiler-context.json")"
 
-# ---- Run the checks (same list and services as java-ec2-profiler-test.yml) ----
-ALL_CHECKS="wall-profile: operation-label: thread-state-label: app-stack-frames: operation-attribution:
-alloc-space-profile: alloc-objects-profile: rotation-windows: identity: cpu-profile:-cpu
-cpu-operation-label:-cpu cpu-no-thread-state:-cpu cpu-identity:-cpu
-unsampled-operation-label:-unsampled unsampled-identity:-unsampled"
+# ---- Run the checks (same list, services and order as java-ec2-profiler-test.yml) ----
+# Phase 1 uses the deploy-time context. Then the export accounting is taken (what each agent
+# exported so far, and the collector's delivery counters), and phase 2 checks against it.
+PHASE1_CHECKS="wall-profile: operation-label: thread-state-label: app-stack-frames: operation-attribution:
+hotspots: alloc-space-profile: alloc-objects-profile: rotation-windows: identity: cpu-profile:-cpu
+cpu-operation-label:-cpu cpu-no-thread-state:-cpu cpu-hotspots:-cpu cpu-identity:-cpu
+unsampled-operation-label:-unsampled unsampled-identity:-unsampled
+none-wall-profile:-none none-operation-attribution:-none"
+PHASE2_CHECKS="thread-count: data-integrity: cpu-data-integrity:-cpu
+unsampled-data-integrity:-unsampled none-data-integrity:-none"
 echo "Running checks (each retries for up to ~10 minutes while profiles are ingested)..."
 failed=0
 results=""
 cd "$REPO_ROOT"
-for entry in $ALL_CHECKS; do
-  check="${entry%%:*}"
-  suffix="${entry#*:}"
-  if [ -n "$CHECKS" ] && [[ ",$CHECKS," != *",$check,"* ]]; then continue; fi
-  load_credentials
-  if ./gradlew -q validator:run --args="-c java/ec2/profiler/$check-validation.yml \
-      --testing-id $TESTING_ID --endpoint http://localhost:8080 --region $REGION \
-      --service-name $SERVICE_NAME$suffix --instance-ami local --instance-id local \
-      --profiles-role-arn '$PROFILES_ROLE_ARN' \
-      --profile-context-file $WORK_DIR/profiler-context.json --rollup" \
-      > "$WORK_DIR/logs/$check.log" 2>&1; then
-    line="PASS  $check ($SERVICE_NAME$suffix)"
+record() {
+  echo "$1"
+  results+="$1"$'\n'
+  case "$1" in FAIL*) failed=$((failed + 1)) ;; esac
+}
+run_checks() { # list context-file
+  for entry in $1; do
+    check="${entry%%:*}"
+    suffix="${entry#*:}"
+    if [ -n "$CHECKS" ] && [[ ",$CHECKS," != *",$check,"* ]]; then continue; fi
+    load_credentials
+    if ./gradlew -q validator:run --args="-c java/ec2/profiler/$check-validation.yml \
+        --testing-id $TESTING_ID --endpoint http://localhost:8080 --region $REGION \
+        --service-name $SERVICE_NAME$suffix --instance-ami local --instance-id local \
+        --profiles-role-arn '$PROFILES_ROLE_ARN' \
+        --profile-context-file $2 --rollup" \
+        > "$WORK_DIR/logs/$check.log" 2>&1; then
+      # Report-only checks (reportOnly in their template) always pass; show what they measured.
+      reported=$(grep -o 'check would [A-Za-z]*' "$WORK_DIR/logs/$check.log" | tail -n 1 || true)
+      if [ -n "$reported" ]; then
+        record "PASS  $check ($SERVICE_NAME$suffix)  [NOT ENFORCED: ${reported#check }; see the reason in its log]"
+      else
+        record "PASS  $check ($SERVICE_NAME$suffix)"
+      fi
+    else
+      record "FAIL  $check ($SERVICE_NAME$suffix)  log: $WORK_DIR/logs/$check.log"
+    fi
+  done
+}
+run_checks "$PHASE1_CHECKS" "$WORK_DIR/profiler-context.json"
+
+# Last line only: some docker-compatible CLI wrappers print banner lines first.
+"$DOCKER" exec "$CONTAINER" bash -c 'cd /work && bash profiler-accounting.sh' | tail -n 1 \
+  > "$WORK_DIR/profiler-context-accounted.json"
+echo "Export accounting: $(cat "$WORK_DIR/profiler-context-accounted.json")"
+# Delivery: the collector exported every profile sample it received and none failed.
+read -r sent failed_samples < <(python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); print(c.get("collectorSentSamples","0"), c.get("collectorFailedSamples","0"))' \
+  "$WORK_DIR/profiler-context-accounted.json")
+if [ -z "$CHECKS" ] || [[ ",$CHECKS," == *",collector-delivery,"* ]]; then
+  if [ "$sent" -gt 0 ] && [ "$failed_samples" -eq 0 ]; then
+    record "PASS  collector-delivery ($sent profile samples exported, 0 failed)"
   else
-    line="FAIL  $check ($SERVICE_NAME$suffix)  log: $WORK_DIR/logs/$check.log"
-    failed=$((failed + 1))
+    record "FAIL  collector-delivery ($sent exported, $failed_samples failed; see $WORK_DIR/collector.out)"
   fi
-  echo "$line"
-  results+="$line"$'\n'
-done
+fi
+run_checks "$PHASE2_CHECKS" "$WORK_DIR/profiler-context-accounted.json"
 
 echo
 echo "==== Summary ($TESTING_ID) ===="

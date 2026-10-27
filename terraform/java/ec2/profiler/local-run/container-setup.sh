@@ -38,12 +38,11 @@ APP_ENV=(env -u AWS_SESSION_TOKEN
   OTEL_AWS_PROFILER_ENABLED=true)
 resource() { echo "service.name=$1,deployment.environment.name=ec2:profiler,host.id=local"; }
 
-# main :8080  wall, OTLP/HTTP, aggregation=sum, memory on, sampled traces
+# main :8080  wall, OTLP/HTTP, aggregation=agent default (full), memory on, sampled traces
 "${APP_ENV[@]}" \
   OTEL_TRACES_SAMPLER=always_on \
   OTEL_AWS_PROFILER_MODE=wall \
   OTEL_AWS_PROFILER_MEMORY_ENABLED=true \
-  OTEL_AWS_PROFILER_AGGREGATION_MODE=sum \
   OTEL_AWS_PROFILER_ENDPOINT=http://127.0.0.1:4318/v1development/profiles \
   OTEL_RESOURCE_ATTRIBUTES="$(resource "$SERVICE_NAME")" \
   nohup java -XX:+UseG1GC -Xmx512m -jar main-service.jar --server.port=8080 &> nohup.out &
@@ -73,6 +72,16 @@ echo $! > cpu.pid
   nohup java -XX:+UseG1GC -Xmx512m -jar main-service.jar --server.port=8082 &> nohup-unsampled.out &
 echo $! > unsampled.pid
 
+# none :8083  wall, OTLP/HTTP, aggregation=none, memory off, sampled traces
+"${APP_ENV[@]}" \
+  OTEL_TRACES_SAMPLER=always_on \
+  OTEL_AWS_PROFILER_MODE=wall \
+  OTEL_AWS_PROFILER_AGGREGATION_MODE=none \
+  OTEL_AWS_PROFILER_ENDPOINT=http://127.0.0.1:4318/v1development/profiles \
+  OTEL_RESOURCE_ATTRIBUTES="$(resource "$SERVICE_NAME-none")" \
+  nohup java -XX:+UseG1GC -Xmx512m -jar main-service.jar --server.port=8083 &> nohup-none.out &
+echo $! > none.pid
+
 sleep 30
 wait_for_app() {
   attempt_counter=0
@@ -95,6 +104,7 @@ wait_for_app() {
 wait_for_app 8080 nohup.out
 wait_for_app 8081 nohup-cpu.out
 wait_for_app 8082 nohup-unsampled.out
+wait_for_app 8083 nohup-none.out
 
 DISTRO_VERSION=$(grep -m1 -o 'opentelemetry-javaagent - version: [^ ]*' nohup.out | awk '{print $NF}')
 printf '{"mainPid":"%s","cpuPid":"%s","unsampledPid":"%s","hostId":"local","hostName":"%s","distroVersion":"%s"}\n' \
@@ -105,7 +115,7 @@ printf '{"mainPid":"%s","cpuPid":"%s","unsampledPid":"%s","hostId":"local","host
 set +o errexit
 echo "TRAFFIC_STARTED"
 while true; do
-  for port in 8080 8081 8082; do
+  for port in 8080 8081 8082 8083; do
     curl -s -o /dev/null "http://localhost:$port/"
     curl -s -o /dev/null "http://localhost:$port/outgoing-http-call"
     curl -s -o /dev/null "http://localhost:$port/aws-sdk-call"
