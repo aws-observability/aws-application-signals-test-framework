@@ -13,9 +13,12 @@
 # property:
 #   - wall profile          {wall, nanoseconds} profile with at least 10s of thread time
 #   - operation label       wall samples carry both driven routes (GET /aws-sdk-call,
-#                           GET /outgoing-http-call) as their operation
+#                           GET /outgoing-http-call) as their operation, and no operation other
+#                           than the routes the traffic and the startup probe hit
 #   - operation attribution each route's wall samples contain its own handler frame and not the
 #                           other route's handler (samples are attributed to the right request)
+#   - hot spots             each route's handler accounts for at least a set share of that
+#                           route's samples (also on the -cpu service's cpu samples)
 #   - thread.state label    wall samples carry both RUNNABLE and SLEEPING
 #   - app stack frames      the flame graph contains the controller and native (start_thread)
 #                           frames, no library-qualified names (libc.so.6.start_thread) and no
@@ -28,16 +31,29 @@
 #                           instance's host.id/host.name and the deployed agent version, a single
 #                           service.instance.id, and every request sample is on a request thread
 #                           (also for the -cpu and -unsampled services)
+# After those, profiler-accounting.sh on the instance records what each agent exported so far, and:
+#   - collector delivery    the collector's own counters show every profile sample exported, none
+#                           failed (e.g. rejected by CloudWatch's per-profile sample limit)
+#   - thread count          the main service's wall samples carry at least 70% as many distinct
+#                           thread names as the JVM has live threads (the profiler covers them)
+#   - data integrity        cpu: CloudWatch's total over exactly the exported windows equals what the
+#                           agent exported (samples x 10 ms) within 2%, so nothing was dropped between
+#                           the agent and the query API. wall (main, unsampled, none): reported but
+#                           NOT ENFORCED until the ADOT Java agent logs each window's total wall time
+#                           (threads x duration, the stand-in expectation, is only approximate)
 # Minimum totals are deliberately far below what the traffic produces; they catch a missing
 # profile or a wrong unit/period, not small regressions. Label checks are scoped to the checked
 # profile type, so e.g. allocation samples cannot satisfy a wall-sample label check.
-# Two more copies of the app on the same instance cover the other profiler settings:
+# Three more copies of the app on the same instance cover the other profiler settings:
 #   - <name>-cpu       (cpu mode, OTLP/gRPC, full aggregation): cpu profile with at least 1s,
 #                      both routes as operation, no thread.state label
 #   - <name>-unsampled (every trace dropped): both routes as operation and correct attribution,
 #                      i.e. request correlation does not depend on trace sampling. That these
 #                      samples carry no trace link is not visible through the query API; the
 #                      AwsProfilerUnsampledContractTest contract test checks it.
+#   - <name>-none      (aggregation=none, kept for backwards compatibility): wall profile with at
+#                      least 10s and correct attribution, i.e. CloudWatch accepts the unaggregated
+#                      payloads (one OTLP sample per profiler sample).
 name: Java EC2 Profiler Use Case
 on:
   workflow_call:
@@ -120,7 +136,9 @@ env:
 jobs:
   java-ec2-profiler:
     runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
-    timeout-minutes: 45
+    # 25 checks run one after another (each waits for CloudWatch to ingest data), plus deploy and
+    # destroy; 45 minutes was sized for the original 12 checks.
+    timeout-minutes: 90
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
       validation-result: ${{ steps.validation-result.outputs.validation-result }}
@@ -345,6 +363,19 @@ jobs:
           --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
           --rollup'
 
+      - name: Validate hot spots (handler share of each route's wall samples)
+        id: hotspots-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/hotspots-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
       - name: Validate alloc_space profile
         id: alloc-space-profile-validation
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
@@ -371,7 +402,7 @@ jobs:
           --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
           --rollup'
 
-      - name: Validate sustained rotation (consecutive export windows)
+      - name: Report sustained rotation (NOT ENFORCED - slow, needs over 5 minutes of data)
         id: rotation-windows-validation
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
         run: ./gradlew validator:run --args='-c java/ec2/profiler/rotation-windows-validation.yml
@@ -439,6 +470,19 @@ jobs:
           --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
           --rollup'
 
+      - name: Validate cpu hot spots (handler share of each route's cpu samples)
+        id: cpu-hotspots-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/cpu-hotspots-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-cpu
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
       - name: Validate cpu profile identity
         id: cpu-identity-validation
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
@@ -455,7 +499,7 @@ jobs:
 
       # ---- unsampled variant (every trace dropped): service <name>-unsampled ----
 
-      - name: Validate unsampled operation label and attribution
+      - name: Report unsampled operation label and attribution (NOT ENFORCED - known CloudWatch deep-frame issue)
         id: unsampled-operation-label-validation
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
         run: ./gradlew validator:run --args='-c java/ec2/profiler/unsampled-operation-label-validation.yml
@@ -482,6 +526,140 @@ jobs:
           --profile-context-file ${{ env.PROFILE_CONTEXT_FILE }}
           --rollup'
 
+      # ---- none variant (aggregation=none, one OTLP sample per profiler sample): service <name>-none ----
+
+      - name: Validate wall profile with aggregation=none
+        id: none-wall-profile-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/none-wall-profile-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-none
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      - name: Validate operation attribution with aggregation=none
+        id: none-operation-attribution-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/none-operation-attribution-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-none
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --rollup'
+
+      # ---- Export accounting: what each agent exported so far, the JVMs' live thread counts and the
+      # collector's delivery counters (profiler-accounting.sh on the instance). The checks below
+      # compare CloudWatch against it. ----
+
+      - name: Collect profiler export accounting
+        id: export-accounting
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        working-directory: terraform/java/ec2/profiler
+        run: |
+          key="$RUNNER_TEMP/profiler-ssh-key.pem"
+          terraform output -raw ssh_private_key > "$key"
+          chmod 600 "$key"
+          ssh -i "$key" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            "ec2-user@$(terraform output -raw main_service_public_ip)" bash profiler-accounting.sh \
+            > "$RUNNER_TEMP/profiler-context-accounted.json"
+          rm -f "$key"
+          cat "$RUNNER_TEMP/profiler-context-accounted.json"
+          echo "ACCOUNTED_CONTEXT_FILE=$RUNNER_TEMP/profiler-context-accounted.json" >> "$GITHUB_ENV"
+
+      - name: Check the collector delivered every profile sample
+        id: collector-delivery-validation
+        if: ${{ !cancelled() && steps.export-accounting.outcome == 'success' }}
+        run: |
+          sent=$(jq -r '.collectorSentSamples' "$ACCOUNTED_CONTEXT_FILE")
+          failed=$(jq -r '.collectorFailedSamples' "$ACCOUNTED_CONTEXT_FILE")
+          echo "Collector exported $sent profile samples; $failed failed"
+          if [ "$sent" -le 0 ] || [ "$failed" -ne 0 ]; then
+            echo "::error::The collector did not deliver every profile sample to CloudWatch ($failed failed)"
+            exit 1
+          fi
+
+      - name: Validate thread count (wall samples cover the JVM's threads)
+        id: thread-count-validation
+        if: ${{ !cancelled() && steps.export-accounting.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/thread-count-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.ACCOUNTED_CONTEXT_FILE }}
+          --rollup'
+
+      # The three wall data integrity steps below are NOT ENFORCED (reportOnly in their templates):
+      # they always pass but report the outcome, as a warning annotation on the run. Their expected
+      # total (live threads x window duration) is only an approximation. Enforcing them needs an
+      # ADOT Java agent change: log each export window's total wall time next to its sample count
+      # (RotationBoundaryProcessor), sum it in profiler-accounting.sh, and drop reportOnly.
+      - name: Report wall data integrity (NOT ENFORCED - needs ADOT Java agent change)
+        id: data-integrity-validation
+        if: ${{ !cancelled() && steps.export-accounting.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/data-integrity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.ACCOUNTED_CONTEXT_FILE }}
+          --rollup'
+
+      - name: Report cpu data integrity (NOT ENFORCED - CloudWatch totals change after ingestion)
+        id: cpu-data-integrity-validation
+        if: ${{ !cancelled() && steps.export-accounting.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/cpu-data-integrity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-cpu
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.ACCOUNTED_CONTEXT_FILE }}
+          --rollup'
+
+      - name: Report unsampled wall data integrity (NOT ENFORCED - needs ADOT Java agent change)
+        id: unsampled-data-integrity-validation
+        if: ${{ !cancelled() && steps.export-accounting.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/unsampled-data-integrity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-unsampled
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.ACCOUNTED_CONTEXT_FILE }}
+          --rollup'
+
+      - name: Report wall data integrity with aggregation=none (NOT ENFORCED - needs ADOT Java agent change)
+        id: none-data-integrity-validation
+        if: ${{ !cancelled() && steps.export-accounting.outcome == 'success' }}
+        run: ./gradlew validator:run --args='-c java/ec2/profiler/none-data-integrity-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-none
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn "${{ env.PROFILES_ROLE_ARN }}"
+          --profile-context-file ${{ env.ACCOUNTED_CONTEXT_FILE }}
+          --rollup'
+
       - name: Refresh AWS Credentials
         if: ${{ env.REPOSITORY_NAME == 'aws-application-signals-test-framework' }}
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -493,11 +671,36 @@ jobs:
         if: always()
         id: validation-result
         run: |
-          if [ "${{ steps.wall-profile-validation.outcome }}" = "success" ] && [ "${{ steps.operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.thread-state-label-validation.outcome }}" = "success" ] && [ "${{ steps.app-stack-frames-validation.outcome }}" = "success" ] && [ "${{ steps.operation-attribution-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-space-profile-validation.outcome }}" = "success" ] && [ "${{ steps.alloc-objects-profile-validation.outcome }}" = "success" ] && [ "${{ steps.rotation-windows-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-profile-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-no-thread-state-validation.outcome }}" = "success" ] && [ "${{ steps.unsampled-operation-label-validation.outcome }}" = "success" ] && [ "${{ steps.identity-validation.outcome }}" = "success" ] && [ "${{ steps.cpu-identity-validation.outcome }}" = "success" ] && [ "${{ steps.unsampled-identity-validation.outcome }}" = "success" ]; then
-            echo "validation-result=success" >> "$GITHUB_OUTPUT"
-          else
-            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
-          fi
+          result=success
+          for outcome in \
+            "${{ steps.wall-profile-validation.outcome }}" \
+            "${{ steps.operation-label-validation.outcome }}" \
+            "${{ steps.thread-state-label-validation.outcome }}" \
+            "${{ steps.app-stack-frames-validation.outcome }}" \
+            "${{ steps.operation-attribution-validation.outcome }}" \
+            "${{ steps.hotspots-validation.outcome }}" \
+            "${{ steps.alloc-space-profile-validation.outcome }}" \
+            "${{ steps.alloc-objects-profile-validation.outcome }}" \
+            "${{ steps.rotation-windows-validation.outcome }}" \
+            "${{ steps.identity-validation.outcome }}" \
+            "${{ steps.cpu-profile-validation.outcome }}" \
+            "${{ steps.cpu-operation-label-validation.outcome }}" \
+            "${{ steps.cpu-no-thread-state-validation.outcome }}" \
+            "${{ steps.cpu-hotspots-validation.outcome }}" \
+            "${{ steps.cpu-identity-validation.outcome }}" \
+            "${{ steps.unsampled-operation-label-validation.outcome }}" \
+            "${{ steps.unsampled-identity-validation.outcome }}" \
+            "${{ steps.none-wall-profile-validation.outcome }}" \
+            "${{ steps.none-operation-attribution-validation.outcome }}" \
+            "${{ steps.collector-delivery-validation.outcome }}" \
+            "${{ steps.thread-count-validation.outcome }}" \
+            "${{ steps.data-integrity-validation.outcome }}" \
+            "${{ steps.cpu-data-integrity-validation.outcome }}" \
+            "${{ steps.unsampled-data-integrity-validation.outcome }}" \
+            "${{ steps.none-data-integrity-validation.outcome }}"; do
+            [ "$outcome" = "success" ] || result=failure
+          done
+          echo "validation-result=$result" >> "$GITHUB_OUTPUT"
 
       # Clean up Procedures
       - name: Terraform destroy
