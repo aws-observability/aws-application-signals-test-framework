@@ -128,6 +128,21 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_PROFILER_CPU_IDENTITY("/expected-data-template/java/ec2/profiler/cpu-identity.mustache"),
   JAVA_EC2_PROFILER_UNSAMPLED_IDENTITY(
       "/expected-data-template/java/ec2/profiler/unsampled-identity.mustache"),
+  JAVA_EC2_PROFILER_NONE_WALL_PROFILE(
+      "/expected-data-template/java/ec2/profiler/none-wall-profile.mustache"),
+  JAVA_EC2_PROFILER_NONE_OPERATION_ATTRIBUTION(
+      "/expected-data-template/java/ec2/profiler/none-operation-attribution.mustache"),
+  JAVA_EC2_PROFILER_THREAD_COUNT("/expected-data-template/java/ec2/profiler/thread-count.mustache"),
+  JAVA_EC2_PROFILER_HOTSPOTS("/expected-data-template/java/ec2/profiler/hotspots.mustache"),
+  JAVA_EC2_PROFILER_CPU_HOTSPOTS("/expected-data-template/java/ec2/profiler/cpu-hotspots.mustache"),
+  JAVA_EC2_PROFILER_DATA_INTEGRITY(
+      "/expected-data-template/java/ec2/profiler/data-integrity.mustache"),
+  JAVA_EC2_PROFILER_CPU_DATA_INTEGRITY(
+      "/expected-data-template/java/ec2/profiler/cpu-data-integrity.mustache"),
+  JAVA_EC2_PROFILER_UNSAMPLED_DATA_INTEGRITY(
+      "/expected-data-template/java/ec2/profiler/unsampled-data-integrity.mustache"),
+  JAVA_EC2_PROFILER_NONE_DATA_INTEGRITY(
+      "/expected-data-template/java/ec2/profiler/none-data-integrity.mustache"),
 
   /** Java EKS Service Events Test Case Validations */
   JAVA_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(

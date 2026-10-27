@@ -4,6 +4,9 @@
   "labelValues": {
     "operation": ["^GET /aws-sdk-call$", "^GET /outgoing-http-call$"]
   },
+  "allowedLabelValues": {
+    "operation": ["GET /", "HEAD /", "GET /aws-sdk-call", "GET /outgoing-http-call"]
+  },
   "operations": {
     "GET /aws-sdk-call": {
       "functions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.awssdkCall( |$)"],
@@ -13,5 +16,7 @@
       "functions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.httpCall( |$)"],
       "absentFunctions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.awssdkCall( |$)"]
     }
-  }
+  },
+  "reportOnly": "true",
+  "reportOnlyReason": "Not enforced (known CloudWatch issue): CloudWatch's flame graph drops the deep frames of samples without a trace link, so the awssdkCall handler of unsampled requests does not show, although the agent sends it. Remove reportOnly once CloudWatch Profiles fixes this."
 }

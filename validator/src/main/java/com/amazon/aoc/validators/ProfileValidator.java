@@ -58,9 +58,18 @@ import lombok.extern.log4j.Log4j2;
  *   "windowSeconds": "300",                              // width of those windows (default 60)
  *   "exactLabelValues": { "process.pid": ["1234"] },     // the label's values are exactly these
  *   "labelValueCounts": { "service.instance.id": "1" },  // the label has exactly this many values
+ *   "minLabelValueCounts": { "thread.name": "30" },      // ... at least this many values
+ *   "allowedLabelValues": { "operation": ["GET /a", "GET /b"] }, // no other value (RE2)
+ *   "hotspots": [ { "function": "\\.Thread\\.run( |$)", "minShare": "0.5" } ], // share of total
+ *   "expectedTotal": "600000000000",                     // total must equal this (data not dropped)
+ *   "totalTolerance": "0.02",                            // ... within this fraction (default 0.02)
+ *   "queryStartMs": "...", "queryEndMs": "...",          // fixed query window instead of lookback
+ *   "reportOnly": "true", "reportOnlyReason": "...",     // not enforced: ~1 min of retries, then
+ *                                                        // always passes, logging the outcome
  *   "operations": {                                      // flame graph of one operation's samples
  *     "GET /a": {
  *       "functions": ["\\.handleA( |$)"], "absentFunctions": ["\\.handleB( |$)"],
+ *       "hotspots": [ { "function": "\\.handleA( |$)", "minShare": "0.8" } ],
  *       "allLabelValuesMatch": { "thread.name": "http-nio-8080-exec-[0-9]+" } // every sample's value
  *     }
  *   }
@@ -105,6 +114,9 @@ public class ProfileValidator implements IValidator {
   private static final ObjectMapper OBJECT_MAPPER =
       new ObjectMapper().enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY);
   private static final String ANY_VALUE = ".+";
+  private static final double DEFAULT_TOTAL_TOLERANCE = 0.02;
+  // A reportOnly check retries for about a minute (10 s apart) instead of the full budget.
+  private static final int REPORT_ONLY_MAX_RETRY_COUNT = 6;
   private static final String OPERATION_LABEL = "operation";
 
   private final MustacheHelper mustacheHelper = new MustacheHelper();
@@ -142,24 +154,82 @@ public class ProfileValidator implements IValidator {
             : DEFAULT_LOOKBACK_MINUTES;
     log.info("Expected profile: {} (selector {})", expected, selector);
 
+    // reportOnly: not enforced. Retry briefly, then always pass, reporting what the check concluded.
+    boolean reportOnly = "true".equalsIgnoreCase(expected.getReportOnly());
+    int retries =
+        reportOnly ? Math.min(this.maxRetryCount, REPORT_ONLY_MAX_RETRY_COUNT) : this.maxRetryCount;
+    try {
+      runChecks(expected, selector, lookbackMinutes, retries);
+    } catch (Exception e) {
+      if (!reportOnly) {
+        throw e;
+      }
+      reportNotEnforced(expected, false, e);
+      return;
+    }
+    if (reportOnly) {
+      reportNotEnforced(expected, true, null);
+      return;
+    }
+    log.info("Profile validation passed for {} (selector {})", expected.getProfileType(), selector);
+  }
+
+  private void runChecks(ExpectedProfile expected, String selector, int lookbackMinutes, int retries)
+      throws Exception {
     RetryHelper.retry(
-        this.maxRetryCount,
+        retries,
         () -> {
-          long end = System.currentTimeMillis();
-          long start = end - lookbackMinutes * 60_000L;
+          // A fixed window (queryStartMs/queryEndMs, e.g. exactly the export windows an
+          // expectedTotal was counted over) takes precedence over the lookback.
+          long end =
+              expected.getQueryEndMs() != null
+                  ? parseLong(expected.getQueryEndMs())
+                  : System.currentTimeMillis();
+          long start =
+              expected.getQueryStartMs() != null
+                  ? parseLong(expected.getQueryStartMs())
+                  : end - lookbackMinutes * 60_000L;
 
           String profileTypeId = resolveProfileTypeId(expected.getProfileType(), start, end);
           checkFlameGraph(expected, profileTypeId, selector, start, end);
           checkLabelNames(expected, profileTypeId, selector, start, end);
           checkAbsentLabelNames(expected, profileTypeId, selector, start, end);
           checkLabelValues(expected, profileTypeId, selector, start, end);
+          checkAllowedLabelValues(expected, profileTypeId, selector, start, end);
           checkExactLabelValues(expected, profileTypeId, selector, start, end);
           checkLabelValueCounts(expected, profileTypeId, selector, start, end);
+          checkMinLabelValueCounts(expected, profileTypeId, selector, start, end);
           checkOperations(expected, profileTypeId, selector, start, end);
           checkWindows(expected, profileTypeId, selector, start, end);
         });
+  }
 
-    log.info("Profile validation passed for {} (selector {})", expected.getProfileType(), selector);
+  /**
+   * Report the outcome of a {@code reportOnly} (not enforced) check: it passes either way, but the
+   * log says whether it would have passed and why not, with {@code reportOnlyReason} saying why it
+   * is not enforced. On GitHub Actions the line is also a warning annotation on the run.
+   */
+  private static void reportNotEnforced(ExpectedProfile expected, boolean passed, Exception failure) {
+    String outcome;
+    if (passed) {
+      outcome = "would pass";
+    } else {
+      String reason =
+          failure instanceof BaseException && ((BaseException) failure).getMessage() != null
+              ? ((BaseException) failure).getMessage()
+              : String.valueOf(failure);
+      outcome = "would FAIL: " + reason;
+    }
+    String message =
+        String.format(
+            "NOT ENFORCED: %s check %s. %s",
+            expected.getProfileType(),
+            outcome,
+            expected.getReportOnlyReason() != null ? expected.getReportOnlyReason() : "");
+    log.warn(message);
+    if (System.getenv("GITHUB_ACTIONS") != null) {
+      System.out.println("::warning title=Profiler check not enforced::" + message);
+    }
   }
 
   /** Pick the advertised profile type ID matching the template's {@code profileType} regex. */
@@ -291,27 +361,213 @@ public class ProfileValidator implements IValidator {
     }
   }
 
+  /**
+   * Each {@code minLabelValueCounts} label must have at least that many distinct values on samples
+   * of the profile type (e.g. wall samples cover most of the JVM's threads). Stops counting once
+   * the minimum is reached.
+   */
+  private void checkMinLabelValueCounts(
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
+      throws Exception {
+    if (expected.getMinLabelValueCounts() == null || expected.getMinLabelValueCounts().isEmpty()) {
+      return;
+    }
+    List<String> names = labelNames(selector, start, end);
+    for (Map.Entry<String, String> entry : expected.getMinLabelValueCounts().entrySet()) {
+      long want = requirePositive(entry.getValue(), "minLabelValueCounts '" + entry.getKey() + "'");
+      String actualName = requireLabel(names, entry.getKey(), selector);
+      List<String> candidates = labelValues(actualName, selector, start, end);
+      int found = 0;
+      for (String value : candidates) {
+        if (hasSamples(profileTypeId, withMatcher(selector, actualName, "=", value), start, end)) {
+          found++;
+          if (found >= want) {
+            break;
+          }
+        }
+      }
+      if (found < want) {
+        log.info(
+            "'{}' has {} distinct value(s) on {} samples, expected at least {} ({} listed"
+                + " service-wide)",
+            actualName,
+            found,
+            profileTypeId,
+            want,
+            candidates.size());
+        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+      }
+    }
+  }
+
+  /**
+   * No sample of the profile type may carry a value of an {@code allowedLabelValues} label outside
+   * its list (backend RE2 regexes, fully anchored): no unexpected operation, say. Samples without
+   * the label are not affected; combine with {@code labelValues} to also require each value.
+   */
+  private void checkAllowedLabelValues(
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
+      throws Exception {
+    if (expected.getAllowedLabelValues() == null || expected.getAllowedLabelValues().isEmpty()) {
+      return;
+    }
+    List<String> names = labelNames(selector, start, end);
+    for (Map.Entry<String, List<String>> entry : expected.getAllowedLabelValues().entrySet()) {
+      String actualName = requireLabel(names, entry.getKey(), selector);
+      String allowed = "(" + String.join("|", entry.getValue()) + ")";
+      String unexpected =
+          withMatcher(
+              withMatcher(selector, actualName, "=~", ANY_VALUE), actualName, "!~", allowed);
+      if (hasSamples(profileTypeId, unexpected, start, end)) {
+        List<String> offenders = new ArrayList<>();
+        Pattern allowedJava = Pattern.compile("^" + allowed + "$");
+        for (String value : labelValues(actualName, selector, start, end)) {
+          if (!allowedJava.matcher(value).matches()
+              && hasSamples(
+                  profileTypeId, withMatcher(selector, actualName, "=", value), start, end)) {
+            offenders.add(value);
+          }
+        }
+        log.error(
+            "{} samples carry '{}' values outside {}: {}",
+            profileTypeId,
+            actualName,
+            entry.getValue(),
+            offenders);
+        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+      }
+    }
+  }
+
   private void checkFlameGraph(
       ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
       throws Exception {
     if (isEmpty(expected.getFunctions())
         && isEmpty(expected.getAbsentFunctions())
-        && expected.getMinTotal() == null) {
+        && isEmpty(expected.getHotspots())
+        && expected.getMinTotal() == null
+        && expected.getExpectedTotal() == null) {
       return;
     }
     JsonNode flamegraph =
         profilesService.selectMergeStacktraces(profileTypeId, selector, start, end).path("flamegraph");
+    long total = parseLong(flamegraph.path("total").asText("0"));
 
     if (expected.getMinTotal() != null) {
-      long total = parseLong(flamegraph.path("total").asText("0"));
       long min = parseLong(expected.getMinTotal());
       if (total < min) {
         log.info("Flame graph total {} below expected minimum {} for {}", total, min, profileTypeId);
         throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND);
       }
     }
+    checkExpectedTotal(expected, total, profileTypeId, start, end);
     checkFrames(
         flamegraph, expected.getFunctions(), expected.getAbsentFunctions(), profileTypeId);
+    checkHotspots(flamegraph, expected.getHotspots(), profileTypeId);
+  }
+
+  /**
+   * Nothing dropped between the agent and the backend: the flame-graph total over the query window
+   * must equal {@code expectedTotal} (what the agent produced for exactly those export windows)
+   * within {@code totalTolerance} (a fraction, default 0.02). Below it, ingestion may still be
+   * catching up, so the check waits; above it, the data cannot be explained by what was sent.
+   */
+  private static void checkExpectedTotal(
+      ExpectedProfile expected, long total, String profileTypeId, long start, long end)
+      throws BaseException {
+    if (expected.getExpectedTotal() == null) {
+      return;
+    }
+    long want = requirePositive(expected.getExpectedTotal(), "expectedTotal");
+    double tolerance =
+        expected.getTotalTolerance() != null
+            ? Double.parseDouble(expected.getTotalTolerance())
+            : DEFAULT_TOTAL_TOLERANCE;
+    double ratio = (double) total / want;
+    String measured =
+        String.format(
+            "%s total %d is %.1f%% of the expected %d for [%d, %d] (tolerance +/-%.0f%%)",
+            profileTypeId, total, 100 * ratio, want, start, end, 100 * tolerance);
+    if (ratio < 1 - tolerance) {
+      log.info("{}; waiting for the rest", measured);
+      throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND, measured);
+    }
+    if (ratio > 1 + tolerance) {
+      log.error("{}: more than was sent", measured);
+      throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED, measured + ": more than was sent");
+    }
+    log.info("{}: matches", measured);
+  }
+
+  /**
+   * Hot spots: each listed function's share of the flame graph (the summed time of its nodes over
+   * the graph total) must be within [minShare, maxShare]. Catches a hot path that moves or
+   * disappears, e.g. a handler that stops dominating its request's samples. Waits while the graph
+   * is empty.
+   */
+  private static void checkHotspots(JsonNode flamegraph, List<Hotspot> hotspots, String what)
+      throws BaseException {
+    if (isEmpty(hotspots)) {
+      return;
+    }
+    long total = parseLong(flamegraph.path("total").asText("0"));
+    if (total <= 0) {
+      log.info("No samples yet for {}; waiting before checking hot spots", what);
+      throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND);
+    }
+    for (Hotspot hotspot : hotspots) {
+      double share = (double) frameTime(flamegraph, hotspot.getFunction()) / total;
+      double min = hotspot.getMinShare() != null ? Double.parseDouble(hotspot.getMinShare()) : 0;
+      double max = hotspot.getMaxShare() != null ? Double.parseDouble(hotspot.getMaxShare()) : 1;
+      if (share < min || share > max) {
+        log.error(
+            "{} of {} is {}% of its samples, expected {}%-{}%",
+            hotspot.getFunction(),
+            what,
+            String.format("%.1f", 100 * share),
+            String.format("%.0f", 100 * min),
+            String.format("%.0f", 100 * max));
+        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+      }
+      log.info(
+          "{} of {} is {}% of its samples", hotspot.getFunction(), what, String.format("%.1f", 100 * share));
+    }
+  }
+
+  /**
+   * Summed total time of the flame-graph nodes whose frame name matches {@code regex}. The
+   * Pyroscope flamebearer stores each level as groups of four numbers: offset, total, self, name
+   * index. A recursive frame (a node nested under a node of the same function) would be counted
+   * more than once; hot-spot functions should not be recursive.
+   */
+  @VisibleForTesting
+  static long frameTime(JsonNode flamegraph, String regex) {
+    Pattern pattern = Pattern.compile(regex);
+    List<String> names = textList(flamegraph.path("names"));
+    long sum = 0;
+    for (JsonNode level : flamegraph.path("levels")) {
+      JsonNode values = level.path("values");
+      for (int i = 0; i + 3 < values.size(); i += 4) {
+        int nameIndex = values.get(i + 3).asInt();
+        if (nameIndex >= 0
+            && nameIndex < names.size()
+            && pattern.matcher(names.get(nameIndex)).find()) {
+          sum += values.get(i + 1).asLong();
+        }
+      }
+    }
+    return sum;
+  }
+
+  private static long requirePositive(String value, String what) throws BaseException {
+    long parsed = value == null ? 0 : parseLong(value);
+    if (parsed <= 0) {
+      throw new BaseException(
+          ExceptionCode.DATA_MODEL_NOT_MATCHED,
+          what + " must be a positive number but is '" + value
+              + "'; check the --profile-context-file passed in");
+    }
+    return parsed;
   }
 
   /**
@@ -337,6 +593,7 @@ public class ProfileValidator implements IValidator {
       String what = profileTypeId + " " + operationSelector;
       checkFrames(
           flamegraph, entry.getValue().getFunctions(), entry.getValue().getAbsentFunctions(), what);
+      checkHotspots(flamegraph, entry.getValue().getHotspots(), what);
       checkAllLabelValuesMatch(
           entry.getValue().getAllLabelValuesMatch(),
           names,
@@ -658,23 +915,42 @@ public class ProfileValidator implements IValidator {
     private Map<String, List<String>> labelValues;
     private Map<String, List<String>> exactLabelValues;
     private Map<String, String> labelValueCounts;
+    private Map<String, String> minLabelValueCounts;
+    private Map<String, List<String>> allowedLabelValues;
     private List<String> functions;
     private List<String> absentFunctions;
+    private List<Hotspot> hotspots;
     private Map<String, ExpectedFrames> operations;
     private String minTotal;
+    private String expectedTotal;
+    private String totalTolerance;
+    private String reportOnly;
+    private String reportOnlyReason;
+    private String queryStartMs;
+    private String queryEndMs;
     private String minWindows;
     private String windowSeconds;
   }
 
   /**
    * Checks on one operation's samples: frames required in and forbidden from its flame graph
-   * (regexes), and labels every one of its samples must match ({@code allLabelValuesMatch}).
+   * (regexes), hot spots, and labels every one of its samples must match ({@code
+   * allLabelValuesMatch}).
    */
   @Data
   public static class ExpectedFrames {
     private List<String> functions;
     private List<String> absentFunctions;
+    private List<Hotspot> hotspots;
     private Map<String, String> allLabelValuesMatch;
+  }
+
+  /** A function (regex) whose share of a flame graph must stay within [minShare, maxShare]. */
+  @Data
+  public static class Hotspot {
+    private String function;
+    private String minShare;
+    private String maxShare;
   }
 
   @VisibleForTesting

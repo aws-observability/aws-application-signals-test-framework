@@ -152,7 +152,9 @@ public class ProfileValidatorTest {
       "app-stack-frames", "alloc-space-profile", "alloc-objects-profile",
       "operation-attribution", "rotation-windows", "cpu-profile", "cpu-operation-label",
       "cpu-no-thread-state", "unsampled-operation-label", "identity", "cpu-identity",
-      "unsampled-identity"
+      "unsampled-identity", "none-wall-profile", "none-operation-attribution", "thread-count",
+      "hotspots", "cpu-hotspots", "data-integrity", "cpu-data-integrity",
+      "unsampled-data-integrity", "none-data-integrity"
     };
     for (String name : configs) {
       java.util.List<ValidationConfig> loaded =
@@ -404,6 +406,7 @@ public class ProfileValidatorTest {
   @Test
   public void testShippedAttributionMatchesCloudWatchFrameNames() throws Exception {
     stub(TYPES, LABEL_NAMES, BOTH_ROUTES, STATE_VALUES, FLAMEGRAPH);
+    stubNoUnexpectedOperations();
     stubOperationGraph(SDK_SELECTOR, graph("java.lang.Thread.run", CW_SDK_HANDLER));
     stubOperationGraph(HTTP_SELECTOR, graph("java.lang.Thread.run", CW_HTTP_HANDLER));
     buildShippedValidator("operation-attribution").validate();
@@ -414,13 +417,15 @@ public class ProfileValidatorTest {
   @Test
   public void testShippedAttributionRejectsOtherHandlerWithCloudWatchSuffix() throws Exception {
     stub(TYPES, LABEL_NAMES, BOTH_ROUTES, STATE_VALUES, FLAMEGRAPH);
+    stubNoUnexpectedOperations();
     stubOperationGraph(SDK_SELECTOR, graph(CW_SDK_HANDLER, CW_HTTP_HANDLER));
     stubOperationGraph(HTTP_SELECTOR, graph(CW_HTTP_HANDLER));
-    for (String name : new String[] {"operation-attribution", "unsampled-operation-label"}) {
-      BaseException be =
-          assertThrows(BaseException.class, () -> buildShippedValidator(name).validate(), name);
-      assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode(), name);
-    }
+    BaseException be =
+        assertThrows(
+            BaseException.class, () -> buildShippedValidator("operation-attribution").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+    // unsampled-operation-label has the same assertions but is reportOnly: it reports, not fails.
+    buildShippedValidator("unsampled-operation-label").validate();
   }
 
   /** A method whose name only starts with the handler's name is not the handler. */
@@ -446,15 +451,15 @@ public class ProfileValidatorTest {
         .selectSeries(eq(WALL_TYPE_ID), anyString(), anyLong(), anyLong(), eq(300.0));
   }
 
-  /** Two 5-minute buckets (a single short burst can straddle one boundary) are not enough. */
+  /**
+   * Two 5-minute buckets are not enough, but the shipped rotation check is reportOnly, so it
+   * reports instead of failing. (The enforced logic is covered by testWindowsFailWithGap.)
+   */
   @Test
-  public void testShippedRotationWindowsFailsWithTwoBuckets() throws Exception {
+  public void testShippedRotationWindowsReportsTwoBuckets() throws Exception {
     when(service.selectSeries(anyString(), anyString(), anyLong(), anyLong(), org.mockito.ArgumentMatchers.anyDouble()))
         .thenReturn(OBJECT_MAPPER.readTree(series(300_000, 600_000)));
-    BaseException be =
-        assertThrows(
-            BaseException.class, () -> buildShippedValidator("rotation-windows").validate());
-    assertEquals(ExceptionCode.EXPECTED_METRIC_NOT_FOUND.getCode(), be.getCode());
+    buildShippedValidator("rotation-windows").validate();
   }
 
   /** A validator built from a shipped java/ec2/profiler validation YAML and its template. */
@@ -571,6 +576,238 @@ public class ProfileValidatorTest {
   public void testWithMatcherOperators() {
     assertEquals("{a=\"b\",c=~\".+\"}", ProfileValidator.withMatcher("{a=\"b\"}", "c", "=~", ".+"));
     assertEquals("{a=\"b\",c!~\"x\"}", ProfileValidator.withMatcher("{a=\"b\"}", "c", "!~", "x"));
+  }
+
+  // ---- thread count, allowed operations, hot spots, data integrity ----
+
+  /** The allowedLabelValues query (any operation outside the allowed list) finds no samples. */
+  private void stubNoUnexpectedOperations() throws Exception {
+    when(service.selectMergeStacktraces(
+            anyString(), org.mockito.ArgumentMatchers.contains("!~"), anyLong(), anyLong()))
+        .thenReturn(OBJECT_MAPPER.readTree(EMPTY));
+  }
+
+  /**
+   * A flame graph with the given total whose level-1 nodes are {@code frames} (name, total pairs),
+   * in Pyroscope's flamebearer shape: per level, groups of offset, total, self, name index.
+   */
+  private static String levelsGraph(long total, Object... frames) {
+    StringBuilder names = new StringBuilder("\"total\"");
+    StringBuilder level1 = new StringBuilder();
+    for (int i = 0; i < frames.length; i += 2) {
+      names.append(",\"").append(frames[i]).append('"');
+      if (level1.length() > 0) {
+        level1.append(',');
+      }
+      level1.append("0,").append(frames[i + 1]).append(",0,").append(i / 2 + 1);
+    }
+    return "{\"flamegraph\":{\"names\":[" + names + "],\"total\":\"" + total + "\","
+        + "\"levels\":[{\"values\":[0," + total + ",0,0]},{\"values\":[" + level1 + "]}]}}";
+  }
+
+  private static final String THREAD_LABELS =
+      "{\"names\":[\"service_name\",\"@sample.operation\",\"@sample.thread.name\"]}";
+
+  private void stubThreads(String threadNames) throws Exception {
+    when(service.labelNames(anyString(), anyLong(), anyLong()))
+        .thenReturn(OBJECT_MAPPER.readTree(THREAD_LABELS));
+    when(service.labelValues(eq("@sample.thread.name"), anyString(), anyLong(), anyLong()))
+        .thenReturn(OBJECT_MAPPER.readTree("{\"names\":" + threadNames + "}"));
+  }
+
+  private ProfileValidator buildContextValidator(String template, String... keyValues)
+      throws Exception {
+    java.util.Map<String, String> profileContext = new java.util.HashMap<>();
+    for (int i = 0; i < keyValues.length; i += 2) {
+      profileContext.put(keyValues[i], keyValues[i + 1]);
+    }
+    context.setProfileContext(profileContext);
+    return buildValidator(TEMPLATE_ROOT + template);
+  }
+
+  /** Enough distinct thread names on the wall samples passes. */
+  @Test
+  public void testMinLabelValueCountsSucceeds() throws Exception {
+    stubThreads("[\"t1\",\"t2\",\"t3\"]");
+    stubStacktraces(sel -> FLAMEGRAPH);
+    buildContextValidator("profile_min_values.mustache", "minThreads", "3").validate();
+  }
+
+  /** Threads listed service-wide but without wall samples do not count towards the minimum. */
+  @Test
+  public void testMinLabelValueCountsFailsWhenThreadsAreMissing() throws Exception {
+    stubThreads("[\"t1\",\"t2\",\"t3\"]");
+    stubStacktraces(sel -> sel.contains("thread.name=\"t3\"") ? EMPTY : FLAMEGRAPH);
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildContextValidator("profile_min_values.mustache", "minThreads", "3").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** A missing deploy-time minimum fails instead of passing trivially. */
+  @Test
+  public void testMinLabelValueCountsFailsWithoutContext() throws Exception {
+    stubThreads("[\"t1\"]");
+    stubStacktraces(sel -> FLAMEGRAPH);
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildContextValidator("profile_min_values.mustache").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** No sample carries an operation outside the allowed list: passes, with the query sent. */
+  @Test
+  public void testAllowedLabelValuesSucceeds() throws Exception {
+    stubStacktraces(sel -> sel.contains("!~") ? EMPTY : FLAMEGRAPH);
+    buildValidator(TEMPLATE_ROOT + "profile_allowed_values.mustache").validate();
+    verify(service)
+        .selectMergeStacktraces(
+            eq(WALL_TYPE_ID),
+            eq("{@resource.service.name=\"serviceName\",@sample.operation=~\".+\","
+                + "@sample.operation!~\"(GET /health|GET /aws-sdk-call)\"}"),
+            anyLong(),
+            anyLong());
+  }
+
+  /** An unexpected operation (here any sample outside the list) fails. */
+  @Test
+  public void testAllowedLabelValuesFailsOnUnexpectedOperation() throws Exception {
+    stubStacktraces(sel -> FLAMEGRAPH);
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildValidator(TEMPLATE_ROOT + "profile_allowed_values.mustache").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** frameTime sums the totals of every node whose name matches, across levels. */
+  @Test
+  public void testFrameTimeSumsMatchingNodes() throws Exception {
+    String json = levelsGraph(100, "a.Handler.run A.java:1", 60, "a.Handler.run A.java:2", 25, "b.Other.x", 15);
+    assertEquals(
+        85,
+        ProfileValidator.frameTime(
+            OBJECT_MAPPER.readTree(json).path("flamegraph"), "^a\\.Handler\\.run( |$)"));
+  }
+
+  /** A handler holding at least its minimum share of its operation's samples passes. */
+  @Test
+  public void testHotspotsSucceed() throws Exception {
+    stubStacktraces(
+        sel -> levelsGraph(100, "c.F.awssdkCall F.java:9", 90, "java.lang.Thread.run", 10));
+    buildValidator(TEMPLATE_ROOT + "profile_hotspots.mustache").validate();
+  }
+
+  /** A handler that no longer dominates its operation's samples fails. */
+  @Test
+  public void testHotspotsFailWhenShareDrops() throws Exception {
+    stubStacktraces(
+        sel -> levelsGraph(100, "c.F.awssdkCall F.java:9", 40, "java.lang.Thread.run", 60));
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () -> buildValidator(TEMPLATE_ROOT + "profile_hotspots.mustache").validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** The backend total matching what the agent exported passes, queried over that exact window. */
+  @Test
+  public void testExpectedTotalSucceedsOverExactWindow() throws Exception {
+    stubStacktraces(sel -> levelsGraph(1_000_000, "x", 1_000_000));
+    buildContextValidator(
+            "profile_expected_total.mustache",
+            "expectedNanos", "1010000", "startMs", "1000", "endMs", "61000")
+        .validate();
+    verify(service, org.mockito.Mockito.atLeastOnce())
+        .selectMergeStacktraces(eq(WALL_TYPE_ID), anyString(), eq(1000L), eq(61000L));
+  }
+
+  /** Less than was exported means data is missing (or still ingesting): wait, then fail. */
+  @Test
+  public void testExpectedTotalWaitsWhenDataIsMissing() throws Exception {
+    stubStacktraces(sel -> levelsGraph(900_000, "x", 900_000));
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () ->
+                buildContextValidator(
+                        "profile_expected_total.mustache",
+                        "expectedNanos", "1000000", "startMs", "1000", "endMs", "61000")
+                    .validate());
+    assertEquals(ExceptionCode.EXPECTED_METRIC_NOT_FOUND.getCode(), be.getCode());
+  }
+
+  /** More than was exported cannot be explained by what was sent: fail. */
+  @Test
+  public void testExpectedTotalFailsWhenMoreThanSent() throws Exception {
+    stubStacktraces(sel -> levelsGraph(1_100_000, "x", 1_100_000));
+    BaseException be =
+        assertThrows(
+            BaseException.class,
+            () ->
+                buildContextValidator(
+                        "profile_expected_total.mustache",
+                        "expectedNanos", "1000000", "startMs", "1000", "endMs", "61000")
+                    .validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /**
+   * reportOnly: the check runs, but a total far outside the tolerance passes (reported), and so
+   * does a check with no data at all after its short retry budget.
+   */
+  @Test
+  public void testReportOnlyCheckReportsInsteadOfFailing() throws Exception {
+    stubStacktraces(sel -> levelsGraph(500_000, "x", 500_000));
+    buildContextValidator(
+            "profile_expected_total_report_only.mustache",
+            "expectedNanos", "1000000", "startMs", "1000", "endMs", "61000")
+        .validate();
+    stubStacktraces(sel -> EMPTY);
+    buildContextValidator(
+            "profile_expected_total_report_only.mustache",
+            "expectedNanos", "1000000", "startMs", "1000", "endMs", "61000")
+        .validate();
+    verify(service, org.mockito.Mockito.atLeastOnce())
+        .selectMergeStacktraces(eq(WALL_TYPE_ID), anyString(), eq(1000L), eq(61000L));
+  }
+
+  private ProfileValidator.ExpectedProfile shippedExpected(String name) throws Exception {
+    ValidationConfig config =
+        new com.amazon.aoc.helpers.ConfigLoadHelper()
+            .loadConfigFromFile("java/ec2/profiler/" + name + "-validation.yml")
+            .get(0);
+    return ProfileValidator.parseExpected(
+        new com.amazon.aoc.helpers.MustacheHelper()
+            .render(config.getExpectedProfileTemplate(), context));
+  }
+
+  /**
+   * The slow checks are reportOnly with a reason; the wall data integrity ones say an ADOT Java
+   * agent change is needed to enforce them. Every other shipped check is enforced.
+   */
+  @Test
+  public void testShippedSlowChecksAreReportOnly() throws Exception {
+    java.util.List<String> wall =
+        Arrays.asList("data-integrity", "unsampled-data-integrity", "none-data-integrity");
+    java.util.List<String> reportOnly =
+        Arrays.asList(
+            "data-integrity", "unsampled-data-integrity", "none-data-integrity",
+            "cpu-data-integrity", "rotation-windows", "unsampled-operation-label");
+    for (String name : reportOnly) {
+      ProfileValidator.ExpectedProfile expected = shippedExpected(name);
+      assertEquals("true", expected.getReportOnly(), name);
+      org.junit.jupiter.api.Assertions.assertFalse(expected.getReportOnlyReason().isEmpty(), name);
+      if (wall.contains(name)) {
+        org.junit.jupiter.api.Assertions.assertTrue(
+            expected.getReportOnlyReason().contains("ADOT Java agent change needed"), name);
+      }
+    }
+    for (String name : new String[] {"operation-attribution", "hotspots", "thread-count", "identity"}) {
+      assertNull(shippedExpected(name).getReportOnly(), name);
+    }
   }
 
   private ProfileValidator buildValidator(String template) throws Exception {

@@ -1,0 +1,9 @@
+{
+  "profileType": "^[^:]+:cpu:nanoseconds:",
+  "expectedTotal": "{{profileContext.cpuExpectedNanos}}",
+  "totalTolerance": "0.02",
+  "queryStartMs": "{{profileContext.cpuStartMs}}",
+  "queryEndMs": "{{profileContext.cpuEndMs}}",
+  "reportOnly": "true",
+  "reportOnlyReason": "Not enforced (slow, backend-dependent): the expected value is exact (samples x 10 ms), but CloudWatch's total for an already-ingested window changes over the following minutes and hours, so the result depends on when it is queried. Remove reportOnly to enforce."
+}
