@@ -24,7 +24,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on:
+      - codebuild-adot-test-framework-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - image:ubuntu-8.0
+      - instance-size:large
     permissions:
       id-token: write
       contents: read
@@ -82,7 +85,10 @@ jobs:
 
   test:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on:
+      - codebuild-adot-test-framework-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - image:ubuntu-8.0
+      - instance-size:large
     permissions:
       id-token: write
       contents: read
@@ -182,7 +188,10 @@ jobs:
   collect-results:
     needs: [test]
     if: always()
-    runs-on: ubuntu-latest
+    runs-on:
+      - codebuild-adot-test-framework-runner-${{ github.run_id }}-${{ github.run_attempt }}
+      - image:ubuntu-8.0
+      - instance-size:small
     permissions:
       actions: write
 
