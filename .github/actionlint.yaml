@@ -10,3 +10,8 @@ self-hosted-runner:
   # for the org's runner groups.
   labels:
     - apm-canary-4-core
+    # CodeBuild-hosted runners (project adot-test-framework-runner).
+    - codebuild-*
+    - image:*
+    - instance-size:*
+    - fleet:*
