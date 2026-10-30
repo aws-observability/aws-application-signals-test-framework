@@ -89,8 +89,9 @@ import lombok.extern.log4j.Log4j2;
  * and sample-attribute matchers, so they only supply candidate names and values for the whole
  * service; whether a label or value is actually on the checked profile type's samples is decided by
  * a {@code SelectMergeStacktraces} query for that type with a matcher on it (non-empty result).
- * {@code allLabelValuesMatch} regexes go to the backend as a {@code !~} matcher, so they use its
- * (RE2, fully anchored) syntax; every other regex is a Java regex matched with {@code find()}.
+ * {@code allLabelValuesMatch} regexes and {@code allowedLabelValues} values (joined into one
+ * alternation) go to the backend as a {@code !~} matcher, so they use its (RE2, fully anchored)
+ * syntax; every other regex is a Java regex matched with {@code find()}.
  *
  * <p>The concrete profile type ID (Pyroscope's {@code name:sample_type:sample_unit:period_type:
  * period_unit}) is resolved at query time from {@code ProfileTypes} by the {@code profileType}
@@ -103,7 +104,8 @@ import lombok.extern.log4j.Log4j2;
  * of those spellings.
  *
  * <p>Profiles are ingested asynchronously and become queryable only after the backend aggregates
- * them, so every check is retried until it passes or the retry budget runs out.
+ * them, so every check is retried until it passes or the retry budget runs out. A {@code
+ * reportOnly} check gets a short budget and never fails: it logs whether it would have passed.
  */
 @Log4j2
 public class ProfileValidator implements IValidator {
