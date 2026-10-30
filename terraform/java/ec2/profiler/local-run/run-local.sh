@@ -1,5 +1,5 @@
 #!/bin/bash
-# Runs the Java EC2 profiler e2e checks locally: the three profiled sample-app variants and the OTel
+# Runs the Java EC2 profiler e2e checks locally: the four profiled sample-app variants and the OTel
 # Collector run in one Docker container (see container-setup.sh) instead of on EC2, export real
 # profiles to CloudWatch Profiles, and the same validator checks as java-ec2-profiler-test.yml run
 # against them. Nothing is created in AWS; only profile data is written under a unique service name.

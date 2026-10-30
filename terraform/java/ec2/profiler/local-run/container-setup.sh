@@ -1,8 +1,9 @@
 #!/bin/bash
 # Runs inside the local test container started by run-local.sh. Mirrors the main_service_setup and
-# traffic_generator_setup provisioners in ../main.tf: the same OTel Collector, the same three
-# profiler variants with the same environment, the same deploy-time context file and the same
-# traffic loop. Differences from EC2, all because a container is not an EC2 instance:
+# traffic_generator_setup provisioners in ../main.tf: the same OTel Collector, the same four
+# profiler variants (main, cpu, unsampled, none) with the same environment, the same deploy-time
+# context file and the same traffic loop. Differences from EC2, all because a container is not an
+# EC2 instance:
 #   - The apps get fake, non-working AWS credentials, so /aws-sdk-call makes a real S3 round trip
 #     (rejected with InvalidAccessKeyId) like it does with the instance role, instead of failing
 #     instantly in the credential lookup.

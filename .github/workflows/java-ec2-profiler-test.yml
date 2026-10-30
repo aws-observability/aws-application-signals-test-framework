@@ -6,11 +6,12 @@
 # Read more about reusable workflows: https://docs.github.com/en/actions/using-workflows/reusing-workflows#overview
 #
 # The springboot sample app runs under the ADOT Java agent with the continuous profiler enabled
-# (wall mode + allocation profiling). The agent exports OTLP profiles to a local OTel Collector,
-# which SigV4-signs and forwards them to CloudWatch Profiles
-# (monitoring.<region>.amazonaws.com/v1development/profiles). Each validation below then reads the
-# profiles back through the CloudWatch Profiles (Pyroscope-compatible) query API and checks one
-# property:
+# (wall mode + allocation profiling, the agent's default aggregation). The agent exports OTLP
+# profiles to a local OTel Collector, which SigV4-signs and forwards them to CloudWatch Profiles
+# (monitoring.<region>.amazonaws.com/v1development/profiles). Each check below reads the profiles
+# back through the CloudWatch Profiles (Pyroscope-compatible) query API and checks one property.
+#
+# Enforced (a failure fails the job):
 #   - wall profile          {wall, nanoseconds} profile with at least 10s of thread time
 #   - operation label       wall samples carry both driven routes (GET /aws-sdk-call,
 #                           GET /outgoing-http-call) as their operation, and no operation other
@@ -25,31 +26,38 @@
 #                           per-run lambda suffixes (Foo$$Lambda/0x...)
 #   - alloc_space profile   {alloc_space, bytes} profile with at least 10 MiB
 #   - alloc_objects profile {alloc_objects, count} profile with at least 10 objects
-#   - sustained rotation    data in >=3 consecutive 5-minute buckets (CloudWatch Profiles' query
-#                           resolution), so the profiler keeps rotating and exporting its 60s windows
 #   - identity              the service's samples carry exactly its own JVM's process.pid, the
 #                           instance's host.id/host.name and the deployed agent version, a single
 #                           service.instance.id, and every request sample is on a request thread
 #                           (also for the -cpu and -unsampled services)
-# After those, profiler-accounting.sh on the instance records what each agent exported so far, and:
+# Then profiler-accounting.sh on the instance records what each agent exported so far, and:
 #   - collector delivery    the collector's own counters show every profile sample exported, none
 #                           failed (e.g. rejected by CloudWatch's per-profile sample limit)
 #   - thread count          the main service's wall samples carry at least 70% as many distinct
 #                           thread names as the JVM has live threads (the profiler covers them)
-#   - data integrity        cpu: CloudWatch's total over exactly the exported windows equals what the
-#                           agent exported (samples x 10 ms) within 2%, so nothing was dropped between
-#                           the agent and the query API. wall (main, unsampled, none): reported but
-#                           NOT ENFORCED until the ADOT Java agent logs each window's total wall time
-#                           (threads x duration, the stand-in expectation, is only approximate)
+#
+# Report only (step names say NOT ENFORCED; each logs what it measured and a GitHub warning, and
+# passes either way, retrying for about a minute instead of ten):
+#   - sustained rotation    data in >=3 consecutive 5-minute buckets (CloudWatch Profiles' query
+#                           resolution). Slow: needs more than 5 minutes of data.
+#   - unsampled operation   the -unsampled service's operation label and attribution. CloudWatch's
+#     label/attribution     flame graph drops the deep frames of samples without a trace link.
+#   - data integrity        CloudWatch's total over exactly the exported windows matches what the
+#                           agent exported, i.e. nothing was dropped between the agent and the query
+#                           API. cpu (samples x 10 ms, within 2%): CloudWatch's total for a window
+#                           still changes after ingestion. wall (main, unsampled, none; threads x
+#                           duration, within 10%): the expectation is only approximate until the
+#                           ADOT Java agent logs each window's total wall time.
+#
 # Minimum totals are deliberately far below what the traffic produces; they catch a missing
 # profile or a wrong unit/period, not small regressions. Label checks are scoped to the checked
 # profile type, so e.g. allocation samples cannot satisfy a wall-sample label check.
 # Three more copies of the app on the same instance cover the other profiler settings:
 #   - <name>-cpu       (cpu mode, OTLP/gRPC, full aggregation): cpu profile with at least 1s,
-#                      both routes as operation, no thread.state label
-#   - <name>-unsampled (every trace dropped): both routes as operation and correct attribution,
-#                      i.e. request correlation does not depend on trace sampling. That these
-#                      samples carry no trace link is not visible through the query API; the
+#                      both routes as operation, no thread.state label, hot spots, identity
+#   - <name>-unsampled (every trace dropped, sum aggregation): identity is enforced; operation
+#                      label and attribution are report only (see above). That these samples
+#                      carry no trace link is not visible through the query API; the
 #                      AwsProfilerUnsampledContractTest contract test checks it.
 #   - <name>-none      (aggregation=none, kept for backwards compatibility): wall profile with at
 #                      least 10s and correct attribution, i.e. CloudWatch accepts the unaggregated
@@ -521,7 +529,7 @@ jobs:
           --profile-context-file ${{ env.PROFILE_CONTEXT_FILE }}
           --rollup"
 
-      # ---- unsampled variant (every trace dropped): service <name>-unsampled ----
+      # ---- unsampled variant (every trace dropped, sum aggregation): service <name>-unsampled ----
 
       - name: Report unsampled operation label and attribution (NOT ENFORCED - known CloudWatch deep-frame issue)
         id: unsampled-operation-label-validation
@@ -623,11 +631,13 @@ jobs:
           --profile-context-file ${{ env.ACCOUNTED_CONTEXT_FILE }}
           --rollup"
 
-      # The three wall data integrity steps below are NOT ENFORCED (reportOnly in their templates):
-      # they always pass but report the outcome, as a warning annotation on the run. Their expected
-      # total (live threads x window duration) is only an approximation. Enforcing them needs an
-      # ADOT Java agent change: log each export window's total wall time next to its sample count
-      # (RotationBoundaryProcessor), sum it in profiler-accounting.sh, and drop reportOnly.
+      # The four data integrity steps below are NOT ENFORCED (reportOnly in their templates): they
+      # always pass but report the outcome, as a warning annotation on the run. The three wall ones'
+      # expected total (live threads x window duration) is only an approximation; enforcing them
+      # needs an ADOT Java agent change: log each export window's total wall time next to its sample
+      # count (RotationBoundaryProcessor), sum it in profiler-accounting.sh, and drop reportOnly. The
+      # cpu one's expectation is exact, but CloudWatch's total for a window still changes after
+      # ingestion.
       - name: Report wall data integrity (NOT ENFORCED - needs ADOT Java agent change)
         id: data-integrity-validation
         if: ${{ !cancelled() && steps.export-accounting.outcome == 'success' }}
