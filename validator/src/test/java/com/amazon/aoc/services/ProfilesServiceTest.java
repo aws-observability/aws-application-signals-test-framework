@@ -15,15 +15,20 @@
 
 package com.amazon.aoc.services;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.sun.net.httpserver.HttpServer;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 public class ProfilesServiceTest {
@@ -49,10 +54,67 @@ public class ProfilesServiceTest {
               "http://127.0.0.1:" + server.getLocalPort(),
               "us-east-1",
               new AWSStaticCredentialsProvider(new BasicAWSCredentials("key", "secret")),
-              500);
+              500,
+              1L);
       assertTimeoutPreemptively(
           Duration.ofSeconds(10),
           () -> assertThrows(SocketTimeoutException.class, () -> service.profileTypes(0, 1)));
+    }
+  }
+
+  /** A server answering HTTP 429 to the first {@code throttled} requests, then {} with 200. */
+  private static HttpServer throttlingServer(int throttled, AtomicInteger requests)
+      throws Exception {
+    HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext(
+        "/",
+        exchange -> {
+          int n = requests.incrementAndGet();
+          byte[] body =
+              (n <= throttled ? "{\"code\":\"resource_exhausted\"}" : "{\"profileTypes\":[]}")
+                  .getBytes(StandardCharsets.UTF_8);
+          exchange.sendResponseHeaders(n <= throttled ? 429 : 200, body.length);
+          exchange.getResponseBody().write(body);
+          exchange.close();
+        });
+    server.start();
+    return server;
+  }
+
+  private static ProfilesService serviceFor(HttpServer server) {
+    return new ProfilesService(
+        "http://127.0.0.1:" + server.getAddress().getPort(),
+        "us-east-1",
+        new AWSStaticCredentialsProvider(new BasicAWSCredentials("key", "secret")),
+        5_000,
+        1L);
+  }
+
+  /** A throttled query is retried on its own and succeeds once the API stops throttling. */
+  @Test
+  public void testThrottledQueryIsRetried() throws Exception {
+    AtomicInteger requests = new AtomicInteger();
+    HttpServer server = throttlingServer(2, requests);
+    try {
+      serviceFor(server).profileTypes(0, 1);
+      assertEquals(3, requests.get());
+    } finally {
+      server.stop(0);
+    }
+  }
+
+  /** Throttling that does not stop fails the query after a bounded number of attempts. */
+  @Test
+  public void testPersistentThrottlingFails() throws Exception {
+    AtomicInteger requests = new AtomicInteger();
+    HttpServer server = throttlingServer(Integer.MAX_VALUE, requests);
+    try {
+      RuntimeException e =
+          assertThrows(RuntimeException.class, () -> serviceFor(server).profileTypes(0, 1));
+      org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().contains("HTTP 429"));
+      assertEquals(6, requests.get());
+    } finally {
+      server.stop(0);
     }
   }
 }

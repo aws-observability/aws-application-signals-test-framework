@@ -148,11 +148,11 @@ echo "Deploy-time context: $(cat "$WORK_DIR/profiler-context.json")"
 # Phase 1 uses the deploy-time context. Then the export accounting is taken (what each agent
 # exported so far, and the collector's delivery counters), and phase 2 checks against it.
 PHASE1_CHECKS="wall-profile: operation-label: thread-state-label: app-stack-frames: operation-attribution:
-hotspots: alloc-space-profile: alloc-objects-profile: rotation-windows: identity: cpu-profile:-cpu
-cpu-operation-label:-cpu cpu-no-thread-state:-cpu cpu-hotspots:-cpu cpu-identity:-cpu
+trace-correlation: hotspots: alloc-space-profile: alloc-objects-profile: rotation-windows: identity:
+cpu-profile:-cpu cpu-operation-label:-cpu cpu-no-thread-state:-cpu cpu-hotspots:-cpu cpu-identity:-cpu
 unsampled-operation-label:-unsampled unsampled-identity:-unsampled
 none-wall-profile:-none none-operation-attribution:-none"
-PHASE2_CHECKS="thread-count: data-integrity: cpu-data-integrity:-cpu
+PHASE2_CHECKS="thread-count: unsampled-no-trace-link:-unsampled data-integrity: cpu-data-integrity:-cpu
 unsampled-data-integrity:-unsampled none-data-integrity:-none"
 echo "Running checks (each retries for up to ~10 minutes while profiles are ingested)..."
 failed=0

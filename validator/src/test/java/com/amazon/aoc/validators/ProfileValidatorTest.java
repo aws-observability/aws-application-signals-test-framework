@@ -154,7 +154,8 @@ public class ProfileValidatorTest {
       "cpu-no-thread-state", "unsampled-operation-label", "identity", "cpu-identity",
       "unsampled-identity", "none-wall-profile", "none-operation-attribution", "thread-count",
       "hotspots", "cpu-hotspots", "data-integrity", "cpu-data-integrity",
-      "unsampled-data-integrity", "none-data-integrity"
+      "unsampled-data-integrity", "none-data-integrity", "trace-correlation",
+      "unsampled-no-trace-link"
     };
     for (String name : configs) {
       java.util.List<ValidationConfig> loaded =
@@ -774,6 +775,149 @@ public class ProfileValidatorTest {
         .selectMergeStacktraces(eq(WALL_TYPE_ID), anyString(), eq(1000L), eq(61000L));
   }
 
+  // Trace IDs of requests made at deploy, as recorded in the deploy-time context.
+  private static final String SDK_TRACE_1 = "5759e988bd862e3fe1be46a994272793";
+  private static final String SDK_TRACE_2 = "5759e988bd862e3fe1be46a994272794";
+  private static final String HTTP_TRACE_1 = "6a2b9c01aa0000000000000000000001";
+  private static final String HTTP_TRACE_2 = "6a2b9c01aa0000000000000000000002";
+  private static final String UNSAMPLED_SDK_TRACE = "7b3c0d12bb0000000000000000000001";
+  private static final String UNSAMPLED_HTTP_TRACE = "7b3c0d12bb0000000000000000000002";
+
+  private ProfileValidator shippedValidator(
+      com.amazon.aoc.fileconfigs.PredefinedExpectedTemplate template, String... keyValues)
+      throws Exception {
+    java.util.Map<String, String> profileContext = new java.util.HashMap<>();
+    for (int i = 0; i < keyValues.length; i += 2) {
+      profileContext.put(keyValues[i], keyValues[i + 1]);
+    }
+    context.setProfileContext(profileContext);
+    ProfileValidator validator = new ProfileValidator(service);
+    validator.init(context, new ValidationConfig(), template);
+    validator.setMaxRetryCount(1);
+    return validator;
+  }
+
+  private ProfileValidator traceCorrelationValidator() throws Exception {
+    return shippedValidator(
+        com.amazon.aoc.fileconfigs.PredefinedExpectedTemplate.JAVA_EC2_PROFILER_TRACE_CORRELATION,
+        "mainSdkTraceId1", SDK_TRACE_1, "mainSdkTraceId2", SDK_TRACE_2,
+        "mainHttpTraceId1", HTTP_TRACE_1, "mainHttpTraceId2", HTTP_TRACE_2);
+  }
+
+  private ProfileValidator unlinkedValidator() throws Exception {
+    return shippedValidator(
+        com.amazon.aoc.fileconfigs.PredefinedExpectedTemplate
+            .JAVA_EC2_PROFILER_UNSAMPLED_NO_TRACE_LINK,
+        "unsampledSdkTraceId1", UNSAMPLED_SDK_TRACE, "unsampledHttpTraceId1", UNSAMPLED_HTTP_TRACE);
+  }
+
+  private static String traceMatcher(String traceId) {
+    return "__trace_id__=\"" + traceId + "\"";
+  }
+
+  /** Each request's trace ID selects samples holding its own handler and not the other route's. */
+  @Test
+  public void testTraceCorrelationSucceeds() throws Exception {
+    stubStacktraces(
+        sel ->
+            sel.contains(traceMatcher(SDK_TRACE_1)) || sel.contains(traceMatcher(SDK_TRACE_2))
+                ? graph("java.lang.Thread.run", CW_SDK_HANDLER)
+                : sel.contains(traceMatcher(HTTP_TRACE_1)) || sel.contains(traceMatcher(HTTP_TRACE_2))
+                    ? graph("java.lang.Thread.run", CW_HTTP_HANDLER)
+                    : EMPTY);
+    traceCorrelationValidator().validate();
+    for (String traceId : new String[] {SDK_TRACE_1, SDK_TRACE_2, HTTP_TRACE_1, HTTP_TRACE_2}) {
+      verify(service)
+          .selectMergeStacktraces(
+              eq(WALL_TYPE_ID),
+              eq("{@resource.service.name=\"serviceName\"," + traceMatcher(traceId) + "}"),
+              anyLong(),
+              anyLong());
+    }
+  }
+
+  /** A trace whose samples hold the other route's handler is linked to the wrong request. */
+  @Test
+  public void testTraceCorrelationFailsWhenTraceHoldsOtherHandler() throws Exception {
+    stubStacktraces(
+        sel ->
+            sel.contains(traceMatcher(HTTP_TRACE_2))
+                ? graph(CW_HTTP_HANDLER, CW_SDK_HANDLER)
+                : sel.contains(traceMatcher(HTTP_TRACE_1))
+                    ? graph(CW_HTTP_HANDLER)
+                    : graph(CW_SDK_HANDLER));
+    BaseException be = assertThrows(BaseException.class, () -> traceCorrelationValidator().validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** A request whose trace links to no samples (yet) does not pass. */
+  @Test
+  public void testTraceCorrelationWaitsForLinkedSamples() throws Exception {
+    stubStacktraces(sel -> sel.contains(traceMatcher(SDK_TRACE_2)) ? EMPTY : graph(CW_SDK_HANDLER));
+    BaseException be = assertThrows(BaseException.class, () -> traceCorrelationValidator().validate());
+    assertEquals(ExceptionCode.EXPECTED_METRIC_NOT_FOUND.getCode(), be.getCode());
+  }
+
+  /**
+   * A trace ID missing from the context (the request at deploy failed) or all zeros (no active span)
+   * fails before any query: an empty matcher would select every sample.
+   */
+  @Test
+  public void testTraceCorrelationRejectsInvalidTraceIds() throws Exception {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            shippedValidator(
+                    com.amazon.aoc.fileconfigs.PredefinedExpectedTemplate
+                        .JAVA_EC2_PROFILER_TRACE_CORRELATION,
+                    "mainSdkTraceId1", SDK_TRACE_1)
+                .validate());
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            shippedValidator(
+                    com.amazon.aoc.fileconfigs.PredefinedExpectedTemplate
+                        .JAVA_EC2_PROFILER_UNSAMPLED_NO_TRACE_LINK,
+                    "unsampledSdkTraceId1", "00000000000000000000000000000000",
+                    "unsampledHttpTraceId1", UNSAMPLED_HTTP_TRACE)
+                .validate());
+    verify(service, org.mockito.Mockito.never()).profileTypes(anyLong(), anyLong());
+  }
+
+  private static final String BUSY_SERVICE =
+      "{\"flamegraph\":{\"names\":[\"total\",\"java.lang.Thread.run\"],"
+          + "\"total\":\"20000000000\"}}";
+
+  /** The unsampled service has samples, but none link to its requests' (dropped) traces. */
+  @Test
+  public void testUnsampledNoTraceLinkSucceeds() throws Exception {
+    stubStacktraces(sel -> sel.contains("__trace_id__") ? EMPTY : BUSY_SERVICE);
+    unlinkedValidator().validate();
+    verify(service)
+        .selectMergeStacktraces(
+            eq(WALL_TYPE_ID),
+            eq("{@resource.service.name=\"serviceName\"," + traceMatcher(UNSAMPLED_HTTP_TRACE) + "}"),
+            anyLong(),
+            anyLong());
+  }
+
+  /** A sample linking to an unsampled request's trace points at a trace that was never exported. */
+  @Test
+  public void testUnsampledNoTraceLinkFailsWhenLinked() throws Exception {
+    stubStacktraces(
+        sel -> sel.contains(traceMatcher(UNSAMPLED_SDK_TRACE)) ? graph(CW_SDK_HANDLER) : BUSY_SERVICE);
+    BaseException be = assertThrows(BaseException.class, () -> unlinkedValidator().validate());
+    assertEquals(ExceptionCode.DATA_MODEL_NOT_MATCHED.getCode(), be.getCode());
+  }
+
+  /** Without data on the unsampled service, "no linked samples" proves nothing: it waits. */
+  @Test
+  public void testUnsampledNoTraceLinkWaitsForData() throws Exception {
+    stubStacktraces(sel -> EMPTY);
+    BaseException be = assertThrows(BaseException.class, () -> unlinkedValidator().validate());
+    assertEquals(ExceptionCode.EXPECTED_METRIC_NOT_FOUND.getCode(), be.getCode());
+  }
+
   private ProfileValidator.ExpectedProfile shippedExpected(String name) throws Exception {
     ValidationConfig config =
         new com.amazon.aoc.helpers.ConfigLoadHelper()
@@ -805,7 +949,11 @@ public class ProfileValidatorTest {
             expected.getReportOnlyReason().contains("ADOT Java agent change needed"), name);
       }
     }
-    for (String name : new String[] {"operation-attribution", "hotspots", "thread-count", "identity"}) {
+    for (String name :
+        new String[] {
+          "operation-attribution", "hotspots", "thread-count", "identity", "trace-correlation",
+          "unsampled-no-trace-link"
+        }) {
       assertNull(shippedExpected(name).getReportOnly(), name);
     }
   }

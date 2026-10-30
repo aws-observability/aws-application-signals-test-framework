@@ -53,6 +53,11 @@ public class ProfilesService {
   // Without timeouts a stalled query blocks forever, so the validator's retries never run. With
   // them it fails like any other error and is retried. Queries normally return in a few seconds.
   static final int TIMEOUT_MS = 30_000;
+  // The query API throttles bursts (HTTP 429). A check can make dozens of queries in a row (one per
+  // thread name), and failing on a 429 would restart all of them, so a throttled query is retried
+  // on its own: up to 6 attempts, 1 s, 2 s, 4 s, ... apart.
+  private static final int MAX_THROTTLED_ATTEMPTS = 6;
+  private final long throttleBackoffMs;
 
   private final String baseEndpoint;
   private final CloseableHttpClient httpClient;
@@ -85,16 +90,22 @@ public class ProfilesService {
                 .withStsClient(
                     AWSSecurityTokenServiceClientBuilder.standard().withRegion(region).build())
                 .build(),
-        TIMEOUT_MS);
+        TIMEOUT_MS,
+        1_000L);
   }
 
-  /** For tests: a given endpoint, credentials and timeout (connect, connection pool and read). */
+  /**
+   * For tests: a given endpoint, credentials, timeout (connect, connection pool and read) and the
+   * first wait before retrying a throttled query.
+   */
   ProfilesService(
       String baseEndpoint,
       String region,
       AWSCredentialsProvider credentialsProvider,
-      int timeoutMs) {
+      int timeoutMs,
+      long throttleBackoffMs) {
     this.baseEndpoint = baseEndpoint;
+    this.throttleBackoffMs = throttleBackoffMs;
 
     AWS4Signer signer = new AWS4Signer();
     signer.setServiceName(SERVICE_NAME);
@@ -182,10 +193,20 @@ public class ProfilesService {
             json.getBytes(StandardCharsets.UTF_8), ContentType.create("application/json")));
 
     log.info("Calling CloudWatch Profiles {}: {}", operation, json);
-    try (CloseableHttpResponse response = httpClient.execute(post)) {
-      int status = response.getStatusLine().getStatusCode();
-      String responseBody =
-          response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
+    for (int attempt = 1; ; attempt++) {
+      int status;
+      String responseBody;
+      try (CloseableHttpResponse response = httpClient.execute(post)) {
+        status = response.getStatusLine().getStatusCode();
+        responseBody =
+            response.getEntity() != null ? EntityUtils.toString(response.getEntity()) : "";
+      }
+      if (status == 429 && attempt < MAX_THROTTLED_ATTEMPTS) {
+        long waitMs = throttleBackoffMs << (attempt - 1);
+        log.info("CloudWatch Profiles {} throttled (HTTP 429); retrying in {} ms", operation, waitMs);
+        Thread.sleep(waitMs);
+        continue;
+      }
       if (status < 200 || status >= 300) {
         throw new RuntimeException(
             String.format(

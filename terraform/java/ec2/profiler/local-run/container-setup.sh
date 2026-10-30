@@ -107,9 +107,24 @@ wait_for_app 8081 nohup-cpu.out
 wait_for_app 8082 nohup-unsampled.out
 wait_for_app 8083 nohup-none.out
 
+# Trace correlation: requests whose trace IDs are known, made before the traffic loop starts. Each
+# route returns its trace ID in X-Ray form (1-<8 hex>-<24 hex>); profile samples link the 32-hex
+# OTel form. The main app's (sampled) requests must link to their traces; the unsampled app's must
+# not link to any.
+trace_id() {
+  curl -s --max-time 30 "http://localhost:$1$2" | grep -o '1-[0-9a-f]\{8\}-[0-9a-f]\{24\}' | tr -d '-' | cut -c2-
+}
+MAIN_SDK_TRACE_1=$(trace_id 8080 /aws-sdk-call)
+MAIN_SDK_TRACE_2=$(trace_id 8080 /aws-sdk-call)
+MAIN_HTTP_TRACE_1=$(trace_id 8080 /outgoing-http-call)
+MAIN_HTTP_TRACE_2=$(trace_id 8080 /outgoing-http-call)
+UNSAMPLED_SDK_TRACE_1=$(trace_id 8082 /aws-sdk-call)
+UNSAMPLED_HTTP_TRACE_1=$(trace_id 8082 /outgoing-http-call)
+
 DISTRO_VERSION=$(grep -m1 -o 'opentelemetry-javaagent - version: [^ ]*' nohup.out | awk '{print $NF}')
-printf '{"mainPid":"%s","cpuPid":"%s","unsampledPid":"%s","hostId":"local","hostName":"%s","distroVersion":"%s"}\n' \
+printf '{"mainPid":"%s","cpuPid":"%s","unsampledPid":"%s","hostId":"local","hostName":"%s","distroVersion":"%s","mainSdkTraceId1":"%s","mainSdkTraceId2":"%s","mainHttpTraceId1":"%s","mainHttpTraceId2":"%s","unsampledSdkTraceId1":"%s","unsampledHttpTraceId1":"%s"}\n' \
   "$(cat main.pid)" "$(cat cpu.pid)" "$(cat unsampled.pid)" "$(cat /proc/sys/kernel/hostname)" "$DISTRO_VERSION" \
+  "$MAIN_SDK_TRACE_1" "$MAIN_SDK_TRACE_2" "$MAIN_HTTP_TRACE_1" "$MAIN_HTTP_TRACE_2" "$UNSAMPLED_SDK_TRACE_1" "$UNSAMPLED_HTTP_TRACE_1" \
   > profiler-context.json
 
 # Traffic: the same loop as the EC2 traffic generator. Keep going if a request fails.

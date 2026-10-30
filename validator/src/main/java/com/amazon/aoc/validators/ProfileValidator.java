@@ -72,7 +72,13 @@ import lombok.extern.log4j.Log4j2;
  *       "hotspots": [ { "function": "\\.handleA( |$)", "minShare": "0.8" } ],
  *       "allLabelValuesMatch": { "thread.name": "http-nio-8080-exec-[0-9]+" } // every sample's value
  *     }
- *   }
+ *   },
+ *   "traces": {                                          // flame graph of one trace's samples
+ *     "4bf92f3577b34da6a3ce929d0e0e4736": {              // (32-hex trace ID)
+ *       "functions": ["\\.handleA( |$)"], "absentFunctions": ["\\.handleB( |$)"]
+ *     }
+ *   },
+ *   "unlinkedTraces": ["0af7651916cd43dd8448eb211c80319c"] // no sample may link to these traces
  * }
  * </pre>
  *
@@ -120,6 +126,9 @@ public class ProfileValidator implements IValidator {
   // A reportOnly check retries for about a minute (10 s apart) instead of the full budget.
   private static final int REPORT_ONLY_MAX_RETRY_COUNT = 6;
   private static final String OPERATION_LABEL = "operation";
+  // Selects the samples whose trace link (OTLP Sample -> Link) has this trace ID.
+  private static final String TRACE_ID_MATCHER = "__trace_id__";
+  private static final Pattern TRACE_ID = Pattern.compile("^[0-9a-f]{32}$");
 
   private final MustacheHelper mustacheHelper = new MustacheHelper();
   private Context context;
@@ -178,6 +187,12 @@ public class ProfileValidator implements IValidator {
 
   private void runChecks(ExpectedProfile expected, String selector, int lookbackMinutes, int retries)
       throws Exception {
+    // A bad trace ID is a deploy problem (e.g. a request that returned none), not missing data: fail
+    // now instead of retrying.
+    if (expected.getTraces() != null) {
+      expected.getTraces().keySet().forEach(ProfileValidator::requireTraceId);
+    }
+    nullToEmpty(expected.getUnlinkedTraces()).forEach(ProfileValidator::requireTraceId);
     RetryHelper.retry(
         retries,
         () -> {
@@ -202,6 +217,8 @@ public class ProfileValidator implements IValidator {
           checkLabelValueCounts(expected, profileTypeId, selector, start, end);
           checkMinLabelValueCounts(expected, profileTypeId, selector, start, end);
           checkOperations(expected, profileTypeId, selector, start, end);
+          checkTraces(expected, profileTypeId, selector, start, end);
+          checkUnlinkedTraces(expected, profileTypeId, selector, start, end);
           checkWindows(expected, profileTypeId, selector, start, end);
         });
   }
@@ -607,6 +624,66 @@ public class ProfileValidator implements IValidator {
   }
 
   /**
+   * Trace correlation: for each trace ID in {@code traces}, the flame graph of only the samples
+   * linked to that trace must hold its expected frames and none of its forbidden ones, e.g. a
+   * request's own handler and not another route's. Waits while the trace has no samples yet.
+   */
+  private void checkTraces(
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
+      throws Exception {
+    if (expected.getTraces() == null) {
+      return;
+    }
+    for (Map.Entry<String, ExpectedFrames> entry : expected.getTraces().entrySet()) {
+      String traceSelector = withMatcher(selector, TRACE_ID_MATCHER, requireTraceId(entry.getKey()));
+      JsonNode flamegraph =
+          profilesService
+              .selectMergeStacktraces(profileTypeId, traceSelector, start, end)
+              .path("flamegraph");
+      if (parseLong(flamegraph.path("total").asText("0")) == 0) {
+        log.info("No samples linked to trace yet for {} {}", profileTypeId, traceSelector);
+        throw new BaseException(ExceptionCode.EXPECTED_METRIC_NOT_FOUND);
+      }
+      checkFrames(
+          flamegraph,
+          entry.getValue().getFunctions(),
+          entry.getValue().getAbsentFunctions(),
+          profileTypeId + " " + traceSelector);
+    }
+  }
+
+  /**
+   * No sample may link to a trace in {@code unlinkedTraces}, e.g. requests whose trace was dropped
+   * by sampling: their samples keep the operation but must not point at a trace that was never
+   * exported. Only meaningful once the requests' export windows are ingested, so templates using it
+   * run after the export accounting, minutes after the requests.
+   */
+  private void checkUnlinkedTraces(
+      ExpectedProfile expected, String profileTypeId, String selector, long start, long end)
+      throws Exception {
+    for (String traceId : nullToEmpty(expected.getUnlinkedTraces())) {
+      String traceSelector = withMatcher(selector, TRACE_ID_MATCHER, requireTraceId(traceId));
+      if (hasSamples(profileTypeId, traceSelector, start, end)) {
+        log.error("Samples of {} link to trace {}, which should have no link", profileTypeId, traceId);
+        throw new BaseException(ExceptionCode.DATA_MODEL_NOT_MATCHED);
+      }
+    }
+  }
+
+  /**
+   * A template trace ID must be a valid 32-hex trace ID: an empty one would select every sample, and
+   * all zeros is what a request without an active span returns.
+   */
+  private static String requireTraceId(String traceId) {
+    if (traceId == null
+        || !TRACE_ID.matcher(traceId).matches()
+        || traceId.chars().allMatch(c -> c == '0')) {
+      throw new IllegalArgumentException("not a 32-hex trace ID: '" + traceId + "'");
+    }
+    return traceId;
+  }
+
+  /**
    * Every sample selected by {@code selector} must have a value of each label matching its regex
    * (backend RE2 syntax): no sample may match {@code label!~"regex"}. E.g. every sample of a request
    * is on a request-handler thread. Waits while the selector has no samples at all.
@@ -923,6 +1000,8 @@ public class ProfileValidator implements IValidator {
     private List<String> absentFunctions;
     private List<Hotspot> hotspots;
     private Map<String, ExpectedFrames> operations;
+    private Map<String, ExpectedFrames> traces;
+    private List<String> unlinkedTraces;
     private String minTotal;
     private String expectedTotal;
     private String totalTolerance;

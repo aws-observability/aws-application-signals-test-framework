@@ -111,6 +111,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
       "/expected-data-template/java/ec2/profiler/app-stack-frames.mustache"),
   JAVA_EC2_PROFILER_OPERATION_ATTRIBUTION(
       "/expected-data-template/java/ec2/profiler/operation-attribution.mustache"),
+  JAVA_EC2_PROFILER_TRACE_CORRELATION(
+      "/expected-data-template/java/ec2/profiler/trace-correlation.mustache"),
   JAVA_EC2_PROFILER_ALLOC_SPACE_PROFILE(
       "/expected-data-template/java/ec2/profiler/alloc-space-profile.mustache"),
   JAVA_EC2_PROFILER_ALLOC_OBJECTS_PROFILE(
@@ -128,6 +130,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_PROFILER_CPU_IDENTITY("/expected-data-template/java/ec2/profiler/cpu-identity.mustache"),
   JAVA_EC2_PROFILER_UNSAMPLED_IDENTITY(
       "/expected-data-template/java/ec2/profiler/unsampled-identity.mustache"),
+  JAVA_EC2_PROFILER_UNSAMPLED_NO_TRACE_LINK(
+      "/expected-data-template/java/ec2/profiler/unsampled-no-trace-link.mustache"),
   JAVA_EC2_PROFILER_NONE_WALL_PROFILE(
       "/expected-data-template/java/ec2/profiler/none-wall-profile.mustache"),
   JAVA_EC2_PROFILER_NONE_OPERATION_ATTRIBUTION(

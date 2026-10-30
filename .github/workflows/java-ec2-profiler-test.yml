@@ -18,6 +18,9 @@
 #                           than the routes the traffic and the startup probe hit
 #   - operation attribution each route's wall samples contain its own handler frame and not the
 #                           other route's handler (samples are attributed to the right request)
+#   - trace correlation     for requests made at deploy (their trace IDs are in the deploy-time
+#                           context), only the samples linked to one request's trace ID hold that
+#                           route's handler and not the other route's
 #   - hot spots             each route's handler accounts for at least a set share of that
 #                           route's samples (also on the -cpu service's cpu samples)
 #   - thread.state label    wall samples carry both RUNNABLE and SLEEPING
@@ -35,6 +38,8 @@
 #                           failed (e.g. rejected by CloudWatch's per-profile sample limit)
 #   - thread count          the main service's wall samples carry at least 70% as many distinct
 #                           thread names as the JVM has live threads (the profiler covers them)
+#   - unsampled trace link  no -unsampled sample links to the trace IDs of its requests made at
+#                           deploy: a dropped trace is never linked
 #
 # Report only (step names say NOT ENFORCED; each logs what it measured and a GitHub warning, and
 # passes either way, retrying for about a minute instead of ten):
@@ -55,10 +60,8 @@
 # Three more copies of the app on the same instance cover the other profiler settings:
 #   - <name>-cpu       (cpu mode, OTLP/gRPC, full aggregation): cpu profile with at least 1s,
 #                      both routes as operation, no thread.state label, hot spots, identity
-#   - <name>-unsampled (every trace dropped, sum aggregation): identity is enforced; operation
-#                      label and attribution are report only (see above). That these samples
-#                      carry no trace link is not visible through the query API; the
-#                      AwsProfilerUnsampledContractTest contract test checks it.
+#   - <name>-unsampled (every trace dropped, sum aggregation): identity and no trace link are
+#                      enforced; operation label and attribution are report only (see above).
 #   - <name>-none      (aggregation=none, kept for backwards compatibility): wall profile with at
 #                      least 10s and correct attribution, i.e. CloudWatch accepts the unaggregated
 #                      payloads (one OTLP sample per profiler sample).
@@ -144,7 +147,7 @@ env:
 jobs:
   java-ec2-profiler:
     runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
-    # 25 checks run one after another (each waits for CloudWatch to ingest data), plus deploy and
+    # 27 checks run one after another (each waits for CloudWatch to ingest data), plus deploy and
     # destroy; 45 minutes was sized for the original 12 checks.
     timeout-minutes: 90
     outputs:
@@ -395,6 +398,20 @@ jobs:
           --profiles-role-arn '$PROFILES_ROLE_ARN'
           --rollup"
 
+      - name: Validate trace correlation (each request's trace ID selects its own handler)
+        id: trace-correlation-validation
+        if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
+        run: ./gradlew validator:run --args="-c java/ec2/profiler/trace-correlation-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn '$PROFILES_ROLE_ARN'
+          --profile-context-file ${{ env.PROFILE_CONTEXT_FILE }}
+          --rollup"
+
       - name: Validate hot spots (handler share of each route's wall samples)
         id: hotspots-validation
         if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}
@@ -631,6 +648,22 @@ jobs:
           --profile-context-file ${{ env.ACCOUNTED_CONTEXT_FILE }}
           --rollup"
 
+      # After the export accounting, so the unsampled requests' export windows are ingested and "no
+      # samples link to the trace" cannot just mean "not ingested yet".
+      - name: Validate unsampled requests link to no trace
+        id: unsampled-no-trace-link-validation
+        if: ${{ !cancelled() && steps.export-accounting.outcome == 'success' }}
+        run: ./gradlew validator:run --args="-c java/ec2/profiler/unsampled-no-trace-link-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --endpoint http://${{ env.MAIN_SERVICE_ENDPOINT }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name ${{ env.SERVICE_NAME }}-unsampled
+          --instance-ami ${{ env.EC2_INSTANCE_AMI }}
+          --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --profiles-role-arn '$PROFILES_ROLE_ARN'
+          --profile-context-file ${{ env.ACCOUNTED_CONTEXT_FILE }}
+          --rollup"
+
       # The four data integrity steps below are NOT ENFORCED (reportOnly in their templates): they
       # always pass but report the outcome, as a warning annotation on the run. The three wall ones'
       # expected total (live threads x window duration) is only an approximation; enforcing them
@@ -712,6 +745,7 @@ jobs:
             "${{ steps.thread-state-label-validation.outcome }}" \
             "${{ steps.app-stack-frames-validation.outcome }}" \
             "${{ steps.operation-attribution-validation.outcome }}" \
+            "${{ steps.trace-correlation-validation.outcome }}" \
             "${{ steps.hotspots-validation.outcome }}" \
             "${{ steps.alloc-space-profile-validation.outcome }}" \
             "${{ steps.alloc-objects-profile-validation.outcome }}" \
@@ -728,6 +762,7 @@ jobs:
             "${{ steps.none-operation-attribution-validation.outcome }}" \
             "${{ steps.collector-delivery-validation.outcome }}" \
             "${{ steps.thread-count-validation.outcome }}" \
+            "${{ steps.unsampled-no-trace-link-validation.outcome }}" \
             "${{ steps.data-integrity-validation.outcome }}" \
             "${{ steps.cpu-data-integrity-validation.outcome }}" \
             "${{ steps.unsampled-data-integrity-validation.outcome }}" \
