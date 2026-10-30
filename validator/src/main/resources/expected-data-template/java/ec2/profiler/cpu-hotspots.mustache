@@ -1,0 +1,15 @@
+{
+  "profileType": "^[^:]+:cpu:nanoseconds:",
+  "operations": {
+    "GET /aws-sdk-call": {
+      "hotspots": [
+        { "function": "^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.awssdkCall( |$)", "minShare": "0.6" }
+      ]
+    },
+    "GET /outgoing-http-call": {
+      "hotspots": [
+        { "function": "^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.httpCall( |$)", "minShare": "0.6" }
+      ]
+    }
+  }
+}
