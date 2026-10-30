@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.charset.StandardCharsets;
 import lombok.extern.log4j.Log4j2;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
@@ -49,6 +50,9 @@ import org.apache.http.util.EntityUtils;
 public class ProfilesService {
   private static final String SERVICE_NAME = "monitoring";
   private static final String QUERIER_PATH = "/querier.v1.QuerierService/";
+  // Without timeouts a stalled query blocks forever, so the validator's retries never run. With
+  // them it fails like any other error and is retried. Queries normally return in a few seconds.
+  static final int TIMEOUT_MS = 30_000;
 
   private final String baseEndpoint;
   private final CloseableHttpClient httpClient;
@@ -72,20 +76,37 @@ public class ProfilesService {
    * @param roleArn role to assume, or null/empty to use the default credential chain
    */
   public ProfilesService(String region, String roleArn) {
-    this.baseEndpoint = String.format("https://monitoring.%s.amazonaws.com", region);
-
-    AWS4Signer signer = new AWS4Signer();
-    signer.setServiceName(SERVICE_NAME);
-    signer.setRegionName(region);
-    AWSCredentialsProvider credentialsProvider =
+    this(
+        String.format("https://monitoring.%s.amazonaws.com", region),
+        region,
         (roleArn == null || roleArn.isEmpty())
             ? new DefaultAWSCredentialsProviderChain()
             : new STSAssumeRoleSessionCredentialsProvider.Builder(roleArn, "profiles-validator")
                 .withStsClient(
                     AWSSecurityTokenServiceClientBuilder.standard().withRegion(region).build())
-                .build();
+                .build(),
+        TIMEOUT_MS);
+  }
+
+  /** For tests: a given endpoint, credentials and timeout (connect, connection pool and read). */
+  ProfilesService(
+      String baseEndpoint,
+      String region,
+      AWSCredentialsProvider credentialsProvider,
+      int timeoutMs) {
+    this.baseEndpoint = baseEndpoint;
+
+    AWS4Signer signer = new AWS4Signer();
+    signer.setServiceName(SERVICE_NAME);
+    signer.setRegionName(region);
     this.httpClient =
         HttpClients.custom()
+            .setDefaultRequestConfig(
+                RequestConfig.custom()
+                    .setConnectTimeout(timeoutMs)
+                    .setConnectionRequestTimeout(timeoutMs)
+                    .setSocketTimeout(timeoutMs)
+                    .build())
             .addInterceptorLast(
                 new AWSRequestSigningApacheInterceptor(SERVICE_NAME, signer, credentialsProvider))
             .build();
