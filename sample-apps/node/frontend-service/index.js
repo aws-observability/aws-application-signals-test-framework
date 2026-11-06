@@ -61,6 +61,13 @@ const agent_based_counter = meter.createCounter('agent_based_counter', {descript
 const agent_based_histogram = meter.createHistogram('agent_based_histogram', {description: 'agent export histogram'});
 const agent_based_gauge = meter.createUpDownCounter('agent_based_gauge', {description: 'agent export gauge'});
 
+// Custom OTLP metric validated by the ADOT SigV4 E2E test through CloudWatch PromQL
+const customMeter = metrics.getMeter('CustomOTLPMetrics');
+const customRequestCounter = customMeter.createCounter('custom.requests', {
+  unit: '{request}',
+  description: 'This is a custom metric for validation testing',
+});
+
 // Continuation of conditional custom pipeline
 let custom_pipeline_counter = null;
 let custom_pipeline_histogram = null;
@@ -115,6 +122,13 @@ app.get('/aws-sdk-call', async (req, res) => {
     custom_pipeline_gauge.add(randomInt(-10, 11), { Operation : 'pipeline_gauge' });
   }
   
+  customRequestCounter.add(1, {
+    'custom.operation': 'request',
+    'custom.component': 'frontend',
+    'custom.environment': 'validation',
+    'custom.description': 'This is a custom metric for validation testing',
+  });
+
   // Add custom warning log for validation testing
   const warningMsg = "This is a custom log for validation testing";
   logger.warn(warningMsg);

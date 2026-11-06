@@ -606,6 +606,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_K8S_CLIENT_CALL_TRACE("/expected-data-template/node/k8s/client-call-trace.mustache"),
 
   /** Node EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  NODE_EC2_ADOT_SIGV4_OTLP_METRIC(
+      "/expected-data-template/node/ec2/adot-aws-otlp/custom-otlp-metric.mustache"),
   NODE_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/node/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   NODE_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
@@ -626,7 +628,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/node/ec2/adot-aws-otlp/client-call-trace.mustache"),
 
   /** Node EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  NODE_EC2_ADOT_OTLP_LOG("/expected-data-template/node/ec2/adot-aws-otlp/application-log.mustache"),
+  NODE_EC2_ADOT_SIGV4_OTLP_LOG("/expected-data-template/node/ec2/adot-aws-otlp/custom-otlp-log.mustache"),
 
   /** Node ECS Test Case Validations */
   NODE_ECS_HC_CALL_LOG("/expected-data-template/node/ecs/hc-log.mustache"),
