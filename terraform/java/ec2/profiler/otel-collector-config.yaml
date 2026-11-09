@@ -1,0 +1,55 @@
+# OTel Collector config for the Java EC2 profiler e2e test (rendered by Terraform templatefile()).
+#
+# The ADOT Java profiler exports unsigned OTLP profiles; CloudWatch Profiles requires SigV4, so a
+# collector sits in front: it receives profiles on localhost and forwards them, SigV4-signed (service
+# `monitoring`, IAM action cloudwatch:PutOtelProfiles), to the regional CloudWatch
+# /v1development/profiles ingest endpoint. It signs with the EC2 instance role, or — when
+# profiles_role_arn is set — with that assumed role, so profiles can go to a different account that
+# is enabled for CloudWatch Profiles.
+#
+# Requires otelcol-contrib v0.148.0+ started with --feature-gates=service.profilesSupport.
+
+extensions:
+  sigv4auth:
+    region: ${region}
+    service: monitoring
+%{ if profiles_role_arn != "" ~}
+    assume_role:
+      arn: ${profiles_role_arn}
+      sts_region: ${region}
+%{ endif ~}
+
+receivers:
+  otlp:
+    protocols:
+      # HTTP for the main and unsampled apps; gRPC for the cpu app (exercises OTLP/gRPC export).
+      http:
+        endpoint: 127.0.0.1:4318
+      grpc:
+        endpoint: 127.0.0.1:4317
+
+exporters:
+  otlphttp/cloudwatch-profiles:
+    profiles_endpoint: https://monitoring.${region}.amazonaws.com/v1development/profiles
+    auth:
+      authenticator: sigv4auth
+
+service:
+  extensions: [sigv4auth]
+  # The collector's own counters (otelcol_exporter_sent/send_failed_profile_samples_total) on
+  # 127.0.0.1:8888, read by profiler-accounting.sh to check every exported profile reached the backend.
+  telemetry:
+    metrics:
+      level: detailed
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 127.0.0.1
+                port: 8888
+  pipelines:
+    # No batch processor: it does not support the profiles signal, and the collector fails to start
+    # with it in a profiles pipeline.
+    profiles:
+      receivers: [otlp]
+      exporters: [otlphttp/cloudwatch-profiles]

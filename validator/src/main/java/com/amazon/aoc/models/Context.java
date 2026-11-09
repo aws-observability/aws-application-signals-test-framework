@@ -16,6 +16,7 @@
 package com.amazon.aoc.models;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 import lombok.NonNull;
 
@@ -72,6 +73,19 @@ public class Context {
   private String locationHash;
 
   private String serviceEventsGitCommitSha;
+
+  /**
+   * Optional role to assume for CloudWatch Profiles queries, e.g. a role in an account that is
+   * enabled for CloudWatch Profiles when the test account is not.
+   */
+  private String profilesRoleArn;
+
+  /**
+   * Values recorded when the profiled apps were deployed (e.g. each JVM's PID, the host name, the
+   * agent version), read from {@code --profile-context-file}, for profile templates to reference as
+   * {@code {{profileContext.<key>}}}.
+   */
+  private Map<String, String> profileContext;
 
   private ECSContext ecsContext;
 

@@ -101,6 +101,53 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
       "/expected-data-template/java/ec2/service-events/function-call-metric.mustache"),
 
+  /** Java EC2 Profiler Test Case Validations (CloudWatch Profiles) */
+  JAVA_EC2_PROFILER_WALL_PROFILE("/expected-data-template/java/ec2/profiler/wall-profile.mustache"),
+  JAVA_EC2_PROFILER_OPERATION_LABEL(
+      "/expected-data-template/java/ec2/profiler/operation-label.mustache"),
+  JAVA_EC2_PROFILER_THREAD_STATE_LABEL(
+      "/expected-data-template/java/ec2/profiler/thread-state-label.mustache"),
+  JAVA_EC2_PROFILER_APP_STACK_FRAMES(
+      "/expected-data-template/java/ec2/profiler/app-stack-frames.mustache"),
+  JAVA_EC2_PROFILER_OPERATION_ATTRIBUTION(
+      "/expected-data-template/java/ec2/profiler/operation-attribution.mustache"),
+  JAVA_EC2_PROFILER_TRACE_CORRELATION(
+      "/expected-data-template/java/ec2/profiler/trace-correlation.mustache"),
+  JAVA_EC2_PROFILER_ALLOC_SPACE_PROFILE(
+      "/expected-data-template/java/ec2/profiler/alloc-space-profile.mustache"),
+  JAVA_EC2_PROFILER_ALLOC_OBJECTS_PROFILE(
+      "/expected-data-template/java/ec2/profiler/alloc-objects-profile.mustache"),
+  JAVA_EC2_PROFILER_ROTATION_WINDOWS(
+      "/expected-data-template/java/ec2/profiler/rotation-windows.mustache"),
+  JAVA_EC2_PROFILER_CPU_PROFILE("/expected-data-template/java/ec2/profiler/cpu-profile.mustache"),
+  JAVA_EC2_PROFILER_CPU_OPERATION_LABEL(
+      "/expected-data-template/java/ec2/profiler/cpu-operation-label.mustache"),
+  JAVA_EC2_PROFILER_CPU_NO_THREAD_STATE(
+      "/expected-data-template/java/ec2/profiler/cpu-no-thread-state.mustache"),
+  JAVA_EC2_PROFILER_UNSAMPLED_OPERATION_LABEL(
+      "/expected-data-template/java/ec2/profiler/unsampled-operation-label.mustache"),
+  JAVA_EC2_PROFILER_IDENTITY("/expected-data-template/java/ec2/profiler/identity.mustache"),
+  JAVA_EC2_PROFILER_CPU_IDENTITY("/expected-data-template/java/ec2/profiler/cpu-identity.mustache"),
+  JAVA_EC2_PROFILER_UNSAMPLED_IDENTITY(
+      "/expected-data-template/java/ec2/profiler/unsampled-identity.mustache"),
+  JAVA_EC2_PROFILER_UNSAMPLED_NO_TRACE_LINK(
+      "/expected-data-template/java/ec2/profiler/unsampled-no-trace-link.mustache"),
+  JAVA_EC2_PROFILER_NONE_WALL_PROFILE(
+      "/expected-data-template/java/ec2/profiler/none-wall-profile.mustache"),
+  JAVA_EC2_PROFILER_NONE_OPERATION_ATTRIBUTION(
+      "/expected-data-template/java/ec2/profiler/none-operation-attribution.mustache"),
+  JAVA_EC2_PROFILER_THREAD_COUNT("/expected-data-template/java/ec2/profiler/thread-count.mustache"),
+  JAVA_EC2_PROFILER_HOTSPOTS("/expected-data-template/java/ec2/profiler/hotspots.mustache"),
+  JAVA_EC2_PROFILER_CPU_HOTSPOTS("/expected-data-template/java/ec2/profiler/cpu-hotspots.mustache"),
+  JAVA_EC2_PROFILER_DATA_INTEGRITY(
+      "/expected-data-template/java/ec2/profiler/data-integrity.mustache"),
+  JAVA_EC2_PROFILER_CPU_DATA_INTEGRITY(
+      "/expected-data-template/java/ec2/profiler/cpu-data-integrity.mustache"),
+  JAVA_EC2_PROFILER_UNSAMPLED_DATA_INTEGRITY(
+      "/expected-data-template/java/ec2/profiler/unsampled-data-integrity.mustache"),
+  JAVA_EC2_PROFILER_NONE_DATA_INTEGRITY(
+      "/expected-data-template/java/ec2/profiler/none-data-integrity.mustache"),
+
   /** Java EKS Service Events Test Case Validations */
   JAVA_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(
       "/expected-data-template/java/eks/service-events/deployment-event.mustache"),

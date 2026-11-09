@@ -1,0 +1,21 @@
+{
+  "profileType": "^[^:]+:wall:nanoseconds:",
+  "traces": {
+    "{{profileContext.mainSdkTraceId1}}": {
+      "functions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.awssdkCall( |$)"],
+      "absentFunctions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.httpCall( |$)"]
+    },
+    "{{profileContext.mainSdkTraceId2}}": {
+      "functions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.awssdkCall( |$)"],
+      "absentFunctions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.httpCall( |$)"]
+    },
+    "{{profileContext.mainHttpTraceId1}}": {
+      "functions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.httpCall( |$)"],
+      "absentFunctions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.awssdkCall( |$)"]
+    },
+    "{{profileContext.mainHttpTraceId2}}": {
+      "functions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.httpCall( |$)"],
+      "absentFunctions": ["^com\\.amazon\\.sampleapp\\.FrontendServiceController\\.awssdkCall( |$)"]
+    }
+  }
+}
