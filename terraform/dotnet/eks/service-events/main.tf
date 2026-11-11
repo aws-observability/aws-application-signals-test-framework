@@ -294,18 +294,47 @@ resource "kubernetes_deployment_v1" "traffic_generator" {
           name              = "traffic-generator"
           image             = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
           image_pull_policy = "Always"
-          command           = ["sh", "-c"]
+          # The shared image contains Node, but no wget. Use its built-in HTTP client so a missing
+          # shell utility cannot silently leave the request-driven validators without traffic.
+          command = ["node", "-e"]
           args = [
             <<-EOT
-            while [ -z "$MAIN_ENDPOINT" ]; do echo "waiting for MAIN_ENDPOINT"; sleep 5; done
-            echo "driving Service Events routes against $MAIN_ENDPOINT"
-            while true; do
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/" || true
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/success" || true
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/failed-call" || true
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/exception" || true
-              sleep 5
-            done
+            const http = require("http");
+            const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+            const request = route => new Promise(resolve => {
+              const req = http.get("http://" + process.env.MAIN_ENDPOINT + route, res => {
+                res.resume();
+                res.on("end", () => {
+                  console.log(route + " " + res.statusCode);
+                  resolve();
+                });
+                res.on("error", error => {
+                  console.error(route + ": " + error.message);
+                  resolve();
+                });
+              });
+              req.on("error", error => {
+                console.error(route + ": " + error.message);
+                resolve();
+              });
+              req.setTimeout(5000, () => req.destroy(new Error("request timed out")));
+            });
+            (async () => {
+              while (!process.env.MAIN_ENDPOINT) {
+                console.log("waiting for MAIN_ENDPOINT");
+                await sleep(5000);
+              }
+              console.log("driving Service Events routes against " + process.env.MAIN_ENDPOINT);
+              while (true) {
+                for (const route of ["/", "/success", "/failed-call", "/exception"]) {
+                  await request(route);
+                }
+                await sleep(5000);
+              }
+            })().catch(error => {
+              console.error(error);
+              process.exit(1);
+            });
             EOT
           ]
           env {
