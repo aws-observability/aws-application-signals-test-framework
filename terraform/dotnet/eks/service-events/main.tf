@@ -157,8 +157,11 @@ resource "kubernetes_deployment_v1" "dotnet_app_deployment" {
           # Service Events is enabled by these env vars, not by the injection annotation. The
           # operator supplies the exporter endpoints and enables Application Signals itself, so
           # unlike the EC2 cell there are no OTEL_EXPORTER_* or OTEL_AWS_OTLP_* settings here.
-          # OTEL_AWS_SERVICE_EVENTS_ENABLED is deliberately left unset so this still exercises the
-          # bundled-enablement contract.
+          # Service Events is opt-in; Application Signals enablement alone does not enable it.
+          env {
+            name  = "OTEL_AWS_SERVICE_EVENTS_ENABLED"
+            value = "true"
+          }
           env {
             name  = "OTEL_AWS_SERVICE_EVENTS_FUNCTION_INSTRUMENT_ENABLED"
             value = "true"

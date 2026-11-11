@@ -26,9 +26,9 @@ Service Events does ship as its own assembly, so provisioning checks that
 `AWS.Distro.OpenTelemetry.ServiceEvents.dll` is present in order to fail fast against a distro build
 that predates the feature.
 
-The test deliberately does **not** set `OTEL_AWS_SERVICE_EVENTS_ENABLED`. It verifies the bundled
-enablement contract: on EC2, enabling Application Signals via
-`OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true` enables Service Events when the explicit flag is unset.
+The test sets `OTEL_AWS_SERVICE_EVENTS_ENABLED=true` because Service Events is opt-in.
+`OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true` supplies Application Signals configuration; it does not
+enable Service Events when the explicit flag is unset.
 
 ## How traffic is generated
 
