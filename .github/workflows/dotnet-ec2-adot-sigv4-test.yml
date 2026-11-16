@@ -17,10 +17,10 @@ on:
         required: true
         type: string
       dotnet-version:
-        description: "Currently support version 8.0, 9.0"
+        description: "Supported .NET versions: 10.0 and 11.0"
         required: false
         type: string
-        default: '8.0'
+        default: '10.0'
       staging_distro_name:
         required: false
         default: 'aws-opentelemetry-distro'

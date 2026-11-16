@@ -118,7 +118,7 @@ resource "null_resource" "main_service_setup" {
       sudo yum install -y wget
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-8.0
+      sudo dnf install -y dotnet-sdk-10.0
       sudo yum install unzip -y
       sudo yum install dos2unix -y
 
@@ -146,8 +146,8 @@ resource "null_resource" "main_service_setup" {
       cd ./asp_frontend_service
       dotnet add package AWS.Distro.OpenTelemetry.AutoInstrumentation --prerelease
       dotnet build --runtime linux-x64
-      dos2unix bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh
-      nohup sh bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp8.0/linux-x64/asp_frontend_service.dll &
+      dos2unix bin/Debug/netcoreapp10.0/linux-x64/adot-launch.sh
+      nohup sh bin/Debug/netcoreapp10.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp10.0/linux-x64/asp_frontend_service.dll &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30
@@ -214,7 +214,7 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install -y wget
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-8.0
+      sudo dnf install -y dotnet-sdk-10.0
       sudo yum install unzip -y
       sudo yum install dos2unix -y
 
@@ -242,8 +242,8 @@ resource "null_resource" "remote_service_setup" {
 
       dotnet add package AWS.Distro.OpenTelemetry.AutoInstrumentation --prerelease
       dotnet build --runtime linux-x64
-      dos2unix bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh
-      nohup sh bin/Debug/netcoreapp8.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp8.0/linux-x64/asp_remote_service.dll &
+      dos2unix bin/Debug/netcoreapp10.0/linux-x64/adot-launch.sh
+      nohup sh bin/Debug/netcoreapp10.0/linux-x64/adot-launch.sh dotnet bin/Debug/netcoreapp10.0/linux-x64/asp_remote_service.dll &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30

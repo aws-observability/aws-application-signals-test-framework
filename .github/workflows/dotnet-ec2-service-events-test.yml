@@ -23,7 +23,7 @@ on:
         description: "Supported versions: 8.0, 9.0, 10.0"
         required: false
         type: string
-        default: '8.0'
+        default: '10.0'
       distro-source:
         description: "ADOT .NET distro source: release or staging"
         required: false
@@ -75,10 +75,9 @@ on:
         required: false
         type: choice
         options:
-          - '8.0'
-          - '9.0'
           - '10.0'
-        default: '8.0'
+          - '11.0'
+        default: '10.0'
       distro-source:
         description: "ADOT .NET distro source"
         required: false
@@ -126,7 +125,7 @@ env:
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name || 'manual-dispatch' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  DOTNET_VERSION: ${{ inputs.dotnet-version || '8.0' }}
+  DOTNET_VERSION: ${{ inputs.dotnet-version || '10.0' }}
   DISTRO_SOURCE: ${{ inputs.distro-source || 'release' }}
   STAGING_DISTRO_NAME: ${{ inputs.staging-distro-name || 'aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip' }}
   ADOT_DISTRO_URI_INPUT: ${{ inputs.adot-distro-uri || '' }}

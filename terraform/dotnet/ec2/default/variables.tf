@@ -38,5 +38,5 @@ variable "get_cw_agent_rpm_command" {
 }
 
 variable "language_version" {
-  default = "8.0"
+  default = "10.0"
 }

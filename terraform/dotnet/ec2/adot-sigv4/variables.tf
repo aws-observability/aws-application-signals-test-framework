@@ -34,7 +34,7 @@ variable "get_adot_distro_command" {
 }
 
 variable "language_version" {
-  default = "8.0"
+  default = "10.0"
 }
 
 variable "application_logs_log_group" {

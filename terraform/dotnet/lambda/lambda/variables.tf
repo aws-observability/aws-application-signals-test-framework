@@ -19,7 +19,7 @@ variable "tracing_mode" {
 variable "runtime" {
   type        = string
   description = "DotNet runtime version used for sample Lambda Function"
-  default     = "dotnet8"
+  default     = "dotnet10"
 }
 
 variable "architecture" {

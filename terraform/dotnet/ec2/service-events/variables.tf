@@ -71,7 +71,7 @@ variable "cw_agent_rpm_uri" {
 # Interpolated into the build output path (bin/Debug/netcoreapp<version>/) and the dotnet-sdk
 # package name, both of which are shell-expanded on the instance.
 variable "language_version" {
-  default = "8.0"
+  default = "10.0"
 
   validation {
     condition     = can(regex("^[0-9]+\\.[0-9]+$", var.language_version))
