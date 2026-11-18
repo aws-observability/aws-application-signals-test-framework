@@ -244,9 +244,10 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
       export OTEL_METRICS_EXPORTER=none
-      # Application Signals enablement bundles Service Events (Lambda excluded). This test asserts
-      # that bundling, so OTEL_AWS_SERVICE_EVENTS_ENABLED is deliberately left unset: setting it
-      # would force Service Events on and mask a regression in the bundled default.
+      # Service Events requires an explicit opt-in even when Application Signals is enabled
+      # (aws-otel-dotnet-instrumentation#455). Without it the distro never initializes Service
+      # Events, so no signal is emitted at all.
+      export OTEL_AWS_SERVICE_EVENTS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
