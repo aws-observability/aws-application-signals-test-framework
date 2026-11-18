@@ -155,9 +155,25 @@ resource "kubernetes_deployment_v1" "dotnet_app_deployment" {
           }
 
           # Service Events is enabled by these env vars, not by the injection annotation. The
-          # operator supplies the exporter endpoints and enables Application Signals itself, so
-          # unlike the EC2 cell there are no OTEL_EXPORTER_* or OTEL_AWS_OTLP_* settings here.
-          # Service Events requires an explicit opt-in even when Application Signals is enabled.
+          # operator enables Application Signals and supplies its trace and metric endpoints, so
+          # unlike the EC2 cell there are no OTEL_EXPORTER_* settings here. Service Events requires
+          # an explicit opt-in even when Application Signals is enabled.
+          #
+          # The Service Events OTLP endpoints are set explicitly. The operator injects
+          # OTEL_AWS_OTLP_LOGS_ENDPOINT and OTEL_AWS_OTLP_METRICS_ENDPOINT for Java, Python and
+          # Node.js but not for .NET, and without them the .NET distro falls back to
+          # localhost:4316. Nothing listens there inside the pod, so every Service Events export
+          # would be lost. The values match what the operator injects for the other languages, and
+          # the webhook does not override env vars already set on the container. Remove these once
+          # the operator injects them for .NET.
+          env {
+            name  = "OTEL_AWS_OTLP_LOGS_ENDPOINT"
+            value = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"
+          }
+          env {
+            name  = "OTEL_AWS_OTLP_METRICS_ENDPOINT"
+            value = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"
+          }
           env {
             name  = "OTEL_AWS_SERVICE_EVENTS_ENABLED"
             value = "true"
