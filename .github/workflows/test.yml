@@ -1,5 +1,5 @@
-## Temporary cross-language dispatch caller for DI E2E version-matrix validation.
-## DO NOT MERGE — drop this file before finalizing the PR.
+## Temporary dispatch caller for validating the .NET EKS Service Events endpoint fix.
+## DO NOT MERGE — this branch exists only to run the E2E test before merging the fix PR.
 name: Test
 on:
   workflow_dispatch:
@@ -9,38 +9,14 @@ permissions:
   contents: read
 
 jobs:
-  python-adot-di:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
-    uses: ./.github/workflows/python-ec2-adot-di-test.yml
+  dotnet-eks-service-events:
+    uses: ./.github/workflows/dotnet-eks-service-events-test.yml
     secrets: inherit
     with:
+      runs-on: '["codebuild-adot-test-framework-runner-${{ github.run_id }}-${{ github.run_attempt }}", "image:ubuntu-8.0", "instance-size:large"]'
       aws-region: 'us-east-1'
+      test-cluster-name: 'e2e-dotnet-adot-test'
       caller-workflow-name: 'test'
-      python-version: ${{ matrix.python-version }}
-
-  java-adot-di:
-    strategy:
-      fail-fast: false
-      matrix:
-        java-version: ['8', '11', '17', '21', '25']
-    uses: ./.github/workflows/java-ec2-adot-di-test.yml
-    secrets: inherit
-    with:
-      aws-region: 'us-east-1'
-      caller-workflow-name: 'test'
-      java-version: ${{ matrix.java-version }}
-
-  node-adot-di:
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: ['18', '20', '22', '24']
-    uses: ./.github/workflows/node-ec2-adot-di-test.yml
-    secrets: inherit
-    with:
-      aws-region: 'us-east-1'
-      caller-workflow-name: 'test'
-      node-version: ${{ matrix.node-version }}
+      # Same ADOT staging image as the failing main-build run 44213387910, so the only change under
+      # test is the endpoint configuration.
+      adot-image-name: '637423224110.dkr.ecr.us-east-1.amazonaws.com/aws-observability/adot-autoinstrumentation-dotnet-staging:staging-linux-amd64-f41a6f1'
