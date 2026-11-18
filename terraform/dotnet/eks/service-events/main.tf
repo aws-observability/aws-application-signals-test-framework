@@ -276,6 +276,9 @@ resource "kubernetes_service" "dotnet_app_service" {
 #   /failed-call -> HttpClient call to a closed port, giving FunctionCall status=error
 #   /exception   -> throws, giving the exception IncidentSnapshot and EndpointErrorMetric at 500
 # MAIN_ENDPOINT is injected by the workflow once the pod IP is known, so the loop waits for it.
+# The image is a minimal Node.js image with no wget or curl, so requests are sent with Node's
+# built-in http module, the same approach as the Node.js EKS cell. Each response status is logged
+# so `kubectl logs` shows whether traffic is reaching the app.
 resource "kubernetes_deployment_v1" "traffic_generator" {
   metadata {
     name      = "traffic-generator"
@@ -307,13 +310,25 @@ resource "kubernetes_deployment_v1" "traffic_generator" {
             <<-EOT
             while [ -z "$MAIN_ENDPOINT" ]; do echo "waiting for MAIN_ENDPOINT"; sleep 5; done
             echo "driving Service Events routes against $MAIN_ENDPOINT"
-            while true; do
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/" || true
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/success" || true
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/failed-call" || true
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/exception" || true
-              sleep 5
-            done
+            exec node -e '
+              const http = require("http");
+              const routes = ["/", "/success", "/failed-call", "/exception"];
+              const get = (path) => new Promise((resolve) => {
+                const req = http.get("http://" + process.env.MAIN_ENDPOINT + path, (res) => {
+                  res.resume();
+                  console.log(path + " " + res.statusCode);
+                  resolve();
+                });
+                req.setTimeout(10000, () => req.destroy(new Error("timeout")));
+                req.on("error", (e) => { console.log(path + " error " + e.message); resolve(); });
+              });
+              (async () => {
+                for (;;) {
+                  for (const r of routes) await get(r);
+                  await new Promise((r) => setTimeout(r, 5000));
+                }
+              })();
+            '
             EOT
           ]
           env {
