@@ -49,6 +49,18 @@ public class ValidationConfig {
   /** PromQL query template (mustache) for Service Events OTLP metric validation. */
   String promQlQuery;
 
+  /** Expected-data template for a "profile" validation (see ProfileValidator). */
+  String expectedProfileTemplate;
+
+  /**
+   * Pyroscope label selector scoping a "profile" validation, e.g. {@code
+   * {@resource.service.name="{{serviceName}}"}}. Defaults to that selector when unset.
+   */
+  String profileLabelSelector;
+
+  /** How far back a "profile" validation queries CloudWatch Profiles, in minutes (default 30). */
+  Integer profileLookbackMinutes;
+
   /** alarm related. */
   Integer pullingDuration;
 
@@ -88,6 +100,10 @@ public class ValidationConfig {
 
   public FileConfig getExpectedLogStructureTemplate() {
     return this.getTemplate(this.expectedLogStructureTemplate);
+  }
+
+  public FileConfig getExpectedProfileTemplate() {
+    return this.getTemplate(this.expectedProfileTemplate);
   }
 
   /**

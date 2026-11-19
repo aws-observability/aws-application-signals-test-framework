@@ -1,0 +1,4 @@
+-
+  validationType: "profile"
+  expectedProfileTemplate: "JAVA_EC2_PROFILER_CPU_IDENTITY"
+  profileLabelSelector: "{@resource.service.name=\"{{serviceName}}\"}"

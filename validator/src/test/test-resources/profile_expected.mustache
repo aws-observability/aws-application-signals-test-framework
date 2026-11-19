@@ -1,0 +1,10 @@
+{
+  "profileType": "^[^:]+:wall:nanoseconds:",
+  "labelNames": ["operation", "thread.state"],
+  "labelValues": {
+    "operation": "^GET /.+$",
+    "thread.state": "^(RUNNABLE|SLEEPING)$"
+  },
+  "functions": ["^com\\.amazon\\.sampleapp\\..+"],
+  "minTotal": "1"
+}

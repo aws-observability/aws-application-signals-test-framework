@@ -1,0 +1,9 @@
+{
+  "profileType": "^[^:]+:wall:nanoseconds:",
+  "expectedTotal": "{{profileContext.mainWallExpectedNanos}}",
+  "totalTolerance": "0.10",
+  "queryStartMs": "{{profileContext.mainStartMs}}",
+  "queryEndMs": "{{profileContext.mainEndMs}}",
+  "reportOnly": "true",
+  "reportOnlyReason": "TODO(ADOT Java agent change needed): the expected wall total is approximated as live threads x window duration, which varies 85-98% run to run. To enforce this check, make the agent log each window's total wall time with its sample count (RotationBoundaryProcessor's 'Processed rotated JFR file' line), have profiler-accounting.sh sum it, then remove reportOnly."
+}

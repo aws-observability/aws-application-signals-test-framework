@@ -1,0 +1,14 @@
+{
+  "profileType": "^[^:]+:wall:nanoseconds:",
+  "exactLabelValues": {
+    "process.pid": ["{{profileContext.pid}}"]
+  },
+  "labelValueCounts": {
+    "service.instance.id": "1"
+  },
+  "operations": {
+    "GET /a": {
+      "allLabelValuesMatch": { "thread.name": "http-nio-8080-exec-[0-9]+" }
+    }
+  }
+}

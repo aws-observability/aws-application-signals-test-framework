@@ -1,0 +1,20 @@
+{
+  "profileType": "^[^:]+:wall:nanoseconds:",
+  "exactLabelValues": {
+    "process.pid": ["{{profileContext.mainPid}}"],
+    "host.id": ["{{profileContext.hostId}}"],
+    "host.name": ["{{profileContext.hostName}}"],
+    "telemetry.distro.version": ["{{profileContext.distroVersion}}"]
+  },
+  "labelValueCounts": {
+    "service.instance.id": "1"
+  },
+  "operations": {
+    "GET /aws-sdk-call": {
+      "allLabelValuesMatch": { "thread.name": "http-nio-8080-exec-[0-9]+" }
+    },
+    "GET /outgoing-http-call": {
+      "allLabelValuesMatch": { "thread.name": "http-nio-8080-exec-[0-9]+" }
+    }
+  }
+}

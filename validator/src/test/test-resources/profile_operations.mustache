@@ -1,0 +1,13 @@
+{
+  "profileType": "^[^:]+:wall:nanoseconds:",
+  "operations": {
+    "GET /aws-sdk-call": {
+      "functions": ["\\.awssdkCall$"],
+      "absentFunctions": ["\\.httpCall$"]
+    },
+    "GET /outgoing-http-call": {
+      "functions": ["\\.httpCall$"],
+      "absentFunctions": ["\\.awssdkCall$"]
+    }
+  }
+}
