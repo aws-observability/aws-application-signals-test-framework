@@ -155,9 +155,25 @@ resource "kubernetes_deployment_v1" "dotnet_app_deployment" {
           }
 
           # Service Events is enabled by these env vars, not by the injection annotation. The
-          # operator supplies the exporter endpoints and enables Application Signals itself, so
-          # unlike the EC2 cell there are no OTEL_EXPORTER_* or OTEL_AWS_OTLP_* settings here.
-          # Service Events requires an explicit opt-in even when Application Signals is enabled.
+          # operator enables Application Signals and supplies its trace and metric endpoints, so
+          # unlike the EC2 cell there are no OTEL_EXPORTER_* settings here. Service Events requires
+          # an explicit opt-in even when Application Signals is enabled.
+          #
+          # The Service Events OTLP endpoints are set explicitly. The operator injects
+          # OTEL_AWS_OTLP_LOGS_ENDPOINT and OTEL_AWS_OTLP_METRICS_ENDPOINT for Java, Python and
+          # Node.js but not for .NET, and without them the .NET distro falls back to
+          # localhost:4316. Nothing listens there inside the pod, so every Service Events export
+          # would be lost. The values match what the operator injects for the other languages, and
+          # the webhook does not override env vars already set on the container. Remove these once
+          # the operator injects them for .NET.
+          env {
+            name  = "OTEL_AWS_OTLP_LOGS_ENDPOINT"
+            value = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/logs"
+          }
+          env {
+            name  = "OTEL_AWS_OTLP_METRICS_ENDPOINT"
+            value = "http://cloudwatch-agent.amazon-cloudwatch:4316/v1/metrics"
+          }
           env {
             name  = "OTEL_AWS_SERVICE_EVENTS_ENABLED"
             value = "true"
@@ -260,6 +276,9 @@ resource "kubernetes_service" "dotnet_app_service" {
 #   /failed-call -> HttpClient call to a closed port, giving FunctionCall status=error
 #   /exception   -> throws, giving the exception IncidentSnapshot and EndpointErrorMetric at 500
 # MAIN_ENDPOINT is injected by the workflow once the pod IP is known, so the loop waits for it.
+# The image is a minimal Node.js image with no wget or curl, so requests are sent with Node's
+# built-in http module, the same approach as the Node.js EKS cell. Each response status is logged
+# so `kubectl logs` shows whether traffic is reaching the app.
 resource "kubernetes_deployment_v1" "traffic_generator" {
   metadata {
     name      = "traffic-generator"
@@ -291,13 +310,25 @@ resource "kubernetes_deployment_v1" "traffic_generator" {
             <<-EOT
             while [ -z "$MAIN_ENDPOINT" ]; do echo "waiting for MAIN_ENDPOINT"; sleep 5; done
             echo "driving Service Events routes against $MAIN_ENDPOINT"
-            while true; do
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/" || true
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/success" || true
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/failed-call" || true
-              wget -q -O /dev/null "http://$MAIN_ENDPOINT/exception" || true
-              sleep 5
-            done
+            exec node -e '
+              const http = require("http");
+              const routes = ["/", "/success", "/failed-call", "/exception"];
+              const get = (path) => new Promise((resolve) => {
+                const req = http.get("http://" + process.env.MAIN_ENDPOINT + path, (res) => {
+                  res.resume();
+                  console.log(path + " " + res.statusCode);
+                  resolve();
+                });
+                req.setTimeout(10000, () => req.destroy(new Error("timeout")));
+                req.on("error", (e) => { console.log(path + " error " + e.message); resolve(); });
+              });
+              (async () => {
+                for (;;) {
+                  for (const r of routes) await get(r);
+                  await new Promise((r) => setTimeout(r, 5000));
+                }
+              })();
+            '
             EOT
           ]
           env {
