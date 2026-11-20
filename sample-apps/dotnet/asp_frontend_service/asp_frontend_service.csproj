@@ -8,14 +8,19 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="4.0.101.3" />
     <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.5" />
-    <!-- Must not be older than the OpenTelemetry SDK bundled in the ADOT .NET distro, otherwise the auto-instrumentation rule engine aborts instrumentation. -->
-    <PackageReference Include="OpenTelemetry" Version="1.20.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+    <!-- Compile-only: at runtime the app uses the OpenTelemetry SDK bundled in the ADOT distro. Shipping our own copy overrides it, which breaks ADOT exporters built against the bundled version (e.g. the legacy SigV4 span exporter). -->
+    <PackageReference Include="OpenTelemetry" Version="1.20.1" ExcludeAssets="runtime" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" ExcludeAssets="runtime" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <AdditionalFiles Include="./stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+  <!-- With the ADOT NuGet package (terraform/dotnet/ec2/nuget) the app must ship the SDK, which that package brings itself. -->
+  <ItemGroup Condition="'@(PackageReference->WithMetadataValue('Identity', 'AWS.Distro.OpenTelemetry.AutoInstrumentation'))' != ''">
+    <PackageReference Remove="OpenTelemetry;OpenTelemetry.Exporter.OpenTelemetryProtocol" />
   </ItemGroup>
 
 </Project>

@@ -192,7 +192,7 @@ jobs:
 
       # The .NET sample app images carry no version tag, unlike the Python and Java equivalents.
       - name: Set Sample App Image
-        run: echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_MAIN_SAMPLE_APP_IMAGE }}" >> "$GITHUB_ENV"
+        run: echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.DOTNET_MAIN_SAMPLE_APP_IMAGE }}:delete-me" >> "$GITHUB_ENV"
 
       # local directory to store the kubernetes config
       - name: Create kubeconfig directory
