@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Net.Http;
@@ -11,6 +12,10 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 
 namespace asp_frontend_service.Controllers;
 
@@ -23,6 +28,19 @@ public class AppController : ControllerBase
         "custom.requests",
         unit: "{request}",
         description: "This is a custom metric for validation testing");
+
+    // Exported by the auto-instrumentation SDK (OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES) to the CloudWatch agent.
+    private static readonly Meter AgentBasedMeter = new Meter("myMeterSource");
+    private static readonly Counter<int> AgentBasedCounter = AgentBasedMeter.CreateCounter<int>("agent_based_counter");
+    private static readonly Histogram<double> AgentBasedHistogram = AgentBasedMeter.CreateHistogram<double>("agent_based_histogram");
+    private static readonly UpDownCounter<int> AgentBasedGauge = AgentBasedMeter.CreateUpDownCounter<int>("agent_based_gauge");
+
+    // Exported by a separate SDK pipeline that only exists when SERVICE_NAME and DEPLOYMENT_ENVIRONMENT_NAME are set.
+    private static readonly MeterProvider PipelineMeterProvider = CreatePipelineMeterProvider();
+    private static readonly Meter PipelineMeter = new Meter("myMeter");
+    private static readonly Counter<int> CustomPipelineCounter = PipelineMeter.CreateCounter<int>("custom_pipeline_counter", "1", "pipeline export counter");
+    private static readonly Histogram<double> CustomPipelineHistogram = PipelineMeter.CreateHistogram<double>("custom_pipeline_histogram", "ms", "pipeline export histogram");
+    private static readonly UpDownCounter<int> CustomPipelineGauge = PipelineMeter.CreateUpDownCounter<int>("custom_pipeline_gauge", "1", "pipeline export gauge");
 
     // reads and writes to bool are atomic according to spec:
     // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/variables#96-atomicity-of-variable-references
@@ -79,6 +97,14 @@ public class AppController : ControllerBase
     [Route("/aws-sdk-call")]
     public string AWSSDKCall([FromQuery] string testingId)
     {
+        var random = new Random();
+        AgentBasedCounter.Add(1, new KeyValuePair<string, object>("Operation", "counter"));
+        AgentBasedHistogram.Record(random.NextDouble() * 100, new KeyValuePair<string, object>("Operation", "histogram"));
+        AgentBasedGauge.Add(random.Next(-10, 11), new KeyValuePair<string, object>("Operation", "gauge"));
+        CustomPipelineCounter.Add(1, new KeyValuePair<string, object>("Operation", "pipeline_counter"));
+        CustomPipelineHistogram.Record(random.Next(100, 1001), new KeyValuePair<string, object>("Operation", "pipeline_histogram"));
+        CustomPipelineGauge.Add(random.Next(-10, 11), new KeyValuePair<string, object>("Operation", "pipeline_gauge"));
+
        var request = new GetBucketLocationRequest()
             {
                BucketName = testingId
@@ -168,6 +194,32 @@ public class AppController : ControllerBase
     public string Exception()
     {
         throw new InvalidOperationException("intentional exception for service events e2e test");
+    }
+
+    private static MeterProvider CreatePipelineMeterProvider()
+    {
+        var serviceName = Environment.GetEnvironmentVariable("SERVICE_NAME");
+        var deploymentEnvironment = Environment.GetEnvironmentVariable("DEPLOYMENT_ENVIRONMENT_NAME");
+        if (string.IsNullOrEmpty(serviceName) || string.IsNullOrEmpty(deploymentEnvironment))
+        {
+            return null;
+        }
+
+        return Sdk.CreateMeterProviderBuilder()
+            .SetResourceBuilder(ResourceBuilder.CreateEmpty().AddAttributes(new Dictionary<string, object>
+            {
+                ["service.name"] = serviceName,
+                ["deployment.environment.name"] = deploymentEnvironment,
+            }))
+            .AddReader(new PeriodicExportingMetricReader(
+                new OtlpMetricExporter(new OtlpExporterOptions
+                {
+                    Endpoint = new Uri("http://localhost:4318/v1/metrics"),
+                    Protocol = OtlpExportProtocol.HttpProtobuf,
+                }),
+                1000))
+            .AddMeter("myMeter")
+            .Build();
     }
 
     private string GetTraceId()

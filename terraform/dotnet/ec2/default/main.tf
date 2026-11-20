@@ -159,8 +159,14 @@ resource "null_resource" "main_service_setup" {
       export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
       export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
-      export OTEL_METRICS_EXPORTER=none
-      export OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id}
+      export OTEL_METRICS_EXPORTER=otlp
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://127.0.0.1:4318/v1/metrics
+      export OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=myMeterSource
+      # CloudWatch drops EMF metrics with more than 30 dimensions. The 5 os.* attributes from this detector push the agent_based metrics to 31.
+      export OTEL_DOTNET_AUTO_OPERATINGSYSTEM_RESOURCE_DETECTOR_ENABLED=false
+      export SERVICE_NAME="dotnet-sample-application-${var.test_id}"
+      export DEPLOYMENT_ENVIRONMENT_NAME="ec2:default"
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME}"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
