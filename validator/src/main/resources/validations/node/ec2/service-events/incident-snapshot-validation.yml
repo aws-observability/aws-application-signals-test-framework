@@ -1,0 +1,4 @@
+-
+  validationType: "cw-log"
+  expectedLogStructureTemplate: "NODE_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT"
+  cwLogFilterPattern: "{ ($.resource.attributes.['service.name'] = \"{{serviceName}}\") && ($.attributes.['event.name'] = \"aws.service_events.incident_snapshot\") && ($.attributes.['aws.service_events.trigger_type'] = \"exception\") && ($.attributes.['aws.service_events.operation'] = \"GET /exception\") && ($.attributes.['http.request.method'] = \"GET\") && ($.attributes.['http.response.status_code'] = 500) && ($.attributes.['url.route'] = \"/exception\") && ($.attributes.['aws.service_events.request.type'] = \"http\") && ($.body.request_context.status_code = 500) && ($.body.request_context.type = \"http\") && ($.body.exception_info[0].exception_type = \"ValueError\") && ($.body.exception_info[0].exception_message = \"*Invalid input*\") && ($.body.exception_info[0].stack_trace = \"*validateInput*\") }"

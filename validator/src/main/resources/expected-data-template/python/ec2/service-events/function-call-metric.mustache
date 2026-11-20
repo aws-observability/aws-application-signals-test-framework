@@ -1,0 +1,26 @@
+[
+  {
+    "Telemetry.Source": "^ServiceEvents$",
+    "__name__": "^service.function.duration$",
+    "__type__": "^ExponentialHistogram$",
+    "__unit__": "^Microseconds$",
+    "function.name": "^frontend_service_app/views\\.mysql$",
+    "status": "^error$",
+    "__value__": ">0"
+  },
+  {
+    "Telemetry.Source": "^ServiceEvents$",
+    "__name__": "^service.function.duration$",
+    "function.name": "^frontend_service_app/views\\..+$",
+    "status": "^success$",
+    "__value__": ">0"
+  },
+  {
+    "Telemetry.Source": "^ServiceEvents$",
+    "__name__": "^service.function.duration$",
+    "function.name": "^frontend_service_app/views\\.runnable_task$",
+    "aws.service_events.caller": "^frontend_service_app/views\\.run_scheduler$",
+    "status": "^success$",
+    "__value__": ">0"
+  }
+]

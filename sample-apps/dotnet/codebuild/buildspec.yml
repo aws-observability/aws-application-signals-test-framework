@@ -1,0 +1,16 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region $env:AWS_DEFAULT_REGION | docker login --username AWS --password-stdin "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com"
+  build:
+    commands:
+      - cd sample-apps/dotnet
+      - docker build -f asp_frontend_service/Dockerfile_Windows -t "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-main-service:latest" .
+      - docker build -f asp_remote_service/Dockerfile_Windows -t "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-remote-service:latest" .
+  post_build:
+    commands:
+      - docker push "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-main-service:latest"
+      - docker push "$env:ACCOUNT_ID.dkr.ecr.$env:AWS_DEFAULT_REGION.amazonaws.com/appsignals-dotnet-windows-remote-service:latest"

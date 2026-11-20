@@ -39,6 +39,20 @@ resource "aws_key_pair" "aws_ssh_key" {
 locals {
   ssh_key_name        = aws_key_pair.aws_ssh_key.key_name
   private_key_content = tls_private_key.ssh_key.private_key_pem
+  legacy_traces_environment = {
+    OTEL_EXPORTER_OTLP_PROTOCOL        = "http/protobuf"
+    OTEL_TRACES_EXPORTER               = "none"
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = "https://xray.${var.aws_region}.amazonaws.com/v1/traces"
+    OTEL_AWS_SIG_V4_ENABLED            = "true"
+  }
+  non_legacy_traces_environment = {
+    OTEL_EXPORTER_OTLP_PROTOCOL        = "http/protobuf"
+    OTEL_TRACES_EXPORTER               = "otlp"
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = "https://xray.${var.aws_region}.amazonaws.com/v1/traces"
+  }
+  traces_environment = join(" ", [
+    for name, value in(var.traces_use_legacy_path ? local.legacy_traces_environment : local.non_legacy_traces_environment) : "${name}=${value}"
+  ])
 }
 
 data "aws_ami" "ami" {
@@ -46,7 +60,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al2023-ami-minimal-*-x86_64"]
   }
   filter {
     name   = "state"
@@ -145,12 +159,16 @@ resource "null_resource" "main_service_setup" {
       DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll \
       OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro \
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
-      OTEL_LOGS_EXPORTER=none \
-      OTEL_METRICS_EXPORTER=none \
-      OTEL_TRACES_EXPORTER=none \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
-      OTEL_AWS_SIG_V4_ENABLED=true \
+      OTEL_LOGS_EXPORTER=otlp \
+      OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
+      OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
+      OTEL_METRICS_EXPORTER=otlp \
+      OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics \
+      OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=CustomOTLPMetrics \
+      ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
+      ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-application-${var.test_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8080 \
@@ -165,8 +183,7 @@ resource "null_resource" "main_service_setup" {
       until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8080" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-          deployment_failed=1
-          break
+          exit 1
         fi
         echo "Attempting to connect to the main endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
@@ -248,12 +265,16 @@ resource "null_resource" "remote_service_setup" {
       DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll \
       OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro \
       OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation" \
-      OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf \
-      OTEL_LOGS_EXPORTER=none \
-      OTEL_METRICS_EXPORTER=none \
-      OTEL_TRACES_EXPORTER=none \
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=https://xray.${var.aws_region}.amazonaws.com/v1/traces \
-      OTEL_AWS_SIG_V4_ENABLED=true \
+      OTEL_LOGS_EXPORTER=otlp \
+      OTEL_EXPORTER_OTLP_LOGS_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs.${var.aws_region}.amazonaws.com/v1/logs \
+      OTEL_EXPORTER_OTLP_LOGS_HEADERS=x-aws-log-group=${var.application_logs_log_group},x-aws-log-stream=default \
+      OTEL_METRICS_EXPORTER=otlp \
+      OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf \
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=https://monitoring.${var.aws_region}.amazonaws.com/v1/metrics \
+      OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=CustomOTLPMetrics \
+      ${var.otlp_compression == "gzip" ? "OTEL_EXPORTER_OTLP_COMPRESSION=gzip" : ""} \
+      ${local.traces_environment} \
       OTEL_TRACES_SAMPLER=always_on \
       OTEL_RESOURCE_ATTRIBUTES=service.name=dotnet-sample-remote-application-${var.test_id} \
       ASPNETCORE_URLS=http://0.0.0.0:8081 \
@@ -268,8 +289,7 @@ resource "null_resource" "remote_service_setup" {
       until $(curl --output /dev/null --silent --fail $(echo "http://localhost:8081" | tr -d '"')); do
         if [ $attempt_counter -eq $max_attempts ];then
           echo "Failed to connect to endpoint. Will attempt to redeploy sample app."
-          deployment_failed=1
-          break
+          exit 1
         fi
         echo "Attempting to connect to the remote endpoint. Tried $attempt_counter out of $max_attempts"
         attempt_counter=$(($attempt_counter+1))
@@ -285,10 +305,10 @@ resource "null_resource" "remote_service_setup" {
 
 resource "null_resource" "traffic_generator_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {

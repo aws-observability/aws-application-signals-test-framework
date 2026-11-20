@@ -8,6 +8,11 @@ name: DotNet EC2 ADOT SigV4 (Stand-Alone ADOT) Use Case
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       caller-workflow-name:
         required: true
         type: string
@@ -32,24 +37,50 @@ env:
   DOTNET_VERSION: ${{ inputs.dotnet-version }}
   SAMPLE_APP_ZIP: s3://aws-appsignals-sample-app-prod-us-east-1/dotnet-sample-app-${{ inputs.dotnet-version }}.zip
   METRIC_NAMESPACE: ApplicationSignals
-  LOG_GROUP_NAME: aws/spans
+  SPANS_LOG_GROUP_NAME: aws/spans
+  APPLICATION_LOGS_LOG_GROUP_NAME: otlp_logs
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
   TEST_RESOURCES_FOLDER: ${GITHUB_WORKSPACE}
   REPOSITORY_NAME: ${{ github.event.repository.name }}
 
 jobs:
   dotnet-ec2-adot-sigv4:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.job-name }}${{ matrix.otlp-compression == 'gzip' && ' (gzip)' || '' }}
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - job-name: dotnet-ec2-sigv4-legacy
+            traces-use-legacy-path: true
+            otlp-compression: none
+          - job-name: dotnet-ec2-sigv4
+            traces-use-legacy-path: false
+            otlp-compression: none
+          - job-name: dotnet-ec2-sigv4
+            traces-use-legacy-path: false
+            otlp-compression: gzip
+    env:
+      TF_VAR_traces_use_legacy_path: ${{ matrix.traces-use-legacy-path }}
+      TF_VAR_otlp_compression: ${{ matrix.otlp-compression }}
     steps:
       - name: Check if the job started
         id: job-started
-        run: echo "job-started=true" >> $GITHUB_OUTPUT
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
+
+      # Pin the JDK used to build the validator. Without it Gradle uses the machine's default JDK, which is
+      # Java 17 on GitHub-hosted runners but Java 25 on CodeBuild's image, which Gradle 8.10 cannot run on.
+      - name: Set up Java for the validator
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Initiate Gradlew Daemon
         id: initiate-gradlew
@@ -62,7 +93,7 @@ jobs:
           sleep_time: 60
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.run_id }}-${{ github.run_number }}-${RANDOM}" >> "$GITHUB_ENV"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -74,17 +105,17 @@ jobs:
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-dotnet-instrumentation" ]; then
             # Get staging distro file from staging bucket
-            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }} && unzip -d dotnet-distro ${{ env.ADOT_DISTRO_NAME }}" >> "$GITHUB_ENV"
           else
             # After Release will switch to latest tag instead of hard code version for canary purpose
-            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="wget -O aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip && unzip -d dotnet-distro aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip" >> "$GITHUB_ENV"
           fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
-          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release && echo "$VERSION_CODENAME") main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
               && sudo apt update && sudo apt install terraform'
           sleep_time: 60
 
@@ -112,6 +143,7 @@ jobs:
               -var="aws_region=${{ env.E2E_TEST_AWS_REGION }}" \
               -var="test_id=${{ env.TESTING_ID }}" \
               -var="sample_app_zip=${{ env.SAMPLE_APP_ZIP }}" \
+              -var="application_logs_log_group=${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}" \
               -var="get_adot_distro_command=${{ env.GET_ADOT_DISTRO_COMMAND }}" \
               -var="language_version=${{ env.DOTNET_VERSION }}" \
             || deployment_failed=$?
@@ -142,12 +174,12 @@ jobs:
       - name: Get the sample app endpoint
         working-directory: terraform/dotnet/ec2/adot-sigv4
         run: |
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
+          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> "$GITHUB_ENV"
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
 
       - name: Initiate Gradlew Daemon
-        if: steps.initiate-gradlew == 'failure'
+        if: steps.initiate-gradlew.outcome == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:
@@ -157,7 +189,7 @@ jobs:
           sleep_time: 60
 
       # Validation for pulse telemetry data
-      - name: Validate generated EMF logs
+      - name: Validate Transaction Search generated EMF logs
         id: log-validation
         run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/log-validation.yml
           --testing-id ${{ env.TESTING_ID }}
@@ -165,7 +197,7 @@ jobs:
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_IP }}:8081
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name dotnet-sample-application-${{ env.TESTING_ID }}
           --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
@@ -173,7 +205,7 @@ jobs:
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
           --rollup'
 
-      - name: Validate generated metrics
+      - name: Validate Transaction Search generated metrics
         id: metric-validation
         if: (success() || steps.log-validation.outcome == 'failure') && !cancelled()
         run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/metric-validation.yml
@@ -182,7 +214,7 @@ jobs:
           --remote-service-deployment-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name dotnet-sample-application-${{ env.TESTING_ID }}
           --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}
@@ -200,12 +232,32 @@ jobs:
           --region ${{ env.E2E_TEST_AWS_REGION }}
           --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
           --metric-namespace ${{ env.METRIC_NAMESPACE }}
-          --log-group ${{ env.LOG_GROUP_NAME }}
+          --log-group ${{ env.SPANS_LOG_GROUP_NAME }}
           --service-name dotnet-sample-application-${{ env.TESTING_ID }}
           --remote-service-name dotnet-sample-remote-application-${{ env.TESTING_ID }}
           --query-string ip=${{ env.REMOTE_SERVICE_IP }}&testingId=${{ env.TESTING_ID }}
           --instance-ami ${{ env.EC2_INSTANCE_AMI }}
           --instance-id ${{ env.MAIN_SERVICE_INSTANCE_ID }}
+          --rollup'
+
+      - name: Validate generated OTLP application logs
+        id: application-log-validation
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.trace-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/custom-otlp-log-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --account-id ${{ env.E2E_TEST_ACCOUNT_ID }}
+          --log-group ${{ env.APPLICATION_LOGS_LOG_GROUP_NAME }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
+          --rollup'
+
+      - name: Validate generated OTLP custom metric via PromQL
+        id: custom-metric-validation
+        if: (success() || steps.log-validation.outcome == 'failure' || steps.metric-validation.outcome == 'failure' || steps.trace-validation.outcome == 'failure' || steps.application-log-validation.outcome == 'failure') && !cancelled()
+        run: ./gradlew validator:run --args='-c dotnet/ec2/adot-sigv4/custom-otlp-metric-validation.yml
+          --testing-id ${{ env.TESTING_ID }}
+          --region ${{ env.E2E_TEST_AWS_REGION }}
+          --service-name dotnet-sample-application-${{ env.TESTING_ID }}
           --rollup'
 
       - name: Refresh AWS Credentials

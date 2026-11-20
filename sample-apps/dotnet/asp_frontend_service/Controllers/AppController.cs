@@ -2,19 +2,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.S3;
-using Microsoft.AspNetCore.Mvc;
 using Amazon.S3.Model;
-using System.Diagnostics.Metrics;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
-using OpenTelemetry.Exporter;
 
 namespace asp_frontend_service.Controllers;
 
@@ -22,63 +23,32 @@ namespace asp_frontend_service.Controllers;
 [Route("[controller]")]
 public class AppController : ControllerBase
 {
+    private static readonly Meter CustomMeter = new Meter("CustomOTLPMetrics");
+    private static readonly Counter<long> CustomRequestCounter = CustomMeter.CreateCounter<long>(
+        "custom.requests",
+        unit: "{request}",
+        description: "This is a custom metric for validation testing");
+
+    // Exported by the auto-instrumentation SDK (OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES) to the CloudWatch agent.
+    private static readonly Meter AgentBasedMeter = new Meter("myMeterSource");
+    private static readonly Counter<int> AgentBasedCounter = AgentBasedMeter.CreateCounter<int>("agent_based_counter");
+    private static readonly Histogram<double> AgentBasedHistogram = AgentBasedMeter.CreateHistogram<double>("agent_based_histogram");
+    private static readonly UpDownCounter<int> AgentBasedGauge = AgentBasedMeter.CreateUpDownCounter<int>("agent_based_gauge");
+
+    // Exported by a separate SDK pipeline that only exists when SERVICE_NAME and DEPLOYMENT_ENVIRONMENT_NAME are set.
+    private static readonly MeterProvider PipelineMeterProvider = CreatePipelineMeterProvider();
+    private static readonly Meter PipelineMeter = new Meter("myMeter");
+    private static readonly Counter<int> CustomPipelineCounter = PipelineMeter.CreateCounter<int>("custom_pipeline_counter", "1", "pipeline export counter");
+    private static readonly Histogram<double> CustomPipelineHistogram = PipelineMeter.CreateHistogram<double>("custom_pipeline_histogram", "ms", "pipeline export histogram");
+    private static readonly UpDownCounter<int> CustomPipelineGauge = PipelineMeter.CreateUpDownCounter<int>("custom_pipeline_gauge", "1", "pipeline export gauge");
+
     // reads and writes to bool are atomic according to spec:
     // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/variables#96-atomicity-of-variable-references
     private static bool shouldSendLocalRootClientCall = false;
     private static bool threadStarted = false;
     private readonly AmazonS3Client s3Client = new AmazonS3Client();
     private readonly HttpClient httpClient = new HttpClient();
-    private static readonly Meter meter = new Meter("myMeterSource");
-    private static readonly Counter<int> agentBasedCounter;
-    private static readonly Histogram<double> agentBasedHistogram;
-    private static readonly UpDownCounter<int> agentBasedGauge;
-
-    // Custom pipeline metrics - only create if specific env vars exist
-    private static readonly Meter pipelineMeter;
-    private static readonly Counter<int> customPipelineCounter;
-    private static readonly Histogram<double> customPipelineHistogram;
-    private static readonly UpDownCounter<int> customPipelineGauge;
-    private static readonly MeterProvider pipelineMeterProvider;
-
-    static AppController()
-    {
-
-        agentBasedCounter = meter.CreateCounter<int>("agent_based_counter");
-        agentBasedHistogram = meter.CreateHistogram<double>("agent_based_histogram");
-        agentBasedGauge = meter.CreateUpDownCounter<int>("agent_based_gauge");
-        
-        var serviceName = Environment.GetEnvironmentVariable("SERVICE_NAME");
-        var deploymentEnv = Environment.GetEnvironmentVariable("DEPLOYMENT_ENVIRONMENT_NAME");
-        
-        if (!string.IsNullOrEmpty(serviceName) && !string.IsNullOrEmpty(deploymentEnv))
-        {
-            
-            pipelineMeterProvider = Sdk.CreateMeterProviderBuilder()
-                .SetResourceBuilder(ResourceBuilder.CreateEmpty().AddAttributes(new Dictionary<string, object>
-                {
-                    ["service.name"] = serviceName,
-                    ["deployment.environment.name"] = deploymentEnv
-                }))
-                .AddOtlpExporter(options =>
-                {
-                    options.Endpoint = new Uri("http://localhost:4318/v1/metrics");
-                    options.Protocol = OtlpExportProtocol.HttpProtobuf;
-                    options.ExportProcessorType = ExportProcessorType.Batch;
-                })
-                .AddReader(new PeriodicExportingMetricReader(new OtlpMetricExporter(new OtlpExporterOptions
-                {
-                    Endpoint = new Uri("http://localhost:4318/v1/metrics"),
-                    Protocol = OtlpExportProtocol.HttpProtobuf
-                }), 1000))
-                .AddMeter("myMeter")
-                .Build();
-            
-            pipelineMeter = new Meter("myMeter");
-            customPipelineCounter = pipelineMeter.CreateCounter<int>("custom_pipeline_counter", "1", "pipeline export counter");
-            customPipelineHistogram = pipelineMeter.CreateHistogram<double>("custom_pipeline_histogram", "ms", "pipeline export histogram");
-            customPipelineGauge = pipelineMeter.CreateUpDownCounter<int>("custom_pipeline_gauge", "1", "pipeline export gauge");
-        }
-    }
+    private readonly ILogger<AppController> logger;
 
     private static readonly Thread thread = new Thread(() =>
             {
@@ -103,10 +73,12 @@ public class AppController : ControllerBase
                 }
             });
 
-    public AppController()
+    public AppController(ILogger<AppController> logger)
     {
+        this.logger = logger;
         if (!threadStarted)
         {
+            Console.WriteLine("Starting thread");
             threadStarted = true;
             thread.Start();
         }
@@ -126,28 +98,14 @@ public class AppController : ControllerBase
     public string AWSSDKCall([FromQuery] string testingId)
     {
         var random = new Random();
-        
-        // Agent-based metrics
-        agentBasedCounter.Add(1, new KeyValuePair<string, object?>("Operation", "counter"));
-        agentBasedHistogram.Record(random.NextDouble() * 100, new KeyValuePair<string, object?>("Operation", "histogram"));
-        agentBasedGauge.Add(random.Next(-10, 11), new KeyValuePair<string, object?>("Operation", "gauge"));
-        
-        // Pipeline metrics
-        if (customPipelineCounter != null)
-        {
-            customPipelineCounter.Add(1, new KeyValuePair<string, object?>("Operation", "pipeline_counter"));
-            customPipelineHistogram?.Record(random.Next(100, 1001), new KeyValuePair<string, object?>("Operation", "pipeline_histogram"));
-            customPipelineGauge?.Add(random.Next(-10, 11), new KeyValuePair<string, object?>("Operation", "pipeline_gauge"));
-        }
-        
-        
-        var bucketName = "e2e-test-bucket-name";
-        if (!string.IsNullOrEmpty(testingId))
-        {
-            bucketName += "-" + testingId;
-        }
-        
-        var request = new GetBucketLocationRequest()
+        AgentBasedCounter.Add(1, new KeyValuePair<string, object>("Operation", "counter"));
+        AgentBasedHistogram.Record(random.NextDouble() * 100, new KeyValuePair<string, object>("Operation", "histogram"));
+        AgentBasedGauge.Add(random.Next(-10, 11), new KeyValuePair<string, object>("Operation", "gauge"));
+        CustomPipelineCounter.Add(1, new KeyValuePair<string, object>("Operation", "pipeline_counter"));
+        CustomPipelineHistogram.Record(random.Next(100, 1001), new KeyValuePair<string, object>("Operation", "pipeline_histogram"));
+        CustomPipelineGauge.Add(random.Next(-10, 11), new KeyValuePair<string, object>("Operation", "pipeline_gauge"));
+
+       var request = new GetBucketLocationRequest()
             {
                BucketName = testingId
             };
@@ -181,8 +139,99 @@ public class AppController : ControllerBase
         return "Application started!";
     }
 
+    // Trivial in-process readiness route. Serves as both the provisioning readiness probe and the
+    // downstream target for /success, so neither depends on anything outside this process.
+    [HttpGet]
+    [Route("/health")]
+    public string Health()
+    {
+        return "healthy";
+    }
+
+    // Makes a real HttpClient call to this application's own /health route. This produces the
+    // Service Events FunctionCall (`service.function.duration`) data point with status=success and,
+    // via the per-endpoint latency threshold, the latency-triggered IncidentSnapshot at HTTP 200.
+    // Unlike /outgoing-http-call (which reaches a public site) the downstream hop stays on loopback,
+    // so neither signal depends on DNS, TLS or egress from the test VPC.
+    [HttpGet]
+    [Route("/success")]
+    public string Success()
+    {
+        var endpoint = $"{this.Request.Scheme}://{this.Request.Host}/health";
+        _ = this.httpClient.GetAsync(endpoint).Result;
+
+        return this.GetTraceId();
+    }
+
+    // Makes an HttpClient call that fails, producing the Service Events FunctionCall data point
+    // with status=error. /exception cannot cover this: it throws inside the controller without
+    // making an outbound call, so no HttpClient activity exists for FunctionCall to record. The
+    // target is a closed loopback port, so the connection is refused immediately and deterministically
+    // without DNS, TLS or egress. The exception is swallowed because the failed downstream call is
+    // the signal under test; the request itself returning 200 keeps it distinct from /exception.
+    [HttpGet]
+    [Route("/failed-call")]
+    public string FailedCall()
+    {
+        try
+        {
+            _ = this.httpClient.GetAsync("http://127.0.0.1:1/").Result;
+        }
+        catch (Exception)
+        {
+            // Expected: the point is the failed HttpClient activity, not the response.
+        }
+
+        return this.GetTraceId();
+    }
+
+    // Throws so the request completes with HTTP 500 and a captured exception. This is the
+    // trigger for the Service Events exception-type IncidentSnapshot and the EndpointErrorMetric
+    // `count` data point. The thrown type surfaces on the snapshot as the fully-qualified .NET
+    // type name (System.InvalidOperationException).
+    [HttpGet]
+    [Route("/exception")]
+    public string Exception()
+    {
+        throw new InvalidOperationException("intentional exception for service events e2e test");
+    }
+
+    private static MeterProvider CreatePipelineMeterProvider()
+    {
+        var serviceName = Environment.GetEnvironmentVariable("SERVICE_NAME");
+        var deploymentEnvironment = Environment.GetEnvironmentVariable("DEPLOYMENT_ENVIRONMENT_NAME");
+        if (string.IsNullOrEmpty(serviceName) || string.IsNullOrEmpty(deploymentEnvironment))
+        {
+            return null;
+        }
+
+        return Sdk.CreateMeterProviderBuilder()
+            .SetResourceBuilder(ResourceBuilder.CreateEmpty().AddAttributes(new Dictionary<string, object>
+            {
+                ["service.name"] = serviceName,
+                ["deployment.environment.name"] = deploymentEnvironment,
+            }))
+            .AddReader(new PeriodicExportingMetricReader(
+                new OtlpMetricExporter(new OtlpExporterOptions
+                {
+                    Endpoint = new Uri("http://localhost:4318/v1/metrics"),
+                    Protocol = OtlpExportProtocol.HttpProtobuf,
+                }),
+                1000))
+            .AddMeter("myMeter")
+            .Build();
+    }
+
     private string GetTraceId()
     {
+        CustomRequestCounter.Add(1, new TagList
+        {
+            { "custom.operation", "request" },
+            { "custom.component", "frontend" },
+            { "custom.environment", "validation" },
+            { "custom.description", CustomRequestCounter.Description },
+        });
+        this.logger.LogWarning("This is a custom log for validation testing");
         var traceId = Activity.Current.TraceId.ToHexString();
         var version = "1";
         var epoch = traceId.Substring(0, 8);

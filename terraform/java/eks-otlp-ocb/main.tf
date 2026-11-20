@@ -37,17 +37,17 @@ provider "aws" {
 
 # get eks cluster
 data "aws_eks_cluster" "testing_cluster" {
-    name = var.eks_cluster_name
+  name = var.eks_cluster_name
 }
 data "aws_eks_cluster_auth" "testing_cluster" {
-    name = var.eks_cluster_name
+  name = var.eks_cluster_name
 }
 
 # set up kubectl
 provider "kubernetes" {
-  host = data.aws_eks_cluster.testing_cluster.endpoint
+  host                   = data.aws_eks_cluster.testing_cluster.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.testing_cluster.certificate_authority[0].data)
-  token = data.aws_eks_cluster_auth.testing_cluster.token
+  token                  = data.aws_eks_cluster_auth.testing_cluster.token
 }
 
 provider "kubectl" {
@@ -70,7 +70,7 @@ data "template_file" "kubeconfig_file" {
 }
 
 resource "local_file" "kubeconfig" {
-  content = data.template_file.kubeconfig_file.rendered
+  content  = data.template_file.kubeconfig_file.rendered
   filename = "${var.kube_directory_path}/config"
 }
 
@@ -103,20 +103,20 @@ resource "kubernetes_deployment" "sample_app_deployment" {
       spec {
         service_account_name = var.service_account_aws_access
         container {
-          name = "back-end"
-          image = var.sample_app_image
+          name              = "back-end"
+          image             = var.sample_app_image
           image_pull_policy = "Always"
           env {
             #inject the test id to service name for unique App Signals metrics
-            name = "OTEL_SERVICE_NAME"
+            name  = "OTEL_SERVICE_NAME"
             value = "sample-application-${var.test_id}"
           }
           env {
-            name = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
+            name  = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
             value = "false"
           }
           env {
-            name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
+            name  = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
             value = "true"
           }
           port {
@@ -129,22 +129,22 @@ resource "kubernetes_deployment" "sample_app_deployment" {
 }
 
 resource "kubernetes_service" "sample_app_service" {
-  depends_on = [ kubernetes_deployment.sample_app_deployment ]
+  depends_on = [kubernetes_deployment.sample_app_deployment]
 
   metadata {
-    name = "sample-app-service"
+    name      = "sample-app-service"
     namespace = var.test_namespace
   }
   spec {
     type = "NodePort"
     selector = {
-        app = "sample-app"
+      app = "sample-app"
     }
     port {
-      protocol = "TCP"
-      port = 8080
+      protocol    = "TCP"
+      port        = 8080
       target_port = 8080
-      node_port = 30100
+      node_port   = 30100
     }
   }
 }
@@ -156,7 +156,7 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
   metadata {
     name      = "sample-r-app-deployment-${var.test_id}"
     namespace = var.test_namespace
-    labels    = {
+    labels = {
       app = "remote-app"
     }
   }
@@ -181,18 +181,18 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
       spec {
         service_account_name = var.service_account_aws_access
         container {
-          name = "back-end"
-          image = var.sample_remote_app_image
+          name              = "back-end"
+          image             = var.sample_remote_app_image
           image_pull_policy = "Always"
           port {
             container_port = 8080
           }
           env {
-            name = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
+            name  = "OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED"
             value = "false"
           }
           env {
-            name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
+            name  = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
             value = "true"
           }
         }
@@ -202,10 +202,10 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
 }
 
 resource "kubernetes_service" "sample_remote_app_service" {
-  depends_on = [ kubernetes_deployment.sample_remote_app_deployment ]
+  depends_on = [kubernetes_deployment.sample_remote_app_deployment]
 
   metadata {
-    name = "sample-remote-app-service"
+    name      = "sample-remote-app-service"
     namespace = var.test_namespace
   }
   spec {
@@ -214,17 +214,17 @@ resource "kubernetes_service" "sample_remote_app_service" {
       app = "remote-app"
     }
     port {
-      protocol = "TCP"
-      port = 8080
+      protocol    = "TCP"
+      port        = 8080
       target_port = 8080
-      node_port = 30101
+      node_port   = 30101
     }
   }
 }
 
 resource "kubernetes_deployment" "traffic_generator" {
   metadata {
-    name = "traffic-generator"
+    name      = "traffic-generator"
     namespace = var.test_namespace
     labels = {
       app = "traffic-generator"
@@ -245,8 +245,8 @@ resource "kubernetes_deployment" "traffic_generator" {
       }
       spec {
         container {
-          name  = "traffic-generator"
-          image = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
+          name              = "traffic-generator"
+          image             = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
           image_pull_policy = "Always"
           env {
             name  = "ID"

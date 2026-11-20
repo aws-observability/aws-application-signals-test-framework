@@ -1,0 +1,7 @@
+-
+  validationType: "cw-log"
+  expectedLogStructureTemplate: "DOTNET_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY"
+  # See incident-snapshot-validation.yml: trigger_type is the only discriminator needed, and every
+  # remaining field is asserted by the template so failures name the field rather than returning
+  # an empty result set.
+  cwLogFilterPattern: "{ ($.resource.attributes.['service.name'] = \"{{serviceName}}\") && ($.scope.name = \"serviceevents\") && ($.attributes.['event.name'] = \"aws.service_events.incident_snapshot\") && ($.attributes.['aws.service_events.trigger_type'] = \"latency\") }"

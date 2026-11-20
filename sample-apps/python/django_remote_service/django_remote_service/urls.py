@@ -5,4 +5,5 @@ from remote_service_app import views
 
 urlpatterns = [
     path('healthcheck', views.healthcheck),
+    path('status/<int:code>', views.status),
 ]

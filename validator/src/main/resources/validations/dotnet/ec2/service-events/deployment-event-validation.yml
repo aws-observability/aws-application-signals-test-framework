@@ -1,0 +1,14 @@
+-
+  validationType: "cw-log"
+  expectedLogStructureTemplate: "DOTNET_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT"
+  # The DeploymentEvent is emitted once, when the application starts, and is never repeated — unlike
+  # the IncidentSnapshots, which the traffic generator drives continuously. The default 5-minute
+  # search window is therefore a race against provisioning: the event is already a few minutes old
+  # by the time this runs, and because the window slides forward with the clock, retrying moves it
+  # further out of reach rather than closer. Widen the window instead.
+  cwLogLookbackMinutes: 30
+  # The filter only needs enough terms to select the right record; every other field is asserted by
+  # the template. Terms are limited to values confirmed against a real emitted record, because a
+  # filter miss returns zero events and surfaces as "expected log not found" with no indication of
+  # which term failed, whereas a template miss names the offending field and its actual value.
+  cwLogFilterPattern: "{ ($.resource.attributes.['service.name'] = \"{{serviceName}}\") && ($.scope.name = \"serviceevents\") && ($.attributes.['event.name'] = \"aws.service_events.deployment_event\") && ($.attributes.['aws.service_events.deployment.trigger'] = \"startup\") }"

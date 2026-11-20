@@ -37,17 +37,17 @@ provider "aws" {
 
 # get eks cluster
 data "aws_eks_cluster" "testing_cluster" {
-    name = var.eks_cluster_name
+  name = var.eks_cluster_name
 }
 data "aws_eks_cluster_auth" "testing_cluster" {
-    name = var.eks_cluster_name
+  name = var.eks_cluster_name
 }
 
 # set up kubectl
 provider "kubernetes" {
-  host = data.aws_eks_cluster.testing_cluster.endpoint
+  host                   = data.aws_eks_cluster.testing_cluster.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.testing_cluster.certificate_authority[0].data)
-  token = data.aws_eks_cluster_auth.testing_cluster.token
+  token                  = data.aws_eks_cluster_auth.testing_cluster.token
 }
 
 provider "kubectl" {
@@ -57,6 +57,16 @@ provider "kubectl" {
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.testing_cluster.certificate_authority[0].data)
   token                  = data.aws_eks_cluster_auth.testing_cluster.token
   load_config_file       = false
+}
+
+# Per-version NodePort assignment so multiple Java version jobs can run in PARALLEL on one shared
+# cluster without "port is already allocated" collisions (NodePort is cluster-wide, not namespaced).
+# The offset is derived from java_version's index in java_versions, so the supported version set is
+# managed only in the calling workflow, never hardcoded here. Backward-compatible with the sequential
+# test: it passes neither var, so the defaults ("8" in ["8"]) yield offset 0 -> 30100 / 30101.
+locals {
+  main_node_port   = 30100 + index(var.java_versions, var.java_version) * 2
+  remote_node_port = 30101 + index(var.java_versions, var.java_version) * 2
 }
 
 data "template_file" "kubeconfig_file" {
@@ -70,7 +80,7 @@ data "template_file" "kubeconfig_file" {
 }
 
 resource "local_file" "kubeconfig" {
-  content = data.template_file.kubeconfig_file.rendered
+  content  = data.template_file.kubeconfig_file.rendered
   filename = "${var.kube_directory_path}/config"
 }
 
@@ -103,28 +113,28 @@ resource "kubernetes_deployment" "sample_app_deployment" {
       spec {
         service_account_name = var.service_account_aws_access
         container {
-          name = "back-end"
-          image = var.sample_app_image
+          name              = "back-end"
+          image             = var.sample_app_image
           image_pull_policy = "Always"
           env {
             #inject the test id to service name for unique App Signals metrics
-            name = "OTEL_SERVICE_NAME"
+            name  = "OTEL_SERVICE_NAME"
             value = "sample-application-${var.test_id}"
           }
           env {
-            name = "RDS_MYSQL_CLUSTER_CONNECTION_URL"
-            value = "jdbc:mysql://${var.rds_mysql_cluster_endpoint}:3306/information_schema"
+            name  = "RDS_MYSQL_CLUSTER_CONNECTION_URL"
+            value = "jdbc:mysql://mysql-service.${var.test_namespace}.svc.cluster.local:3306/information_schema"
           }
           env {
-            name = "RDS_MYSQL_CLUSTER_USERNAME"
-            value = var.rds_mysql_cluster_username
+            name  = "RDS_MYSQL_CLUSTER_USERNAME"
+            value = "root"
           }
           env {
-            name = "RDS_MYSQL_CLUSTER_PASSWORD"
-            value = var.rds_mysql_cluster_password
+            name  = "RDS_MYSQL_CLUSTER_PASSWORD"
+            value = "testpassword"
           }
           env {
-            name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
+            name  = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
             value = "true"
           }
           port {
@@ -137,22 +147,22 @@ resource "kubernetes_deployment" "sample_app_deployment" {
 }
 
 resource "kubernetes_service" "sample_app_service" {
-  depends_on = [ kubernetes_deployment.sample_app_deployment ]
+  depends_on = [kubernetes_deployment.sample_app_deployment]
 
   metadata {
-    name = "sample-app-service"
+    name      = "sample-app-service"
     namespace = var.test_namespace
   }
   spec {
     type = "NodePort"
     selector = {
-        app = "sample-app"
+      app = "sample-app"
     }
     port {
-      protocol = "TCP"
-      port = 8080
+      protocol    = "TCP"
+      port        = 8080
       target_port = 8080
-      node_port = 30100
+      node_port   = local.main_node_port # per-version port; avoids cross-job NodePort collision
     }
   }
 }
@@ -162,9 +172,9 @@ resource "kubernetes_service" "sample_app_service" {
 resource "kubernetes_deployment" "sample_remote_app_deployment" {
 
   metadata {
-    name      = "sample-r-app-deployment-${var.test_id}"
+    name      = "java-remote-${var.test_id}"
     namespace = var.test_namespace
-    labels    = {
+    labels = {
       app = "remote-app"
     }
   }
@@ -189,11 +199,11 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
       spec {
         service_account_name = var.service_account_aws_access
         container {
-          name = "back-end"
-          image = var.sample_remote_app_image
+          name              = "back-end"
+          image             = var.sample_remote_app_image
           image_pull_policy = "Always"
           env {
-            name = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
+            name  = "OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_CONTROLLER_TELEMETRY_ENABLED"
             value = "true"
           }
           port {
@@ -206,13 +216,13 @@ resource "kubernetes_deployment" "sample_remote_app_deployment" {
 }
 
 resource "kubernetes_service" "sample_remote_app_deployment" {
-  depends_on = [ kubernetes_deployment.sample_remote_app_deployment ]
+  depends_on = [kubernetes_deployment.sample_remote_app_deployment]
 
   metadata {
     # use the same name as the deployment to handle the edge case when the deployment name is longer than 47 characters
     # in this edge case, we just use the service name (rather than deployment name) as RemoteService
     # see https://github.com/aws/amazon-cloudwatch-agent/pull/1553
-    name      = "sample-r-app-deployment-${var.test_id}"
+    name      = "java-remote-${var.test_id}"
     namespace = var.test_namespace
   }
   spec {
@@ -221,17 +231,17 @@ resource "kubernetes_service" "sample_remote_app_deployment" {
       app = "remote-app"
     }
     port {
-      protocol = "TCP"
-      port = 8080
+      protocol    = "TCP"
+      port        = 8080
       target_port = 8080
-      node_port = 30101
+      node_port   = local.remote_node_port # per-version port; avoids cross-job NodePort collision
     }
   }
 }
 
 resource "kubernetes_deployment" "traffic_generator" {
   metadata {
-    name = "traffic-generator"
+    name      = "traffic-generator"
     namespace = var.test_namespace
     labels = {
       app = "traffic-generator"
@@ -252,8 +262,8 @@ resource "kubernetes_deployment" "traffic_generator" {
       }
       spec {
         container {
-          name  = "traffic-generator"
-          image = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
+          name              = "traffic-generator"
+          image             = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/e2e-test-resource:traffic-generator"
           image_pull_policy = "Always"
           env {
             name  = "ID"
@@ -261,6 +271,73 @@ resource "kubernetes_deployment" "traffic_generator" {
           }
         }
       }
+    }
+  }
+}
+
+resource "kubernetes_deployment" "mysql" {
+  metadata {
+    name      = "sql-deployment"
+    namespace = var.test_namespace
+    labels = {
+      app = "mysql"
+    }
+  }
+  spec {
+    replicas = 1
+    selector {
+      match_labels = {
+        app = "mysql"
+      }
+    }
+    template {
+      metadata {
+        labels = {
+          app = "mysql"
+        }
+      }
+      spec {
+        container {
+          name  = "mysql"
+          image = "mysql:8.0"
+          port {
+            container_port = 3306
+          }
+          env {
+            name  = "MYSQL_ROOT_PASSWORD"
+            value = "testpassword"
+          }
+          resources {
+            requests = {
+              cpu    = "100m"
+              memory = "256Mi"
+            }
+            limits = {
+              cpu    = "250m"
+              memory = "512Mi"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_service" "mysql" {
+  depends_on = [kubernetes_deployment.mysql]
+
+  metadata {
+    name      = "mysql-service"
+    namespace = var.test_namespace
+  }
+  spec {
+    selector = {
+      app = "mysql"
+    }
+    port {
+      protocol    = "TCP"
+      port        = 3306
+      target_port = 3306
     }
   }
 }

@@ -41,14 +41,10 @@ variable "get_adot_jar_command" {
   default = "<command> s3://<bucket-name>/<jar>"
 }
 
-variable "canary_type" {
-  default = "java-ec2-asg"
-}
-
 variable "language_version" {
   default = "11"
 }
 
-  variable "cpu_architecture" {
+variable "cpu_architecture" {
   default = "x86_64"
 }

@@ -3,13 +3,13 @@ locals {
 }
 
 resource "aws_lambda_layer_version" "sdk_layer" {
-  count               = var.is_canary ? 0 : 1
+  count               = 1
   layer_name          = var.sdk_layer_name
   filename            = "${var.layer_artifacts_directory}/layer.zip"
-  compatible_runtimes = ["dotnet6", "dotnet8"]
+  compatible_runtimes = ["dotnet8", "dotnet10"]
   license_info        = "Apache-2.0"
   source_code_hash    = filebase64sha256("${var.layer_artifacts_directory}/layer.zip")
-#   filename = "${var.kube_directory_path}/config"
+  #   filename = "${var.kube_directory_path}/config"
 }
 
 module "hello-lambda-function" {
@@ -27,12 +27,23 @@ module "hello-lambda-function" {
   memory_size = 512
   timeout     = 30
 
-  layers = var.is_canary ? [local.sdk_layer_arns[var.region]] : [aws_lambda_layer_version.sdk_layer[0].arn]
+  layers = [aws_lambda_layer_version.sdk_layer[0].arn]
 
   environment_variables = {
-    AWS_LAMBDA_EXEC_WRAPPER     = "/opt/otel-instrument"
-    OTEL_SERVICE_NAME           = "${var.function_name}"
+    AWS_LAMBDA_EXEC_WRAPPER          = "/opt/otel-instrument"
+    AWS_LAMBDA_HANDLER_LOG_FORMAT    = "Unformatted"
+    OTEL_SERVICE_NAME                = "${var.function_name}"
+    OTEL_LOGS_EXPORTER               = "otlp,console"
+    OTEL_EXPORTER_OTLP_LOGS_ENDPOINT = "https://logs.${var.region}.amazonaws.com/v1/logs"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS  = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
+    ADOT_TEST_EXPORT_PATH_ENABLED    = "true"
   }
+  # Note: The following env vars are needed for the OTel .NET auto-instrumentation ILogger bridge.
+  # Currently the CLR profiler does not bridge ILogger calls to OTel log records in Lambda.
+  # These are kept for when the ILogger bridge issue is resolved.
+  # OTEL_DOTNET_AUTO_LOGS_ENABLED                    = "true"
+  # OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED    = "true"
+  # OTEL_DOTNET_AUTO_LOGS_INCLUDE_FORMATTED_MESSAGE  = "true"
 
   tracing_mode = var.tracing_mode
 
@@ -57,6 +68,12 @@ module "api-gateway" {
   function_name       = module.hello-lambda-function.lambda_function_name
   function_invoke_arn = module.hello-lambda-function.lambda_function_invoke_arn
   enable_xray_tracing = var.tracing_mode == "Active"
+}
+
+resource "aws_cloudwatch_log_stream" "otlp_logs" {
+  name           = "otlp-logs"
+  log_group_name = "/aws/lambda/${var.function_name}"
+  depends_on     = [module.hello-lambda-function]
 }
 
 resource "aws_iam_role_policy_attachment" "hello-lambda-cloudwatch" {

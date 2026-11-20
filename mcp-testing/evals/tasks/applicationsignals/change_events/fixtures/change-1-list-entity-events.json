@@ -1,0 +1,21 @@
+{
+    "ChangeEvents": [
+        {
+            "AccountId": "123456789012",
+            "ChangeEventType": "DEPLOYMENT",
+            "Entity": {
+                "Identifier": "payments-service",
+                "ResourceType": "AWS::ECS::Cluster",
+                "Type": "AWS::Resource"
+            },
+            "EventId": "eventId-1",
+            "EventName": "UpdateService",
+            "Region": "us-east-1",
+            "Timestamp": 1.769631544E9,
+            "UserName": "dataGenerationLambda"
+        }
+    ],
+    "StartTime": 1737667200,
+    "EndTime": 1737667800,
+    "NextToken": null
+}

@@ -60,6 +60,16 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EKS_OTLP_OCB_CLIENT_CALL_METRIC("/expected-data-template/java/eks-otlp-ocb/client-call-metric.mustache"),
   JAVA_EKS_OTLP_OCB_CLIENT_CALL_TRACE("/expected-data-template/java/eks-otlp-ocb/client-call-trace.mustache"),
 
+  /** Java EC2 Dynamic Instrumentation Test Case Validations */
+  JAVA_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT(
+      "/expected-data-template/java/ec2/adot-di/di-snapshot-line-breakpoint.mustache"),
+  JAVA_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE(
+      "/expected-data-template/java/ec2/adot-di/di-snapshot-method-probe.mustache"),
+  JAVA_EC2_ADOT_DI_SNAPSHOT_METHOD_BREAKPOINT(
+      "/expected-data-template/java/ec2/adot-di/di-snapshot-method-breakpoint.mustache"),
+  JAVA_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE_EXCEPTION(
+      "/expected-data-template/java/ec2/adot-di/di-snapshot-method-probe-exception.mustache"),
+
   /** Java EC2 Default Test Case Validations */
   JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/default/outgoing-http-call-log.mustache"),
   JAVA_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC(
@@ -78,6 +88,30 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_DEFAULT_CLIENT_CALL_LOG("/expected-data-template/java/ec2/default/client-call-log.mustache"),
   JAVA_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/java/ec2/default/client-call-metric.mustache"),
   JAVA_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/default/client-call-trace.mustache"),
+
+  /** Java EC2 Service Events Test Case Validations */
+  JAVA_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/java/ec2/service-events/deployment-event.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/java/ec2/service-events/incident-snapshot.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/java/ec2/service-events/incident-snapshot-latency.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/java/ec2/service-events/endpoint-error-metric.mustache"),
+  JAVA_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/java/ec2/service-events/function-call-metric.mustache"),
+
+  /** Java EKS Service Events Test Case Validations */
+  JAVA_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/java/eks/service-events/deployment-event.mustache"),
+  JAVA_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/java/eks/service-events/incident-snapshot.mustache"),
+  JAVA_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/java/eks/service-events/incident-snapshot-latency.mustache"),
+  JAVA_EKS_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/java/eks/service-events/endpoint-error-metric.mustache"),
+  JAVA_EKS_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/java/eks/service-events/function-call-metric.mustache"),
 
   /** Java EC2 ASG Test Case Validations */
   JAVA_EC2_ASG_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/asg/outgoing-http-call-log.mustache"),
@@ -116,6 +150,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_UBUNTU_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/ubuntu/client-call-trace.mustache"),
 
   /** Java EC2 ADOT SigV4 (ADOT Stand-Alone) Test Case Validations */
+  JAVA_EC2_ADOT_SIGV4_OTLP_METRIC(
+      "/expected-data-template/java/ec2/adot-aws-otlp/custom-otlp-metric.mustache"),
   JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG("/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   JAVA_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
       "/expected-data-template/java/ec2/adot-aws-otlp/outgoing-http-call-metric.mustache"),
@@ -135,7 +171,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/java/ec2/adot-aws-otlp/client-call-trace.mustache"),
 
   /** Java EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  JAVA_EC2_ADOT_OTLP_LOG("/expected-data-template/java/ec2/adot-aws-otlp/application-log.mustache"),
+  JAVA_EC2_ADOT_SIGV4_OTLP_LOG("/expected-data-template/java/ec2/adot-aws-otlp/custom-otlp-log.mustache"),
 
   /** Java EC2 X-Ray Adaptive Sampling Test Case Validation */
   JAVA_EC2_ADAPTIVE_SAMPLING_FULL_TRACE("/expected-data-template/java/ec2/adaptive-sampling/full-trace.mustache"),
@@ -231,6 +267,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/asg/client-call-trace.mustache"),
 
   /** Python EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  PYTHON_EC2_ADOT_SIGV4_OTLP_METRIC(
+      "/expected-data-template/python/ec2/adot-aws-otlp/custom-otlp-metric.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/python/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   PYTHON_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
@@ -251,12 +289,52 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/python/ec2/adot-aws-otlp/client-call-trace.mustache"),
 
   /** Python EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  PYTHON_EC2_ADOT_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/application-log.mustache"),
+  PYTHON_EC2_ADOT_SIGV4_OTLP_LOG("/expected-data-template/python/ec2/adot-aws-otlp/custom-otlp-log.mustache"),
 
-  /** Python EC2 ADOT Gen AI Test Case Validation */
-  PYTHON_EC2_ADOT_GENAI_LOG("/expected-data-template/python/ec2/adot-genai/genai-log.mustache"),
-  PYTHON_EC2_ADOT_GENAI_TRACE("/expected-data-template/python/ec2/adot-genai/genai-trace.mustache"),
-  PYTHON_EC2_ADOT_GENAI_METRIC("/expected-data-template/python/ec2/adot-genai/genai-metric.mustache"),
+  /** Python EC2 ADOT Gen AI v1 Test Case Validation */
+  PYTHON_EC2_ADOT_GENAI_LOG("/expected-data-template/python/ec2/adot-genai-v1/genai-log.mustache"),
+  PYTHON_EC2_ADOT_GENAI_TRACE("/expected-data-template/python/ec2/adot-genai-v1/genai-trace.mustache"),
+  PYTHON_EC2_ADOT_GENAI_METRIC("/expected-data-template/python/ec2/adot-genai-v1/genai-metric.mustache"),
+  PYTHON_EC2_ADOT_GENAI_TRUNCATED_LOG("/expected-data-template/python/ec2/adot-genai-v1/genai-log-truncated.mustache"),
+
+  /** Python EC2 GenAI v2 (AgentCore Collector) Test Case Validations */
+  PYTHON_EC2_ADOT_GENAI_V2_TRACE("/expected-data-template/python/ec2/adot-genai-v2/genai-trace.mustache"),
+  PYTHON_EC2_ADOT_GENAI_V2_LLO_SPAN_ATTRIBUTE_LOG("/expected-data-template/python/ec2/adot-genai-v2/genai-log-llo-span-attribute.mustache"),
+  PYTHON_EC2_ADOT_GENAI_V2_METRIC("/expected-data-template/python/ec2/adot-genai-v2/genai-metric.mustache"),
+
+  /** Python EC2 Dynamic Instrumentation Test Case Validations */
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-line-breakpoint.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-probe.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_BREAKPOINT(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-breakpoint.mustache"),
+  PYTHON_EC2_ADOT_DI_SNAPSHOT_METHOD_PROBE_EXCEPTION(
+      "/expected-data-template/python/ec2/adot-di/di-snapshot-method-probe-exception.mustache"),
+  
+  /** Python EC2 Service Events Test Case Validations */
+  PYTHON_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/python/ec2/service-events/deployment-event.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/python/ec2/service-events/incident-snapshot.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/python/ec2/service-events/incident-snapshot-latency.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/python/ec2/service-events/endpoint-error-metric.mustache"),
+  PYTHON_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/python/ec2/service-events/function-call-metric.mustache"),
+
+  /** Python EKS Service Events Test Case Validations */
+  PYTHON_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/python/eks/service-events/deployment-event.mustache"),
+  PYTHON_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/python/eks/service-events/incident-snapshot.mustache"),
+  PYTHON_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/python/eks/service-events/incident-snapshot-latency.mustache"),
+  PYTHON_EKS_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/python/eks/service-events/endpoint-error-metric.mustache"),
+  PYTHON_EKS_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/python/eks/service-events/function-call-metric.mustache"),
 
   /** Python K8S Test Case Validations */
   PYTHON_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/python/k8s/outgoing-http-call-log.mustache"),
@@ -283,6 +361,10 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_RUNTIME_METRIC_LOG("/expected-data-template/python/runtime/runtime-log.mustache"),
   PYTHON_RUNTIME_METRIC("/expected-data-template/python/runtime/runtime-metric.mustache"),
 
+  /** Python EC2 X-Ray Adaptive Sampling Test Case Validation */
+  PYTHON_EC2_ADAPTIVE_SAMPLING_FULL_TRACE("/expected-data-template/python/ec2/adaptive-sampling/full-trace.mustache"),
+  PYTHON_EC2_ADAPTIVE_SAMPLING_PARTIAL_TRACE("/expected-data-template/python/ec2/adaptive-sampling/partial-trace.mustache"),
+
   /** DotNet EC2 Default Test Case Validations */
   DOTNET_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/dotnet/ec2/default/outgoing-http-call-log.mustache"),
@@ -303,6 +385,9 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_DEFAULT_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/default/client-call-metric.mustache"),
   DOTNET_EC2_DEFAULT_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/default/client-call-trace.mustache"),
 
+  /** DotNet EC2 Default Custom Metrics Test Case Validations */
+  DOTNET_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC("/expected-data-template/dotnet/ec2/default/aws-otel-custom-metrics.mustache"),
+
   /** DotNet EC2 Windows Default Test Case Validations */
   DOTNET_EC2_WINDOWS_DEFAULT_OUTGOING_HTTP_CALL_LOG(
           "/expected-data-template/dotnet/ec2/windows/outgoing-http-call-log.mustache"),
@@ -314,9 +399,6 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_WINDOWS_DEFAULT_AWS_SDK_CALL_LOG("/expected-data-template/dotnet/ec2/windows/aws-sdk-call-log.mustache"),
   DOTNET_EC2_WINDOWS_DEFAULT_AWS_SDK_CALL_METRIC("/expected-data-template/dotnet/ec2/windows/aws-sdk-call-metric.mustache"),
   DOTNET_EC2_WINDOWS_DEFAULT_AWS_SDK_CALL_TRACE("/expected-data-template/dotnet/ec2/windows/aws-sdk-call-trace.mustache"),
-
-    /** DOTNET EC2 Default Custom Metrics Test Case Validations */
-  DOTNET_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC("/expected-data-template/dotnet/ec2/default/aws-otel-custom-metrics.mustache"),
 
   DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_LOG("/expected-data-template/dotnet/ec2/windows/remote-service-log.mustache"),
   DOTNET_EC2_WINDOWS_DEFAULT_REMOTE_SERVICE_METRIC("/expected-data-template/dotnet/ec2/windows/remote-service-metric.mustache"),
@@ -345,6 +427,10 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_ASG_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/asg/client-call-trace.mustache"),
 
   /** DotNet EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  DOTNET_EC2_ADOT_SIGV4_OTLP_METRIC(
+      "/expected-data-template/dotnet/ec2/adot-sigv4/custom-otlp-metric.mustache"),
+  DOTNET_EC2_ADOT_SIGV4_OTLP_LOG(
+      "/expected-data-template/dotnet/ec2/adot-sigv4/custom-otlp-log.mustache"),
   DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/dotnet/ec2/adot-sigv4/outgoing-http-call-log.mustache"),
   DOTNET_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
@@ -363,6 +449,30 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   DOTNET_EC2_ADOT_SIGV4_CLIENT_CALL_LOG("/expected-data-template/dotnet/ec2/adot-sigv4/client-call-log.mustache"),
   DOTNET_EC2_ADOT_SIGV4_CLIENT_CALL_METRIC("/expected-data-template/dotnet/ec2/adot-sigv4/client-call-metric.mustache"),
   DOTNET_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/dotnet/ec2/adot-sigv4/client-call-trace.mustache"),
+
+  /** DotNet EC2 Service Events Test Case Validations */
+  DOTNET_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/dotnet/ec2/service-events/deployment-event.mustache"),
+  DOTNET_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/dotnet/ec2/service-events/incident-snapshot.mustache"),
+  DOTNET_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/dotnet/ec2/service-events/incident-snapshot-latency.mustache"),
+  DOTNET_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/dotnet/ec2/service-events/endpoint-error-metric.mustache"),
+  DOTNET_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/dotnet/ec2/service-events/function-call-metric.mustache"),
+
+  /** DotNet EKS Service Events Test Case Validations */
+  DOTNET_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/dotnet/eks/service-events/deployment-event.mustache"),
+  DOTNET_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/dotnet/eks/service-events/incident-snapshot.mustache"),
+  DOTNET_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/dotnet/eks/service-events/incident-snapshot-latency.mustache"),
+  DOTNET_EKS_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/dotnet/eks/service-events/endpoint-error-metric.mustache"),
+  DOTNET_EKS_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/dotnet/eks/service-events/function-call-metric.mustache"),
 
   /** DotNet K8s Test Case Validations */
   DOTNET_K8S_OUTGOING_HTTP_CALL_LOG("/expected-data-template/dotnet/k8s/outgoing-http-call-log.mustache"),
@@ -416,6 +526,34 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_EKS_CLIENT_CALL_METRIC("/expected-data-template/node/eks/client-call-metric.mustache"),
   NODE_EKS_CLIENT_CALL_TRACE("/expected-data-template/node/eks/client-call-trace.mustache"),
   
+  /** Node EC2 Dynamic Instrumentation Test Case Validations */
+  NODE_EC2_ADOT_DI_SNAPSHOT_LINE_BREAKPOINT(
+      "/expected-data-template/node/ec2/adot-di/di-snapshot-line-breakpoint.mustache"),
+
+  /** Node EC2 Service Events Test Case Validations */
+  NODE_EC2_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/node/ec2/service-events/deployment-event.mustache"),
+  NODE_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/node/ec2/service-events/incident-snapshot.mustache"),
+  NODE_EC2_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/node/ec2/service-events/incident-snapshot-latency.mustache"),
+  NODE_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/node/ec2/service-events/endpoint-error-metric.mustache"),
+  NODE_EC2_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/node/ec2/service-events/function-call-metric.mustache"),
+
+  /** Node EKS Service Events Test Case Validations */
+  NODE_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT(
+      "/expected-data-template/node/eks/service-events/deployment-event.mustache"),
+  NODE_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT(
+      "/expected-data-template/node/eks/service-events/incident-snapshot.mustache"),
+  NODE_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT_LATENCY(
+      "/expected-data-template/node/eks/service-events/incident-snapshot-latency.mustache"),
+  NODE_EKS_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC(
+      "/expected-data-template/node/eks/service-events/endpoint-error-metric.mustache"),
+  NODE_EKS_SERVICE_EVENTS_FUNCTION_CALL_METRIC(
+      "/expected-data-template/node/eks/service-events/function-call-metric.mustache"),
+
   /** Node EC2 Default Test Case Validations */
   NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_LOG("/expected-data-template/node/ec2/default/outgoing-http-call-log.mustache"),
   NODE_EC2_DEFAULT_OUTGOING_HTTP_CALL_METRIC("/expected-data-template/node/ec2/default/outgoing-http-call-metric.mustache"),
@@ -471,6 +609,8 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_K8S_CLIENT_CALL_TRACE("/expected-data-template/node/k8s/client-call-trace.mustache"),
 
   /** Node EC2 ADOT SigV4 (Stand Alone ADOT) Test Case Validations */
+  NODE_EC2_ADOT_SIGV4_OTLP_METRIC(
+      "/expected-data-template/node/ec2/adot-aws-otlp/custom-otlp-metric.mustache"),
   NODE_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_LOG(
       "/expected-data-template/node/ec2/adot-aws-otlp/outgoing-http-call-log.mustache"),
   NODE_EC2_ADOT_SIGV4_OUTGOING_HTTP_CALL_METRIC(
@@ -491,7 +631,7 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   NODE_EC2_ADOT_SIGV4_CLIENT_CALL_TRACE("/expected-data-template/node/ec2/adot-aws-otlp/client-call-trace.mustache"),
 
   /** Node EC2 ADOT SigV4 Log Exporter Test Case Validation */
-  NODE_EC2_ADOT_OTLP_LOG("/expected-data-template/node/ec2/adot-aws-otlp/application-log.mustache"),
+  NODE_EC2_ADOT_SIGV4_OTLP_LOG("/expected-data-template/node/ec2/adot-aws-otlp/custom-otlp-log.mustache"),
 
   /** Node ECS Test Case Validations */
   NODE_ECS_HC_CALL_LOG("/expected-data-template/node/ecs/hc-log.mustache"),
@@ -512,6 +652,12 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   PYTHON_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/python/lambda/aws-sdk-call-log.mustache"),
   PYTHON_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/python/lambda/aws-sdk-call-metric.mustache"),
 
+  /** Python Lambda Lite SDK (Fast Start) Test Case Validations */
+  PYTHON_LAMBDA_LITE_SDK_INVOKE_TRACE("/expected-data-template/python/lambda-lite-sdk/lambda-invoke-trace.mustache"),
+
+  /** Node Lambda Lite SDK (Fast Start) Test Case Validations */
+  NODE_LAMBDA_LITE_SDK_INVOKE_TRACE("/expected-data-template/node/lambda-lite-sdk/lambda-invoke-trace.mustache"),
+
   /** DotNet Lambda Test Case Validations */
   DOTNET_LAMBDA_INVOKE_LOG("/expected-data-template/dotnet/lambda/lambda-invoke-log.mustache"),
   DOTNET_LAMBDA_INVOKE_METRIC("/expected-data-template/dotnet/lambda/lambda-invoke-metric.mustache"),
@@ -525,6 +671,13 @@ public enum PredefinedExpectedTemplate implements FileConfig {
   JAVA_LAMBDA_INVOKE_TRACE("/expected-data-template/java/lambda/lambda-invoke-trace.mustache"),
   JAVA_LAMBDA_AWS_SDK_CALL_LOG("/expected-data-template/java/lambda/aws-sdk-call-log.mustache"),
   JAVA_LAMBDA_AWS_SDK_CALL_METRIC("/expected-data-template/java/lambda/aws-sdk-call-metric.mustache"),
+
+  /** Console log schema — includes droppedAttributes, flags, scope.version, resource.schemaUrl. */
+  LAMBDA_LOG_SCHEMA("/expected-data-template/java/lambda/log-schema.mustache"),
+  /** OTLP log schema — core fields only (backend omits default-value fields). */
+  LAMBDA_LOG_SCHEMA_OTLP("/expected-data-template/java/lambda/log-schema-otlp.mustache"),
+  /** .NET console log schema — observedTimeUnixNano allows 0. */
+  LAMBDA_LOG_SCHEMA_DOTNET("/expected-data-template/java/lambda/log-schema-dotnet.mustache"),
   ;
 
   private String path;

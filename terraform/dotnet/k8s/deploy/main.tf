@@ -92,10 +92,9 @@ resource "null_resource" "deploy" {
         kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
       elif [ "${var.repository}" = "aws-otel-dotnet-instrumentation" ]; then
         kubectl patch deploy -n amazon-cloudwatch amazon-cloudwatch-observability-controller-manager --type='json' \
-        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/4", "value": "--auto-instrumentation-dotnet-image=${var.patch_image_arn}"}]'
-        kubectl delete pods --all -n amazon-cloudwatch
-        sleep 10
-        kubectl wait --for=condition=Ready pod --all -n amazon-cloudwatch
+        -p='[{"op": "replace", "path": "/spec/template/spec/containers/0/args/5", "value": "--auto-instrumentation-dotnet-image=${var.patch_image_arn}"}]'
+        # Patching the deployment triggers a rollout; wait for it to converge before proceeding.
+        kubectl rollout status deployment/amazon-cloudwatch-observability-controller-manager -n amazon-cloudwatch --timeout=120s
       fi
 
       # Create sample app namespace
@@ -146,7 +145,7 @@ resource "null_resource" "deploy" {
 
       echo "Wait for sample app to be reach ready state"
       sleep 10
-      kubectl wait --for=condition=Ready --request-timeout '10m' pod --all -n dotnet-sample-app-namespace
+      kubectl wait --for=condition=Ready --timeout=10m pod --all -n dotnet-sample-app-namespace
 
       # Emit main and remote service pod IP
       echo "LOG: Outputting remote service pod IP to SSM using put-parameter API"

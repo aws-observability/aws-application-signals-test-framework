@@ -1,0 +1,4 @@
+-
+  validationType: "promql"
+  expectedMetricTemplate: "NODE_EC2_SERVICE_EVENTS_ENDPOINT_ERROR_METRIC"
+  promQlQuery: "{\"count\", \"@resource.service.name\"=\"{{serviceName}}\"}"

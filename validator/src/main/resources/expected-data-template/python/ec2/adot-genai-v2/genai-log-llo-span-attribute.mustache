@@ -1,0 +1,26 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}"
+    }
+  },
+  "scope": {
+    "name": "openinference.instrumentation.langchain"
+  },
+  "severityNumber": "^[0-9]+$",
+  "severityText": ".*",
+  "body": {
+    "input": {
+      "messages": [
+        {
+          "content": "^.+$",
+          "role": "user"
+        }
+      ]
+    }
+  },
+  "attributes": {
+    "event.name": "openinference.instrumentation.langchain"
+  },
+  "traceId": "{{traceId}}"
+}]

@@ -3,10 +3,10 @@ locals {
 }
 
 resource "aws_lambda_layer_version" "sdk_layer" {
-  count               = var.is_canary ? 0 : 1
+  count               = 1
   layer_name          = var.sdk_layer_name
   filename            = "${var.layer_artifacts_directory}/layer.zip"
-  compatible_runtimes = ["java17", "java21"]
+  compatible_runtimes = ["java11", "java17", "java21", "java25"]
   license_info        = "Apache-2.0"
   source_code_hash    = filebase64sha256("${var.layer_artifacts_directory}/layer.zip")
 }
@@ -23,14 +23,21 @@ module "hello-lambda-function" {
   create_package         = false
   local_existing_package = "${var.layer_artifacts_directory}/java-function.zip"
 
-  memory_size = 512
+  memory_size = 1024
   timeout     = 30
 
-  layers = var.is_canary ? [local.sdk_layer_arns[var.region]] : [aws_lambda_layer_version.sdk_layer[0].arn]
+  layers = [aws_lambda_layer_version.sdk_layer[0].arn]
 
   environment_variables = {
-    AWS_LAMBDA_EXEC_WRAPPER     = "/opt/otel-instrument"
-    OTEL_SERVICE_NAME           = var.function_name
+    AWS_LAMBDA_EXEC_WRAPPER                        = "/opt/otel-instrument"
+    OTEL_SERVICE_NAME                              = var.function_name
+    OTEL_LOGS_EXPORTER                             = "otlp,console"
+    OTEL_EXPORTER_OTLP_LOGS_ENDPOINT               = "https://logs.${var.region}.amazonaws.com/v1/logs"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS                = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
+    OTEL_EXPORTER_OTLP_LOGS_PROTOCOL               = "http/protobuf"
+    OTEL_INSTRUMENTATION_LOGBACK_APPENDER_ENABLED  = "true"
+    OTEL_INSTRUMENTATION_JAVA_UTIL_LOGGING_ENABLED = "true"
+    ADOT_TEST_EXPORT_PATH_ENABLED                  = "true"
   }
 
   tracing_mode = var.tracing_mode
@@ -57,6 +64,12 @@ module "api-gateway" {
   function_name       = module.hello-lambda-function.lambda_function_name
   function_invoke_arn = module.hello-lambda-function.lambda_function_invoke_arn
   enable_xray_tracing = var.tracing_mode == "Active"
+}
+
+resource "aws_cloudwatch_log_stream" "otlp_logs" {
+  name           = "otlp-logs"
+  log_group_name = "/aws/lambda/${var.function_name}"
+  depends_on     = [module.hello-lambda-function]
 }
 
 resource "aws_iam_role_policy_attachment" "hello-lambda-cloudwatch" {

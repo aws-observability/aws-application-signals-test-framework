@@ -33,12 +33,8 @@ variable "get_adot_wheel_command" {
   default = "aws s3 cp s3://<bucket-name>/<whl> ./<whl> && pip install <whl>"
 }
 
-variable "canary_type" {
-  default = "python-ec2-default"
-}
-
 variable "language_version" {
-  default = "3.9"
+  default = "3.10"
 }
 
 variable "cpu_architecture" {
@@ -47,4 +43,15 @@ variable "cpu_architecture" {
 
 variable "application_logs_log_group" {
   default = "otlp_logs"
+}
+
+variable "otlp_compression" {
+  description = "Compression applied to the OTLP exporters."
+  type        = string
+  default     = "none"
+
+  validation {
+    condition     = contains(["none", "gzip"], var.otlp_compression)
+    error_message = "OTLP compression must be none or gzip."
+  }
 }

@@ -28,11 +28,11 @@ resource "aws_default_vpc" "default" {}
 
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "aws_ssh_key" {
-  key_name = "instance_key-${var.test_id}"
+  key_name   = "instance_key-${var.test_id}"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
@@ -42,11 +42,11 @@ locals {
 }
 
 data "aws_ami" "ami" {
-  owners = ["amazon"]
-  most_recent      = true
+  owners      = ["amazon"]
+  most_recent = true
   filter {
-    name = "name"
-    values = ["al20*-ami-minimal-*-${var.cpu_architecture}"]
+    name   = "name"
+    values = ["al2023-ami-minimal-*-${var.cpu_architecture}"]
   }
   filter {
     name   = "state"
@@ -78,13 +78,13 @@ data "aws_ami" "ami" {
 }
 
 resource "aws_instance" "main_service_instance" {
-  ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
+  instance_type                        = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
     http_endpoint = "enabled"
@@ -102,10 +102,10 @@ resource "aws_instance" "main_service_instance" {
 
 resource "null_resource" "main_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
@@ -117,10 +117,10 @@ resource "null_resource" "main_service_setup" {
       sudo yum install wget -y
       sudo yum install unzip -y
 
-      # Dnf does not have the module for python 3.8, 3.10, 3.12, 3.13, therefore we need to manually install it by downloading the package from the python website.
+      # Dnf does not have the module for python 3.10, 3.12, 3.13, therefore we need to manually install it by downloading the package from the python website.
       # Building and installing the package takes longer then installing it through dnf, so a seperate installation process was made.
       # The canary should run on a version without the manual installation process
-      if [ "${var.language_version}" == "3.8" ] || [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
+      if [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
           # Install modules required to compile Python and also run the sample app
           sudo dnf groupinstall "Development Tools" -y
           sudo dnf install openssl-devel sqlite-devel libffi-devel -y
@@ -154,7 +154,7 @@ resource "null_resource" "main_service_setup" {
       sudo rpm -U ./cw-agent.rpm
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
-      # Install modules with specific version so that it doesn't cause errors with Python 3.8
+      # Install modules with specific version so that it doesn't cause errors
       sudo python${var.language_version} -m pip install importlib-metadata==8.4.0 "protobuf>=3.19,<5.0"
       sudo python${var.language_version} -m pip install grpcio --only-binary=:all:
 
@@ -214,13 +214,13 @@ resource "null_resource" "main_service_setup" {
 }
 
 resource "aws_instance" "remote_service_instance" {
-  ami                                   = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
-  instance_type                         = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id # Amazon Linux 2 (free tier)
+  instance_type                        = var.cpu_architecture == "x86_64" ? "t3.micro" : "t4g.micro"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
     http_endpoint = "enabled"
@@ -238,10 +238,10 @@ resource "aws_instance" "remote_service_instance" {
 
 resource "null_resource" "remote_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.remote_service_instance.public_ip
+    host        = aws_instance.remote_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
@@ -253,10 +253,10 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install wget -y
       sudo yum install unzip -y
 
-      # Dnf does not have the module for python 3.10, 3,10, 3.12, therefore we need to manually install it by downloading the package from the python website.
+      # Dnf does not have the module for python 3.10, 3.12, 3.13, therefore we need to manually install it by downloading the package from the python website.
       # Building and installing the package takes longer then installing it through dnf, so a seperate installation process was made.
       # The canary should run on a version without the manual installation process
-      if [ "${var.language_version}" == "3.8" ] || [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
+      if [ "${var.language_version}" = "3.10" ] || [ "${var.language_version}" = "3.12" ] || [ "${var.language_version}" = "3.13" ]; then
           # Install modules required to compile Python and also run the sample app
           sudo dnf groupinstall "Development Tools" -y
           sudo dnf install openssl-devel sqlite-devel libffi-devel -y
@@ -290,7 +290,7 @@ resource "null_resource" "remote_service_setup" {
       sudo rpm -U ./cw-agent.rpm
       sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:./amazon-cloudwatch-agent.json
 
-      # Install modules with specific version so that it doesn't cause errors with Python 3.8
+      # Install modules with specific version so that it doesn't cause errors
       sudo python${var.language_version} -m pip install importlib-metadata==8.4.0 "protobuf>=3.19,<5.0"
       sudo python${var.language_version} -m pip install grpcio --only-binary=:all:
 
@@ -346,10 +346,10 @@ resource "null_resource" "remote_service_setup" {
 
 resource "null_resource" "traffic_generator_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {

@@ -3,7 +3,18 @@
 
 name: Sample App Deployment - Python S3
 on:
-  workflow_dispatch: # be able to run the workflow on demand
+  workflow_dispatch:
+    inputs:
+      deploy-base-test-apps:
+        description: 'Deploy main and remote Python sample apps'
+        required: false
+        default: true
+        type: boolean
+      deploy-genai-test-app:
+        description: 'Deploy GenAI LangChain sample app'
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   id-token: write
@@ -20,7 +31,7 @@ jobs:
       matrix:
         aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
                       'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','sa-east-1',
                       'us-east-1','us-east-2', 'us-west-1', 'us-west-2' ]
     runs-on: ubuntu-latest
     steps:
@@ -47,30 +58,79 @@ jobs:
           aws-region: ${{ matrix.aws-region }}
 
       - name: Build Sample App Zip
+        if: inputs.deploy-base-test-apps != false
         working-directory: sample-apps/python
         run: zip -r python-sample-app.zip .
 
       - name: Upload to S3
+        if: inputs.deploy-base-test-apps != false
         working-directory: sample-apps/python
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-sample-app.zip --key python-sample-app.zip
 
       - name: Build Gen AI Sample App Zip
+        if: inputs.deploy-genai-test-app != false
         working-directory: sample-apps/python/genai_service
         run: zip -r python-gen-ai-sample-app.zip .
 
       - name: Upload Gen AI Sample App to S3
+        if: inputs.deploy-genai-test-app != false
         working-directory: sample-apps/python/genai_service
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-gen-ai-sample-app.zip --key python-genai-sample-app.zip
 
+      - name: Build Gen AI v2 Sample App Zip
+        working-directory: sample-apps/python/genai_service_v2
+        run: zip -r python-genai-v2-sample-app.zip .
+
+      - name: Upload Gen AI v2 Sample App to S3
+        working-directory: sample-apps/python/genai_service_v2
+        run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./python-genai-v2-sample-app.zip --key python-genai-v2-sample-app.zip
+
       - name: Build Lambda Sample App
+        if: inputs.deploy-base-test-apps != false
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-otel-python-instrumentation'
       - name: Build sample lambda function
+        if: inputs.deploy-base-test-apps != false
         shell: bash
         run: ./package-lambda-function.sh
         working-directory: lambda-layer/sample-apps
 
       - name: Upload to Lambda Sample App to S3
+        if: inputs.deploy-base-test-apps != false
         working-directory: lambda-layer/sample-apps
         run: aws s3api put-object --bucket ${{ secrets.APP_SIGNALS_E2E_EC2_JAR }}-prod-${{ matrix.aws-region }} --body ./build/function.zip --key pyfunction.zip
+
+  python-zip-adaptive-sampling:
+    if: inputs.deploy-base-test-apps != false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.E2E_TEST_ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-east-1
+
+      - name: Retrieve account
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 # v2.0.10
+        with:
+          secret-ids:
+            ACCOUNT_ID, adaptive-sampling-region-account/prod-us-west-2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
+          aws-region: us-west-2
+
+      - name: Build Sample App Zip
+        working-directory: sample-apps/python
+        run: zip -r python-sample-app.zip .
+
+      - name: Upload to S3
+        working-directory: sample-apps/python
+        run: aws s3api put-object --bucket aws-appsignals-sample-app-prod-us-west-2-adap --body ./python-sample-app.zip --key python-sample-app.zip

@@ -11,13 +11,13 @@
   "annotations": {
     "aws.local.service": "^{{serviceName}}$",
     "aws.local.operation": "^GET /remote-service$",
-    "aws.local.environment": "^generic:default$"
+    "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
   },
   "metadata": {
     "EC2.AutoScalingGroup": "^eks-.+",
     "EKS.Cluster": "^{{platformInfo}}$",
     "K8s.Namespace": "^{{appNamespace}}",
-    "PlatformType": "^Generic$"
+    "PlatformType": "^AWS::EKS$"
   },
   "subsegments": [
     {
@@ -35,13 +35,13 @@
             "aws.local.operation": "^UnmappedOperation$",
             "aws.remote.service": "^{{remoteServiceIp}}:8080$",
             "aws.remote.operation": "^GET /healthcheck$",
-            "aws.local.environment": "^generic:default$"
+            "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
           },
           "metadata": {
             "EC2.AutoScalingGroup": "^eks-.+",
             "EKS.Cluster": "^{{platformInfo}}$",
             "K8s.Namespace": "^{{appNamespace}}$",
-            "PlatformType": "^Generic$"
+            "PlatformType": "^AWS::EKS$"
            },
           "namespace": "^remote$"
         }
@@ -59,13 +59,13 @@
   "annotations": {
     "aws.local.service": "^{{remoteServiceDeploymentName}}$",
     "aws.local.operation": "^GET /healthcheck$",
-    "aws.local.environment": "^generic:default$"
+    "aws.local.environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$"
   },
   "metadata": {
     "EC2.AutoScalingGroup": "^eks-.+",
     "EKS.Cluster": "^{{platformInfo}}$",
     "K8s.Namespace": "^{{appNamespace}}",
-    "PlatformType": "^Generic$",
+    "PlatformType": "^AWS::EKS$",
     "K8s.Workload": "^{{remoteServiceDeploymentName}}$"
   },
   "subsegments": [
@@ -74,5 +74,3 @@
     }
   ]
 }]
-
-

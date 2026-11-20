@@ -9,11 +9,17 @@ on:
 
 jobs:
   static-code-checks:
-    runs-on: ubuntu-latest
+    # Fork PRs run on GitHub-hosted runners; the CodeBuild webhook requires approval for them.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || fromJSON(format('["codebuild-adot-test-framework-runner-{0}-{1}", "image:ubuntu-8.0", "instance-size:large"]', github.run_id, github.run_attempt)) }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
+
+      - name: Set up CodeBuild runner
+        uses: ./.github/actions/codebuild-runner-setup
+
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
 
       - name: Check for versioned GitHub actions
         if: always()
@@ -23,7 +29,7 @@ jobs:
           
           if [ -n "$CHANGED_FILES" ]; then
             # Check for any versioned actions, excluding comments and this validation script
-            VIOLATIONS=$(grep -Hn "uses:.*@v" $CHANGED_FILES | grep -v "grep.*uses:.*@v" | grep -v "#.*@v" || true)
+            VIOLATIONS=$(grep -Hn "uses:.*@v" "$CHANGED_FILES" | grep -v "grep.*uses:.*@v" | grep -v "#.*@v" || true)
             if [ -n "$VIOLATIONS" ]; then
               echo "Found versioned GitHub actions. Use commit SHAs instead:"
               echo "$VIOLATIONS"
@@ -58,9 +64,103 @@ jobs:
           
           echo "No github.event.inputs usage found in run steps"
 
+      # This action wrapper by raven-actions provides cross-platform support and caching
+      # Catches the same issues as GitHub's web editor: syntax errors, type mismatches,
+      # undefined inputs/secrets, circular dependencies, and more
+      # Note: actionlint cannot validate composite actions - see https://github.com/rhysd/actionlint/issues/350
+      - name: Validate GitHub Actions workflows
+        if: always()
+        uses: raven-actions/actionlint@e01d1ea33dd6a5ed517d95b4c0c357560ac6f518 # v2.1.1
+        with:
+          files: .github/workflows/*.yml
+          # Temporarily ignore specific shellcheck codes while we systematically fix them
+          # TODO: Remove these suppressions incrementally as issues are fixed
+          # SC2004: $/${} is unnecessary on arithmetic variables (14 occurrences)
+          # SC2129: Consider using { cmd1; cmd2; } >> file instead of individual redirects (10 occurrences)
+          # SC2016: Expressions don't expand in single quotes, use double quotes for that (8 occurrences)
+          # SC2010: Don't use ls | grep. Use a glob or a for loop with a condition (5 occurrences)
+          # SC2015: Note that A && B || C is not if-then-else. C may run when A is true (5 occurrences)
+          # SC2181: Check exit code directly with e.g. 'if ! mycmd;', not indirectly with $? (1 occurrence)
+          # SC2260: This redirection overrides the output pipe (1 occurrence)
+          flags: |
+            -ignore SC2004
+            -ignore SC2129
+            -ignore SC2016
+            -ignore SC2010
+            -ignore SC2015
+            -ignore SC2260
+            -ignore SC2181
+
+      - name: Check Terraform formatting
+        if: always()
+        run: |
+          if ! command -v terraform &> /dev/null; then
+            echo "❌ ERROR: Terraform not installed in CI"
+            echo "This is a CI configuration error - terraform should be available"
+            exit 1
+          fi
+          
+          if ! terraform fmt -check -recursive terraform/; then
+            echo ""
+            echo "❌ Terraform files are not formatted correctly"
+            echo ""
+            echo "To fix this, run:"
+            echo "  terraform fmt -recursive terraform/"
+            echo ""
+            echo "Or install pre-commit to auto-format on commit:"
+            echo "  pip install pre-commit"
+            echo "  pre-commit install"
+            echo ""
+            exit 1
+          fi
+          
+          echo "✅ All Terraform files are properly formatted"
+
+  find-terraform-dirs:
+    # Fork PRs run on GitHub-hosted runners; the CodeBuild webhook requires approval for them.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || fromJSON(format('["codebuild-adot-test-framework-runner-{0}-{1}", "image:ubuntu-8.0", "instance-size:small"]', github.run_id, github.run_attempt)) }}
+    outputs:
+      dirs: ${{ steps.find-dirs.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      
+      - name: Find all terraform directories
+        id: find-dirs
+        run: |
+          # Find all directories containing .tf files, excluding downloaded modules in .terraform/
+          # Process: find .tf files -> get their directories -> sort unique -> convert to JSON array
+          # The jq command: read lines (-R), slurp into array (-s), compact (-c), split on newlines and remove last empty element
+          DIRS=$(find terraform -name "*.tf" -not -path "*/.terraform/*" -exec dirname {} \; | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          echo "dirs=$DIRS" >> "$GITHUB_OUTPUT"
+          echo "Found $(echo "$DIRS" | jq 'length') terraform directories"
+
+  terraform-validate:
+    needs: find-terraform-dirs
+    # Fork PRs run on GitHub-hosted runners; the CodeBuild webhook requires approval for them.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || fromJSON(format('["codebuild-adot-test-framework-runner-{0}-{1}", "image:ubuntu-8.0", "instance-size:small"]', github.run_id, github.run_attempt)) }}
+    strategy:
+      # Run validation in parallel across all terraform directories for speed
+      # Without matrix: ~14 minutes serial, With matrix: ~15 seconds per directory in parallel
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJson(needs.find-terraform-dirs.outputs.dirs) }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      
+      - name: Terraform Init
+        working-directory: ${{ matrix.dir }}
+        run: terraform init -backend=false
+      
+      - name: Terraform Validate
+        working-directory: ${{ matrix.dir }}
+        run: terraform validate
+
   build:
     name: Gradle Build
-    runs-on: ubuntu-latest
+    # Fork PRs run on GitHub-hosted runners; the CodeBuild webhook requires approval for them.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || fromJSON(format('["codebuild-adot-test-framework-runner-{0}-{1}", "image:ubuntu-8.0", "instance-size:large"]', github.run_id, github.run_attempt)) }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -76,12 +176,16 @@ jobs:
         run: ./gradlew build
 
   all-pr-checks-pass:
-    runs-on: ubuntu-latest
-    needs: [build, static-code-checks]
+    # Fork PRs run on GitHub-hosted runners; the CodeBuild webhook requires approval for them.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || fromJSON(format('["codebuild-adot-test-framework-runner-{0}-{1}", "image:ubuntu-8.0", "instance-size:small"]', github.run_id, github.run_attempt)) }}
+    needs: [build, static-code-checks, find-terraform-dirs, terraform-validate]
     if: always()
     steps:
       - name: Checkout to get workflow file
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #5.0.0
+
+      - name: Set up CodeBuild runner
+        uses: ./.github/actions/codebuild-runner-setup
 
       - name: Check all jobs succeeded and none missing
         run: |

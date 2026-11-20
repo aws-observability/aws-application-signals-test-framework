@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp8.0</TargetFramework>
@@ -6,12 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="3.7.310.7" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.300.120" />
-    <PackageReference Include="AWS.Distro.OpenTelemetry.AutoInstrumentation" Version="1.9.1" />
-    <PackageReference Include="OpenTelemetry" Version="1.14.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.101.3" />
+    <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.5" />
+    <!-- Must not be older than the OpenTelemetry SDK bundled in the ADOT .NET distro, otherwise the auto-instrumentation rule engine aborts instrumentation. -->
+    <PackageReference Include="OpenTelemetry" Version="1.20.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

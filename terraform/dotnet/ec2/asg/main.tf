@@ -53,7 +53,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al2023-ami-minimal-*-x86_64"]
   }
   filter {
     name   = "state"
@@ -91,15 +91,21 @@ resource "aws_launch_configuration" "launch_configuration" {
   associate_public_ip_address = true
   iam_instance_profile        = "APP_SIGNALS_EC2_TEST_ROLE"
   security_groups             = [aws_default_vpc.default.default_security_group_id]
-  
+
   root_block_device {
     volume_size = 5
+  }
+
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
   }
 
   user_data = <<-EOF
     #!/bin/bash
     set -o errexit
     cd /home/ec2-user
+    export HOME=/home/ec2-user
 
     # Install DotNet and wget
     sudo yum install -y wget
@@ -127,8 +133,10 @@ resource "aws_launch_configuration" "launch_configuration" {
     # Get Absolute Path
     current_dir=$(pwd)
 
-    # Export environment variables for instrumentation
     cd ./asp_frontend_service
+    dotnet build
+
+    # Export environment variables for instrumentation
     export INSTALL_DIR=../dotnet-distro
     export CORECLR_ENABLE_PROFILING=1
     export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
@@ -150,8 +158,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_LOG_LEVEL=debug
     export OTEL_DOTNET_AUTO_LOG_DIRECTORY=/tmp
     export ASPNETCORE_URLS=http://0.0.0.0:8080
-    sudo -E dotnet build
-    sudo -E nohup dotnet bin/Debug/netcoreapp8.0/asp_frontend_service.dll &
+    nohup dotnet bin/Debug/netcoreapp8.0/asp_frontend_service.dll &
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
@@ -172,12 +179,12 @@ resource "aws_launch_configuration" "launch_configuration" {
 }
 
 resource "aws_autoscaling_group" "asg" {
-  name                 = "dotnet-ec2-single-asg-${var.test_id}"
-  min_size             = 1
-  max_size             = 1
-  launch_configuration = aws_launch_configuration.launch_configuration.name
-  vpc_zone_identifier  = [data.aws_subnets.default_subnets.ids.0]
-  health_check_type = "EC2"
+  name                      = "dotnet-ec2-single-asg-${var.test_id}"
+  min_size                  = 1
+  max_size                  = 1
+  launch_configuration      = aws_launch_configuration.launch_configuration.name
+  vpc_zone_identifier       = [data.aws_subnets.default_subnets.ids.0]
+  health_check_type         = "EC2"
   health_check_grace_period = 180
 }
 
@@ -216,6 +223,7 @@ resource "null_resource" "remote_service_setup" {
     inline = [
       <<-EOF
       #!/bin/bash
+      set -e
 
       # Install DotNet and wget
       sudo yum install wget -y
@@ -244,8 +252,10 @@ resource "null_resource" "remote_service_setup" {
       current_dir=$(pwd)
       echo $current_dir
 
-      # Export environment variables for instrumentation
       cd ./asp_remote_service
+      dotnet build
+
+      # Export environment variables for instrumentation
       export CORECLR_ENABLE_PROFILING=1
       export CORECLR_PROFILER={918728DD-259F-4A6A-AC2B-B85E1B658318}
       export CORECLR_PROFILER_PATH=$current_dir/dotnet-distro/linux-x64/OpenTelemetry.AutoInstrumentation.Native.so
@@ -263,7 +273,6 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
       export ASPNETCORE_URLS=http://0.0.0.0:8081
-      dotnet build
       nohup dotnet bin/Debug/netcoreapp8.0/asp_remote_service.dll &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds

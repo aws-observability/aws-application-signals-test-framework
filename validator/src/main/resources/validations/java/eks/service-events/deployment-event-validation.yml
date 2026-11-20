@@ -1,0 +1,4 @@
+-
+  validationType: "cw-log"
+  expectedLogStructureTemplate: "JAVA_EKS_SERVICE_EVENTS_DEPLOYMENT_EVENT"
+  cwLogFilterPattern: "{ ($.resource.attributes.['service.name'] = \"{{serviceName}}\") && ($.scope.name = \"serviceevents\") && ($.attributes.['event.name'] = \"aws.service_events.deployment_event\") }"

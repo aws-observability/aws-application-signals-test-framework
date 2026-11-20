@@ -1,3 +1,0 @@
--
-  validationType: "cw-log"
-  expectedLogStructureTemplate: "NODE_EC2_ADOT_OTLP_LOG"

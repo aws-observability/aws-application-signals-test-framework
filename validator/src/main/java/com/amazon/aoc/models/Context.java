@@ -69,6 +69,10 @@ public class Context {
 
   private String traceId;
 
+  private String locationHash;
+
+  private String serviceEventsGitCommitSha;
+
   private ECSContext ecsContext;
 
   private CloudWatchContext cloudWatchContext;

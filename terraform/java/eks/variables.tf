@@ -18,7 +18,7 @@ variable "test_id" {
 }
 
 variable "kube_directory_path" {
-    default = "./.kube"
+  default = "./.kube"
 }
 
 variable "aws_region" {
@@ -49,16 +49,18 @@ variable "sample_remote_app_image" {
   default = "<ECR_IMAGE_LINK>:<TAG>"
 }
 
-variable "rds_mysql_cluster_endpoint" {
-  default = "example.cluster-example.eu-west-1.rds.amazonaws.com"
+# The Java version this job is testing. The parallel workflow passes it per-job; the sequential
+# workflow omits it and gets the default.
+variable "java_version" {
+  default = "8"
 }
 
-variable "rds_mysql_cluster_username" {
-  default = "username"
-}
-
-variable "rds_mysql_cluster_password" {
-  default = "password"
+# The ordered set of Java versions the calling workflow supports. main.tf derives this job's
+# NodePort offset from java_version's index in this list, so supported versions are managed only
+# in the calling workflow, never hardcoded here.
+variable "java_versions" {
+  type    = list(string)
+  default = ["8"]
 }
 
 variable "account_id" {

@@ -2,7 +2,6 @@
 ## SPDX-License-Identifier: Apache-2.0
 import logging
 import os
-import base64
 import threading
 import time
 import random
@@ -53,6 +52,11 @@ meter = metrics.get_meter("myMeter")
 agent_based_counter = meter.create_counter("agent_based_counter", unit="1", description="agent export counter")
 agent_based_histogram = meter.create_histogram("agent_based_histogram", description="agent export histogram")
 agent_based_gauge = meter.create_up_down_counter("agent_based_gauge", unit="1", description="agent export gauge")
+
+custom_meter = metrics.get_meter("CustomOTLPMetrics")
+custom_request_counter = custom_meter.create_counter(
+    "custom.requests", unit="{request}", description="This is a custom metric for validation testing"
+)
 
 # Create pipeline metrics only if pipeline exists
 custom_pipeline_counter = None
@@ -114,6 +118,12 @@ def aws_sdk_call(request):
     testing_id = request.GET.get('testingId', None)
     if testing_id is not None:
         bucket_name += "-" + testing_id
+    custom_request_counter.add(1, {
+        "custom.operation": "request",
+        "custom.component": "frontend",
+        "custom.environment": "validation",
+        "custom.description": "This is a custom metric for validation testing",
+    })
     logger.warning("This is a custom log for validation testing")
     s3_client = boto3.client("s3")
     try:
@@ -171,13 +181,12 @@ def get_xray_trace_id():
 def mysql(request):
     logger.info("mysql received")
 
-    encoded_password = os.environ["RDS_MYSQL_CLUSTER_PASSWORD"]
-    decoded_password = base64.b64decode(encoded_password).decode('utf-8')
+    password = os.environ["RDS_MYSQL_CLUSTER_PASSWORD"]
 
     try:
         connection = pymysql.connect(host=os.environ["RDS_MYSQL_CLUSTER_ENDPOINT"],
                                      user=os.environ["RDS_MYSQL_CLUSTER_USERNAME"],
-                                     password=decoded_password,
+                                     password=password,
                                      database=os.environ["RDS_MYSQL_CLUSTER_DATABASE"])
         with connection:
             with connection.cursor() as cursor:
@@ -186,3 +195,13 @@ def mysql(request):
         logger.error("Could not complete http request to RDS database:" + str(e))
     finally:
         return get_xray_trace_id()
+
+def status(request, code):
+    ip = request.GET.get('ip', 'localhost')
+    ip = ip.replace("/", "")
+    try:
+        requests.get(f"http://{ip}:8001/status/{code}")
+    except Exception:
+        pass  # Ignore exception
+    logger.info(f"Service A requested status code {code} from Service B")
+    return get_xray_trace_id()

@@ -28,11 +28,11 @@ resource "aws_default_vpc" "default" {}
 
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "aws_ssh_key" {
-  key_name = "instance_key-${var.test_id}"
+  key_name   = "instance_key-${var.test_id}"
   public_key = tls_private_key.ssh_key.public_key_openssh
 }
 
@@ -42,8 +42,8 @@ locals {
 }
 
 data "aws_ami" "ami" {
-  owners = ["amazon"]
-  most_recent      = true
+  owners      = ["amazon"]
+  most_recent = true
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
@@ -52,7 +52,7 @@ data "aws_ami" "ami" {
     name   = "state"
     values = ["available"]
   }
-  
+
   filter {
     name   = "image-type"
     values = ["machine"]
@@ -75,13 +75,13 @@ data "aws_ami" "ami" {
 }
 
 resource "aws_instance" "main_service_instance" {
-  ami                                   = data.aws_ami.ami.id 
-  instance_type                         = "t3.micro" 
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id
+  instance_type                        = "t3.micro"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
     http_endpoint = "enabled"
@@ -99,10 +99,10 @@ resource "aws_instance" "main_service_instance" {
 
 resource "null_resource" "main_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
@@ -111,20 +111,22 @@ resource "null_resource" "main_service_setup" {
       #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
+      export DEBIAN_FRONTEND=noninteractive
+      export NEEDRESTART_MODE=a
       # Install wget and Java based on OS
       # Ubuntu commands
-      sudo apt-get update
-      sudo apt-get install -y software-properties-common
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y software-properties-common
       sudo add-apt-repository -y ppa:openjdk-r/ppa
-      sudo apt-get update
-      sudo apt-get install wget -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install wget -y
       # Try to fix broken packages if any
-      sudo apt-get install -y -f
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y -f
       # Clean apt cache
-      sudo apt-get clean
-      sudo apt-get autoremove -y
-      sudo apt-get install -y openjdk-11-jdk 
-      sudo apt-get install -y awscli
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get clean
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get autoremove -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y openjdk-11-jdk 
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y awscli
       
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -178,13 +180,13 @@ resource "null_resource" "main_service_setup" {
 }
 
 resource "aws_instance" "remote_service_instance" {
-  ami                                   = data.aws_ami.ami.id 
-  instance_type                         = "t3.micro"
-  key_name                              = local.ssh_key_name
-  iam_instance_profile                  = "APP_SIGNALS_EC2_TEST_ROLE"
-  vpc_security_group_ids                = [aws_default_vpc.default.default_security_group_id]
-  associate_public_ip_address           = true
-  instance_initiated_shutdown_behavior  = "terminate"
+  ami                                  = data.aws_ami.ami.id
+  instance_type                        = "t3.micro"
+  key_name                             = local.ssh_key_name
+  iam_instance_profile                 = "APP_SIGNALS_EC2_TEST_ROLE"
+  vpc_security_group_ids               = [aws_default_vpc.default.default_security_group_id]
+  associate_public_ip_address          = true
+  instance_initiated_shutdown_behavior = "terminate"
 
   metadata_options {
     http_endpoint = "enabled"
@@ -202,10 +204,10 @@ resource "aws_instance" "remote_service_instance" {
 
 resource "null_resource" "remote_service_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.remote_service_instance.public_ip
+    host        = aws_instance.remote_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
@@ -214,22 +216,24 @@ resource "null_resource" "remote_service_setup" {
       #!/bin/bash
       # Make the Terraform fail if any step throws an error
       set -o errexit
+      export DEBIAN_FRONTEND=noninteractive
+      export NEEDRESTART_MODE=a
       # Install wget and Java 
       # Ubuntu commands
-      sudo apt-get update
-      sudo apt-get install -y software-properties-common
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y software-properties-common
       sudo add-apt-repository -y ppa:openjdk-r/ppa
-      sudo apt-get update
-      sudo apt-get install wget -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install wget -y
       # Try to fix broken packages if any
-      sudo apt-get install -y -f
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y -f
       # Clean apt cache
-      sudo apt-get clean
-      sudo apt-get autoremove -y
-      sudo apt-get install -y openjdk-11-jdk
-      sudo apt-get install -y awscli
-      sudo apt-get update
-      sudo apt-get install ec2-instance-connect -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get clean
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get autoremove -y
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y openjdk-11-jdk
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y awscli
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
+      sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install ec2-instance-connect -y
       
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -284,25 +288,27 @@ resource "null_resource" "remote_service_setup" {
 
 resource "null_resource" "traffic_generator_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
     inline = [
       <<-EOF
       #!/bin/bash
+        export DEBIAN_FRONTEND=noninteractive
+        export NEEDRESTART_MODE=a
         # Ubuntu commands
-        sudo apt-get update
+        sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get update
         # Install curl first if not already installed
-        sudo apt-get install -y curl
+        sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y curl
         # Install Node.js and npm using NodeSource
         curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-        sudo apt-get install -y nodejs
+        sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y nodejs
         # Install other required packages
-        sudo apt-get install -y awscli unzip tmux
+        sudo DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=a apt-get install -y awscli unzip tmux
 
         # Bring in the traffic generator files to EC2 Instance
         aws s3 cp s3://aws-appsignals-sample-app-prod-${var.aws_region}/traffic-generator.zip ./traffic-generator.zip

@@ -1,8 +1,8 @@
 [{
   "EC2.AutoScalingGroup": "^eks-.+",
   "EC2.InstanceId": "^i-[A-Za-z0-9]{17}$",
-  "Environment": "^generic:default$",
-  "PlatformType": "^Generic$",
+  "Environment": "^eks:(default|{{platformInfo}}/{{appNamespace}})$",
+  "PlatformType": "^AWS::EKS$",
   "Service": "^{{serviceName}}$",
   "Operation": "InternalOperation",
   "RemoteService": "local-root-client-call",

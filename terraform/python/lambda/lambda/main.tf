@@ -2,13 +2,13 @@ locals {
   architecture = var.architecture == "x86_64" ? "amd64" : "arm64"
 }
 resource "aws_lambda_layer_version" "sdk_layer" {
-  count               = var.is_canary ? 0 : 1
+  count               = 1
   layer_name          = var.sdk_layer_name
   filename            = "${var.layer_artifacts_directory}/layer.zip"
-  compatible_runtimes = ["python3.10", "python3.11", "python3.12", "python3.13"]
+  compatible_runtimes = ["python3.10", "python3.11", "python3.12", "python3.13", "python3.14"]
   license_info        = "Apache-2.0"
   source_code_hash    = filebase64sha256("${var.layer_artifacts_directory}/layer.zip")
-#   filename = "${var.kube_directory_path}/config"
+  #   filename = "${var.kube_directory_path}/config"
 }
 
 module "hello-lambda-function" {
@@ -26,10 +26,23 @@ module "hello-lambda-function" {
   memory_size = 512
   timeout     = 30
 
-  layers = var.is_canary ? [local.sdk_layer_arns_amd64[var.region]] : [aws_lambda_layer_version.sdk_layer[0].arn]
+  layers = [aws_lambda_layer_version.sdk_layer[0].arn]
 
-  environment_variables = {
-    AWS_LAMBDA_EXEC_WRAPPER     = "/opt/otel-instrument"
+  environment_variables = var.lite_sdk ? {
+    AWS_LAMBDA_EXEC_WRAPPER              = "/opt/otel-instrument"
+    OTEL_AWS_LAMBDA_FAST_START           = "true"
+    OTEL_METRICS_EXPORTER                = "none"
+    OTEL_LOGS_EXPORTER                   = "none"
+    OTEL_AWS_APPLICATION_SIGNALS_ENABLED = "true"
+    } : {
+    AWS_LAMBDA_EXEC_WRAPPER                          = "/opt/otel-instrument"
+    OTEL_LOGS_EXPORTER                               = "otlp,console"
+    OTEL_EXPORTER_OTLP_LOGS_ENDPOINT                 = "https://logs.${var.region}.amazonaws.com/v1/logs"
+    OTEL_EXPORTER_OTLP_LOGS_HEADERS                  = "x-aws-log-group=/aws/lambda/${var.function_name},x-aws-log-stream=otlp-logs"
+    OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED = "true"
+    OTEL_PYTHON_DISABLED_INSTRUMENTATIONS            = "none"
+    OTEL_PYTHON_LOG_LEVEL                            = "info"
+    ADOT_TEST_EXPORT_PATH_ENABLED                    = "true"
   }
 
   tracing_mode = var.tracing_mode
@@ -57,6 +70,13 @@ module "api-gateway" {
   enable_xray_tracing = var.tracing_mode == "Active"
 }
 
+resource "aws_cloudwatch_log_stream" "otlp_logs" {
+  count          = var.lite_sdk ? 0 : 1
+  name           = "otlp-logs"
+  log_group_name = "/aws/lambda/${var.function_name}"
+  depends_on     = [module.hello-lambda-function]
+}
+
 resource "aws_iam_role_policy_attachment" "hello-lambda-cloudwatch" {
   role       = module.hello-lambda-function.lambda_function_name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -66,3 +86,4 @@ resource "aws_iam_role_policy_attachment" "test_xray" {
   role       = module.hello-lambda-function.lambda_function_name
   policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
 }
+

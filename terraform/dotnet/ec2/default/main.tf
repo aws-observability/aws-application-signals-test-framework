@@ -46,7 +46,7 @@ data "aws_ami" "ami" {
   most_recent = true
   filter {
     name   = "name"
-    values = ["al20*-ami-minimal-*-x86_64"]
+    values = ["al2023-ami-minimal-*-x86_64"]
   }
   filter {
     name   = "state"
@@ -112,16 +112,18 @@ resource "null_resource" "main_service_setup" {
     inline = [
       <<-EOF
       #!/bin/bash
+      set -e
 
       # Install DotNet and wget
-      sudo yum install -y wget
+      sudo yum install -y wget unzip
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-${var.language_version}
-      sudo yum install unzip -y
-
-    # enable ec2 instance connect for debug
-      sudo yum install ec2-instance-connect -y
+      if ! sudo dnf install -y dotnet-sdk-${var.language_version}; then
+        echo "dnf install failed, falling back to dotnet-install.sh"
+        sudo dnf install -y icu
+        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel ${var.language_version}
+        export PATH="$HOME/.dotnet:$PATH"
+      fi
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -136,8 +138,8 @@ resource "null_resource" "main_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app-delete-me.zip
-      unzip -o dotnet-sample-app-delete-me.zip
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -154,22 +156,20 @@ resource "null_resource" "main_service_setup" {
       export DOTNET_STARTUP_HOOKS=$current_dir/dotnet-distro/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll
       export OTEL_DOTNET_AUTO_HOME=$current_dir/dotnet-distro
       export OTEL_DOTNET_AUTO_PLUGINS="AWS.Distro.OpenTelemetry.AutoInstrumentation.Plugin, AWS.Distro.OpenTelemetry.AutoInstrumentation"
-      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://localhost:4316/v1/metrics
+      export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4316
+      export OTEL_AWS_APPLICATION_SIGNALS_EXPORTER_ENDPOINT=http://127.0.0.1:4316/v1/metrics
       export OTEL_METRICS_EXPORTER=otlp
-      export OTEL_TRACES_EXPORTER=otlp
-      export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4316
-      export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4316/v1/traces
-      export OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf
-      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:4318/v1/metrics
-      export OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://127.0.0.1:4318/v1/metrics
       export OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=myMeterSource
+      # CloudWatch drops EMF metrics with more than 30 dimensions. The 5 os.* attributes from this detector push the agent_based metrics to 31.
+      export OTEL_DOTNET_AUTO_OPERATINGSYSTEM_RESOURCE_DETECTOR_ENABLED=false
       export SERVICE_NAME="dotnet-sample-application-${var.test_id}"
       export DEPLOYMENT_ENVIRONMENT_NAME="ec2:default"
       export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment=$${DEPLOYMENT_ENVIRONMENT_NAME}"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
-      export AWS_REGION="${var.aws_region}"
       export ASPNETCORE_URLS=http://0.0.0.0:8080
       nohup dotnet bin/Debug/netcoreapp${var.language_version}/asp_frontend_service.dll &
 
@@ -232,13 +232,18 @@ resource "null_resource" "remote_service_setup" {
     inline = [
       <<-EOF
       #!/bin/bash
+      set -e
 
       # Install DotNet and wget
-      sudo yum install -y wget
+      sudo yum install -y wget unzip
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-${var.language_version}
-      sudo yum install unzip -y
+      if ! sudo dnf install -y dotnet-sdk-${var.language_version}; then
+        echo "dnf install failed, falling back to dotnet-install.sh"
+        sudo dnf install -y icu
+        curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel ${var.language_version}
+        export PATH="$HOME/.dotnet:$PATH"
+      fi
 
       # Copy in CW Agent configuration
       agent_config='${replace(replace(file("./amazon-cloudwatch-agent.json"), "/\\s+/", ""), "$REGION", var.aws_region)}'
@@ -253,8 +258,8 @@ resource "null_resource" "remote_service_setup" {
       ${var.get_adot_distro_command}
 
       # Get and run the sample application with configuration
-      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app-delete-me.zip
-      unzip -o dotnet-sample-app-delete-me.zip
+      aws s3 cp ${var.sample_app_zip} ./dotnet-sample-app.zip
+      unzip -o dotnet-sample-app.zip
 
       # Get Absolute Path
       current_dir=$(pwd)
@@ -308,15 +313,17 @@ resource "null_resource" "remote_service_setup" {
 
 resource "null_resource" "traffic_generator_setup" {
   connection {
-    type = "ssh"
-    user = var.user
+    type        = "ssh"
+    user        = var.user
     private_key = local.private_key_content
-    host = aws_instance.main_service_instance.public_ip
+    host        = aws_instance.main_service_instance.public_ip
   }
 
   provisioner "remote-exec" {
     inline = [
       <<-EOF
+        set -e
+
         sudo yum install nodejs aws-cli unzip tmux -y
 
         # Bring in the traffic generator files to EC2 Instance

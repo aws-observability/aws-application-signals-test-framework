@@ -1,0 +1,76 @@
+[{
+  "name": "^{{serviceName}}/default$",
+  "subsegments": [
+    {
+      "name": "^Lambda$",
+      "aws": {
+        "function_name": "^{{serviceName}}$"
+      },
+      "namespace": "^aws$"
+    }
+  ]
+},
+{
+  "name": "^{{serviceName}}$",
+  "origin": "^AWS::Lambda$"
+},
+{
+  "name": "^{{serviceName}}$",
+  "origin": "^AWS::Lambda::Function$"
+},
+{
+  "name": "^{{serviceName}}$",
+  "annotations": {
+    "aws.local.service": "^{{serviceName}}$",
+    "aws.local.operation": "^{{serviceName}}/FunctionHandler$",
+    "aws.local.environment": "^lambda:default$",
+    "span.kind": "^SERVER$",
+    "span.name": "^lambda_function\\.lambda_handler$"
+  },
+  "metadata": {
+    "service.name": "^{{serviceName}}$",
+    "telemetry.sdk.language": "^python$",
+    "telemetry.sdk.name": "^opentelemetry$",
+    "cloud.platform": "^aws_lambda$"
+  },
+  "subsegments": [
+    {
+      "name": "^aws\\.amazon\\.com$",
+      "namespace": "^remote$",
+      "annotations": {
+        "aws.remote.service": "^aws\\.amazon\\.com$",
+        "aws.remote.operation": "^GET /$",
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^{{serviceName}}/FunctionHandler$",
+        "span.kind": "^CLIENT$",
+        "span.name": "^GET$"
+      },
+      "http": {
+        "request": {
+          "method": "^GET$",
+          "url": "^https://aws\\.amazon\\.com/$"
+        },
+        "response": {
+          "status": 200
+        }
+      }
+    },
+    {
+      "name": "^S3$",
+      "namespace": "^aws$",
+      "annotations": {
+        "aws.remote.service": "^AWS::S3$",
+        "aws.remote.operation": "^ListBuckets$",
+        "aws.local.service": "^{{serviceName}}$",
+        "aws.local.operation": "^{{serviceName}}/FunctionHandler$",
+        "span.kind": "^CLIENT$",
+        "span.name": "^S3\\.ListBuckets$"
+      },
+      "metadata": {
+        "rpc.service": "^S3$",
+        "rpc.system": "^aws-api$",
+        "rpc.method": "^ListBuckets$"
+      }
+    }
+  ]
+}]

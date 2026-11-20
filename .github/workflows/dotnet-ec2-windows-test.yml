@@ -8,6 +8,11 @@ name: DotNet EC2 Windows Use Case
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       aws-region:
         required: true
         type: string
@@ -32,7 +37,7 @@ env:
   E2E_TEST_AWS_REGION: ${{ inputs.aws-region }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  SAMPLE_APP_ZIP: "aws s3 cp s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/dotnet-sample-app.zip ./dotnet-sample-app.zip"
+  SAMPLE_APP_ZIP: "aws s3 cp s3://aws-appsignals-sample-app-prod-${{ inputs.aws-region }}/dotnet-sample-app-8.0.zip ./dotnet-sample-app.zip"
   METRIC_NAMESPACE: ApplicationSignals
   LOG_GROUP_NAME: /aws/application-signals/data
   ADOT_DISTRO_NAME: ${{ inputs.staging_distro_name }}
@@ -41,7 +46,7 @@ env:
 
 jobs:
   dotnet-ec2-windows:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     timeout-minutes: 30
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
@@ -49,13 +54,21 @@ jobs:
     steps:
       - name: Check if the job started
         id: job-started
-        run: echo "job-started=true" >> $GITHUB_OUTPUT
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
           ref: ${{ inputs.caller-workflow-name == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
+
+      # Pin the JDK used to build the validator. Without it Gradle uses the machine's default JDK, which is
+      # Java 17 on GitHub-hosted runners but Java 25 on CodeBuild's image, which Gradle 8.10 cannot run on.
+      - name: Set up Java for the validator
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Initiate Gradlew Daemon
         id: initiate-gradlew
@@ -68,7 +81,7 @@ jobs:
           sleep_time: 60
 
       - name: Generate testing id
-        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
+        run: echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -92,26 +105,26 @@ jobs:
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-dotnet-instrumentation" ]; then
             # Get staging distro file from staging bucket
-            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }}; Expand-Archive -Path ${{ env.ADOT_DISTRO_NAME }} -DestinationPath ./dotnet-distro" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="aws s3 cp s3://adot-autoinstrumentation-dotnet-staging/${{ env.ADOT_DISTRO_NAME }} ./${{ env.ADOT_DISTRO_NAME }}; Expand-Archive -Path ${{ env.ADOT_DISTRO_NAME }} -DestinationPath ./dotnet-distro" >> "$GITHUB_ENV"
           else
             # After Release will switch to latest tag instead of hard code version for canary purpose
-            echo GET_ADOT_DISTRO_COMMAND="curl.exe -L -o ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-windows.zip --retry 5 --retry-all-errors --retry-delay 5; Expand-Archive -Path ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -DestinationPath ./dotnet-distro -Force" >> $GITHUB_ENV
+            echo GET_ADOT_DISTRO_COMMAND="curl.exe -L -o ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip https://github.com/aws-observability/aws-otel-dotnet-instrumentation/releases/latest/download/aws-distro-opentelemetry-dotnet-instrumentation-windows.zip --retry 5 --retry-all-errors --retry-delay 5; Expand-Archive -Path ./aws-distro-opentelemetry-dotnet-instrumentation-windows.zip -DestinationPath ./dotnet-distro -Force" >> "$GITHUB_ENV"
           fi
 
       - name: Set Get CW Agent command environment variable
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
             # Get cloudwatch agent staging file if triggered by cw-a repo
-            echo GET_CW_AGENT_MSI_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/packaging/${{ github.sha }}/amazon-cloudwatch-agent.msi ./amazon-cloudwatch-agent.msi" >> $GITHUB_ENV
+            echo GET_CW_AGENT_MSI_COMMAND= "aws s3 cp s3://${{ secrets.S3_INTEGRATION_BUCKET }}/integration-test/packaging/${{ github.sha }}/amazon-cloudwatch-agent.msi ./amazon-cloudwatch-agent.msi" >> "$GITHUB_ENV"
           else
-            echo GET_CW_AGENT_MSI_COMMAND= "curl.exe -L -o ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi --retry 5 --retry-all-errors --retry-delay 5" >> $GITHUB_ENV
+            echo GET_CW_AGENT_MSI_COMMAND= "curl.exe -L -o ./amazon-cloudwatch-agent.msi https://amazoncloudwatch-agent.s3.amazonaws.com/windows/amd64/latest/amazon-cloudwatch-agent.msi --retry 5 --retry-all-errors --retry-delay 5" >> "$GITHUB_ENV"
           fi
 
       - name: Set up terraform
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
-          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release && echo "$VERSION_CODENAME") main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
               && sudo apt update && sudo apt install terraform'
           sleep_time: 60
 
@@ -169,21 +182,21 @@ jobs:
       - name: Get the ec2 instance ami id
         working-directory: terraform/dotnet/ec2/windows
         run: |
-          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> $GITHUB_ENV
+          echo "EC2_INSTANCE_AMI=$(terraform output ec2_instance_ami)" >> "$GITHUB_ENV"
 
       - name: Get SSM outputs
         working-directory: terraform/dotnet/ec2/windows
         run: |
-          echo "FRONTEND_DOCUMENT_NAME=$(terraform output frontend_document_name)" >> $GITHUB_ENV
-          echo "REMOTE_DOCUMENT_NAME=$(terraform output remote_document_name)" >> $GITHUB_ENV
+          echo "FRONTEND_DOCUMENT_NAME=$(terraform output frontend_document_name)" >> "$GITHUB_ENV"
+          echo "REMOTE_DOCUMENT_NAME=$(terraform output remote_document_name)" >> "$GITHUB_ENV"
 
       - name: Get the sample app endpoint
         working-directory: terraform/dotnet/ec2/windows
         run: |
-          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> $GITHUB_ENV
-          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> $GITHUB_ENV
-          echo "REMOTE_SERVICE_INSTANCE_ID=$(terraform output remote_service_instance_id)" >> $GITHUB_ENV
+          echo "MAIN_SERVICE_ENDPOINT=localhost:8080" >> "$GITHUB_ENV"
+          echo "REMOTE_SERVICE_IP=$(terraform output sample_app_remote_service_private_ip)" >> "$GITHUB_ENV"
+          echo "MAIN_SERVICE_INSTANCE_ID=$(terraform output main_service_instance_id)" >> "$GITHUB_ENV"
+          echo "REMOTE_SERVICE_INSTANCE_ID=$(terraform output remote_service_instance_id)" >> "$GITHUB_ENV"
 
 # A standard Windows Deployment Script are Expect to run ~5min, plus waiting for SSM to be setup in EC2 instance ~2min
 # 15 Min loose upper timeout bound is designed to allow for a rate situation: in a very small chance,
@@ -199,7 +212,7 @@ jobs:
           check_instance_ready() {
             local instance_id=$1
             while [[ $attempt -lt $max_attempts ]]; do
-              state=$(aws ssm describe-instance-information --filters Key=InstanceIds,Values=$instance_id --query "InstanceInformationList[0].PingStatus" --output text)
+              state=$(aws ssm describe-instance-information --filters Key=InstanceIds,Values="$instance_id" --query "InstanceInformationList[0].PingStatus" --output text)
               echo "Attempt $((attempt + 1))/$max_attempts: Current SSM state of instance $instance_id: $state"
 
               if [[ "$state" == "Online" ]]; then
@@ -218,8 +231,8 @@ jobs:
             fi
           }
 
-          check_instance_ready ${{ env.MAIN_SERVICE_INSTANCE_ID }}
-          check_instance_ready ${{ env.REMOTE_SERVICE_INSTANCE_ID }}
+          check_instance_ready "${{ env.MAIN_SERVICE_INSTANCE_ID }}"
+          check_instance_ready "${{ env.REMOTE_SERVICE_INSTANCE_ID }}"
           
           main_command_id=$(aws ssm send-command \
               --instance-ids "${{ env.MAIN_SERVICE_INSTANCE_ID }}" \
@@ -267,11 +280,11 @@ jobs:
             fi
           }
           
-          watch_command $main_command_id
-          watch_command $remote_command_id
+          watch_command "$main_command_id"
+          watch_command "$remote_command_id"
 
       - name: Initiate Gradlew Daemon
-        if: steps.initiate-gradlew == 'failure'
+        if: steps.initiate-gradlew.outcome == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:
@@ -344,9 +357,9 @@ jobs:
         id: validation-result
         run: |
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "validation-result=success" >> $GITHUB_OUTPUT
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
-            echo "validation-result=failure" >> $GITHUB_OUTPUT
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
 
       # Clean up Procedures

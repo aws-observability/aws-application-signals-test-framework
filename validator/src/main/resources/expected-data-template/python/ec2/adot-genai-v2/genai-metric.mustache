@@ -1,0 +1,19 @@
+-
+  metricName: genai_faketokenusage
+  namespace: {{metricNamespace}}
+  dimensions:
+    -
+      name: model
+      value: claude
+    -
+      name: operation
+      value: chat
+    -
+      name: service.name
+      value: {{serviceName}}
+    -
+      name: aws.local.service
+      value: {{serviceName}}
+    -
+      name: aws.service.type
+      value: gen_ai_agent

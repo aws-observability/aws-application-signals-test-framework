@@ -1,3 +1,24 @@
+# aws-application-signals-test-framework
+
+## Development Setup
+
+### Pre-commit Hooks
+This repository uses [pre-commit](https://pre-commit.com/) to automatically format Terraform files.
+
+Install pre-commit:
+```bash
+pip install pre-commit
+```
+
+Install the git hooks:
+```bash
+pre-commit install
+```
+
+Now Terraform files will be automatically formatted when you commit.
+
+---
+
 # How to Run Lambda Java Performance Test
 [Link](docs/lambda-java-perf-test.md)
 

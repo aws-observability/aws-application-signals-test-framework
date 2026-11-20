@@ -15,6 +15,9 @@
 
 package com.amazon.sampleapp;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.trace.Span;
 import java.net.URI;
 import java.sql.DriverManager;
@@ -32,7 +35,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,12 +51,18 @@ import software.amazon.awssdk.services.s3.model.GetBucketLocationRequest;
 @Controller
 public class FrontendServiceController {
   private static final Logger logger = LoggerFactory.getLogger(FrontendServiceController.class);
+  private static final LongCounter customRequestCounter =
+      GlobalOpenTelemetry.getMeter("CustomOTLPMetrics")
+          .counterBuilder("custom.requests")
+          .setUnit("{request}")
+          .setDescription("This is a custom metric for validation testing")
+          .build();
   private final CloseableHttpClient httpClient;
   private final S3Client s3;
   private AtomicBoolean shouldSendLocalRootClientCall = new AtomicBoolean(false);
 
   @Bean
-  private void runLocalRootClientCallRecurringService() { // run the service
+  private ScheduledExecutorService runLocalRootClientCallRecurringService() { // run the service
     ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     Runnable runnableTask =
@@ -74,6 +82,7 @@ public class FrontendServiceController {
             };
     // Run with initial 0.1s delay, every 1 second
     executorService.scheduleAtFixedRate(runnableTask, 100, 1000, TimeUnit.MILLISECONDS);
+    return executorService;
   }
 
   @Autowired
@@ -96,6 +105,14 @@ public class FrontendServiceController {
     if (testingId != null) {
       bucketName += "-" + testingId;
     }
+    customRequestCounter.add(
+        1,
+        Attributes.builder()
+            .put("custom.operation", "request")
+            .put("custom.component", "frontend")
+            .put("custom.environment", "validation")
+            .put("custom.description", "This is a custom metric for validation testing")
+            .build());
     logger.warn("This is a custom log for validation testing");
     GetBucketLocationRequest bucketLocationRequest =
             GetBucketLocationRequest.builder().bucket(bucketName).build();
@@ -151,7 +168,7 @@ public class FrontendServiceController {
   @ResponseBody
   public String mysql() {
     logger.info("mysql received");
-    final String rdsMySQLClusterPassword = new String(new Base64().decode(System.getenv("RDS_MYSQL_CLUSTER_PASSWORD").getBytes()));
+    final String rdsMySQLClusterPassword = System.getenv("RDS_MYSQL_CLUSTER_PASSWORD");
     try {
       Connection connection = DriverManager.getConnection(
               System.getenv("RDS_MYSQL_CLUSTER_CONNECTION_URL"),

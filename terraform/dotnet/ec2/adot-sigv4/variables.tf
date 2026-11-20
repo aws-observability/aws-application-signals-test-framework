@@ -33,10 +33,27 @@ variable "get_adot_distro_command" {
   default = "aws s3 cp s3://<bucket-name>/<distro> ./<distro> && unzip <distro>"
 }
 
-variable "canary_type" {
-  default = "dotnet-ec2-default"
-}
-
 variable "language_version" {
   default = "8.0"
+}
+
+variable "application_logs_log_group" {
+  default = "otlp_logs"
+}
+
+variable "traces_use_legacy_path" {
+  description = "Use the legacy SigV4 trace configuration instead of the upstream OTLP trace exporter."
+  type        = bool
+  default     = true
+}
+
+variable "otlp_compression" {
+  description = "Compression applied to the OTLP exporters."
+  type        = string
+  default     = "none"
+
+  validation {
+    condition     = contains(["none", "gzip"], var.otlp_compression)
+    error_message = "OTLP compression must be none or gzip."
+  }
 }

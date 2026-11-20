@@ -1,0 +1,6 @@
+starlette
+uvicorn[standard]
+langchain-aws
+langgraph
+langchain-core
+openinference-instrumentation-langchain

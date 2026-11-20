@@ -160,6 +160,12 @@ public class App implements Callable<Integer> {
   @CommandLine.Option(names = {"--trace-id"})
   private String traceId;
 
+  @CommandLine.Option(names = {"--location-hash"})
+  private String locationHash;
+
+  @CommandLine.Option(names = {"--service-events-git-commit-sha"})
+  private String serviceEventsGitCommitSha;
+
   private static final String TEST_CASE_DIM_KEY = "testcase";
   private static final String CANARY_NAMESPACE = "Otel/Canary";
   private static final String CANARY_METRIC_NAME = "Success";
@@ -200,6 +206,8 @@ public class App implements Callable<Integer> {
     context.setInstanceId(this.instanceId);
     context.setPrivateDnsName(this.privateDnsName);
     context.setTraceId(this.traceId);
+    context.setLocationHash(this.locationHash);
+    context.setServiceEventsGitCommitSha(this.serviceEventsGitCommitSha);
 
     log.info(context);
 

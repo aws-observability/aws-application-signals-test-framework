@@ -19,7 +19,7 @@ variable "tracing_mode" {
 variable "runtime" {
   type        = string
   description = "NodeJS runtime version used for sample Lambda Function"
-  default     = "nodejs20.x"
+  default     = "nodejs24.x"
 }
 
 variable "architecture" {
@@ -34,14 +34,14 @@ variable "region" {
   default     = "us-west-2"
 }
 
-variable "is_canary" {
-  type        = bool
-  default     = false
-  description = "Whether to create the resource or not"
-}
-
 variable "layer_artifacts_directory" {
   type        = string
-  default = "./layer_artifacts"
+  default     = "./layer_artifacts"
   description = "Lambda layer and function artifacts directory"
+}
+
+variable "lite_sdk" {
+  type        = bool
+  description = "When true, deploy with the lite SDK (fast start) configuration instead of the full SDK"
+  default     = false
 }

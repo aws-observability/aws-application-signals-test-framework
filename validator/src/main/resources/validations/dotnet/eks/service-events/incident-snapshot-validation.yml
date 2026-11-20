@@ -1,0 +1,8 @@
+-
+  validationType: "cw-log"
+  expectedLogStructureTemplate: "DOTNET_EKS_SERVICE_EVENTS_INCIDENT_SNAPSHOT"
+  # trigger_type alone separates this from the latency snapshot, so the filter needs nothing
+  # further. Route, status code, request type and the nested exception body are all asserted by the
+  # template instead: their exact rendering is unverified, and an unverified term in a filter costs
+  # a full retry budget and reports only "log not found".
+  cwLogFilterPattern: "{ ($.resource.attributes.['service.name'] = \"{{serviceName}}\") && ($.scope.name = \"serviceevents\") && ($.attributes.['event.name'] = \"aws.service_events.incident_snapshot\") && ($.attributes.['aws.service_events.trigger_type'] = \"exception\") }"

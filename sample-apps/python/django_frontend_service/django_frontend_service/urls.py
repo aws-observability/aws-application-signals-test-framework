@@ -10,4 +10,5 @@ urlpatterns = [
     path('remote-service', views.downstream_service),
     path('client-call', views.async_service),
     path('mysql', views.mysql),
+    path('status/<int:code>', views.status),
 ]

@@ -8,6 +8,11 @@ name: Node EKS Use Case
 on:
   workflow_call:
     inputs:
+      runs-on:
+        description: 'Runner for this workflow''s jobs: a label, or a JSON array of labels (e.g. CodeBuild-hosted runner labels).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
       aws-region:
         required: true
         type: string
@@ -48,7 +53,7 @@ env:
 
 jobs:
   node-eks:
-    runs-on: ubuntu-latest
+    runs-on: ${{ startsWith(inputs.runs-on, '[') && fromJSON(inputs.runs-on) || inputs.runs-on || 'ubuntu-latest' }}
     timeout-minutes: 30
     outputs:
       job-started: ${{ steps.job-started.outputs.job-started }}
@@ -56,18 +61,26 @@ jobs:
     steps:
       - name: Check if the job started
         id: job-started
-        run: echo "job-started=true" >> $GITHUB_OUTPUT
+        run: echo "job-started=true" >> "$GITHUB_OUTPUT"
 
       - name: Generate testing id and sample app namespace
         run: |
-          echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> $GITHUB_ENV
-          echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> $GITHUB_ENV
+          echo TESTING_ID="${{ github.job }}-${{ github.run_id }}-${{ github.run_number }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+          echo SAMPLE_APP_NAMESPACE="ns-${{ github.run_id }}-${{ github.run_number }}" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: 'aws-observability/aws-application-signals-test-framework'
           ref: ${{ env.CALLER_WORKFLOW_NAME == 'main-build' && 'main' || github.ref }}
           fetch-depth: 0
+
+      # Pin the JDK used to build the validator. Without it Gradle uses the machine's default JDK, which is
+      # Java 17 on GitHub-hosted runners but Java 25 on CodeBuild's image, which Gradle 8.10 cannot run on.
+      - name: Set up Java for the validator
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
 
       # We initialize Gradlew Daemon early on during the workflow because sometimes initialization
       # fails due to transient issues. If it fails here, then we will try again later before the validators
@@ -124,7 +137,7 @@ jobs:
         run: mkdir -p ${{ github.workspace }}/.kube
 
       - name: Set KUBECONFIG environment variable
-        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> $GITHUB_ENV
+        run: echo KUBECONFIG="${{ github.workspace }}/.kube/config" >> "$GITHUB_ENV"
 
       - name: Set up kubeconfig
         run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.E2E_TEST_AWS_REGION }}
@@ -139,7 +152,7 @@ jobs:
 
       - name: Add eksctl to Github Path
         run: |
-          echo "${{ github.workspace }}/eksctl" >> $GITHUB_PATH
+          echo "${{ github.workspace }}/eksctl" >> "$GITHUB_PATH"
 
       # This step deletes lingering resources from previous test runs
       - name: Delete all sample app namespaces
@@ -170,43 +183,9 @@ jobs:
         uses: ./.github/workflows/actions/execute_and_retry
         with:
           command: "wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg"
-          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          post-command: 'echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(. /etc/os-release && echo "$VERSION_CODENAME") main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
               && sudo apt update && sudo apt install terraform'
           sleep_time: 60
-
-      - name: Get RDS database cluster metadata
-        continue-on-error: true
-        run: |
-          if [ "${{ env.CLUSTER_NAME }}" = "e2e-enablement-script-test" ]; then
-            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraenablementscriptpythone2eclusterformysql"
-          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-test" ]; then
-            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroracwagente2eclusterformysql"
-          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-node-adot-test" ]; then
-            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraadotnodee2eclusterformysql"
-          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-cw-agent-operator-test" ]; then
-            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroracwagentoperatore2eclusterformysql"
-          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-node-canary-test" ]; then
-            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroranodeclusterformysql"
-          elif [ "${{ env.CLUSTER_NAME }}" = "e2e-playground" ]; then
-            RDS_MYSQL_CLUSTER_IDENTIFIER="rdsauroraplaygroundclusterformysql"
-          else
-            echo "${{ env.CLUSTER_NAME }} is not a known cluster name"
-            exit 1
-          fi
-          RDS_MYSQL_CLUSTER_ENDPOINT=$(aws rds describe-db-cluster-endpoints --db-cluster-identifier $RDS_MYSQL_CLUSTER_IDENTIFIER --region ${{inputs.aws-region}} --query "DBClusterEndpoints[?EndpointType=='WRITER'].Endpoint" --output text)
-          echo RDS_MYSQL_CLUSTER_ENDPOINT="$RDS_MYSQL_CLUSTER_ENDPOINT" >> $GITHUB_ENV
-          RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME=$(aws secretsmanager list-secrets --region ${{inputs.aws-region}} --query "SecretList[?Tags[?Value=='arn:aws:rds:${{inputs.aws-region}}:${{env.ACCOUNT_ID}}:cluster:$RDS_MYSQL_CLUSTER_IDENTIFIER']].Name" --output text)
-          echo RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME="$RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME" >> $GITHUB_ENV
-
-      - name: Get RDS database credentials from SecretsManager
-        continue-on-error: true
-        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 # v2.0.10
-        env:
-          NODE_OPTIONS: "--network-family-autoselection-attempt-timeout=1000"
-        with:
-          secret-ids:
-            RDS_MYSQL_CLUSTER_SECRETS, ${{env.RDS_MYSQL_CLUSTER_CREDENTIAL_SECRET_NAME}}
-          parse-json-secrets: true
 
       - name: Initiate Terraform
         uses: ./.github/workflows/actions/execute_and_retry
@@ -218,8 +197,8 @@ jobs:
 
       - name: Set Sample App Image
         run: |
-          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.NODE_MAIN_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
-          echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.NODE_REMOTE_SAMPLE_APP_IMAGE }}" >> $GITHUB_ENV
+          echo MAIN_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.NODE_MAIN_SAMPLE_APP_IMAGE }}" >> "$GITHUB_ENV"
+          echo REMOTE_SAMPLE_APP_IMAGE_ARN="${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.E2E_TEST_AWS_REGION }}.amazonaws.com/${{ env.NODE_REMOTE_SAMPLE_APP_IMAGE }}" >> "$GITHUB_ENV"
 
       - name: Deploy sample app via terraform and wait for the endpoint to come online
         id: deploy-sample-app
@@ -244,9 +223,6 @@ jobs:
               -var="service_account_aws_access=service-account-${{ env.TESTING_ID }}" \
               -var="sample_app_image=${{ env.MAIN_SAMPLE_APP_IMAGE_ARN }}" \
               -var="sample_remote_app_image=${{ env.REMOTE_SAMPLE_APP_IMAGE_ARN }}" \
-              -var="rds_mysql_cluster_endpoint=${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}" \
-              -var="rds_mysql_cluster_username=${{env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME}}" \
-              -var='rds_mysql_cluster_password=${{env.RDS_MYSQL_CLUSTER_SECRETS_PASSWORD}}' \
               -var='account_id=${{ env.ACCOUNT_ID }}' \
             || deployment_failed=$?          
 
@@ -273,7 +249,7 @@ jobs:
               aws eks update-kubeconfig --region ${{ env.E2E_TEST_AWS_REGION }} --name ${{ env.CLUSTER_NAME }}
           
               execute_and_retry 2 "kubectl delete pods --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 60
-              execute_and_retry 2 "kubectl wait --for=condition=Ready --request-timeout '5m' pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
+              execute_and_retry 2 "kubectl wait --for=condition=Ready --timeout=5m pod --all -n ${{ env.SAMPLE_APP_NAMESPACE }}" "" 10
             fi
           
             # If the deployment_failed is 1 then either the terraform deployment or the endpoint connection failed, so first destroy the
@@ -314,11 +290,11 @@ jobs:
       - name: Get ECR to Patch
         run: |
           if [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent" ]; then
-            echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> $GITHUB_ENV
+            echo PATCH_IMAGE_ARN="${{ secrets.AWS_ECR_PRIVATE_REGISTRY }}/cwagent-integration-test:${{ github.sha }}" >> "$GITHUB_ENV"
           elif [ "${{ env.REPOSITORY_NAME }}" = "amazon-cloudwatch-agent-operator" ]; then
-            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> $GITHUB_ENV
+            echo PATCH_IMAGE_ARN="${{ vars.ECR_OPERATOR_STAGING_REPO }}:${{ env.CW_AGENT_OPERATOR_TAG }}" >> "$GITHUB_ENV"
           elif [ "${{ env.REPOSITORY_NAME }}" = "aws-otel-js-instrumentation" ]; then
-            echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> $GITHUB_ENV
+            echo PATCH_IMAGE_ARN="${{ env.ADOT_IMAGE_NAME }}" >> "$GITHUB_ENV"
           fi
 
       - name: Patch Image and Check Diff
@@ -339,21 +315,21 @@ jobs:
       - name: Get Remote Service Deployment Name
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> $GITHUB_ENV
+          command: echo "REMOTE_SERVICE_DEPLOYMENT_NAME=$(kubectl get deployments -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].metadata.name}')" >> "$GITHUB_ENV"
           max_retry: 3
           sleep_time: 30
 
       - name: Get Remote Service IP
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> $GITHUB_ENV
+          command: echo "REMOTE_SERVICE_POD_IP=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=remote-app -o jsonpath='{.items[0].status.podIP}')" >> "$GITHUB_ENV"
           max_retry: 3
           sleep_time: 30
 
       - name: Get Main Service Endpoint
         uses: ./.github/workflows/actions/execute_and_retry
         with:
-          command: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8000" >> $GITHUB_ENV
+          command: echo "APP_ENDPOINT=$(kubectl get pods -n ${{ env.SAMPLE_APP_NAMESPACE }} --selector=app=sample-app -o jsonpath='{.items[0].status.podIP}'):8000" >> "$GITHUB_ENV"
           max_retry: 3
           sleep_time: 30
 
@@ -365,7 +341,7 @@ jobs:
           sleep_time: 30
 
       - name: Initiate Gradlew Daemon
-        if: steps.initiate-gradlew == 'failure'
+        if: steps.initiate-gradlew.outcome == 'failure'
         uses: ./.github/workflows/actions/execute_and_retry
         continue-on-error: true
         with:
@@ -389,8 +365,8 @@ jobs:
           --platform-info ${{ env.CLUSTER_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --remote-resource-identifier "information_schema|${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}|3306"
-          --remote-db-user ${{ env.RDS_MYSQL_CLUSTER_SECRETS_USERNAME }}
+          --remote-resource-identifier "information_schema|mysql-service.${{ env.SAMPLE_APP_NAMESPACE }}.svc.cluster.local|3306"
+          --remote-db-user root
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -409,7 +385,7 @@ jobs:
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-name sample-remote-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --remote-resource-identifier "information_schema|${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}|3306"
+          --remote-resource-identifier "information_schema|mysql-service.${{ env.SAMPLE_APP_NAMESPACE }}.svc.cluster.local|3306"
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -427,7 +403,7 @@ jobs:
           --platform-info ${{ env.CLUSTER_NAME }}
           --service-name sample-application-${{ env.TESTING_ID }}
           --remote-service-deployment-name ${{ env.REMOTE_SERVICE_DEPLOYMENT_NAME }}
-          --remote-resource-identifier "information_schema|${{env.RDS_MYSQL_CLUSTER_ENDPOINT}}|3306"
+          --remote-resource-identifier "information_schema|mysql-service.${{ env.SAMPLE_APP_NAMESPACE }}.svc.cluster.local|3306"
           --query-string ip=${{ env.REMOTE_SERVICE_POD_IP }}&testingId=${{ env.TESTING_ID }}
           --rollup'
 
@@ -436,9 +412,9 @@ jobs:
         id: validation-result
         run: |
           if [ "${{ steps.log-validation.outcome }}" = "success" ] && [ "${{ steps.metric-validation.outcome }}" = "success" ] && [ "${{ steps.trace-validation.outcome }}" = "success" ]; then
-            echo "validation-result=success" >> $GITHUB_OUTPUT
+            echo "validation-result=success" >> "$GITHUB_OUTPUT"
           else
-            echo "validation-result=failure" >> $GITHUB_OUTPUT
+            echo "validation-result=failure" >> "$GITHUB_OUTPUT"
           fi
 
       # Clean up Procedures

@@ -10,14 +10,14 @@
       "otel.resource.Internal_Org": "Financial",
       "otel.resource.Business Unit": "Payments",
       "otel.resource.Region": "us-east-1",
-      "otel.resource.aws.application_signals.metric_resource_keys": "Business Unit&Region&Organization",
+      "otel.resource.aws.application_signals.metric_resource_keys": "Business Unit&Region&Internal_Org",
       "otel.resource.host.image.id": "^{{instanceAmi}}$",
       "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$"
     }
   },
   "subsegments": [
     {
-      "name": "^local-root-client-call$",
+      "name": "^local-root-client-call:80$",
       "http": {
           "request": {
               "url": "^http://local-root-client-call$",
@@ -27,7 +27,7 @@
       "annotations": {
         "aws.local.service": "^{{serviceName}}$",
         "aws.local.operation": "^InternalOperation$",
-        "aws.remote.service": "^local-root-client-call$",
+        "aws.remote.service": "^local-root-client-call:80$",
         "aws.remote.operation": "GET /",
         "aws.local.environment": "^ec2:default$"
       },
@@ -43,7 +43,7 @@
   ]
 },
 {
-    "name": "^local-root-client-call$",
+    "name": "^local-root-client-call:80$",
     "http": {
         "request": {
             "url": "^http://local-root-client-call$",
@@ -54,7 +54,7 @@
         }
     },
     "annotations": {
-        "aws.local.service": "^local-root-client-call$",
+        "aws.local.service": "^local-root-client-call:80$",
         "aws.local.operation": "^GET /$"
     }
 }]

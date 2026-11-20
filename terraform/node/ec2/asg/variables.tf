@@ -36,7 +36,3 @@ variable "get_adot_instrumentation_command" {
 variable "get_cw_agent_rpm_command" {
   default = "<command> s3://<bucket-name>/<RPM>"
 }
-
-variable "canary_type" {
-  default = "node-ec2-default"
-}

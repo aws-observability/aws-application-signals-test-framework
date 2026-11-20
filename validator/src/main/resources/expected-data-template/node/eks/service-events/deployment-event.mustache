@@ -1,0 +1,21 @@
+[{
+  "resource": {
+    "attributes": {
+      "service.name": "{{serviceName}}",
+      "aws.local.service": "{{serviceName}}",
+      "deployment.environment.name": "^eks:service-events$",
+      "telemetry.sdk.language": "^nodejs$"
+    }
+  },
+  "scope": {
+    "name": "serviceevents"
+  },
+  "eventName": "^aws.service_events.deployment_event$",
+  "attributes": {
+    "event.name": "aws.service_events.deployment_event",
+    "aws.service_events.deployment.trigger": "^(startup|periodic|shutdown)$",
+    "aws.service_events.deployment.id": "{{serviceName}}",
+    "vcs.ref.head.revision": "^[a-f0-9]{40}$",
+    "vcs.repository.url.full": "^https://github\\.com/aws-observability/aws-otel-js-instrumentation$"
+  }
+}]

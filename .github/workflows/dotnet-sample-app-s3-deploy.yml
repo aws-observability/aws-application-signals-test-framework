@@ -16,9 +16,9 @@ jobs:
       matrix:
         aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
                       'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','sa-east-1',
                       'us-east-1','us-east-2', 'us-west-1', 'us-west-2' ]
-        dotnet-version: [ '8.0', '9.0' ]
+        dotnet-version: [ '8.0', '9.0', '10.0' ]
     runs-on: ubuntu-latest
     env:
       DEFAULT_VERSION: '8.0'
@@ -90,11 +90,11 @@ jobs:
 
       - name: Build Sample App Zip
         working-directory: sample-apps/dotnet
-        run: zip -r dotnet-sample-app-${DOTNET_VERSION}.zip .
+        run: zip -r dotnet-sample-app-"${DOTNET_VERSION}".zip .
 
       - name: Upload to S3
         working-directory: sample-apps/dotnet
-        run: aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-sample-app-${DOTNET_VERSION}.zip --key dotnet-sample-app-${DOTNET_VERSION}.zip
+        run: aws s3api put-object --bucket aws-appsignals-sample-app-prod-${{ matrix.aws-region }} --body ./dotnet-sample-app-"${DOTNET_VERSION}".zip --key dotnet-sample-app-"${DOTNET_VERSION}".zip
 
       - name: Upload Windows Script to S3
         working-directory: sample-apps/dotnet
@@ -109,7 +109,7 @@ jobs:
       matrix:
         aws-region: [ 'af-south-1','ap-east-1','ap-northeast-1','ap-northeast-2','ap-northeast-3','ap-south-1','ap-south-2','ap-southeast-1',
                       'ap-southeast-2','ap-southeast-3','ap-southeast-4','ca-central-1','eu-central-1','eu-central-2','eu-north-1',
-                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','me-south-1', 'sa-east-1',
+                      'eu-south-1','eu-south-2','eu-west-1','eu-west-2','eu-west-3','il-central-1','me-central-1','sa-east-1',
                       'us-east-1','us-east-2', 'us-west-1', 'us-west-2' ]
     runs-on: ubuntu-latest
     steps:
@@ -148,7 +148,7 @@ jobs:
 
       - name: Build Lambda Sample App
         shell: bash
-        run: dotnet lambda package -pl ./src/SimpleLambdaFunction
+        run: dotnet lambda package -pl ./src/SimpleLambdaFunction --framework net8.0
         working-directory: sample-applications/lambda-test-apps/SimpleLambdaFunction
       
       - name: Upload Lambda Sample App to S3

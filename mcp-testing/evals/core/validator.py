@@ -316,6 +316,84 @@ class ToolCallValidator(Validator):
             }
 
 
+class ToolPresenceValidator(Validator):
+    """Validator that checks if specific tools were called, regardless of order and other tools being called."""
+
+    def __init__(self, expected_tools: List[str], ignore_file_tools: bool = False):
+        """Initialize tool call set validator.
+
+        Args:
+            expected_tools: List of tool names that must be called (order doesn't matter)
+            ignore_file_tools: If True, filter out file-related tools before validation
+        """
+        self.expected_tools = set(expected_tools)
+        self.ignore_file_tools = ignore_file_tools
+
+    def get_name(self) -> str:
+        """Return validator name."""
+        return 'Tool Call Set'
+
+    async def validate(
+        self,
+        captured_data: Dict[str, Any],
+    ) -> ValidationResult:
+        """Validate that all expected tools were called."""
+        logger.info('Validating tool calls (order-independent)...')
+
+        tool_calls = captured_data.get(TOOL_CALLS, [])
+        called_tools = [call['name'] for call in tool_calls]
+
+        if self.ignore_file_tools:
+            called_tools = [tool for tool in called_tools if tool not in PERMITTED_FILE_TOOLS]
+
+        called_tools_set = set(called_tools)
+        missing_tools = self.expected_tools - called_tools_set
+        extra_tools = called_tools_set - self.expected_tools
+
+        if not missing_tools:
+            reasoning = f'All expected tools called: {sorted(self.expected_tools)}'
+            if extra_tools:
+                reasoning += f' (also called: {sorted(extra_tools)})'
+            
+            return {
+                'validator_name': self.get_name(),
+                'overall_pass': True,
+                'criteria_results': [
+                    {
+                        'criterion': 'All expected tools called',
+                        'status': 'PASS',
+                        'reasoning': reasoning,
+                    }
+                ],
+                'raw_validation_output': {
+                    'expected_tools': sorted(self.expected_tools),
+                    'called_tools': called_tools,
+                    'missing_tools': [],
+                    'extra_tools': sorted(extra_tools),
+                    'ignore_file_tools': self.ignore_file_tools,
+                },
+            }
+        else:
+            return {
+                'validator_name': self.get_name(),
+                'overall_pass': False,
+                'criteria_results': [
+                    {
+                        'criterion': 'All expected tools called',
+                        'status': 'FAIL',
+                        'reasoning': f'Missing tools: {sorted(missing_tools)}. Called: {called_tools}',
+                    }
+                ],
+                'raw_validation_output': {
+                    'expected_tools': sorted(self.expected_tools),
+                    'called_tools': called_tools,
+                    'missing_tools': sorted(missing_tools),
+                    'extra_tools': sorted(extra_tools),
+                    'ignore_file_tools': self.ignore_file_tools,
+                },
+            }
+
+
 class BuildValidator(Validator):
     """Validator that runs build commands and checks exit code."""
 

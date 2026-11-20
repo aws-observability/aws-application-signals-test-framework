@@ -45,6 +45,7 @@ from .validator import (
     LLMJudgeValidator,
     BuildValidator,
     ToolCallValidator,
+    ToolPresenceValidator,
 )
 from .validation_prompts import ValidationPromptType
 from .llm_provider import LLMProvider, BedrockLLMProvider
@@ -85,6 +86,7 @@ __all__ = [
     'LLMJudgeValidator',
     'BuildValidator',
     'ToolCallValidator',
+    'ToolPresenceValidator',
     'ValidationPromptType',
     # Captured data constants
     'GIT_DIFF',

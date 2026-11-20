@@ -1,3 +1,0 @@
--
-  validationType: "cw-log"
-  expectedLogStructureTemplate: "JAVA_EC2_ADOT_OTLP_LOG"
