@@ -20,10 +20,10 @@ on:
         required: true
         type: string
       dotnet-version:
-        description: "Supported versions: 8.0, 9.0, 10.0"
+        description: "Supported versions: 10.0 and 11.0"
         required: false
         type: string
-        default: '8.0'
+        default: '10.0'
       distro-source:
         description: "ADOT .NET distro source: release or staging"
         required: false
@@ -71,14 +71,13 @@ on:
         type: string
         default: 'us-east-1'
       dotnet-version:
-        description: "Supported versions: 8.0, 9.0, 10.0"
+        description: "Supported versions: 10.0 and 11.0"
         required: false
         type: choice
         options:
-          - '8.0'
-          - '9.0'
           - '10.0'
-        default: '8.0'
+          - '11.0'
+        default: '10.0'
       distro-source:
         description: "ADOT .NET distro source"
         required: false
@@ -126,7 +125,7 @@ env:
   CALLER_WORKFLOW_NAME: ${{ inputs.caller-workflow-name || 'manual-dispatch' }}
   E2E_TEST_ACCOUNT_ID: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ACCOUNT_ID }}
   E2E_TEST_ROLE_NAME: ${{ secrets.APPLICATION_SIGNALS_E2E_TEST_ROLE_NAME }}
-  DOTNET_VERSION: ${{ inputs.dotnet-version || '8.0' }}
+  DOTNET_VERSION: ${{ inputs.dotnet-version || '10.0' }}
   DISTRO_SOURCE: ${{ inputs.distro-source || 'release' }}
   STAGING_DISTRO_NAME: ${{ inputs.staging-distro-name || 'aws-distro-opentelemetry-dotnet-instrumentation-linux-glibc-x64.zip' }}
   ADOT_DISTRO_URI_INPUT: ${{ inputs.adot-distro-uri || '' }}
@@ -164,8 +163,8 @@ jobs:
             echo "Invalid aws-region: $E2E_TEST_AWS_REGION"
             exit 1
           fi
-          if [[ ! "$DOTNET_VERSION" =~ ^(8\.0|9\.0|10\.0)$ ]]; then
-            echo "Unsupported dotnet-version: $DOTNET_VERSION (expected 8.0, 9.0, or 10.0)"
+          if [[ ! "$DOTNET_VERSION" =~ ^(10\.0|11\.0)$ ]]; then
+            echo "Unsupported dotnet-version: $DOTNET_VERSION (expected 10.0 or 11.0)"
             exit 1
           fi
           # Provenance for the sample-app artifact. When the caller supplies the SHA that actually

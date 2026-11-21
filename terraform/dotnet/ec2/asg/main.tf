@@ -111,7 +111,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     sudo yum install -y wget
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-    sudo dnf install -y dotnet-sdk-8.0
+    sudo dnf install -y dotnet-sdk-10.0
     sudo yum install unzip -y
 
     # Copy in CW Agent configuration
@@ -158,7 +158,7 @@ resource "aws_launch_configuration" "launch_configuration" {
     export OTEL_LOG_LEVEL=debug
     export OTEL_DOTNET_AUTO_LOG_DIRECTORY=/tmp
     export ASPNETCORE_URLS=http://0.0.0.0:8080
-    nohup dotnet bin/Debug/netcoreapp8.0/asp_frontend_service.dll &
+    nohup dotnet bin/Debug/netcoreapp10.0/asp_frontend_service.dll &
 
     # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
     sleep 30
@@ -229,7 +229,7 @@ resource "null_resource" "remote_service_setup" {
       sudo yum install wget -y
       sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
       sudo wget -O /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/fedora/37/prod.repo
-      sudo dnf install -y dotnet-sdk-8.0
+      sudo dnf install -y dotnet-sdk-10.0
       sudo yum install unzip -y
 
       # Copy in CW Agent configuration
@@ -273,7 +273,7 @@ resource "null_resource" "remote_service_setup" {
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
       export ASPNETCORE_URLS=http://0.0.0.0:8081
-      nohup dotnet bin/Debug/netcoreapp8.0/asp_remote_service.dll &
+      nohup dotnet bin/Debug/netcoreapp10.0/asp_remote_service.dll &
 
       # The application needs time to come up and reach a steady state, this should not take longer than 30 seconds
       sleep 30

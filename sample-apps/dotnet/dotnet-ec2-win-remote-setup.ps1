@@ -14,7 +14,7 @@ $ProgressPreference = 'SilentlyContinue'
 # Install Dotnet
 Write-Host "Installing Dotnet" | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
 curl.exe -L -o dotnet-install.ps1 https://dot.net/v1/dotnet-install.ps1 --retry 5 --retry-all-errors --retry-delay 5
-.\dotnet-install.ps1 -Version 8.0.302
+.\dotnet-install.ps1 -Channel 10.0
 
 # Install and start Cloudwatch Agent
 Invoke-Expression $GetCloudwatchAgentCommand | %{ "{0:HH:mm:ss:fff}: {1}" -f (Get-Date), $_ }
@@ -81,7 +81,7 @@ $env:OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED = "false"
 $env:OTEL_TRACES_SAMPLER = "always_on"
 $env:ASPNETCORE_URLS = "http://0.0.0.0:8081"
 
-Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp8.0/asp_remote_service.dll"
+Start-Process -FilePath "dotnet" -ArgumentList "bin/Debug/netcoreapp10.0/asp_remote_service.dll"
 
 
 Write-Host "Start Sleep"

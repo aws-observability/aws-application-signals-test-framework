@@ -24,10 +24,10 @@ on:
         required: true
         type: string
       dotnet-version:
-        description: "Currently support version 8.0, 9.0"
+        description: "Supported .NET versions: 10.0 and 11.0"
         required: false
         type: string
-        default: '8.0'
+        default: '10.0'
     outputs:
       job-started:
         value: ${{ jobs.dotnet-ec2-default.outputs.job-started }}
