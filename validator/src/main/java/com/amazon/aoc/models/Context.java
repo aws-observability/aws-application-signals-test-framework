@@ -27,6 +27,8 @@ public class Context {
 
   private String language;
 
+  private String languageVersion;
+
   @NonNull private String region;
 
   private String availabilityZone;

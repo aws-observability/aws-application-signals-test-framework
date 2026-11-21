@@ -7,9 +7,8 @@
   "Version": "^1$",
   "Telemetry.Source": "^LocalRootSpan$",
   "Host": "^{{privateDnsName}}$",
-  "otel.resource.aws.application_signals.metric_resource_keys": "all_attributes",
-  "otel.resource.host.image.id": "^{{instanceAmi}}$",
-  "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$"
+  "otel.resource.Business Unit": "Payments",
+  "otel.resource.Region": "us-east-1"
 },
 {
   "EC2.AutoScalingGroup": "^{{platformInfo}}$",
@@ -22,7 +21,6 @@
   "RemoteOperation": "GET /",
   "Telemetry.Source": "^ClientSpan$",
   "Host": "^{{privateDnsName}}$",
-  "otel.resource.aws.application_signals.metric_resource_keys": "all_attributes",
-  "otel.resource.host.image.id": "^{{instanceAmi}}$",
-  "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$"
+  "otel.resource.Business Unit": "Payments",
+  "otel.resource.Region": "us-east-1"
 }]

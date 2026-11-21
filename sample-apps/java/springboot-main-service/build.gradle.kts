@@ -38,11 +38,18 @@ repositories {
   mavenCentral()
 }
 
+// Spring Boot 3 (used for Java 25) manages OpenTelemetry versions. Keep every OpenTelemetry jar on the version below.
+extra["opentelemetry.version"] = "1.34.1"
+
 dependencies {
   implementation(platform("software.amazon.awssdk:bom:2.20.78"))
   implementation("org.springframework.boot:spring-boot-starter-web")
   implementation("org.springframework.boot:spring-boot-starter-logging")
   implementation("io.opentelemetry:opentelemetry-api:1.34.1")
+  implementation("io.opentelemetry:opentelemetry-sdk:1.34.1")
+  implementation("io.opentelemetry:opentelemetry-sdk-metrics:1.34.1")
+  implementation("io.opentelemetry:opentelemetry-exporter-otlp:1.34.1")
+  implementation("io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.34.1")
   implementation("software.amazon.awssdk:s3")
   implementation("software.amazon.awssdk:sts")
   implementation("com.mysql:mysql-connector-j:8.4.0")
