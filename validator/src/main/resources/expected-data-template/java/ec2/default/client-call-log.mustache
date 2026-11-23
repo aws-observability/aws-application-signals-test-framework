@@ -6,8 +6,9 @@
   "Version": "^1$",
   "Telemetry.Source": "^LocalRootSpan$",
   "Host": "^ip(-[0-9]{1,3}){4}.*$",
-  "otel.resource.Business Unit": "Payments",
-  "otel.resource.Region": "us-east-1"
+  "otel.resource.aws.application_signals.metric_resource_keys": "all_attributes",
+  "otel.resource.host.image.id": "^{{instanceAmi}}$",
+  "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$"
 },
 {
   "EC2.InstanceId": "^{{instanceId}}$",
@@ -19,6 +20,7 @@
   "RemoteOperation": "GET /",
   "Telemetry.Source": "^ClientSpan$",
   "Host": "^ip(-[0-9]{1,3}){4}.*$",
-  "otel.resource.Business Unit": "Payments",
-  "otel.resource.Region": "us-east-1"
+  "otel.resource.aws.application_signals.metric_resource_keys": "all_attributes",
+  "otel.resource.host.image.id": "^{{instanceAmi}}$",
+  "otel.resource.host.type": "^([a-z0-9]+\\.[a-z0-9]+)$"
 }]

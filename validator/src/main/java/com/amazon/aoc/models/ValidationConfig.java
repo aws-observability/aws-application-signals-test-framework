@@ -49,6 +49,13 @@ public class ValidationConfig {
   /** PromQL query template (mustache) for Service Events OTLP metric validation. */
   String promQlQuery;
 
+  // Context for dynamic template selection
+  private Context context;
+
+  public void setContext(Context context) {
+    this.context = context;
+  }
+
   /** alarm related. */
   Integer pullingDuration;
 
@@ -79,7 +86,41 @@ public class ValidationConfig {
   String negativeSoaking;
 
   public FileConfig getExpectedMetricTemplate() {
-    return this.getTemplate(this.expectedMetricTemplate);
+    String templatePath = this.expectedMetricTemplate;
+
+    // Dynamic template selection for Java EC2 custom metrics based on Java version
+    if (context != null && "java".equalsIgnoreCase(context.getLanguage())
+        && context.getLanguageVersion() != null) {
+      if ("JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V11_23".equals(templatePath)
+          || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V8".equals(templatePath)
+          || "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V25".equals(templatePath)) {
+
+        int javaVersion = parseJavaVersion(context.getLanguageVersion());
+
+        if (javaVersion == 8) {
+          // Java 8 uses process.command_line
+          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V8";
+        } else if (javaVersion >= 25) {
+          // Java 25+ includes service.version dimension
+          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V25";
+        } else if (javaVersion >= 11) {
+          // Java 11-23 use process.command_args (base template)
+          templatePath = "JAVA_EC2_DEFAULT_AWS_OTEL_CUSTOM_METRIC_V11_23";
+        }
+      }
+    }
+
+    return this.getTemplate(templatePath);
+  }
+
+  private int parseJavaVersion(String version) {
+    try {
+      // Handle versions like "8", "11", "17", "21", "23"
+      return Integer.parseInt(version.trim());
+    } catch (NumberFormatException e) {
+      // If parsing fails, return 0 to indicate unknown version
+      return 0;
+    }
   }
 
   public FileConfig getExpectedTraceTemplate() {
