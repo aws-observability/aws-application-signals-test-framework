@@ -1,87 +1,46 @@
-## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-## SPDX-License-Identifier: Apache-2.0
-
-# Temporary test workflow for the .NET custom metrics E2E test. Remove before merge.
+## Temporary cross-language dispatch caller for DI E2E version-matrix validation.
+## DO NOT MERGE — drop this file before finalizing the PR.
 name: Test
 on:
-  push:
-    branches:
-      - DOTNET_Custom_metrics
+  workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  dotnet-ec2-default-test:
+  python-adot-di:
     strategy:
       fail-fast: false
       matrix:
-        dotnet-version: ['8.0', '9.0', '10.0']
-    uses: ./.github/workflows/dotnet-ec2-default-test.yml
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+    uses: ./.github/workflows/python-ec2-adot-di-test.yml
     secrets: inherit
     with:
-      caller-workflow-name: 'test'
       aws-region: 'us-east-1'
-      dotnet-version: ${{ matrix.dotnet-version }}
+      caller-workflow-name: 'test'
+      python-version: ${{ matrix.python-version }}
 
-  dotnet-ec2-asg-test:
-    uses: ./.github/workflows/dotnet-ec2-asg-test.yml
+  java-adot-di:
+    strategy:
+      fail-fast: false
+      matrix:
+        java-version: ['8', '11', '17', '21', '25']
+    uses: ./.github/workflows/java-ec2-adot-di-test.yml
     secrets: inherit
     with:
-      caller-workflow-name: 'test'
       aws-region: 'us-east-1'
+      caller-workflow-name: 'test'
+      java-version: ${{ matrix.java-version }}
 
-  dotnet-ec2-adot-sigv4-test:
-    uses: ./.github/workflows/dotnet-ec2-adot-sigv4-test.yml
+  node-adot-di:
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['18', '20', '22', '24']
+    uses: ./.github/workflows/node-ec2-adot-di-test.yml
     secrets: inherit
     with:
-      caller-workflow-name: 'test'
-
-  dotnet-ec2-nuget-test:
-    uses: ./.github/workflows/dotnet-ec2-nuget-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
       aws-region: 'us-east-1'
-
-  dotnet-ec2-service-events-test:
-    uses: ./.github/workflows/dotnet-ec2-service-events-test.yml
-    secrets: inherit
-    with:
       caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-      sample-app-zip: 's3://aws-appsignals-sample-app-prod-us-east-1/dotnet-sample-app-8.0-delete-me.zip'
-
-  dotnet-ec2-windows-test:
-    uses: ./.github/workflows/dotnet-ec2-windows-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-
-  dotnet-eks-test:
-    uses: ./.github/workflows/dotnet-eks-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-      test-cluster-name: 'e2e-dotnet-adot-test'
-
-  # Shares the e2e-dotnet-adot-test cluster with dotnet-eks-test, so it must not run concurrently.
-  dotnet-eks-service-events-test:
-    needs: dotnet-eks-test
-    if: ${{ !cancelled() }}
-    uses: ./.github/workflows/dotnet-eks-service-events-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
-      test-cluster-name: 'e2e-dotnet-adot-test'
-
-  dotnet-k8s-test:
-    uses: ./.github/workflows/dotnet-k8s-test.yml
-    secrets: inherit
-    with:
-      caller-workflow-name: 'test'
-      aws-region: 'us-east-1'
+      node-version: ${{ matrix.node-version }}

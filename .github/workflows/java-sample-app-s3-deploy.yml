@@ -48,6 +48,14 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
 
+      # Pin the JDK Gradle runs on. Without it Gradle uses the runner's default JDK, which is
+      # Java 25 on the ubuntu-26.04 GitHub-hosted runners, which Gradle 8.14 cannot run on.
+      - name: Set up Java 17 for Gradle
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - name: Setup Gradle 8.14
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a #4.4.3
         with:
@@ -90,6 +98,12 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: ${{ matrix.aws-region }}
+
+      - name: Set up Java 17 for Gradle
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle 8.14
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a #4.4.3
@@ -265,6 +279,12 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/${{ env.E2E_TEST_ROLE_NAME }}
           aws-region: us-west-2
+
+      - name: Set up Java 17 for Gradle
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Gradle 8.14
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a #4.4.3

@@ -164,9 +164,12 @@ resource "null_resource" "main_service_setup" {
       export OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=myMeterSource
       # CloudWatch drops EMF metrics with more than 30 dimensions. The 5 os.* attributes from this detector push the agent_based metrics to 31.
       export OTEL_DOTNET_AUTO_OPERATINGSYSTEM_RESOURCE_DETECTOR_ENABLED=false
+      # Keep the agent_based dimensions the same across ADOT releases: v1.15.0 emits container.id on EC2 and no
+      # host.image.id; v1.16.0 emits host.image.id and no container.id.
+      export OTEL_DOTNET_AUTO_CONTAINER_RESOURCE_DETECTOR_ENABLED=false
       export SERVICE_NAME="dotnet-sample-application-${var.test_id}"
       export DEPLOYMENT_ENVIRONMENT_NAME="ec2:default"
-      export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME}"
+      export OTEL_RESOURCE_ATTRIBUTES="service.name=$${SERVICE_NAME},deployment.environment.name=$${DEPLOYMENT_ENVIRONMENT_NAME},host.image.id=${data.aws_ami.ami.id}"
       export OTEL_AWS_APPLICATION_SIGNALS_ENABLED=true
       export OTEL_AWS_APPLICATION_SIGNALS_RUNTIME_ENABLED=false
       export OTEL_TRACES_SAMPLER=always_on
