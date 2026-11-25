@@ -40,14 +40,14 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ---
 
-apiVersion: opentelemetry.io/v1alpha1
+apiVersion: opentelemetry.io/v1beta1
 kind: OpenTelemetryCollector
 metadata:
   name: appsignals
 spec:
   # mode: daemonset
   image: ${E2E_OTEL_COLLECTOR_IMAGE}
-  config: |
+  config:
     extensions:
       sigv4auth:
         region: "${E2E_TEST_AWS_REGION}"
